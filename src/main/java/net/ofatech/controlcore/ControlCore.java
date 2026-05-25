@@ -1,22 +1,22 @@
-package net.ofatech.hytaletemplate;
+package net.ofatech.controlcore;
 
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import com.hypixel.hytale.server.core.plugin.JavaPluginInit;
-import net.ofatech.hytaletemplate.core.domain.interfaces.IModCommand;
-import net.ofatech.hytaletemplate.core.domain.interfaces.IModEvent;
-import net.ofatech.hytaletemplate.platform.registry.ModComponentScanner;
+import net.ofatech.controlcore.core.domain.interfaces.IModCommand;
+import net.ofatech.controlcore.core.domain.interfaces.IModEvent;
+import net.ofatech.controlcore.platform.registry.ModComponentScanner;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Modifier;
 import java.util.Set;
 
-public class TemplatePlugin extends JavaPlugin {
+public class ControlCore extends JavaPlugin {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
-    public TemplatePlugin(@Nonnull JavaPluginInit init) {
+    public ControlCore(@Nonnull JavaPluginInit init) {
         super(init);
-        LOGGER.atInfo().log("Initializing TemplatePlugin  with Version: %s", this.getManifest().getVersion().toString());
+        LOGGER.atInfo().log("Initializing ControlCore  with Version: %s", this.getManifest().getVersion().toString());
     }
 
     @Override

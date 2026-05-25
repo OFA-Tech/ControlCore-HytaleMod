@@ -1,4 +1,4 @@
-package net.ofatech.hytaletemplate.core.domain.extensions;
+package net.ofatech.controlcore.core.domain.extensions;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

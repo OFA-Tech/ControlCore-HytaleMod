@@ -1,41 +1,51 @@
-# Hytale Java Plugin Architecture Template
+# ControlCore (Configured Java Plugin)
 
-This repository is a **cloneable Hytale Java plugin architecture template**.
-It is intended to be copied and renamed for new plugin/mod projects.
+ControlCore is the **server control and configuration foundation** for OFA-Tech Hytale projects.
 
-## Project status
+Instead of treating configuration as scattered per-mod implementation detail, this project aims to provide a shared layer for server preferences, administrative controls, configurable actions, and reusable quality-of-life systems.
 
-This template is stable and intentionally minimal.
-There is no planned feature roadmap right now, but issues and PRs are welcome.
+## Purpose
 
-## What this template is
+ControlCore exists to reduce configuration fragmentation across mods.
 
-- A starter project with a **DDD-inspired folder structure** adapted for Java/Hytale.
-- A template that keeps the plugin entrypoint thin and separates concerns.
-- A reference for where to place public API contracts, domain code, services, and platform integration.
+When each mod uses different settings formats, command patterns, and defaults, server administration becomes harder than it needs to be. ControlCore is designed to establish a consistent control surface so specialized gameplay mods can stay focused on gameplay while reusing a common configuration philosophy.
 
-## What this template is not
+## Vision
 
-- Not a shared runtime framework dependency.
-- Not a global cross-mod API registry.
-- Not a ServiceLoader-based integration framework.
+The long-term vision is a common configuration backbone where compatible mods can:
+
+- Register configurable concepts in a predictable way.
+- Expose server-facing and player-facing options consistently.
+- Reuse shared defaults, actions, and administrative patterns.
+- Integrate with other mods without fragile one-off configuration bridges.
+
+## Core concepts
+
+- **Server control as a platform service**: configuration is treated as part of server identity, not isolated side files.
+- **Configurable interaction**: commands, actions, preferences, and scheduled behavior remain adjustable.
+- **Shared quality-of-life infrastructure**: common mod needs are implemented once and reused.
+- **Controlled extensibility**: other mods can depend on the control layer without handing over gameplay ownership.
+
+## Current repository scope
+
+This repository still provides a **cloneable Java plugin architecture base** and is intentionally practical for development:
+
+- `TemplatePlugin` remains the thin plugin entrypoint.
+- `platform` contains Hytale-facing integration (commands, events, registries).
+- `core` contains internal domain and service logic.
+- `api` is where stable public contracts can evolve.
 
 ## Quick start
 
-- Update metadata in `gradle.properties` (name, group, description, version, authors).
-- Rename `TemplatePlugin` and its package, then update `plugin_main` in `gradle.properties`.
-- Remove or replace the example command/event classes once you have your own.
-- Follow the [Rename Guide](docs/rename-guide.md) for a step-by-step checklist.
-
-## Architecture summary
-
-- `TemplatePlugin` is the entrypoint and should stay thin.
-- `platform` contains Hytale-specific code (commands, events, adapters).
-- `core` contains domain, service, and infrastructure internals.
-- `api` is a placeholder for the public API surface of the mod you build from this template.
+- Verify project metadata in `gradle.properties`.
+- Rename `TemplatePlugin` and its package for your module identity.
+- Update `plugin_main` and any remaining template identifiers.
+- Replace example platform classes with your own behavior.
+- Use the [Rename Guide](docs/rename-guide.md) for a full checklist.
 
 ## Documentation
 
+- [Configured Java Plugin](docs/configured-java-plugin.md)
 - [Architecture](docs/architecture.md)
 - [Folder Structure](docs/folder-structure.md)
 - [Rename Guide](docs/rename-guide.md)

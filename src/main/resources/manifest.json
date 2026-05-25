@@ -1,16 +1,16 @@
 {
-    "Group": "dev.ofatech",
-    "Name": "ProjectTemplateHytaleMod",
+    "Group": "net.ofatech",
+    "Name": "ControlCore",
     "Version": "0.0.1",
-    "Description": "A template for Hytale mods using the Hytale Gradle plugin.",
+    "Description": "ControlCore, a Hytale mod built to handle server-side configuration.",
     "Authors": [
         {
             "Name": "CaioMBA",
-            "Email": "example@ofatech.com",
+            "Email": "caiombaraujo@gmail.com",
             "Url": "https://github.com/CaioMBA"
         }
     ],
-    "Website": "https://github.com/CaioMBA/ProjectTemplate-HytaleMod",
+    "Website": "https://github.com/OFA-Tech/ControlCore-HytaleMod",
     "DisabledByDefault": false,
     "IncludesAssetPack": false,
     "Dependencies": {},

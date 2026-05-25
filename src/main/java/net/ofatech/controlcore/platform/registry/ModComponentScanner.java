@@ -1,4 +1,4 @@
-package net.ofatech.hytaletemplate.platform.registry;
+package net.ofatech.controlcore.platform.registry;
 
 import java.io.IOException;
 import java.net.JarURLConnection;

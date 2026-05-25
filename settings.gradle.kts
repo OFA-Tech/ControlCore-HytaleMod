@@ -6,7 +6,7 @@ val pluginVersion = providers.gradleProperty("plugin_version").getOrElse("0.0.1"
 val pluginDescription = providers.gradleProperty("plugin_description").getOrElse("A Hytale Mod")
 val pluginWebSite = providers.gradleProperty("plugin_website").getOrElse("")
 val serverVersion = providers.gradleProperty("server_version").getOrElse("*")
-val pluginMain = providers.gradleProperty("plugin_main").getOrElse("net.ofatech.hytaletemplate.TemplatePlugin")
+val pluginMain = providers.gradleProperty("plugin_main").getOrElse("net.ofatech.controlcore.TemplatePlugin")
 
 val pluginAuthorNames = providers.gradleProperty("plugin_author_names").orNull
 val pluginAuthorEmails = providers.gradleProperty("plugin_author_emails").orNull

@@ -1,6 +1,6 @@
 # Folder Structure
 
-The default Java package is `net.ofatech.hytaletemplate`.
+The default Java package is `net.ofatech.controlcore`.
 Below is the core layout you get from the template.
 
 ```

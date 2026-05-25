@@ -1,4 +1,4 @@
-package net.ofatech.hytaletemplate.core.domain.extensions;
+package net.ofatech.controlcore.core.domain.extensions;
 
 public final class NumericExtensions {
     private static final long KILOBYTE = 1024L;

@@ -1,4 +1,4 @@
-package net.ofatech.hytaletemplate.core.data.io;
+package net.ofatech.controlcore.core.data.io;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

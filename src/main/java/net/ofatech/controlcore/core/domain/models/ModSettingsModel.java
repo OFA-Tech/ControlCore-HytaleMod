@@ -1,4 +1,4 @@
-package net.ofatech.hytaletemplate.core.domain.models;
+package net.ofatech.controlcore.core.domain.models;
 
 public record ModSettingsModel (
     boolean enabled

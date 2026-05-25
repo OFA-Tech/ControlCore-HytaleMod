@@ -1,4 +1,4 @@
-package net.ofatech.hytaletemplate.core.domain.extensions;
+package net.ofatech.controlcore.core.domain.extensions;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;

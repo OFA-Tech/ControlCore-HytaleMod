@@ -1,4 +1,4 @@
-package net.ofatech.hytaletemplate.core.domain.extensions;
+package net.ofatech.controlcore.core.domain.extensions;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;

@@ -1,6 +1,6 @@
-package net.ofatech.hytaletemplate.core.data.filesystem;
+package net.ofatech.controlcore.core.data.filesystem;
 
-import net.ofatech.hytaletemplate.core.domain.interfaces.IFileSystemAccess;
+import net.ofatech.controlcore.core.domain.interfaces.IFileSystemAccess;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

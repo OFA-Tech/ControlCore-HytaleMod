@@ -18,7 +18,7 @@ Edit `gradle.properties` and set:
 
 ## 2) Rename packages and entrypoint
 
-- Rename the Java package from `net.ofatech.hytaletemplate` to your own.
+- Rename the Java package from `net.ofatech.controlcore` to your own.
 - Rename `TemplatePlugin` to your mod/plugin name.
 - Update references in `plugin_main` and any imports.
 

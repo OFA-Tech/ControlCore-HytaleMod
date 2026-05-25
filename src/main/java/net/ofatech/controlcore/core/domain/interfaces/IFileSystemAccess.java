@@ -1,4 +1,4 @@
-package net.ofatech.hytaletemplate.core.domain.interfaces;
+package net.ofatech.controlcore.core.domain.interfaces;
 
 import java.nio.file.Path;
 import java.util.List;
