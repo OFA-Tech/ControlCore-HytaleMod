@@ -16,5 +16,5 @@
     "Dependencies": {},
     "OptionalDependencies": {},
     "ServerVersion": "*",
-    "Main": "net.ofatech.hytaletemplate.TemplatePlugin"
+    "Main": "net.ofatech.controlcore.ControlCore"
 }

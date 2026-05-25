@@ -1,4 +1,6 @@
 import dev.scaffoldit.hytale.wire.HytaleManifest
+import org.gradle.kotlin.dsl.maven
+import org.gradle.kotlin.dsl.mavenCentral
 
 val pluginGroup = providers.gradleProperty("plugin_group").getOrElse("net.ofatech")
 val pluginName = providers.gradleProperty("plugin_name").getOrElse("HytaleMod")
@@ -49,12 +51,19 @@ hytale {
     useVersion("latest")
 
     repositories {
+        mavenCentral()
+
+        maven {
+            name = "CurseMaven"
+            url = uri("https://www.cursemaven.com")
+        }
         // Any external repositories besides: MavenLocal, MavenCentral, HytaleMaven, and CurseMaven
     }
 
     dependencies {
         // Any external dependency you also want to include
-        implementation("com.google.code.gson:gson:2.10.1")
+        implementation("com.google.code.gson:gson:2.14.0")
+        implementation("curse.maven:hyui-1431415:7820303")
     }
 
     manifest {
