@@ -1,0 +1,20 @@
+{
+    "Group": "dev.ofatech",
+    "Name": "ProjectTemplateHytaleMod",
+    "Version": "0.0.1",
+    "Description": "A template for Hytale mods using the Hytale Gradle plugin.",
+    "Authors": [
+        {
+            "Name": "CaioMBA",
+            "Email": "example@ofatech.com",
+            "Url": "https://github.com/CaioMBA"
+        }
+    ],
+    "Website": "https://github.com/CaioMBA/ProjectTemplate-HytaleMod",
+    "DisabledByDefault": false,
+    "IncludesAssetPack": false,
+    "Dependencies": {},
+    "OptionalDependencies": {},
+    "ServerVersion": "*",
+    "Main": "net.ofatech.hytaletemplate.TemplatePlugin"
+}

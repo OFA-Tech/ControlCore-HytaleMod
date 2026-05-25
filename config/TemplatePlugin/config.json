@@ -1,0 +1,21 @@
+{
+  "debug": false,
+  "language": "en_us",
+  "storage": {
+    "type": "json",
+    "directory": "data"
+  },
+  "api": {
+    "enabled": false,
+    "host": "127.0.0.1",
+    "port": 8080,
+    "token": "change-me",
+    "allowReloadEndpoint": false
+  },
+  "features": {
+    "exampleCommand": true,
+    "playerWelcomeMessage": true,
+    "restApi": false
+  }
+}
+
