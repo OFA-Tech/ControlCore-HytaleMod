@@ -1,4 +1,4 @@
-package net.ofatech.controlcore.platform.hyui;
+package net.ofatech.controlcore.platform.hyui.page;
 
 import au.ellie.hyui.builders.HyUIPage;
 import au.ellie.hyui.builders.PageBuilder;
@@ -10,29 +10,18 @@ import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import net.ofatech.controlcore.core.domain.interfaces.IControlPanel;
 import net.ofatech.controlcore.core.domain.models.ControlPanelRequest;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
-public class ControlPanel implements IControlPanel {
+public final class ControlPanel {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
-    private final String HTML_STRING = """
-            <div class="page-overlay">
-                <div class="container" data-hyui-title="ControlCore">
-                    <div class="container-contents">
-                        <p>ControlCore admin panel</p>
-                        <button id="close-btn">Close</button>
-                    </div>
-                </div>
-            </div>
-            """;
+    private static final String HTML_PATH = "/Pages/control-panel.html";
 
 
-    @Override
-    public CompletableFuture<Void> openControlPanel(Player player, ControlPanelRequest request) {
+    public static CompletableFuture<Void> open(Player player, ControlPanelRequest request) {
         Objects.requireNonNull(player, "player cannot be null");
         Objects.requireNonNull(request, "request cannot be null");
 
@@ -55,7 +44,8 @@ public class ControlPanel implements IControlPanel {
                 }
 
                 PageBuilder.pageForPlayer(playerRef)
-                    .fromHtml(HTML_STRING)
+                    .loadHtml(HTML_PATH)
+                    .enableAsyncImageLoading(true)
                     .addEventListener("close-btn", CustomUIEventBindingType.Activating, (ignored, ctx) ->
                         ctx.getPage().ifPresent(HyUIPage::close)
                     )

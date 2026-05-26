@@ -16,11 +16,15 @@ repositories {
 
 dependencies {
     implementation("com.google.code.gson:gson:2.14.0")
-    // Any external dependency you also want to include
     implementation("curse.maven:hyui-1431415:7820303")
+
+    implementation("io.avaje:avaje-inject:12.5-javax")
+    annotationProcessor("io.avaje:avaje-inject-generator:12.5-javax")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.0")
     testImplementation("org.mockito:mockito-core:5.12.0")
+    testImplementation("io.avaje:avaje-inject-test:12.5-javax")
+    testAnnotationProcessor("io.avaje:avaje-inject-generator:12.5-javax")
 }
 
 tasks.test {

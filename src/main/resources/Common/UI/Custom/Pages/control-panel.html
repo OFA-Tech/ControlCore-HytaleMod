@@ -1,0 +1,222 @@
+<style>
+    .control-panel {
+        anchor-width: 900;
+        anchor-height: 580;
+    }
+
+    .titlebar {
+        layout-mode: right;
+    }
+
+    .tabs {
+        anchor-height: 40;
+    }
+
+    .tab-page {
+        layout-mode: topscrolling;
+        padding: 12;
+    }
+
+    .section {
+        layout-mode: top;
+        padding-bottom: 14;
+    }
+
+    .section-title {
+        font-weight: bold;
+        font-size: 18;
+        padding-bottom: 6;
+    }
+
+    .row {
+        layout-mode: left;
+        padding-bottom: 8;
+    }
+
+    .field-label {
+        anchor-width: 240;
+    }
+
+    .field {
+        flex-weight: 1;
+        anchor-height: 32;
+    }
+
+    .actions {
+        layout-mode: left;
+        padding-top: 6;
+    }
+
+    .action-btn {
+        anchor-height: 34;
+    }
+
+    .section-note {
+        padding-bottom: 10px;
+        opacity: 0.85;
+    }
+
+    .subsection-title {
+        font-weight: bold;
+        font-size: 15;
+        padding-top: 4;
+        padding-bottom: 6;
+    }
+
+    .field-help-italic{
+        font-style: italic;
+    }
+
+</style>
+
+<div class="page-overlay">
+    <div class="container control-panel" data-hyui-title="ControlCore">
+        <div class="container-title titlebar">
+            <!-- Keep this ID stable; Java listens for it. -->
+            <button id="close-btn" class="secondary-button">Close</button>
+        </div>
+
+        <div class="container-contents">
+            <nav class="tabs"
+                 data-tabs="server:Server Configs,player:Player Prefs,keymap:Keymaps"
+                 data-selected="server"></nav>
+
+            <div class="tab-content" data-hyui-tab-id="server">
+                <div class="tab-page">
+                    <div class="section">
+                        <p class="section-title">Main Server Configuration</p>
+                        <p class="section-note default-style">These values map directly to the server config keys</p>
+
+                        <div class="section">
+                            <p class="subsection-title">Identity</p>
+
+                            <div class="row">
+                                <label for="serverName" class="field-label default-style">ServerName</label>
+                                <input id="serverName" type="text" class="field default-style" placeholder="Caitos Hytale Server" value="Caitos Hytale Server" />
+                            </div>
+
+                            <div class="row">
+                                <label for="motd" class="field-label default-style">MOTD</label>
+                                <input id="motd" type="text" class="field default-style" placeholder="WELCOME TO OFA-TECH" value="WELCOME TO OFA-TECH" maxlength="120" />
+                            </div>
+
+                            <div class="row">
+                                <label for="password" class="field-label default-style">Password</label>
+                                <input id="password" type="text" class="field default-style" placeholder="" value="" maxlength="120" />
+                            </div>
+                            <div class="row">
+                                <p class="field-help-italic">Set password empty to make it public</p>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <p class="subsection-title">Capacity</p>
+
+                            <div class="row">
+                                <label for="maxPlayers" class="field-label default-style">MaxPlayers</label>
+                                <input id="maxPlayers" type="number" class="field default-style" value="10" min="1" max="200" step="1" />
+                            </div>
+
+                            <div class="row">
+                                <label for="maxViewRadius" class="field-label default-style">MaxViewRadius</label>
+                                <input id="maxViewRadius" type="number" class="field default-style" value="5" min="1" max="32" step="1" />
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <p class="subsection-title">Connection Timeouts</p>
+
+                            <div class="row">
+                                <label for="playTimeout" class="field-label default-style">PlayTimeout</label>
+                                <input id="playTimeout" type="text" class="field default-style" placeholder="PT10M" value="PT10M" />
+                            </div>
+                            <div class="row">
+                                <p class="field-help-italic">Use ISO-8601 duration format, for example PT10M for ten minutes.</p>
+                            </div>
+
+                        </div>
+
+                        <div class="section">
+                            <p class="subsection-title">Actions</p>
+
+                            <div class="actions row">
+                                <button id="saveServerConfig" class="action-btn">Save</button>
+                                <button id="reloadServerConfig" class="action-btn secondary-button">Reset</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" data-hyui-tab-id="player">
+                <div class="tab-page">
+                    <div class="section">
+                        <p class="section-title">Player Preferences</p>
+
+                        <div class="row">
+                            <labeled-checkbox id="prefDarkMode">Dark mode</labeled-checkbox>
+                        </div>
+
+                        <div class="row">
+                            <labeled-checkbox id="prefCompactLayout">Compact layout</labeled-checkbox>
+                        </div>
+
+                        <div class="row">
+                            <labeled-checkbox id="prefShowHints">Show UI hints</labeled-checkbox>
+                        </div>
+
+                        <div class="row">
+                            <label for="prefUiScale" class="field-label default-style">UI Scale</label>
+                            <input id="prefUiScale" type="range" class="field default-style" min="80" max="140" step="5" value="100" />
+                        </div>
+
+                        <div class="actions">
+                            <button id="savePlayerPrefs" class="action-btn">Save</button>
+                            <button id="resetPlayerPrefs" class="action-btn secondary-button">Reset</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-content" data-hyui-tab-id="keymap">
+                <div class="tab-page">
+                    <div class="section">
+                        <p class="section-title">Keymaps</p>
+                        <p class="default-style">Map commands to keys. “Server Default” is the recommended binding.</p>
+
+                        <div class="section">
+                            <p class="section-title">Commands</p>
+
+                            <div class="row">
+                                <label class="field-label default-style">Open Control Panel</label>
+                                <label id="bindOpenPanel" class="field default-style">Unbound</label>
+                                <button id="rebindOpenPanel" class="secondary-button">Rebind</button>
+                                <button id="resetOpenPanel" class="tertiary-button">Server Default</button>
+                            </div>
+
+                            <div class="row">
+                                <label class="field-label default-style">Reload Server Config</label>
+                                <label id="bindReloadServer" class="field default-style">Unbound</label>
+                                <button id="rebindReloadServer" class="secondary-button">Rebind</button>
+                                <button id="resetReloadServer" class="tertiary-button">Server Default</button>
+                            </div>
+
+                            <div class="row">
+                                <label class="field-label default-style">Toggle Debug</label>
+                                <label id="bindToggleDebug" class="field default-style">Unbound</label>
+                                <button id="rebindToggleDebug" class="secondary-button">Rebind</button>
+                                <button id="resetToggleDebug" class="tertiary-button">Server Default</button>
+                            </div>
+                        </div>
+
+                        <div class="actions">
+                            <button id="saveKeymaps" class="action-btn">Save</button>
+                            <button id="resetAllKeymaps" class="action-btn secondary-button">Reset All</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
