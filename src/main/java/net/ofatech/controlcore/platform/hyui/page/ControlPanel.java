@@ -7,6 +7,7 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.modules.entity.component.DisplayNameComponent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
@@ -35,11 +36,14 @@ public final class ControlPanel {
         Store<EntityStore> store = entityRef.getStore();
         World world = store.getExternalData().getWorld();
 
+        var displayName = store.getComponent(entityRef, DisplayNameComponent.getComponentType());
+        Objects.requireNonNull(displayName, "displayName cannot be null");
+
         return CompletableFuture.runAsync(() -> {
             try {
                 PlayerRef playerRef = store.getComponent(entityRef, PlayerRef.getComponentType());
                 if (playerRef == null) {
-                    LOGGER.atWarning().log("PlayerRef component not found for player %s in world %s".formatted(player.getDisplayName(), world.getName()));
+                    LOGGER.atWarning().log("PlayerRef component not found for player %s in world %s".formatted(displayName.getDisplayName(), world.getName()));
                     return;
                 }
 
@@ -51,7 +55,7 @@ public final class ControlPanel {
                     )
                     .open(store);
             } catch (Exception e) {
-                LOGGER.atWarning().log("Failed to open control panel for player %s: %s", player.getDisplayName(), e.getMessage());
+                LOGGER.atWarning().log("Failed to open control panel for player %s: %s", displayName.getDisplayName(), e.getMessage());
             }
         }, world);
     }

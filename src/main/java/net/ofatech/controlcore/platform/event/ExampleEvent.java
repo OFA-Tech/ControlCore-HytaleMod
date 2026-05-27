@@ -1,12 +1,21 @@
 package net.ofatech.controlcore.platform.event;
 
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.logger.HytaleLogger;
 import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
+import com.hypixel.hytale.server.core.modules.entity.component.DisplayNameComponent;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import net.ofatech.controlcore.ControlCore;
 import net.ofatech.controlcore.core.domain.interfaces.IModEvent;
 
+import java.util.Objects;
+
 public class ExampleEvent implements IModEvent {
+    private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
     @Override
     public void register(ControlCore plugin) {
@@ -15,7 +24,19 @@ public class ExampleEvent implements IModEvent {
 
     private void onPlayerReady(PlayerReadyEvent event) {
         Player player = event.getPlayer();
-        player.sendMessage(Message.raw("Welcome " + player.getDisplayName()));
-    }
 
+        Ref<EntityStore> entityRef = player.getReference();
+        Objects.requireNonNull(entityRef, "entityRef cannot be null");
+
+        Store<EntityStore> store = entityRef.getStore();
+        Objects.requireNonNull(store, "store cannot be null");
+
+        PlayerRef playerRef = store.getComponent(entityRef, PlayerRef.getComponentType());
+        Objects.requireNonNull(playerRef, "displayName cannot be null");
+
+        DisplayNameComponent displayName = store.getComponent(entityRef, DisplayNameComponent.getComponentType());
+        Objects.requireNonNull(displayName, "displayName cannot be null");
+
+        playerRef.sendMessage(Message.raw("Welcome " + displayName.getDisplayName()));
+    }
 }

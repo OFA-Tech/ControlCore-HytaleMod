@@ -1,6 +1,4 @@
 import dev.scaffoldit.hytale.wire.HytaleManifest
-import org.gradle.kotlin.dsl.maven
-import org.gradle.kotlin.dsl.mavenCentral
 
 val pluginGroup = providers.gradleProperty("plugin_group").getOrElse("net.ofatech")
 val pluginName = providers.gradleProperty("plugin_name").getOrElse("HytaleMod")

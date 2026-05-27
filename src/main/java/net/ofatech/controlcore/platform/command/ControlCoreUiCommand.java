@@ -32,8 +32,6 @@ public class ControlCoreUiCommand extends AbstractCommand implements IModCommand
             return CompletableFuture.completedFuture(null);
         }
 
-        context.sendMessage(Message.raw("ControlPanel opened by %s".formatted(player.getDisplayName())));
-
         return ControlPanel.open(
             player,
             new ControlPanelRequest(true, true, true));
