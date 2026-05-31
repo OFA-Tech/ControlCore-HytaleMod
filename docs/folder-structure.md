@@ -7,7 +7,7 @@ Below is the core layout you get from the template.
 src/main/java/net/ofatech/hytaletemplate
 ├─ TemplatePlugin.java
 ├─ api
-│  ├─ TemplateAPI.java
+│  ├─ ControlCore.java
 │  └─ integration
 ├─ core
 │  ├─ data

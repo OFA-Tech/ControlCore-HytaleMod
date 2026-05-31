@@ -3,7 +3,7 @@
 ## Overview
 
 The template keeps the plugin entrypoint thin and pushes behavior into feature classes that are discovered at startup.
-The `TemplatePlugin` class scans the plugin package using `ModComponentScanner` and registers any concrete classes that implement `IModCommand` or `IModEvent`.
+The `ControlCore` class scans the plugin package using `ModComponentScanner` and registers any concrete classes that implement `IModCommand` or `IModEvent`.
 This keeps registration consistent while avoiding a large manual registry.
 
 ## Module boundaries
@@ -14,7 +14,7 @@ This keeps registration consistent while avoiding a large manual registry.
 
 ## Registration flow
 
-1. `TemplatePlugin.setup()` calls `registerDynamicComponents()`.
+1. `ControlCore.setup()` calls `registerDynamicComponents()`.
 2. `ModComponentScanner` searches the plugin package for class files.
 3. Any concrete `IModCommand` or `IModEvent` classes are instantiated via no-arg constructors.
 4. Each instance calls its `register` method to attach itself to the Hytale registries.

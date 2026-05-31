@@ -22,29 +22,35 @@ public final class ControlPanel {
     private static final String HTML_PATH = "/Pages/control-panel.html";
 
 
-    public static CompletableFuture<Void> open(Player player, ControlPanelRequest request) {
-        Objects.requireNonNull(player, "player cannot be null");
+    public static CompletableFuture<Void> open(Ref<EntityStore> entityRef, ControlPanelRequest request) {
+        Objects.requireNonNull(entityRef, "entityRef cannot be null");
         Objects.requireNonNull(request, "request cannot be null");
 
-        player.getWorldMapTracker().tick(0);
-        Ref<EntityStore> entityRef = player.getReference();
-
-        if (entityRef == null || !entityRef.isValid()){
+        if (!entityRef.isValid()){
+            LOGGER.atWarning().log("Invalid entityRef: %s".formatted(entityRef));
             return CompletableFuture.completedFuture(null);
         }
 
         Store<EntityStore> store = entityRef.getStore();
         World world = store.getExternalData().getWorld();
 
-        var displayName = store.getComponent(entityRef, DisplayNameComponent.getComponentType());
-        Objects.requireNonNull(displayName, "displayName cannot be null");
-
         return CompletableFuture.runAsync(() -> {
             try {
+                Player player = store.getComponent(entityRef, Player.getComponentType());
+                if (player == null) {
+                    throw new IllegalStateException("Player component not found for entityRef: " + entityRef);
+                }
+                DisplayNameComponent nameComponent = store.getComponent(entityRef, DisplayNameComponent.getComponentType());
+                Objects.requireNonNull(nameComponent, "displayName cannot be null");
+                if (nameComponent.getDisplayName() == null) {
+                    throw new IllegalStateException("displayName cannot be null");
+                }
+                String displayName = nameComponent.getDisplayName().getRawText();
+
                 PlayerRef playerRef = store.getComponent(entityRef, PlayerRef.getComponentType());
                 if (playerRef == null) {
-                    LOGGER.atWarning().log("PlayerRef component not found for player %s in world %s".formatted(displayName.getDisplayName(), world.getName()));
-                    return;
+                    LOGGER.atWarning().log("PlayerRef component not found for player %s in world %s".formatted(displayName, world.getName()));
+                    throw new IllegalStateException("PlayerRef component not found for player " + displayName + " in world " + world.getName());
                 }
 
                 PageBuilder.pageForPlayer(playerRef)
@@ -55,7 +61,7 @@ public final class ControlPanel {
                     )
                     .open(store);
             } catch (Exception e) {
-                LOGGER.atWarning().log("Failed to open control panel for player %s: %s", displayName.getDisplayName(), e.getMessage());
+                LOGGER.atWarning().log("Failed to open control panel: %s", e.getMessage());
             }
         }, world);
     }

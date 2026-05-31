@@ -61,7 +61,7 @@ hytale {
     dependencies {
         // Any external dependency you also want to include
         implementation("com.google.code.gson:gson:2.14.0")
-        implementation("curse.maven:hyui-1431415:7820303")
+        implementation("curse.maven:hyui-1431415:8151837")
     }
 
     manifest {
@@ -73,5 +73,6 @@ hytale {
         Website = pluginWebSite
         ServerVersion = serverVersion
         Authors = authors
+        IncludesAssetPack = true
     }
 }

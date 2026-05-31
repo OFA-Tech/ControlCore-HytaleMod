@@ -13,6 +13,7 @@ import net.ofatech.controlcore.ControlCore;
 import net.ofatech.controlcore.core.domain.interfaces.IModEvent;
 
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 public class ExampleEvent implements IModEvent {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
@@ -34,9 +35,13 @@ public class ExampleEvent implements IModEvent {
         PlayerRef playerRef = store.getComponent(entityRef, PlayerRef.getComponentType());
         Objects.requireNonNull(playerRef, "displayName cannot be null");
 
-        DisplayNameComponent displayName = store.getComponent(entityRef, DisplayNameComponent.getComponentType());
-        Objects.requireNonNull(displayName, "displayName cannot be null");
+        DisplayNameComponent nameComponent = store.getComponent(entityRef, DisplayNameComponent.getComponentType());
+        Objects.requireNonNull(nameComponent, "displayName cannot be null");
+        if (nameComponent.getDisplayName() == null) {
+            return;
+        }
+        String displayName = nameComponent.getDisplayName().getRawText();
 
-        playerRef.sendMessage(Message.raw("Welcome " + displayName.getDisplayName()));
+        playerRef.sendMessage(Message.raw("Welcome " + displayName));
     }
 }

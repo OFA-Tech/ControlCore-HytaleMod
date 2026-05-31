@@ -9,5 +9,5 @@ Thanks for contributing!
 - Keep public APIs stable and documented.
 
 ## Local checks
-- Run `./gradlew build` before opening a pull request.
+- Run `.\gradlew clean build --refresh-dependencies --no-daemon --no-build-cache` before opening a pull request.
 

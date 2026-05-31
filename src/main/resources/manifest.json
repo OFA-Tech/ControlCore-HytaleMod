@@ -12,7 +12,7 @@
     ],
     "Website": "https://github.com/OFA-Tech/ControlCore-HytaleMod",
     "DisabledByDefault": false,
-    "IncludesAssetPack": false,
+    "IncludesAssetPack": true,
     "Dependencies": {},
     "OptionalDependencies": {},
     "ServerVersion": "*",
