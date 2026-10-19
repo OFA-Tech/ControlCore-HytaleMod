@@ -19,7 +19,7 @@ import java.util.concurrent.CompletableFuture;
 public final class ControlPanel {
     private static final HytaleLogger LOGGER = HytaleLogger.forEnclosingClass();
 
-    private static final String HTML_PATH = "/Pages/control-panel.html";
+    private static final String HTML_PATH = "/Pages/control-panel-hyui.html";
 
 
     public static CompletableFuture<Void> open(Ref<EntityStore> entityRef, ControlPanelRequest request) {
@@ -56,9 +56,6 @@ public final class ControlPanel {
                 PageBuilder.pageForPlayer(playerRef)
                     .loadHtml(HTML_PATH)
                     .enableAsyncImageLoading(true)
-                    .addEventListener("close-btn", CustomUIEventBindingType.Activating, (ignored, ctx) ->
-                        ctx.getPage().ifPresent(HyUIPage::close)
-                    )
                     .open(store);
             } catch (Exception e) {
                 LOGGER.atWarning().log("Failed to open control panel: %s", e.getMessage());
