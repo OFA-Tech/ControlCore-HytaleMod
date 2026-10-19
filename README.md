@@ -113,7 +113,7 @@ themselves with `@AutoService` and get their dependencies through their construc
 
 ## Releasing
 
-`.github/workflows/release.yml` is commented out until the first release; uncomment it to enable.
+`.github/workflows/release.yml.disabled` is turned off until the first release; rename it to `release.yml` and uncomment it to enable.
 Then push a tag `vX.Y.Z`: it builds with `-Pstrict`, publishes to GitHub Packages and attaches the
 jars to a GitHub Release.
 

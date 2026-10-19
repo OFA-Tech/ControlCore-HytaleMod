@@ -1,4 +1,5 @@
-# Disabled until the first release. Uncomment to publish to GitHub Packages and create a
+# Disabled until the first release (GitHub only runs *.yml files, and a file with no jobs fails on every push).
+# Rename back to release.yml and uncomment to publish to GitHub Packages and create a
 # GitHub Release on every vX.Y.Z tag (see docs/api.md).
 #
 # name: Release

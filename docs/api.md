@@ -122,5 +122,5 @@ ControlCoreApi.find().ifPresent(api -> {
 `maven-publish` publishes `net.ofatech:controlcore` (the plugin jar plus sources and javadoc). The
 artifact id is `mod_id` in lower case, the repository is `github_repository` in `gradle.properties`.
 
-`.github/workflows/release.yml` is commented out for now. Once uncommented, a `vX.Y.Z` tag runs
+`.github/workflows/release.yml.disabled` is turned off for now. Once renamed to `release.yml` and uncommented, a `vX.Y.Z` tag runs
 `./gradlew publish` to GitHub Packages and attaches the jars to a GitHub Release.
