@@ -34,7 +34,7 @@ are delivered on the events bus.
    }
    dependencies {
        compileOnly("net.ofatech:controlcore:0.1.0")
-       vineMod("net.ofatech:controlcore:0.1.0") // run it in your dev server
+       vineImplementation("net.ofatech:controlcore:0.1.0") // run it in your dev server (not vineMod: see docs/platforms.md)
    }
    ```
 2. **Manifest.** Use `manifest_dependencies = OFATech:ControlCore=>=0.1.0`, or

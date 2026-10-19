@@ -70,10 +70,15 @@ A feature asks `Capabilities.find(ControlPanelView.class)` and does not care whi
    ```kotlin
    repositories { maven("https://repo.example.com/releases") } // if hytale-tools doesn't add it
    dependencies {
-       compileOnly("com.example:their-mod-api:1.2.3")   // never shipped in our jar
-       vineMod("com.example:their-mod:1.2.3")           // loaded by runServer for testing
+       compileOnly("com.example:their-mod-api:1.2.3")         // never shipped in our jar
+       vineImplementation("com.example:their-mod:1.2.3")      // loaded by runServer for testing
    }
    ```
+
+   Use `vineImplementation`, not `vineMod`, for a mod whose classes our code calls: `runServer`
+   loads this mod from the class path, while `vineMod` jars get their own plugin class loader, so our
+   code would hit `ClassNotFoundException`. `vineImplementation` stages the jar in `run/mods` and on
+   the shared class path, and still does not bundle it. On a real server both jars sit in `mods/`.
 
    hytale-tools already adds the Hytale, hytalemodding, hytale-mods, HelpChat, CurseMaven,
    AzureDoom, Modtale and Modifold repositories.

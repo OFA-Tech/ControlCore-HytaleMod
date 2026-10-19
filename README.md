@@ -100,6 +100,7 @@ themselves with `@AutoService` and get their dependencies through their construc
 | [docs/components.md](docs/components.md) | Writing commands, event handlers, modules, tasks; injection |
 | [docs/platforms.md](docs/platforms.md) | Translating Hytale features; HyUI and other mods |
 | [docs/api.md](docs/api.md) | Using ControlCore from another mod; publishing |
+| [docs/development.md](docs/development.md) | Running, debugging, custom UI gotchas, current state and next steps |
 
 ## Releasing
 
