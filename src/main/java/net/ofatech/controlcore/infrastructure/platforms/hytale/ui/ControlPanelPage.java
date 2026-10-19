@@ -7,6 +7,7 @@ import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.ui.DropdownEntryInfo;
 import com.hypixel.hytale.server.core.ui.LocalizableString;
@@ -17,18 +18,25 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import java.time.Duration;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import javax.annotation.Nonnull;
+import net.ofatech.controlcore.domain.event.SettingChanged;
+import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.ControlPanelContent;
+import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.ControlPanelTab;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.ServerSettings;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
+import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
+import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Result;
 
 /**
@@ -77,6 +85,14 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             }
             return SERVER;
         }
+
+        boolean shownFor(ControlPanelRequest request) {
+            return switch (this) {
+                case SERVER, SETTINGS -> request.includeServerSettings();
+                case PLAYER -> request.includePlayerPreferences();
+                case KEYMAP -> request.includeRegisteredActions();
+            };
+        }
     }
 
     /** Where a settings section is drawn. */
@@ -96,26 +112,43 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             "#ResetToggleDebug");
 
     private final ServerSettings server;
+    private final SettingsEditor settings;
+    private final Log log;
+    private final Set<Tab> tabs = EnumSet.noneOf(Tab.class);
     private final Map<SettingScope, SettingsSection> sections = new EnumMap<>(SettingScope.class);
     private final Map<SettingScope, Map<SettingId, Integer>> rowIndexes = new EnumMap<>(SettingScope.class);
+    /** Value each row currently shows, to skip change notifications the panel caused itself (world thread). */
+    private final Map<SettingId, String> shown = new HashMap<>();
+
+    private volatile Subscription changes;
     private Tab selected;
 
-    ControlPanelPage(PlayerRef player, ControlPanelContent content) {
+    ControlPanelPage(PlayerRef player, ControlPanelRequest request, ControlPanelContent content, Log log) {
         super(player, CustomPageLifetime.CanDismiss, Action.CODEC);
         this.server = content.server();
-        this.selected = Tab.of(content.startTab());
+        this.settings = content.settings();
+        this.log = log;
+        ControlPanelRequest shownSections = request.isEmpty() ? ControlPanelRequest.PLAYER_PREFERENCES : request;
+        for (Tab tab : Tab.values()) {
+            if (tab.shownFor(shownSections)) {
+                tabs.add(tab);
+            }
+        }
+        Tab start = Tab.of(content.startTab());
+        this.selected = tabs.contains(start) ? start : tabs.iterator().next();
         Optional<PlayerId> viewer = Optional.of(PlayerId.of(player.getUuid()));
-        sections.put(
-                SettingScope.SERVER,
-                new SettingsSection(
-                        content.settings(), SettingScope.SERVER, viewer, "No server settings are registered yet."));
-        sections.put(
-                SettingScope.PLAYER,
-                new SettingsSection(
-                        content.settings(),
-                        SettingScope.PLAYER,
-                        viewer,
-                        "No mod has registered player preferences yet."));
+        if (shownSections.includeServerSettings()) {
+            sections.put(
+                    SettingScope.SERVER,
+                    new SettingsSection(
+                            settings, SettingScope.SERVER, viewer, "No server settings are registered yet."));
+        }
+        if (shownSections.includePlayerPreferences()) {
+            sections.put(
+                    SettingScope.PLAYER,
+                    new SettingsSection(
+                            settings, SettingScope.PLAYER, viewer, "No mod has registered player preferences yet."));
+        }
     }
 
     @Override
@@ -125,21 +158,37 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             @Nonnull UIEventBuilder events,
             @Nonnull Store<EntityStore> store) {
         commands.append(LAYOUT);
-        commands.set("#ServerName.Text", orDash(server.serverName()));
-        commands.set("#Motd.Text", orDash(server.motd()));
-        commands.set("#Password.Text", server.passwordProtected() ? "Set (private server)" : "None (public server)");
-        commands.set("#MaxPlayers.Text", Integer.toString(server.maxPlayers()));
-        commands.set("#MaxViewRadius.Text", Integer.toString(server.maxViewRadius()));
-        commands.set("#PlayTimeout.Text", describe(server.playTimeout()));
+        if (tabs.contains(Tab.SERVER)) {
+            commands.set("#ServerName.Text", orDash(server.serverName()));
+            commands.set("#Motd.Text", orDash(server.motd()));
+            commands.set(
+                    "#Password.Text", server.passwordProtected() ? "Set (private server)" : "None (public server)");
+            commands.set("#MaxPlayers.Text", Integer.toString(server.maxPlayers()));
+            commands.set("#MaxViewRadius.Text", Integer.toString(server.maxViewRadius()));
+            commands.set("#PlayTimeout.Text", describe(server.playTimeout()));
+        }
         NOT_WIRED_YET.forEach(button -> commands.set(button + ".Disabled", true));
         sections.values().forEach(section -> buildSection(section, commands, events));
+        for (Tab tab : Tab.values()) {
+            commands.set(tab.button + ".Visible", tabs.contains(tab));
+        }
+        commands.set("#TabButtons.Visible", tabs.size() > 1);
         showTab(commands);
 
-        for (Tab tab : Tab.values()) {
+        for (Tab tab : tabs) {
             events.addEventBinding(
                     CustomUIEventBindingType.Activating, tab.button, EventData.of(Action.KEY, TAB_PREFIX + tab.name()));
         }
         events.addEventBinding(CustomUIEventBindingType.Activating, "#CloseButton", EventData.of(Action.KEY, CLOSE));
+        if (changes == null && !sections.isEmpty()) {
+            changes = settings.onAnyChange(this::onSettingChanged);
+        }
+    }
+
+    @Override
+    public void onDismiss(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
+        stopListening();
+        super.onDismiss(ref, store);
     }
 
     @Override
@@ -170,6 +219,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 }
                 case SettingsSection.Row row -> {
                     indexes.put(row.id(), index);
+                    shown.put(row.id(), row.snapshot().value());
                     buildRow(section.scope(), row, element, commands, events);
                 }
             }
@@ -237,6 +287,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         Target target = TARGETS.get(section.scope());
         UICommandBuilder update = new UICommandBuilder();
         result.onSuccess(snapshot -> {
+                    shown.put(snapshot.id(), snapshot.value());
                     update.set(target.status() + ".Text", SettingsSection.saved(snapshot));
                     Integer index = rowIndexes.get(section.scope()).get(snapshot.id());
                     if (writeBack && index != null) {
@@ -250,6 +301,67 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 })
                 .onFailure(error -> update.set(target.status() + ".Text", error.description()));
         sendUpdate(update, false);
+    }
+
+    /** Called on the thread that changed the setting; the panel is updated on the player's world thread. */
+    private void onSettingChanged(SettingChanged change) {
+        SettingsSection section = sections.get(change.scope());
+        if (section == null || !section.concerns(change)) {
+            return;
+        }
+        Ref<EntityStore> ref = playerRef.getReference();
+        if (ref == null || !ref.isValid()) {
+            stopListening();
+            return;
+        }
+        Store<EntityStore> store = ref.getStore();
+        store.getExternalData().getWorld().execute(() -> refresh(ref, store, section, change.id()));
+    }
+
+    private void refresh(Ref<EntityStore> ref, Store<EntityStore> store, SettingsSection section, SettingId id) {
+        try {
+            if (!isOpen(ref, store)) {
+                stopListening();
+                return;
+            }
+            Integer index = rowIndexes.getOrDefault(section.scope(), Map.of()).get(id);
+            if (index == null) {
+                return;
+            }
+            section.current(id).onSuccess(snapshot -> {
+                if (snapshot.value().equals(shown.get(id))) {
+                    return;
+                }
+                shown.put(id, snapshot.value());
+                Target target = TARGETS.get(section.scope());
+                UICommandBuilder update = new UICommandBuilder();
+                showValue(
+                        SettingsSection.kindOf(snapshot.definition().type()),
+                        target.list() + "[" + index + "] #Input",
+                        snapshot,
+                        update);
+                update.set(target.status() + ".Text", SettingsSection.changedElsewhere(snapshot));
+                sendUpdate(update, false);
+            });
+        } catch (RuntimeException e) {
+            log.error("Could not refresh the control panel of " + playerRef.getUsername(), e);
+        }
+    }
+
+    private boolean isOpen(Ref<EntityStore> ref, Store<EntityStore> store) {
+        if (!ref.isValid()) {
+            return false;
+        }
+        Player player = store.getComponent(ref, Player.getComponentType());
+        return player != null && player.getPageManager().getCustomPage() == this;
+    }
+
+    private void stopListening() {
+        Subscription subscription = changes;
+        changes = null;
+        if (subscription != null) {
+            subscription.close();
+        }
     }
 
     private static void showValue(
@@ -277,7 +389,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     }
 
     private void selectTab(String tabName) {
-        for (Tab tab : Tab.values()) {
+        for (Tab tab : tabs) {
             if (tab.name().equals(tabName) && tab != selected) {
                 selected = tab;
                 UICommandBuilder update = new UICommandBuilder();

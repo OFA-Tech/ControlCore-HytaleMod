@@ -10,11 +10,14 @@ types, so the API survives Hytale updates.
 | `ControlCoreApi` | entry point: `get()`, `find()`, `apiVersion()`, `controlPanel()`, `events()`, `settings()` |
 | `ControlPanelApi` | `isAvailable()`, `open(player, request)` |
 | `ControlCoreEvents` | `subscribe(eventType, listener)` returning a closable `Subscription` |
-| `SettingsApi` (1.1.0) | shared settings registry: `register(definition)`, `definitions()`, `snapshot(scope, player)`, `read` / `write` / `reset` by id |
+| `SettingsApi` (1.1.0) | shared settings registry: `register(definition)`, `definitions()`, `snapshot(scope, player)`, `read` / `write` / `reset` by id, `onAnyChange(listener)` (1.2.0) |
 | `Setting<T>` | handle returned by `register`: `get()`, `get(player)`, `set(..)`, `reset(..)`, `onChange(listener)` |
 
-`ControlPanelApi.open` does not check permissions; the calling mod decides who may open the panel. It
-returns errors such as `ControlPanel.Disabled` and `ControlPanel.PlayerNotFound`.
+`ControlPanelApi.open` does not check permissions; the calling mod decides who may open the panel. The
+request picks the tabs: `ControlPanelRequest.ALL` is the admin panel, `ControlPanelRequest.PLAYER_PREFERENCES`
+(1.2.0) only the player's own preferences, safe for anyone and available even when the admin panel is
+disabled. It returns errors such as `ControlPanel.Disabled`, `ControlPanel.PlayerNotFound` and
+`ControlPanel.NothingToShow`.
 Translated game events (`PlayerJoined`, `PlayerLeft`) and `SettingChanged` are delivered on the events
 bus.
 
@@ -65,6 +68,7 @@ ControlCoreApi.find().ifPresent(api -> {
 | `/cc-get <id>` | `<base>.settings` | name, description, value, default, type and scope |
 | `/cc-set <id> <value>` | `<base>.settings` | change a server setting (the value may contain spaces) |
 | `/cc-reset <id>` | `<base>.settings` | return a server setting to its default |
+| `/prefs` | any player | open the panel on your preferences (works even when the admin panel is disabled) |
 | `/cc-prefs` | any player | list your preferences |
 | `/cc-pref <id> <value>` | any player | change one of your preferences |
 | `/cc-pref-reset <id>` | any player | return a preference to the default |

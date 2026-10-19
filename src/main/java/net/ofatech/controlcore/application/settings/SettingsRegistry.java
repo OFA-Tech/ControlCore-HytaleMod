@@ -104,6 +104,11 @@ public final class SettingsRegistry implements SettingsApi {
     }
 
     @Override
+    public Subscription onAnyChange(Consumer<? super SettingChanged> listener) {
+        return events.subscribe(SettingChanged.class, listener);
+    }
+
+    @Override
     public Result<SettingSnapshot> write(SettingId id, Optional<PlayerId> player, String text) {
         return find(id).flatMap(definition -> writeText(definition, player, text));
     }

@@ -98,6 +98,35 @@ class ControlPanelServiceTest {
     }
 
     @Test
+    void preferencesStayAvailableWhenThePanelIsDisabled() {
+        settings.settings = new ModSettings(false);
+        var service = service(Optional.empty());
+
+        var result = service.open(admin.id(), ControlPanelRequest.PLAYER_PREFERENCES);
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(builtIn.lastRequest).isEqualTo(ControlPanelRequest.PLAYER_PREFERENCES);
+    }
+
+    @Test
+    void narrowRequestsAlwaysUseTheBuiltInView() {
+        var service = service(Optional.of(uiMod));
+
+        service.open(admin.id(), ControlPanelRequest.PLAYER_PREFERENCES);
+
+        assertThat(uiMod.opened).isEmpty();
+        assertThat(builtIn.players()).containsExactly(admin.id());
+    }
+
+    @Test
+    void rejectsRequestsWithoutSections() {
+        var result = service(Optional.empty()).open(admin.id(), new ControlPanelRequest(false, false, false));
+
+        assertThat(result.error().code()).isEqualTo("ControlPanel.NothingToShow");
+        assertThat(builtIn.opened).isEmpty();
+    }
+
+    @Test
     void rejectsPlayersWhoAreNotOnline() {
         var result = service(Optional.empty()).open(PlayerId.of(UUID.randomUUID()), ControlPanelRequest.ALL);
 

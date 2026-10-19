@@ -50,7 +50,11 @@ public final class ControlPanelService implements ControlPanelApi {
 
     @Override
     public Result<Void> open(PlayerId player, ControlPanelRequest request) {
-        if (!settings.panelEnabled()) {
+        if (request.isEmpty()) {
+            return Result.failure(
+                    Error.validation("ControlPanel.NothingToShow", "The request does not include any section."));
+        }
+        if (request.includesAdminSections() && !settings.panelEnabled()) {
             return Result.failure(Error.unavailable(
                     "ControlPanel.Disabled",
                     "The control panel is disabled (setting " + ControlPanelSettings.ENABLED_ID + ")."));
@@ -58,7 +62,11 @@ public final class ControlPanelService implements ControlPanelApi {
         if (players.find(player).isEmpty()) {
             return Result.failure(Error.notFound("ControlPanel.PlayerNotFound", "That player is not online."));
         }
-        ControlPanelView view = capabilities.find(ControlPanelView.class).orElse(platformView);
+        // The HyUI page is the full admin layout, so narrower requests always use the built-in panel.
+        ControlPanelView view = capabilities
+                .find(ControlPanelView.class)
+                .filter(uiMod -> request.equals(ControlPanelRequest.ALL))
+                .orElse(platformView);
         return view.open(player, request, new ControlPanelContent(server.read(), registry, settings.startTab(player)));
     }
 }

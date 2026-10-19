@@ -91,7 +91,7 @@ case and the built-in panel is used. HyUI is only `compileOnly` for now; see
 
 ## Current state and next steps
 
-Done (branch `restructure-template`): template structure, `/open-admin-config` with the
+Done (merged in PR #1): template structure, `/open-admin-config` with the
 `<base>.admin` permission, built-in panel with three tabs, `ControlCoreApi` for other mods.
 
 Done: settings registry (`ControlCoreApi.settings()`, `/cc-*` commands, `SettingValues.json`), verified
@@ -101,13 +101,14 @@ Done: **Mod Settings** and **Player Prefs** tabs list and edit the registered se
 Save, check boxes and dropdowns save immediately, Default resets); ControlCore's own settings: panel
 switch, welcome message, show-welcome and panel start tab.
 
+Done: `/prefs` opens the panel on the Player Prefs tab only, for any player (the page builds only the
+sections in the `ControlPanelRequest` and ignores events for the others). Open panels follow setting
+changes made elsewhere (`SettingsEditor.onAnyChange`): the page updates on the player's world thread and
+skips values it already shows, so its own saves don't echo.
+
 Open:
 
-- The panel is admin-only (`/open-admin-config`), so players set preferences with `/cc-prefs` /
-  `/cc-pref`. A player-facing command that opens only the Player Prefs tab would close that gap.
-- The settings lists are built when the panel opens; changes made elsewhere while it is open show after
-  reopening it.
-
+- Settings registered while a panel is open appear after reopening it.
 - **Server Configs tab:** values are read-only. Editing needs a write method on the
   `ServerConfiguration` port (Hytale's `HytaleServerConfig` has setters) plus input fields and a Save
   button whose event reads the fields with `@` keys.

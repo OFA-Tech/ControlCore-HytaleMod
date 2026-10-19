@@ -2,6 +2,9 @@ package net.ofatech.controlcore.domain.model.settings;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
+import net.ofatech.controlcore.domain.event.SettingChanged;
+import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -37,4 +40,12 @@ public interface SettingsEditor {
      * @return the new snapshot, or {@code Settings.UnknownSetting} or {@code Settings.WrongScope}
      */
     Result<SettingSnapshot> reset(SettingId id, Optional<PlayerId> player);
+
+    /**
+     * Listens to changes of every setting until the returned subscription is closed. Listeners run on the thread
+     * that made the change.
+     *
+     * @since API 1.2.0
+     */
+    Subscription onAnyChange(Consumer<? super SettingChanged> listener);
 }

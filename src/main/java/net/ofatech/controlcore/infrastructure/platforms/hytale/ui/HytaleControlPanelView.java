@@ -37,7 +37,9 @@ public final class HytaleControlPanelView implements ControlPanelView {
             try {
                 Player component = store.getComponent(entity, Player.getComponentType());
                 if (component != null && entity.isValid()) {
-                    component.getPageManager().openCustomPage(entity, store, new ControlPanelPage(playerRef, content));
+                    component
+                            .getPageManager()
+                            .openCustomPage(entity, store, new ControlPanelPage(playerRef, request, content, log));
                 }
             } catch (RuntimeException e) {
                 log.error("Could not open the control panel for " + playerRef.getUsername(), e);

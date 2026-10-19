@@ -39,7 +39,8 @@ The long-term vision is a common configuration backbone where compatible mods ca
   operators have it. The built-in panel (native Hytale UI) has four tabs: **Server Configs** shows the
   current server config (name, MOTD, password set or not, max players, view radius, play timeout);
   **Mod Settings** lists and edits every registered server setting; **Player Prefs** edits your own
-  preferences; **Keymaps** is a preview (rebinding is not wired yet). When a compatible
+  preferences; **Keymaps** is a preview (rebinding is not wired yet). Any player can open their own
+  preferences with `/prefs`. Open panels update when a setting changes elsewhere. When a compatible
   [HyUI](https://www.curseforge.com/hytale/mods/hyui) is installed, its HTML panel is used instead.
 - **Settings registry**: mods register typed settings (server-wide or per-player preferences) through
   `ControlCoreApi.settings()`; ControlCore validates and stores them and reports changes. Admins use

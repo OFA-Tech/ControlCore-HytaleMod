@@ -13,6 +13,11 @@
 - `/open-admin-config` now requires the `<base permission>.admin` node.
 
 ### Added
+- `/prefs`: any player opens the panel on their own preferences (no admin tabs); works even when the
+  admin panel is disabled. API 1.2.0: `ControlPanelRequest.PLAYER_PREFERENCES`,
+  `SettingsEditor.onAnyChange`.
+- Open control panels update when a setting is changed elsewhere (another admin, `/cc-set`, another mod)
+  and say "Changed elsewhere: …".
 - Control panel **Mod Settings** tab (every registered server setting) and a real **Player Prefs** tab
   (your own preferences): text fields with Save, check boxes and dropdowns that save immediately, and a
   Default button per row.
