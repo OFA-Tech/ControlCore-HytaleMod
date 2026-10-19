@@ -7,6 +7,7 @@ import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 import net.ofatech.controlcore.domain.ports.game.Players;
+import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
 import net.ofatech.controlcore.domain.ports.platform.Capabilities;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
@@ -16,18 +17,31 @@ public final class ControlPanelService implements ControlPanelApi {
 
     private final SettingsProvider settings;
     private final Players players;
+    private final ServerConfiguration server;
+    private final ControlPanelView platformView;
     private final Capabilities capabilities;
 
-    public ControlPanelService(SettingsProvider settings, Players players, Capabilities capabilities) {
+    public ControlPanelService(
+            SettingsProvider settings,
+            Players players,
+            ServerConfiguration server,
+            ControlPanelView platformView,
+            Capabilities capabilities) {
         this.settings = settings;
         this.players = players;
+        this.server = server;
+        this.platformView = platformView;
         this.capabilities = capabilities;
     }
 
     @Override
     public boolean isAvailable() {
-        return settings.current().controlPanelEnabled()
-                && capabilities.find(ControlPanelView.class).isPresent();
+        return settings.current().controlPanelEnabled();
+    }
+
+    /** Whether a UI mod (HyUI) renders the panel instead of the built-in Hytale UI. */
+    public boolean usesUiMod() {
+        return capabilities.find(ControlPanelView.class).isPresent();
     }
 
     @Override
@@ -39,11 +53,7 @@ public final class ControlPanelService implements ControlPanelApi {
         if (players.find(player).isEmpty()) {
             return Result.failure(Error.notFound("ControlPanel.PlayerNotFound", "That player is not online."));
         }
-        return capabilities
-                .find(ControlPanelView.class)
-                .map(view -> view.open(player, request))
-                .orElseGet(() -> Result.failure(Error.unavailable(
-                        "ControlPanel.UiUnavailable",
-                        "The control panel needs the HyUI mod, which is not installed or failed to load.")));
+        ControlPanelView view = capabilities.find(ControlPanelView.class).orElse(platformView);
+        return view.open(player, request, server.read());
     }
 }

@@ -35,10 +35,10 @@ The long-term vision is a common configuration backbone where compatible mods ca
 
 ## Current state
 
-- `/open-admin-config` opens the admin control panel (HTML rendered by
-  [HyUI](https://www.curseforge.com/hytale/mods/hyui)). It needs the `<base permission>.admin` node;
-  operators have it. The panel is display-only for now: its Save, Reset and Rebind buttons are not
-  wired yet.
+- `/open-admin-config` opens the admin control panel. It needs the `<base permission>.admin` node;
+  operators have it. The built-in panel (native Hytale UI) shows the current server config (name, MOTD,
+  password set or not, max players, view radius); editing is not wired yet. When a compatible
+  [HyUI](https://www.curseforge.com/hytale/mods/hyui) is installed, its HTML panel is used instead.
 - `Settings.json` in the mod's data folder: `ControlPanelEnabled` (default `true`).
 - Public API for other mods: `ControlCoreApi` (see [docs/api.md](docs/api.md)).
 
@@ -47,8 +47,9 @@ Built on Hytale server **0.7.2** (`>=0.7.2 <0.8.0`), Java 25, Gradle 9.8.1 and
 
 ## Installing
 
-Put `ControlCore-<version>.jar` and HyUI (`Ellie:HyUI`) in the server's `mods/` folder. Without HyUI
-ControlCore still loads, and `/open-admin-config` answers that the panel is unavailable.
+Put `ControlCore-<version>.jar` in the server's `mods/` folder. HyUI (`Ellie:HyUI`) is optional. HyUI
+0.9.8 is not compatible with Hytale 0.7 (its pages crash the world on the first update), so ControlCore
+detects that and keeps using the built-in panel.
 
 ## Development
 
@@ -82,9 +83,9 @@ src/main/java/net/ofatech/controlcore/
     ├── system/          JDK implementations (clock)
     ├── persistence/     storage (player data as JSON)
     └── platforms/
-        ├── hytale/      Hytale → our ports   (the only place that knows Hytale)
+        ├── hytale/      Hytale → our ports, incl. the built-in panel (ui/)
         └── hyui/        HyUI → our ControlPanelView
-src/main/resources/Common/UI/Custom/Pages/   control panel HTML (HyUI)
+src/main/resources/Common/UI/Custom/Pages/   ControlCore/ControlPanel.ui (built-in), control-panel-hyui.html
 ```
 
 Your features never import Hytale or another mod; commands, event handlers, modules and tasks register

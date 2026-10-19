@@ -1,6 +1,7 @@
 package net.ofatech.controlcore.infrastructure.platforms.hytale;
 
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
+import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
@@ -9,6 +10,7 @@ import net.ofatech.controlcore.domain.ports.game.Permissions;
 import net.ofatech.controlcore.domain.ports.game.PlayerData;
 import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.game.Scheduler;
+import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
 import net.ofatech.controlcore.domain.ports.mods.ModLookup;
 import net.ofatech.controlcore.domain.ports.platform.Platform;
 import net.ofatech.controlcore.domain.ports.platform.PortBinder;
@@ -23,6 +25,8 @@ import net.ofatech.controlcore.infrastructure.platforms.hytale.mods.HytaleModLoo
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytaleMessenger;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytalePermissions;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytalePlayers;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.server.HytaleServerConfiguration;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.ui.HytaleControlPanelView;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.world.HytaleScheduler;
 import net.ofatech.controlcore.infrastructure.system.SystemClock;
 
@@ -58,6 +62,8 @@ public final class HytalePlatform implements Platform {
                 CommandRegistrar.class,
                 new HytaleCommandRegistrar(plugin.getCommandRegistry(), plugin.getBasePermission(), log));
         binder.bind(ModLookup.class, new HytaleModLookup());
+        binder.bind(ServerConfiguration.class, new HytaleServerConfiguration());
+        binder.bind(ControlPanelView.class, new HytaleControlPanelView(log));
     }
 
     @Override

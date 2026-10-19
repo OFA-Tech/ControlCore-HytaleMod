@@ -9,6 +9,7 @@ import net.ofatech.controlcore.domain.event.PlayerJoined;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.fakes.FakePlatform;
+import net.ofatech.controlcore.fakes.RecordingControlPanelView;
 import net.ofatech.controlcore.fakes.TestModPlatforms;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,20 +57,24 @@ class ModRuntimeTest {
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.value().text()).isEmpty();
         assertThat(TestModPlatforms.OPENED).containsExactly(admin.id());
-        assertThat(platform.log.contains("Control panel is available")).isTrue();
+        assertThat(platform.controlPanel.opened).isEmpty();
+        assertThat(platform.log.contains("Control panel is available (HyUI)")).isTrue();
     }
 
     @Test
-    void commandExplainsWhenNoUiModIsLoaded() {
+    void commandFallsBackToTheBuiltInUiWithoutAUiMod() {
         runtime.setup();
         runtime.start();
         PlayerInfo admin = platform.players.join("Admin");
 
         var result = platform.commands.run(COMMAND, admin, Map.of());
 
-        assertThat(result.error().code()).isEqualTo("ControlPanel.UiUnavailable");
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(platform.controlPanel.opened)
+                .containsExactly(new RecordingControlPanelView.Opened(admin.id(), platform.server));
         assertThat(platform.log.contains("Ellie:HyUI is not installed")).isTrue();
-        assertThat(platform.log.contains("Control panel is unavailable")).isTrue();
+        assertThat(platform.log.contains("Control panel is available (built-in Hytale UI)"))
+                .isTrue();
     }
 
     @Test

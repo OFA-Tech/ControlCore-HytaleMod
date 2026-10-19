@@ -15,12 +15,12 @@ public final class ControlPanelModule implements FeatureModule {
 
     @Override
     public void start(ModuleContext context) {
-        if (!context.settings().current().controlPanelEnabled()) {
+        if (!controlPanel.isAvailable()) {
             context.log().info("Control panel is disabled in Settings.json");
-        } else if (controlPanel.isAvailable()) {
-            context.log().info("Control panel is available: /open-admin-config");
+        } else if (controlPanel.usesUiMod()) {
+            context.log().info("Control panel is available (HyUI): /open-admin-config");
         } else {
-            context.log().warn("Control panel is unavailable: install HyUI (Ellie:HyUI) to use /open-admin-config");
+            context.log().info("Control panel is available (built-in Hytale UI): /open-admin-config");
         }
     }
 }

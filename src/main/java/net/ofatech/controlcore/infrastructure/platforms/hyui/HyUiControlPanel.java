@@ -10,6 +10,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import java.util.concurrent.CompletableFuture;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.model.ServerSettings;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Error;
@@ -27,7 +28,7 @@ final class HyUiControlPanel implements ControlPanelView {
     }
 
     @Override
-    public Result<Void> open(PlayerId player, ControlPanelRequest request) {
+    public Result<Void> open(PlayerId player, ControlPanelRequest request, ServerSettings server) {
         PlayerRef playerRef = Universe.get().getPlayer(player.value());
         Ref<EntityStore> entity = playerRef != null ? playerRef.getReference() : null;
         if (entity == null || !entity.isValid()) {

@@ -12,8 +12,8 @@ types, so the API survives Hytale updates.
 | `ControlCoreEvents` | `subscribe(eventType, listener)` returning a closable `Subscription` |
 
 `ControlPanelApi.open` does not check permissions; the calling mod decides who may open the panel. It
-returns errors such as `ControlPanel.Disabled`, `ControlPanel.PlayerNotFound` and
-`ControlPanel.UiUnavailable` (HyUI missing). Translated game events (`PlayerJoined`, `PlayerLeft`)
+returns errors such as `ControlPanel.Disabled` and `ControlPanel.PlayerNotFound`.
+Translated game events (`PlayerJoined`, `PlayerLeft`)
 are delivered on the events bus.
 
 ## Using it from another mod

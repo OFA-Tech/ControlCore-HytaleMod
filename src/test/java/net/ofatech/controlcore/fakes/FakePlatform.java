@@ -1,5 +1,7 @@
 package net.ofatech.controlcore.fakes;
 
+import net.ofatech.controlcore.domain.model.ServerSettings;
+import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
@@ -8,6 +10,7 @@ import net.ofatech.controlcore.domain.ports.game.Permissions;
 import net.ofatech.controlcore.domain.ports.game.PlayerData;
 import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.game.Scheduler;
+import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
 import net.ofatech.controlcore.domain.ports.mods.ModLookup;
 import net.ofatech.controlcore.domain.ports.platform.Platform;
 import net.ofatech.controlcore.domain.ports.platform.PortBinder;
@@ -26,6 +29,8 @@ public final class FakePlatform implements Platform {
     public final FakeScheduler scheduler = new FakeScheduler();
     public final FakeCommandRegistrar commands = new FakeCommandRegistrar();
     public final FakeModLookup mods = new FakeModLookup();
+    public final RecordingControlPanelView controlPanel = new RecordingControlPanelView();
+    public ServerSettings server = new ServerSettings("Test Server", "Welcome", false, 10, 5);
     public EventPublisher connectedPublisher;
 
     @Override
@@ -45,6 +50,8 @@ public final class FakePlatform implements Platform {
         binder.bind(Scheduler.class, scheduler);
         binder.bind(CommandRegistrar.class, commands);
         binder.bind(ModLookup.class, mods);
+        binder.bind(ServerConfiguration.class, () -> server);
+        binder.bind(ControlPanelView.class, controlPanel);
     }
 
     @Override

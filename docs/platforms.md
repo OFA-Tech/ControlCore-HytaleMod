@@ -24,6 +24,8 @@ A platform contains translations only, never feature logic.
 | `SettingsProvider` | `config/HytaleSettingsProvider` | `Config` + `BuilderCodec` (`Settings.json`) |
 | `ModLookup` | `mods/HytaleModLookup` | `PluginManager`, `PluginIdentifier` |
 | `Log` | `log/HytaleLog` | `HytaleLogger` |
+| `ServerConfiguration` | `server/HytaleServerConfiguration` | `HytaleServer.getConfig()` |
+| `ControlPanelView` | `ui/HytaleControlPanelView`, `ControlPanelPage` | `InteractiveCustomUIPage`, `PageManager`, `.ui` layout |
 | `PlayerData` | `infrastructure/persistence/JsonPlayerDataStore` | none; `players.json` in the plugin data folder |
 | `Clock` | `infrastructure/system/SystemClock` | none |
 
@@ -88,23 +90,36 @@ A feature asks `Capabilities.find(ControlPanelView.class)` and does not care whi
 - Capabilities are only bound in `start()`, after other mods finished their `setup()`.
 
 
-### HyUI (shipped)
+### The control panel: built-in UI and HyUI
+
+`ControlPanelView` has two implementations, and `ControlPanelService` picks one per call:
+
+1. **HyUI capability**, if `HyUiPlatform` bound it (preferred).
+2. **Built-in**, `platforms/hytale/ui/HytaleControlPanelView`, always bound by `HytalePlatform`. It
+   opens `ControlPanelPage`, an `InteractiveCustomUIPage` with the layout
+   `src/main/resources/Common/UI/Custom/Pages/ControlCore/ControlPanel.ui` (Hytale's `.ui` syntax,
+   styles from `Common.ui`). Values come from the `ServerConfiguration` port
+   (`HytaleServerConfiguration` reads `HytaleServer.get().getConfig()`); the Close button is an
+   event binding handled in `handleDataEvent`.
 
 [HyUI](https://www.curseforge.com/hytale/mods/hyui) (`Ellie:HyUI`) renders HTML pages as Hytale UI. It
 is a separate plugin, so it is never bundled into ControlCore's jar.
 
 - `HyUiPlatform`: descriptor for `Ellie:HyUI`.
-- `HyUiBridge`: touches a HyUI class first, so an incompatible HyUI fails while binding (and is rolled
-  back) instead of on first use, then provides `ControlPanelView`.
-- `HyUiControlPanel` (inbound): implements `ControlPanelView` by opening
-  `src/main/resources/Common/UI/Custom/Pages/control-panel-hyui.html` with `PageBuilder` on the
-  player's world thread.
+- `HyUiBridge`: touches a HyUI class, then checks that the server still has
+  `PageManager.updateCustomPage(CustomPage)`. HyUI 0.9.x calls it whenever a page changes (tab click,
+  live value); Hytale 0.7 renamed it to `updateLegacyCustomPage`, and the resulting
+  `NoSuchMethodError` on the world thread crashes the world. If it is missing, binding fails, is rolled
+  back and logged, and the built-in panel is used.
+- `HyUiControlPanel` (inbound): opens `Common/UI/Custom/Pages/control-panel-hyui.html` with
+  `PageBuilder` on the player's world thread.
 
 Gradle uses `vineImplementation`, not `vineMod`: `runServer` loads ControlCore from the classpath, so
 HyUI's classes must be on that classpath as well or ControlCore cannot see them. hytale-tools stages
 it both in `run/mods` and on the shared runtime classpath, and still does not bundle it. On a real
 server both jars sit in `mods/` and see each other.
 
-HyUI 0.9.8 declares `ServerVersion >=0.5.0-pre.9 <0.6.0`. On 0.7.2 the server logs a warning but loads
-and enables it. If a future server refuses it, ControlCore still loads and `/open-admin-config`
-answers that the panel is unavailable.
+HyUI 0.9.8 (latest as of 2026-10) declares `ServerVersion >=0.5.0-pre.9 <0.6.0`. On 0.7.2 it loads
+with a warning but fails the check above, so the built-in panel is used. When HyUI publishes a
+0.7-compatible build, bump the CurseMaven file id in `build.gradle.kts`; the check passes and HyUI
+takes over without code changes.

@@ -43,12 +43,13 @@ net/ofatech/controlcore/
 │   ├── guard/                         Guard, DomainException
 │   └── ports/
 │       ├── platform/                  Platform, PortBinder, ModPlatform, CapabilityBinder, Capabilities
-│       ├── game/                      Players, Messenger, Permissions, Scheduler, PlayerData
+│       ├── game/                      Players, Messenger, Permissions, Scheduler, PlayerData,
+│       │                              ServerConfiguration
 │       ├── command/                   CommandSpec, ArgSpec, ArgType, CommandContext, CommandSender,
 │       │                              CommandHandler, CommandRegistrar, Reply
 │       ├── event/                     EventPublisher
 │       ├── mods/                      ModLookup
-│       ├── capability/                ControlPanelView (offered by a UI mod)
+│       ├── capability/                ControlPanelView (built-in, or offered by a UI mod)
 │       ├── config/                    SettingsProvider
 │       └── system/                    Clock, Log
 ├── application/
@@ -65,7 +66,7 @@ net/ofatech/controlcore/
     ├── persistence/                   JsonPlayerDataStore
     └── platforms/
         ├── hytale/                    HytalePlatform + command/ config/ event/ log/ mapping/ mods/
-        │                              player/ world/
+        │                              player/ server/ ui/ world/
         └── hyui/                      HyUiPlatform, HyUiBridge, HyUiControlPanel
 ```
 
@@ -93,7 +94,7 @@ green and run CI on every pull request.
     `@AutoService(<interface>)` and exactly one public constructor. Without the annotation a class
     would silently never register.
 11. Expected failures are returned as `Result`, never thrown. Errors carry a stable code such as
-    `ControlPanel.UiUnavailable`.
+    `ControlPanel.PlayerNotFound`.
 12. Classes are `final` (or records/enums/interfaces); no mutable static state. The single exception
     is the `ControlCoreApiProvider` holder, which uses a `final AtomicReference`.
 

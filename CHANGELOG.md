@@ -13,6 +13,8 @@
 - `/open-admin-config` now requires the `<base permission>.admin` node.
 
 ### Added
+- Built-in control panel with native Hytale UI (`Pages/ControlCore/ControlPanel.ui`) showing the current
+  server config; used whenever HyUI is missing or incompatible (HyUI 0.9.8 crashes worlds on 0.7).
 - `ControlCoreApi` / `ControlPanelApi` for other mods; `Result` / `Error` for expected failures.
 - `Settings.json` with `ControlPanelEnabled`.
 - ArchUnit architecture tests, runtime and feature tests with fakes, Spotless, build workflow.

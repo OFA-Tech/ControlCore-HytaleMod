@@ -30,7 +30,7 @@ public final class TestModPlatforms {
 
         @Override
         public void bind(CapabilityBinder binder) {
-            binder.provide(ControlPanelView.class, () -> (player, request) -> {
+            binder.provide(ControlPanelView.class, () -> (player, request, server) -> {
                 OPENED.add(player);
                 return Result.success();
             });

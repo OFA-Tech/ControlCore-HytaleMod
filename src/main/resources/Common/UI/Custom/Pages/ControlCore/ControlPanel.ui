@@ -1,0 +1,126 @@
+$C = "../../Common.ui";
+
+@RowLabelStyle = (...$C.@DefaultLabelStyle, RenderBold: true, VerticalAlignment: Center);
+@RowValueStyle = (...$C.@DefaultLabelStyle, VerticalAlignment: Center, Wrap: true);
+
+$C.@PageOverlay {
+  LayoutMode: Middle;
+
+  $C.@DecoratedContainer {
+    Anchor: (Width: 560);
+
+    #Title {
+      $C.@Title {
+        @Text = "ControlCore";
+      }
+    }
+
+    #Content {
+      LayoutMode: Top;
+      Padding: (Full: 16);
+
+      Label {
+        Text: "Main Server Configuration";
+        Style: (...$C.@DefaultLabelStyle, RenderBold: true, FontSize: 18);
+        Anchor: (Bottom: 4);
+      }
+
+      Label {
+        Text: "Current values of the server config. Editing comes in a later version.";
+        Style: (...$C.@DefaultLabelStyle, TextColor: #878e9c, Wrap: true);
+        Anchor: (Bottom: 14);
+      }
+
+      Group {
+        LayoutMode: Left;
+        Anchor: (Bottom: 8);
+
+        Label {
+          Text: "Server Name";
+          Anchor: (Width: 180);
+          Style: @RowLabelStyle;
+        }
+
+        Label #ServerName {
+          FlexWeight: 1;
+          Style: @RowValueStyle;
+        }
+      }
+
+      Group {
+        LayoutMode: Left;
+        Anchor: (Bottom: 8);
+
+        Label {
+          Text: "MOTD";
+          Anchor: (Width: 180);
+          Style: @RowLabelStyle;
+        }
+
+        Label #Motd {
+          FlexWeight: 1;
+          Style: @RowValueStyle;
+        }
+      }
+
+      Group {
+        LayoutMode: Left;
+        Anchor: (Bottom: 8);
+
+        Label {
+          Text: "Password";
+          Anchor: (Width: 180);
+          Style: @RowLabelStyle;
+        }
+
+        Label #Password {
+          FlexWeight: 1;
+          Style: @RowValueStyle;
+        }
+      }
+
+      Group {
+        LayoutMode: Left;
+        Anchor: (Bottom: 8);
+
+        Label {
+          Text: "Max Players";
+          Anchor: (Width: 180);
+          Style: @RowLabelStyle;
+        }
+
+        Label #MaxPlayers {
+          FlexWeight: 1;
+          Style: @RowValueStyle;
+        }
+      }
+
+      Group {
+        LayoutMode: Left;
+        Anchor: (Bottom: 8);
+
+        Label {
+          Text: "Max View Radius";
+          Anchor: (Width: 180);
+          Style: @RowLabelStyle;
+        }
+
+        Label #MaxViewRadius {
+          FlexWeight: 1;
+          Style: @RowValueStyle;
+        }
+      }
+
+      Group {
+        Anchor: (Vertical: 14, Height: 1);
+        Background: #5e512c;
+      }
+
+      $C.@TextButton #CloseButton {
+        Text: "Close";
+      }
+    }
+  }
+}
+
+$C.@BackButton {}
