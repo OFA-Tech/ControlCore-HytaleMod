@@ -1,221 +1,368 @@
 <style>
-    .control-panel {
-        anchor-width: 900;
-        anchor-height: 580;
-    }
+.page-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
 
-    .titlebar {
-        layout-mode: right;
-    }
+    display: flex;
+    justify-content: center;
+    align-items: center;
 
-    .tabs {
-        anchor-height: 40;
-    }
+    background: rgba(7, 10, 20, 0.55);
+    z-index: 9999;
+}
 
-    .tab-page {
-        layout-mode: topscrolling;
-        padding: 12;
-    }
+.control-panel {
+    width: 800px;
+    height: 600px;
 
-    .section {
-        layout-mode: top;
-        padding-bottom: 14;
-    }
+    display: flex;
+    flex-direction: column;
 
-    .section-title {
-        font-weight: bold;
-        font-size: 18;
-        padding-bottom: 6;
-    }
+    background: rgba(248, 250, 252, 0.96);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 24px;
 
-    .row {
-        layout-mode: left;
-        padding-bottom: 8;
-    }
+    overflow: hidden;
+}
 
-    .field-label {
-        anchor-width: 240;
-    }
+.control-panel-header {
+    width: 100%;
+    height: 48px;
 
-    .field {
-        flex-weight: 1;
-        anchor-height: 32;
-    }
+    display: flex;
+    align-items: center;
 
-    .actions {
-        layout-mode: left;
-        padding-top: 6;
-    }
+    background: rgba(15, 23, 42, 0.96);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
 
-    .action-btn {
-        anchor-height: 34;
-    }
+.control-panel-header-spacer {
+    width: 80px;
+    height: 48px;
+}
 
-    .section-note {
-        padding-bottom: 10px;
-        opacity: 0.85;
-    }
+.control-panel-title {
+    flex: 1;
 
-    .subsection-title {
-        font-weight: bold;
-        font-size: 15;
-        padding-top: 4;
-        padding-bottom: 6;
-    }
+    color: #f8fafc;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.04em;
+}
 
-    .field-help-italic{
-        font-style: italic;
-    }
+.control-panel-close-button {
+    width: 80px;
+    height: 48px;
 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    color: #ffffff;
+    background: #dc2626;
+
+    border: none;
+    border-radius: 0 24px 0 0;
+
+    font-size: 14px;
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
+.control-panel-close-button:hover {
+    background: #b91c1c;
+}
+
+.control-panel-content {
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 18px;
+
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+.tabs {
+    min-height: 44px;
+
+    display: flex;
+    align-items: center;
+
+    margin-bottom: 18px;
+    padding: 4px;
+
+    background: rgba(226, 232, 240, 0.75);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    border-radius: 16px;
+}
+
+.tab-page {
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 14px;
+}
+
+.tab-heading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    margin-bottom: 4px;
+}
+
+.tab-title {
+    color: #0f172a;
+    font-size: 22px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.tab-description {
+    margin-top: 4px;
+
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+}
+
+.config-card {
+    display: flex;
+    flex-direction: column;
+
+    padding: 16px;
+
+    background: #ffffff;
+    border: 1px solid rgba(203, 213, 225, 0.9);
+    border-radius: 18px;
+}
+
+.config-card-title {
+    margin-bottom: 14px;
+
+    color: #1e293b;
+    font-size: 15px;
+    font-weight: 800;
+    text-align: left;
+}
+
+.form-row {
+    display: flex;
+    align-items: center;
+
+    margin-bottom: 10px;
+}
+
+.form-label {
+    width: 170px;
+    margin-right: 12px;
+
+    color: #334155;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: right;
+}
+
+.form-input {
+    flex: 1;
+    height: 38px;
+
+    padding: 0 12px;
+
+    color: #0f172a;
+    background: #f8fafc;
+
+    border: 1px solid rgba(148, 163, 184, 0.75);
+    border-radius: 12px;
+
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.form-input:focus {
+    border-color: #2563eb;
+    background: #ffffff;
+    outline: none;
+}
+
+.form-help-row {
+    display: flex;
+
+    padding-left: 182px;
+    margin-top: -2px;
+    margin-bottom: 6px;
+}
+
+.form-help-text {
+    color: #64748b;
+    font-size: 12px;
+    font-style: italic;
+}
+
+.action-row {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+
+    gap: 10px;
+}
+
+.primary-action-button {
+    min-width: 110px;
+    height: 40px;
+
+    color: #ffffff;
+    background: #2563eb;
+
+    border: none;
+    border-radius: 12px;
+
+    font-size: 13px;
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
+.primary-action-button:hover {
+    background: #1d4ed8;
+}
+
+.secondary-action-button {
+    min-width: 110px;
+    height: 40px;
+
+    color: #334155;
+    background: #e2e8f0;
+
+    border: 1px solid rgba(148, 163, 184, 0.7);
+    border-radius: 12px;
+
+    font-size: 13px;
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
+.secondary-action-button:hover {
+    background: #cbd5e1;
+}
 </style>
 
 <div class="page-overlay">
-    <div class="container control-panel" data-hyui-title="ControlCore">
-        <div class="container-title titlebar">
-            <!-- Keep this ID stable; Java listens for it. -->
-            <button id="close-btn" class="secondary-button">Close</button>
-        </div>
+    <div class="control-panel" data-hyui-title="ControlCore">
+        <div class="control-panel-content">
 
-        <div class="container-contents">
             <nav class="tabs"
                  data-tabs="server:Server Configs,player:Player Prefs,keymap:Keymaps"
                  data-selected="server"></nav>
 
-            <div class="tab-content" data-hyui-tab-id="server">
-                <div class="tab-page">
-                    <div class="section">
-                        <p class="section-title">Main Server Configuration</p>
-                        <p class="section-note default-style">These values map directly to the server config keys</p>
+            <div class="tab-page" data-hyui-tab-id="server">
 
-                        <div class="section">
-                            <p class="subsection-title">Identity</p>
+                <div class="tab-heading">
+                    <p class="tab-title">Main Server Configuration</p>
+                    <p class="tab-description">These values map directly to the server config keys.</p>
+                </div>
 
-                            <div class="row">
-                                <label for="serverName" class="field-label default-style">ServerName</label>
-                                <input id="serverName" type="text" class="field default-style" placeholder="Caitos Hytale Server" value="Caitos Hytale Server" />
-                            </div>
+                <div class="config-card">
+                    <p class="config-card-title">Identity</p>
 
-                            <div class="row">
-                                <label for="motd" class="field-label default-style">MOTD</label>
-                                <input id="motd" type="text" class="field default-style" placeholder="WELCOME TO OFA-TECH" value="WELCOME TO OFA-TECH" maxlength="120" />
-                            </div>
+                    <div class="form-row">
+                        <label for="serverName" class="form-label">Server Name</label>
+                        <input id="serverName"
+                               type="text"
+                               class="form-input"
+                               placeholder="Caitos Hytale Server"
+                               value="Caitos Hytale Server" />
+                    </div>
 
-                            <div class="row">
-                                <label for="password" class="field-label default-style">Password</label>
-                                <input id="password" type="text" class="field default-style" placeholder="" value="" maxlength="120" />
-                            </div>
-                            <div class="row">
-                                <p class="field-help-italic">Set password empty to make it public</p>
-                            </div>
-                        </div>
+                    <div class="form-row">
+                        <label for="motd" class="form-label">MOTD</label>
+                        <input id="motd"
+                               type="text"
+                               class="form-input"
+                               placeholder="WELCOME TO OFA-TECH"
+                               value="WELCOME TO OFA-TECH"
+                               maxlength="120" />
+                    </div>
 
-                        <div class="section">
-                            <p class="subsection-title">Capacity</p>
+                    <div class="form-row">
+                        <label for="password" class="form-label">Password</label>
+                        <input id="password"
+                               type="text"
+                               class="form-input"
+                               placeholder="Leave empty for public server"
+                               value=""
+                               maxlength="120" />
+                    </div>
 
-                            <div class="row">
-                                <label for="maxPlayers" class="field-label default-style">MaxPlayers</label>
-                                <input id="maxPlayers" type="number" class="field default-style" value="10" min="1" max="200" step="1" />
-                            </div>
-
-                            <div class="row">
-                                <label for="maxViewRadius" class="field-label default-style">MaxViewRadius</label>
-                                <input id="maxViewRadius" type="number" class="field default-style" value="5" min="1" max="32" step="1" />
-                            </div>
-                        </div>
-
-                        <div class="section">
-                            <p class="subsection-title">Connection Timeouts</p>
-
-                            <div class="row">
-                                <label for="playTimeout" class="field-label default-style">PlayTimeout</label>
-                                <input id="playTimeout" type="text" class="field default-style" placeholder="PT10M" value="PT10M" />
-                            </div>
-                            <div class="row">
-                                <p class="field-help-italic">Use ISO-8601 duration format, for example PT10M for ten minutes.</p>
-                            </div>
-
-                        </div>
-
-                        <div class="section">
-                            <p class="subsection-title">Actions</p>
-
-                            <div class="actions row">
-                                <button id="saveServerConfig" class="action-btn">Save</button>
-                                <button id="reloadServerConfig" class="action-btn secondary-button">Reset</button>
-                            </div>
-                        </div>
-
+                    <div class="form-help-row">
+                        <p class="form-help-text">Leave the password empty to make the server public.</p>
                     </div>
                 </div>
+
+                <div class="config-card">
+                    <p class="config-card-title">Capacity</p>
+
+                    <div class="form-row">
+                        <label for="maxPlayers" class="form-label">Max Players</label>
+                        <input id="maxPlayers"
+                               type="number"
+                               class="form-input"
+                               value="10" />
+                    </div>
+
+                    <div class="form-row">
+                        <label for="maxViewRadius" class="form-label">Max View Radius</label>
+                        <input id="maxViewRadius"
+                               type="number"
+                               class="form-input"
+                               value="5"
+                               min="1"
+                               max="32"
+                               step="1" />
+                    </div>
+                </div>
+
+                <div class="config-card">
+                    <p class="config-card-title">Connection Timeouts</p>
+
+                    <div class="form-row">
+                        <label for="playTimeout" class="form-label">Play Timeout</label>
+                        <input id="playTimeout"
+                               type="text"
+                               class="form-input"
+                               placeholder="PT10M"
+                               value="PT10M" />
+                    </div>
+
+                    <div class="form-help-row">
+                        <p class="form-help-text">Use ISO-8601 duration format, for example PT10M for ten minutes.</p>
+                    </div>
+                </div>
+
+                <div class="config-card">
+                    <p class="config-card-title">Actions</p>
+
+                    <div class="action-row">
+                        <button id="saveServerConfig" class="primary-action-button">Save</button>
+                        <button id="reloadServerConfig" class="secondary-action-button">Reset</button>
+                    </div>
+                </div>
+
             </div>
-
-            <div class="tab-content" data-hyui-tab-id="player">
-                <div class="tab-page">
-                    <div class="section">
-                        <p class="section-title">Player Preferences</p>
-
-                        <div class="row">
-                            <labeled-checkbox id="prefDarkMode">Dark mode</labeled-checkbox>
-                        </div>
-
-                        <div class="row">
-                            <labeled-checkbox id="prefCompactLayout">Compact layout</labeled-checkbox>
-                        </div>
-
-                        <div class="row">
-                            <labeled-checkbox id="prefShowHints">Show UI hints</labeled-checkbox>
-                        </div>
-
-                        <div class="row">
-                            <label for="prefUiScale" class="field-label default-style">UI Scale</label>
-                            <input id="prefUiScale" type="range" class="field default-style" min="80" max="140" step="5" value="100" />
-                        </div>
-
-                        <div class="actions">
-                            <button id="savePlayerPrefs" class="action-btn">Save</button>
-                            <button id="resetPlayerPrefs" class="action-btn secondary-button">Reset</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-content" data-hyui-tab-id="keymap">
-                <div class="tab-page">
-                    <div class="section">
-                        <p class="section-title">Keymaps</p>
-                        <p class="default-style">Map commands to keys. “Server Default” is the recommended binding.</p>
-
-                        <div class="section">
-                            <p class="section-title">Commands</p>
-
-                            <div class="row">
-                                <label class="field-label default-style">Open Control Panel</label>
-                                <label id="bindOpenPanel" class="field default-style">Unbound</label>
-                                <button id="rebindOpenPanel" class="secondary-button">Rebind</button>
-                                <button id="resetOpenPanel" class="tertiary-button">Server Default</button>
-                            </div>
-
-                            <div class="row">
-                                <label class="field-label default-style">Reload Server Config</label>
-                                <label id="bindReloadServer" class="field default-style">Unbound</label>
-                                <button id="rebindReloadServer" class="secondary-button">Rebind</button>
-                                <button id="resetReloadServer" class="tertiary-button">Server Default</button>
-                            </div>
-
-                            <div class="row">
-                                <label class="field-label default-style">Toggle Debug</label>
-                                <label id="bindToggleDebug" class="field default-style">Unbound</label>
-                                <button id="rebindToggleDebug" class="secondary-button">Rebind</button>
-                                <button id="resetToggleDebug" class="tertiary-button">Server Default</button>
-                            </div>
-                        </div>
-
-                        <div class="actions">
-                            <button id="saveKeymaps" class="action-btn">Save</button>
-                            <button id="resetAllKeymaps" class="action-btn secondary-button">Reset All</button>
-                        </div>
-                    </div>
-                </div>
+            <div class="tab-page" data-hyui-tab-id="server">
+                
             </div>
         </div>
     </div>

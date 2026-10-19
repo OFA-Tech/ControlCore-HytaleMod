@@ -1,0 +1,7 @@
+$C = "../../Common.ui";
+
+// Category heading above a group of setting rows. Appended by ControlPanelPage.
+Label {
+  Anchor: (Top: 4, Bottom: 6);
+  Style: (...$C.@DefaultLabelStyle, RenderBold: true, RenderUppercase: true, FontSize: 13, TextColor: #878e9c);
+}

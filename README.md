@@ -1,14 +1,19 @@
-# ControlCore (Configured Java Plugin)
+# ControlCore
 
 ControlCore is the **server control and configuration foundation** for OFA-Tech Hytale projects.
 
-Instead of treating configuration as scattered per-mod implementation detail, this project aims to provide a shared layer for server preferences, administrative controls, configurable actions, and reusable quality-of-life systems.
+Instead of treating configuration as scattered per-mod implementation detail, this project aims to
+provide a shared layer for server preferences, administrative controls, configurable actions, and
+reusable quality-of-life systems.
 
 ## Purpose
 
 ControlCore exists to reduce configuration fragmentation across mods.
 
-When each mod uses different settings formats, command patterns, and defaults, server administration becomes harder than it needs to be. ControlCore is designed to establish a consistent control surface so specialized gameplay mods can stay focused on gameplay while reusing a common configuration philosophy.
+When each mod uses different settings formats, command patterns, and defaults, server administration
+becomes harder than it needs to be. ControlCore is designed to establish a consistent control surface
+so specialized gameplay mods can stay focused on gameplay while reusing a common configuration
+philosophy.
 
 ## Vision
 
@@ -21,33 +26,97 @@ The long-term vision is a common configuration backbone where compatible mods ca
 
 ## Core concepts
 
-- **Server control as a platform service**: configuration is treated as part of server identity, not isolated side files.
+- **Server control as a platform service**: configuration is treated as part of server identity, not
+  isolated side files.
 - **Configurable interaction**: commands, actions, preferences, and scheduled behavior remain adjustable.
 - **Shared quality-of-life infrastructure**: common mod needs are implemented once and reused.
-- **Controlled extensibility**: other mods can depend on the control layer without handing over gameplay ownership.
+- **Controlled extensibility**: other mods can depend on the control layer without handing over
+  gameplay ownership.
 
-## Current repository scope
+## Current state
 
-This repository still provides a **cloneable Java plugin architecture base** and is intentionally practical for development:
+- `/open-admin-config` opens the admin control panel. It needs the `<base permission>.admin` node;
+  operators have it. The built-in panel (native Hytale UI) has four tabs: **Server Configs** shows the
+  current server config (name, MOTD, password set or not, max players, view radius, play timeout);
+  **Mod Settings** lists and edits every registered server setting; **Player Prefs** edits your own
+  preferences; **Keymaps** is a preview (rebinding is not wired yet). When a compatible
+  [HyUI](https://www.curseforge.com/hytale/mods/hyui) is installed, its HTML panel is used instead.
+- **Settings registry**: mods register typed settings (server-wide or per-player preferences) through
+  `ControlCoreApi.settings()`; ControlCore validates and stores them and reports changes. Admins use
+  `/cc-settings`, `/cc-get`, `/cc-set`, `/cc-reset` (`<base permission>.settings`); players use `/cc-prefs`,
+  `/cc-pref`, `/cc-pref-reset`. See [docs/api.md](docs/api.md#settings-registry).
+- ControlCore's own settings: `controlcore:control-panel-enabled`, `controlcore:welcome-message` (sent to
+  joining players, `{player}` is their name), and per-player `controlcore:show-welcome-message` and
+  `controlcore:panel-start-tab`.
+- `Settings.json` in the mod's data folder: `ControlPanelEnabled` (default `true`), the default of the
+  `controlcore:control-panel-enabled` setting. Changed values live in `SettingValues.json`.
+- Public API for other mods: `ControlCoreApi` (see [docs/api.md](docs/api.md)).
 
-- `TemplatePlugin` remains the thin plugin entrypoint.
-- `platform` contains Hytale-facing integration (commands, events, registries).
-- `core` contains internal domain and service logic.
-- `api` is where stable public contracts can evolve.
+Built on Hytale server **0.7.2** (`>=0.7.2 <0.8.0`), Java 25, Gradle 9.8.1 and
+[`com.azuredoom.hytale-tools`](https://github.com/AzureDoom/Hytale-Gradle-Plugin).
 
-## Quick start
+## Installing
 
-- Verify project metadata in `gradle.properties`.
-- Rename `TemplatePlugin` and its package for your module identity.
-- Update `plugin_main` and any remaining template identifiers.
-- Replace example platform classes with your own behavior.
-- Use the [Rename Guide](docs/rename-guide.md) for a full checklist.
+Put `ControlCore-<version>.jar` in the server's `mods/` folder. HyUI (`Ellie:HyUI`) is optional. HyUI
+0.9.8 is not compatible with Hytale 0.7 (its pages crash the world on the first update), so ControlCore
+detects that and keeps using the built-in panel.
+
+## Development
+
+```bash
+./gradlew build                  # compile, test, architecture rules, jar in build/libs
+./gradlew runServer              # local dev server with ControlCore
+./gradlew runServer -Ddebug=true -Dhotswap=true   # debugger + hot swap (JetBrains Runtime recommended)
+./gradlew setupHytaleDev         # decompiled server sources and assets for your IDE
+./gradlew updatePluginManifest   # regenerate src/main/resources/manifest.json from gradle.properties
+./gradlew spotlessApply          # format the code
+```
+
+First run:
+
+1. `runServer` asks you to sign in to Hytale (device code in the console) to download the server
+   assets once; they are cached in `~/.gradle/caches/hytale-assets/`. To use the assets of your
+   installed game instead, pass `-PhytaleHomeOverride=<path to Assets.zip>` (on Windows:
+   `%APPDATA%\Hytale\install\release\package\game\latest\Assets.zip`).
+2. In the server console, run `/auth login browser` so game clients can join. Credentials are saved.
+3. Join `localhost`, run `/op add <your name>` in the console, then `/open-admin-config` in game.
+
+## Layout
+
+```
+src/main/java/net/ofatech/controlcore/
+├── Main.java            entry point Hytale loads; only delegates to ModRuntime
+├── api/                 what other mods use (interfaces)
+├── domain/              models, Result/Error, events and ports (interfaces for everything external)
+├── application/         features (control panel), the runtime
+└── infrastructure/
+    ├── system/          JDK implementations (clock)
+    ├── persistence/     storage (player data as JSON)
+    └── platforms/
+        ├── hytale/      Hytale → our ports, incl. the built-in panel (ui/)
+        └── hyui/        HyUI → our ControlPanelView
+src/main/resources/Common/UI/Custom/Pages/   ControlCore/ControlPanel.ui (built-in), control-panel-hyui.html
+```
+
+Your features never import Hytale or another mod; commands, event handlers, modules and tasks register
+themselves with `@AutoService` and get their dependencies through their constructor.
 
 ## Documentation
 
-- [Configured Java Plugin](docs/configured-java-plugin.md)
-- [Architecture](docs/architecture.md)
-- [Folder Structure](docs/folder-structure.md)
-- [Rename Guide](docs/rename-guide.md)
-- [API Folder Guide](docs/api-folder.md)
-- [Examples](docs/examples.md)
+| Document | Contents |
+|---|---|
+| [docs/architecture.md](docs/architecture.md) | Layers, rules, lifecycle, package map |
+| [docs/components.md](docs/components.md) | Writing commands, event handlers, modules, tasks; injection |
+| [docs/platforms.md](docs/platforms.md) | Translating Hytale features; HyUI and other mods |
+| [docs/api.md](docs/api.md) | Using ControlCore from another mod; publishing |
+| [docs/development.md](docs/development.md) | Running, debugging, custom UI gotchas, current state and next steps |
+
+## Releasing
+
+`.github/workflows/release.yml` is commented out until the first release; uncomment it to enable.
+Then push a tag `vX.Y.Z`: it builds with `-Pstrict`, publishes to GitHub Packages and attaches the
+jars to a GitHub Release.
+
+## License
+
+MIT, see [LICENSE](LICENSE).

@@ -1,7 +1,7 @@
 {
-    "Group": "net.ofatech",
+    "Group": "OFATech",
     "Name": "ControlCore",
-    "Version": "0.0.1",
+    "Version": "0.1.0",
     "Description": "ControlCore, a Hytale mod built to handle server-side configuration.",
     "Authors": [
         {
@@ -11,10 +11,17 @@
         }
     ],
     "Website": "https://github.com/OFA-Tech/ControlCore-HytaleMod",
+    "ServerVersion": ">=0.7.2 <0.8.0",
+    "Dependencies": {
+        "Hytale:AssetModule": "*"
+    },
+    "OptionalDependencies": {
+        "Ellie:HyUI": "*"
+    },
     "DisabledByDefault": false,
+    "Main": "net.ofatech.controlcore.Main",
     "IncludesAssetPack": true,
-    "Dependencies": {},
-    "OptionalDependencies": {},
-    "ServerVersion": "*",
-    "Main": "net.ofatech.controlcore.ControlCore"
+    "UpdateChecker": {
+        "CurseForge": ""
+    }
 }

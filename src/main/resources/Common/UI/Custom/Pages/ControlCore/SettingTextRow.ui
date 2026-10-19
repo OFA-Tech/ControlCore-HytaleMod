@@ -1,0 +1,36 @@
+$C = "../../Common.ui";
+
+// One registered setting edited as text (integer, decimal, text). Appended by ControlPanelPage.
+Group {
+  LayoutMode: Top;
+  Anchor: (Bottom: 10);
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Height: 38);
+
+    Label #Label {
+      Anchor: (Width: 190, Right: 10);
+      Style: (...$C.@DefaultLabelStyle, RenderBold: true, VerticalAlignment: Center, Wrap: true);
+    }
+
+    $C.@TextField #Input {
+      FlexWeight: 1;
+    }
+
+    $C.@SmallSecondaryTextButton #Save {
+      @Text = "Save";
+      Anchor: (Width: 80, Height: 32, Left: 6);
+    }
+
+    $C.@SmallTertiaryTextButton #Reset {
+      @Text = "Default";
+      Anchor: (Width: 90, Height: 32, Left: 6);
+    }
+  }
+
+  Label #Description {
+    Anchor: (Top: 2);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, Wrap: true);
+  }
+}

@@ -1,0 +1,33 @@
+$C = "../../Common.ui";
+
+// One registered choice setting, saved as soon as an option is picked. Appended by ControlPanelPage.
+Group {
+  LayoutMode: Top;
+  Anchor: (Bottom: 10);
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Height: 34);
+
+    Label #Label {
+      Anchor: (Width: 190, Right: 10);
+      Style: (...$C.@DefaultLabelStyle, RenderBold: true, VerticalAlignment: Center, Wrap: true);
+    }
+
+    $C.@DropdownBox #Input {}
+
+    Group {
+      FlexWeight: 1;
+    }
+
+    $C.@SmallTertiaryTextButton #Reset {
+      @Text = "Default";
+      Anchor: (Width: 90, Height: 32, Left: 6);
+    }
+  }
+
+  Label #Description {
+    Anchor: (Top: 2);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, Wrap: true);
+  }
+}

@@ -1,0 +1,262 @@
+package net.ofatech.controlcore.domain.model.settings;
+
+import java.util.List;
+import java.util.Locale;
+import net.ofatech.controlcore.domain.guard.DomainException;
+import net.ofatech.controlcore.domain.result.Error;
+import net.ofatech.controlcore.domain.result.Result;
+
+/**
+ * The kind of value a setting holds, how it is written as text and which values are allowed.
+ *
+ * @param <T> Java type of the value
+ */
+public sealed interface SettingType<T>
+        permits SettingType.BooleanType,
+                SettingType.IntegerType,
+                SettingType.DecimalType,
+                SettingType.TextType,
+                SettingType.ChoiceType {
+
+    /** Error code for a value that does not fit the type. */
+    String INVALID_VALUE = "Settings.InvalidValue";
+
+    /** @return {@code true} / {@code false}; also accepts on/off, yes/no, 1/0 */
+    static SettingType<Boolean> bool() {
+        return new BooleanType();
+    }
+
+    /** @return a whole number between {@code min} and {@code max}, inclusive */
+    static SettingType<Integer> integer(int min, int max) {
+        return new IntegerType(min, max);
+    }
+
+    /** @return a decimal number between {@code min} and {@code max}, inclusive */
+    static SettingType<Double> decimal(double min, double max) {
+        return new DecimalType(min, max);
+    }
+
+    /** @return free text of at most {@code maxLength} characters */
+    static SettingType<String> text(int maxLength) {
+        return new TextType(maxLength);
+    }
+
+    /** @return one of the given options (matched case-insensitively, stored as written here) */
+    static SettingType<String> choice(String... options) {
+        return new ChoiceType(List.of(options));
+    }
+
+    /** @return the Java type of the values */
+    Class<T> valueType();
+
+    /**
+     * @param text user input
+     * @return the value, or {@link #INVALID_VALUE}
+     */
+    Result<T> parse(String text);
+
+    /**
+     * @param value a value to check, for example one passed by another mod
+     * @return the value, or {@link #INVALID_VALUE}
+     */
+    Result<T> validate(T value);
+
+    /** @return the value as text that {@link #parse(String)} reads back */
+    default String format(T value) {
+        return String.valueOf(value);
+    }
+
+    /** @return a short description for players, for example {@code "integer 1..100"} */
+    String describe();
+
+    private static <T> Result<T> invalid(String text, SettingType<?> type) {
+        return Result.failure(
+                Error.validation(INVALID_VALUE, "'" + text + "' is not a valid " + type.describe() + "."));
+    }
+
+    /** {@code true} or {@code false}. */
+    record BooleanType() implements SettingType<Boolean> {
+
+        @Override
+        public Class<Boolean> valueType() {
+            return Boolean.class;
+        }
+
+        @Override
+        public Result<Boolean> parse(String text) {
+            return switch (text == null ? "" : text.trim().toLowerCase(Locale.ROOT)) {
+                case "true", "on", "yes", "1" -> Result.success(true);
+                case "false", "off", "no", "0" -> Result.success(false);
+                default -> invalid(text, this);
+            };
+        }
+
+        @Override
+        public Result<Boolean> validate(Boolean value) {
+            return value == null ? invalid("null", this) : Result.success(value);
+        }
+
+        @Override
+        public String describe() {
+            return "boolean (true/false)";
+        }
+    }
+
+    /**
+     * A whole number.
+     *
+     * @param min smallest allowed value
+     * @param max largest allowed value
+     */
+    record IntegerType(int min, int max) implements SettingType<Integer> {
+
+        public IntegerType {
+            if (min > max) {
+                throw new DomainException("min " + min + " is greater than max " + max);
+            }
+        }
+
+        @Override
+        public Class<Integer> valueType() {
+            return Integer.class;
+        }
+
+        @Override
+        public Result<Integer> parse(String text) {
+            try {
+                return validate(Integer.parseInt(text == null ? "" : text.trim()));
+            } catch (NumberFormatException e) {
+                return invalid(text, this);
+            }
+        }
+
+        @Override
+        public Result<Integer> validate(Integer value) {
+            return value != null && value >= min && value <= max
+                    ? Result.success(value)
+                    : invalid(String.valueOf(value), this);
+        }
+
+        @Override
+        public String describe() {
+            return "integer " + min + ".." + max;
+        }
+    }
+
+    /**
+     * A decimal number.
+     *
+     * @param min smallest allowed value
+     * @param max largest allowed value
+     */
+    record DecimalType(double min, double max) implements SettingType<Double> {
+
+        public DecimalType {
+            if (!(min <= max)) {
+                throw new DomainException("min " + min + " is greater than max " + max);
+            }
+        }
+
+        @Override
+        public Class<Double> valueType() {
+            return Double.class;
+        }
+
+        @Override
+        public Result<Double> parse(String text) {
+            try {
+                return validate(Double.parseDouble(text == null ? "" : text.trim()));
+            } catch (NumberFormatException e) {
+                return invalid(text, this);
+            }
+        }
+
+        @Override
+        public Result<Double> validate(Double value) {
+            return value != null && Double.isFinite(value) && value >= min && value <= max
+                    ? Result.success(value)
+                    : invalid(String.valueOf(value), this);
+        }
+
+        @Override
+        public String describe() {
+            return "decimal " + min + ".." + max;
+        }
+    }
+
+    /**
+     * Free text.
+     *
+     * @param maxLength longest allowed text
+     */
+    record TextType(int maxLength) implements SettingType<String> {
+
+        public TextType {
+            if (maxLength < 1) {
+                throw new DomainException("maxLength must be at least 1");
+            }
+        }
+
+        @Override
+        public Class<String> valueType() {
+            return String.class;
+        }
+
+        @Override
+        public Result<String> parse(String text) {
+            return validate(text);
+        }
+
+        @Override
+        public Result<String> validate(String value) {
+            return value != null && value.length() <= maxLength
+                    ? Result.success(value)
+                    : invalid(String.valueOf(value), this);
+        }
+
+        @Override
+        public String describe() {
+            return "text (up to " + maxLength + " characters)";
+        }
+    }
+
+    /**
+     * One of a fixed list of options.
+     *
+     * @param options allowed values, in display order
+     */
+    record ChoiceType(List<String> options) implements SettingType<String> {
+
+        public ChoiceType {
+            options = List.copyOf(options);
+            if (options.isEmpty() || options.stream().anyMatch(String::isBlank)) {
+                throw new DomainException("A choice needs at least one non-blank option");
+            }
+        }
+
+        @Override
+        public Class<String> valueType() {
+            return String.class;
+        }
+
+        @Override
+        public Result<String> parse(String text) {
+            String wanted = text == null ? "" : text.trim();
+            return options.stream()
+                    .filter(option -> option.equalsIgnoreCase(wanted))
+                    .findFirst()
+                    .<Result<String>>map(Result::success)
+                    .orElseGet(() -> invalid(text, this));
+        }
+
+        @Override
+        public Result<String> validate(String value) {
+            return value != null && options.contains(value) ? Result.success(value) : invalid(value, this);
+        }
+
+        @Override
+        public String describe() {
+            return "one of " + String.join(", ", options);
+        }
+    }
+}
