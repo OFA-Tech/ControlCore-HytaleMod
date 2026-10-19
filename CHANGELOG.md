@@ -13,6 +13,12 @@
 - `/open-admin-config` now requires the `<base permission>.admin` node.
 
 ### Added
+- Control panel **Mod Settings** tab (every registered server setting) and a real **Player Prefs** tab
+  (your own preferences): text fields with Save, check boxes and dropdowns that save immediately, and a
+  Default button per row.
+- Settings `controlcore:welcome-message` (join message, `{player}` placeholder),
+  `controlcore:show-welcome-message` and `controlcore:panel-start-tab` (per player).
+- `ControlPanelView.open` now receives `ControlPanelContent` (server config, settings, start tab).
 - Shared settings registry (`ControlCoreApi.settings()`, API 1.1.0): mods register typed settings
   (`bool`, `integer`, `decimal`, `text`, `choice`) with server or player scope; values are validated,
   stored in `SettingValues.json` / `players.json` and reported through `SettingChanged`.

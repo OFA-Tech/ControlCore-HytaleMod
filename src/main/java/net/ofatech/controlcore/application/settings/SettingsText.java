@@ -28,7 +28,7 @@ final class SettingsText {
     }
 
     static String line(SettingSnapshot snapshot) {
-        return snapshot.id() + " = " + snapshot.value() + (snapshot.overridden() ? "" : " (default)");
+        return snapshot.id() + " = " + shown(snapshot.value()) + (snapshot.overridden() ? "" : " (default)");
     }
 
     static String details(SettingSnapshot snapshot) {
@@ -40,14 +40,18 @@ final class SettingsText {
         if (!definition.description().isBlank()) {
             text.append("\n  ").append(definition.description());
         }
-        text.append("\n  Value: ").append(snapshot.value()).append(snapshot.overridden() ? "" : " (default)");
-        text.append("\n  Default: ").append(definition.formattedDefault());
+        text.append("\n  Value: ").append(shown(snapshot.value())).append(snapshot.overridden() ? "" : " (default)");
+        text.append("\n  Default: ").append(shown(definition.formattedDefault()));
         text.append("\n  Type: ").append(definition.type().describe());
         text.append("\n  Scope: ").append(definition.scope().name().toLowerCase(Locale.ROOT));
         return text.toString();
     }
 
     static String changed(SettingSnapshot snapshot) {
-        return snapshot.id() + " is now " + snapshot.value() + (snapshot.overridden() ? "" : " (default)") + ".";
+        return snapshot.id() + " is now " + shown(snapshot.value()) + (snapshot.overridden() ? "" : " (default)") + ".";
+    }
+
+    static String shown(String value) {
+        return value.isEmpty() ? "(empty)" : value;
     }
 }

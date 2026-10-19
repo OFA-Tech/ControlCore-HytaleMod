@@ -47,7 +47,7 @@ class ControlPanelServiceTest {
         DomainEventBus bus = new DomainEventBus(log);
         registry = new SettingsRegistry(new FakeSettingStore(), new FakePlayerData(), bus, bus, log);
         return new ControlPanelService(
-                new ControlPanelSettings(registry, settings), players, () -> SERVER, builtIn, capabilities);
+                new ControlPanelSettings(registry, settings), players, () -> SERVER, builtIn, capabilities, registry);
     }
 
     @Test
@@ -69,6 +69,7 @@ class ControlPanelServiceTest {
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(builtIn.opened).containsExactly(new RecordingControlPanelView.Opened(admin.id(), SERVER));
+        assertThat(builtIn.lastContent.settings()).isSameAs(registry);
         assertThat(service.isAvailable()).isTrue();
         assertThat(service.usesUiMod()).isFalse();
     }

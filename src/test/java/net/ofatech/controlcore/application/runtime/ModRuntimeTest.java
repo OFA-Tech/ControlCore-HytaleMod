@@ -4,11 +4,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.Map;
+import java.util.Optional;
 import net.ofatech.controlcore.api.ControlCoreApi;
 import net.ofatech.controlcore.domain.event.PlayerJoined;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
+import net.ofatech.controlcore.domain.model.ControlPanelTab;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
+import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.fakes.FakePlatform;
 import net.ofatech.controlcore.fakes.RecordingControlPanelView;
@@ -186,6 +189,41 @@ class ModRuntimeTest {
         assertThat(compact.get(player.id())).isTrue();
         assertThat(prefs.value().text().orElseThrow()).contains("hud:compact = true");
         assertThat(wrongScope.error().code()).isEqualTo("Settings.WrongScope");
+    }
+
+    @Test
+    void joiningPlayersGetTheWelcomeMessageUnlessTheyTurnItOff() {
+        runtime.setup();
+        runtime.start();
+        PlayerInfo admin = platform.players.join("Admin");
+        PlayerInfo quiet = platform.players.join("Quiet");
+
+        platform.connectedPublisher.publish(new PlayerJoined(admin));
+        platform.commands.run("cc-set", admin, Map.of("id", "controlcore:welcome-message", "value", "Hi {player}!"));
+        platform.commands.run("cc-pref", quiet, Map.of("id", "controlcore:show-welcome-message", "value", "off"));
+        platform.connectedPublisher.publish(new PlayerJoined(admin));
+        platform.connectedPublisher.publish(new PlayerJoined(quiet));
+
+        assertThat(platform.messenger.textsTo(admin.id())).containsExactly("Hi Admin!");
+        assertThat(platform.messenger.textsTo(quiet.id())).isEmpty();
+    }
+
+    @Test
+    void thePanelOpensOnEachPlayersStartTab() {
+        runtime.setup();
+        runtime.start();
+        PlayerInfo admin = platform.players.join("Admin");
+
+        platform.commands.run(COMMAND, admin, Map.of());
+        var first = platform.controlPanel.lastContent.startTab();
+        platform.commands.run("cc-pref", admin, Map.of("id", "controlcore:panel-start-tab", "value", "mod settings"));
+        platform.commands.run(COMMAND, admin, Map.of());
+
+        assertThat(first).isEqualTo(ControlPanelTab.SERVER_CONFIGS);
+        assertThat(platform.controlPanel.lastContent.startTab()).isEqualTo(ControlPanelTab.MOD_SETTINGS);
+        assertThat(platform.controlPanel.lastContent.settings().snapshot(SettingScope.SERVER, Optional.empty()))
+                .extracting(snapshot -> snapshot.id().toString())
+                .containsExactly("controlcore:control-panel-enabled", "controlcore:welcome-message");
     }
 
     @Test

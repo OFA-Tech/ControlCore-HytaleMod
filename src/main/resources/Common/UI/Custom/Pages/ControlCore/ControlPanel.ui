@@ -5,12 +5,13 @@ $C = "../../Common.ui";
 @NoteStyle = (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, Wrap: true);
 @RowLabelStyle = (...$C.@DefaultLabelStyle, RenderBold: true, VerticalAlignment: Center);
 @RowValueStyle = (...$C.@DefaultLabelStyle, VerticalAlignment: Center, Wrap: true);
+@StatusStyle = (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #E8A93B, Wrap: true);
 
 $C.@PageOverlay {
   LayoutMode: Middle;
 
   $C.@DecoratedContainer {
-    Anchor: (Width: 680);
+    Anchor: (Width: 760);
 
     #Title {
       $C.@Title {
@@ -28,6 +29,11 @@ $C.@PageOverlay {
 
         $C.@SmallSecondaryTextButton #ServerTabButton {
           @Text = "Server Configs";
+          Anchor: (Width: 160, Height: 30, Right: 6);
+        }
+
+        $C.@SmallSecondaryTextButton #SettingsTabButton {
+          @Text = "Mod Settings";
           Anchor: (Width: 160, Height: 30, Right: 6);
         }
 
@@ -172,6 +178,35 @@ $C.@PageOverlay {
         }
       }
 
+      Group #SettingsTab {
+        LayoutMode: Top;
+        Visible: false;
+
+        Label {
+          Text: "Mod Settings";
+          Style: @SectionTitleStyle;
+          Anchor: (Bottom: 4);
+        }
+
+        Label {
+          Text: "Server settings registered by ControlCore and other mods. Changes apply immediately.";
+          Style: @NoteStyle;
+          Anchor: (Bottom: 8);
+        }
+
+        Label #SettingsStatus {
+          Style: @StatusStyle;
+          Anchor: (Bottom: 8);
+        }
+
+        Group #SettingsList {
+          LayoutMode: TopScrolling;
+          ScrollbarStyle: $C.@DefaultScrollbarStyle;
+          Anchor: (Height: 340);
+          Padding: (Right: 10);
+        }
+      }
+
       Group #PlayerTab {
         LayoutMode: Top;
         Visible: false;
@@ -183,41 +218,21 @@ $C.@PageOverlay {
         }
 
         Label {
-          Text: "Preview: preferences are not saved yet.";
+          Text: "Your own preferences, registered by ControlCore and other mods. Players can also use /cc-prefs.";
           Style: @NoteStyle;
-          Anchor: (Bottom: 12);
+          Anchor: (Bottom: 8);
         }
 
-        $C.@CheckBoxWithLabel #PrefDarkMode {
-          @Text = "Dark mode";
-          @Checked = false;
+        Label #PlayerStatus {
+          Style: @StatusStyle;
+          Anchor: (Bottom: 8);
         }
 
-        $C.@CheckBoxWithLabel #PrefCompactLayout {
-          @Text = "Compact layout";
-          @Checked = false;
-        }
-
-        $C.@CheckBoxWithLabel #PrefShowHints {
-          @Text = "Show UI hints";
-          @Checked = true;
-        }
-
-        Group {
-          LayoutMode: Left;
-          Anchor: (Top: 6);
-
-          Label {
-            Text: "UI Scale";
-            Anchor: (Width: 200);
-            Style: @RowLabelStyle;
-          }
-
-          Label {
-            Text: "100%";
-            FlexWeight: 1;
-            Style: @RowValueStyle;
-          }
+        Group #PlayerList {
+          LayoutMode: TopScrolling;
+          ScrollbarStyle: $C.@DefaultScrollbarStyle;
+          Anchor: (Height: 340);
+          Padding: (Right: 10);
         }
       }
 

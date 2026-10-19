@@ -2,6 +2,8 @@ package net.ofatech.controlcore.application.controlpanel;
 
 import com.google.auto.service.AutoService;
 import net.ofatech.controlcore.api.ControlPanelApi;
+import net.ofatech.controlcore.api.SettingsApi;
+import net.ofatech.controlcore.domain.model.ControlPanelContent;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
@@ -19,18 +21,21 @@ public final class ControlPanelService implements ControlPanelApi {
     private final ServerConfiguration server;
     private final ControlPanelView platformView;
     private final Capabilities capabilities;
+    private final SettingsApi registry;
 
     public ControlPanelService(
             ControlPanelSettings settings,
             Players players,
             ServerConfiguration server,
             ControlPanelView platformView,
-            Capabilities capabilities) {
+            Capabilities capabilities,
+            SettingsApi registry) {
         this.settings = settings;
         this.players = players;
         this.server = server;
         this.platformView = platformView;
         this.capabilities = capabilities;
+        this.registry = registry;
     }
 
     @Override
@@ -54,6 +59,6 @@ public final class ControlPanelService implements ControlPanelApi {
             return Result.failure(Error.notFound("ControlPanel.PlayerNotFound", "That player is not online."));
         }
         ControlPanelView view = capabilities.find(ControlPanelView.class).orElse(platformView);
-        return view.open(player, request, server.read());
+        return view.open(player, request, new ControlPanelContent(server.read(), registry, settings.startTab(player)));
     }
 }

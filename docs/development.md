@@ -65,6 +65,21 @@ Things to know:
 - **Tabs:** `TabNavigation` only supports icon tabs, so the panel uses text buttons
   (`$C.@SmallSecondaryTextButton`) that show one `#...Tab` group and disable the selected button.
 - Open pages on the world thread: `world.execute(() -> player.getPageManager().openCustomPage(ref, store, page))`.
+- **Lists built at runtime:** `commands.append("#List", "Pages/ControlCore/SettingTextRow.ui")` appends a
+  whole document as a child of `#List` (a `Group` with `LayoutMode: TopScrolling` scrolls). The n-th
+  appended child is `#List[n]`, and its descendants are `#List[n] #Input` (space = descendant). The
+  settings tabs do this, one row document per setting (`Setting{Text,Toggle,Choice}Row.ui`, headings
+  `SettingCategory.ui`); the plain-Java `SettingsSection` decides the rows and actions, `ControlPanelPage`
+  draws them. Vanilla does the same in `PluginListPage` and `PointInspectorPage`.
+- **Reading inputs:** bind with `EventData` that mixes constants and `@` keys, e.g.
+  `Action=Save, Id=<id>, @Value=#List[2] #Input.Value`. The codec type must match the element:
+  `TextField`/`DropdownBox` → `Codec.STRING`, `CheckBox` → `Codec.BOOLEAN`, `NumberField` → `Codec.DOUBLE`
+  (see `LaunchPad$LaunchPadSettingsPage`). Check boxes and dropdowns bind `ValueChanged`; buttons
+  `Activating`. Don't write a value back into the element that just changed: if the client echoed it
+  as another `ValueChanged`, it would loop.
+- **Dropdown entries:** `commands.set("#X.Entries", List<DropdownEntryInfo>)` with
+  `new DropdownEntryInfo(LocalizableString.fromString(label), value)`, then `#X.Value`. Text fields take
+  `#X.PlaceholderText`.
 
 ## HyUI
 
@@ -82,11 +97,16 @@ Done (branch `restructure-template`): template structure, `/open-admin-config` w
 Done: settings registry (`ControlCoreApi.settings()`, `/cc-*` commands, `SettingValues.json`), verified
 on the dev server from the console (list/get/set/reset, invalid input, persistence across a restart).
 
+Done: **Mod Settings** and **Player Prefs** tabs list and edit the registered settings (text fields with
+Save, check boxes and dropdowns save immediately, Default resets); ControlCore's own settings: panel
+switch, welcome message, show-welcome and panel start tab.
+
 Open:
 
-- **Mod Settings tab:** list and edit every registered setting in the panel (rows generated from
-  `SettingsApi.snapshot`). Needs dynamic `.ui` appends; check `UICommandBuilder` in the 0.7.2 jar first.
-- **Player Prefs tab:** replace the preview checkboxes with the player-scope settings.
+- The panel is admin-only (`/open-admin-config`), so players set preferences with `/cc-prefs` /
+  `/cc-pref`. A player-facing command that opens only the Player Prefs tab would close that gap.
+- The settings lists are built when the panel opens; changes made elsewhere while it is open show after
+  reopening it.
 
 - **Server Configs tab:** values are read-only. Editing needs a write method on the
   `ServerConfiguration` port (Hytale's `HytaleServerConfig` has setters) plus input fields and a Save
