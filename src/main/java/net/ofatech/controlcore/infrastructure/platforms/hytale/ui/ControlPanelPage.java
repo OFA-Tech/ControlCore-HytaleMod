@@ -131,7 +131,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     /** Data sent by the client when a bound element is used. */
     static final class Action {
 
-        static final String KEY = "@Action";
+        // Plain key: the value is sent as is. A key starting with '@' makes the client read the value from a UI
+        // property instead (for example "@Name" -> "#NameField.Value"), and a constant there disconnects it.
+        static final String KEY = "Action";
 
         static final BuilderCodec<Action> CODEC = BuilderCodec.builder(Action.class, Action::new)
                 .append(
