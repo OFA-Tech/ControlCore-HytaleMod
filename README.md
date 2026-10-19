@@ -36,8 +36,9 @@ The long-term vision is a common configuration backbone where compatible mods ca
 ## Current state
 
 - `/open-admin-config` opens the admin control panel. It needs the `<base permission>.admin` node;
-  operators have it. The built-in panel (native Hytale UI) shows the current server config (name, MOTD,
-  password set or not, max players, view radius); editing is not wired yet. When a compatible
+  operators have it. The built-in panel (native Hytale UI) has three tabs: **Server Configs** shows the
+  current server config (name, MOTD, password set or not, max players, view radius, play timeout);
+  **Player Prefs** and **Keymaps** are previews. Editing and rebinding are not wired yet. When a compatible
   [HyUI](https://www.curseforge.com/hytale/mods/hyui) is installed, its HTML panel is used instead.
 - `Settings.json` in the mod's data folder: `ControlPanelEnabled` (default `true`).
 - Public API for other mods: `ControlCoreApi` (see [docs/api.md](docs/api.md)).
@@ -55,7 +56,7 @@ detects that and keeps using the built-in panel.
 
 ```bash
 ./gradlew build                  # compile, test, architecture rules, jar in build/libs
-./gradlew runServer              # local dev server with ControlCore and HyUI
+./gradlew runServer              # local dev server with ControlCore
 ./gradlew runServer -Ddebug=true -Dhotswap=true   # debugger + hot swap (JetBrains Runtime recommended)
 ./gradlew setupHytaleDev         # decompiled server sources and assets for your IDE
 ./gradlew updatePluginManifest   # regenerate src/main/resources/manifest.json from gradle.properties

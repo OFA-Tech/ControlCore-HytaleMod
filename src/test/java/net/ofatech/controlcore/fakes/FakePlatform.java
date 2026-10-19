@@ -30,7 +30,8 @@ public final class FakePlatform implements Platform {
     public final FakeCommandRegistrar commands = new FakeCommandRegistrar();
     public final FakeModLookup mods = new FakeModLookup();
     public final RecordingControlPanelView controlPanel = new RecordingControlPanelView();
-    public ServerSettings server = new ServerSettings("Test Server", "Welcome", false, 10, 5);
+    public ServerSettings server =
+            new ServerSettings("Test Server", "Welcome", false, 10, 5, java.time.Duration.ofMinutes(10));
     public EventPublisher connectedPublisher;
 
     @Override

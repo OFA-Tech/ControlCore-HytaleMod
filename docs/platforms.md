@@ -99,8 +99,10 @@ A feature asks `Capabilities.find(ControlPanelView.class)` and does not care whi
    opens `ControlPanelPage`, an `InteractiveCustomUIPage` with the layout
    `src/main/resources/Common/UI/Custom/Pages/ControlCore/ControlPanel.ui` (Hytale's `.ui` syntax,
    styles from `Common.ui`). Values come from the `ServerConfiguration` port
-   (`HytaleServerConfiguration` reads `HytaleServer.get().getConfig()`); the Close button is an
-   event binding handled in `handleDataEvent`.
+   (`HytaleServerConfiguration` reads `HytaleServer.get().getConfig()`). Tabs are text buttons:
+   each click is an event binding handled in `handleDataEvent`, which sends an update toggling the
+   `#...Tab.Visible` groups and disabling the selected tab's button. (Hytale's `TabNavigation`
+   element only supports icon tabs.)
 
 [HyUI](https://www.curseforge.com/hytale/mods/hyui) (`Ellie:HyUI`) renders HTML pages as Hytale UI. It
 is a separate plugin, so it is never bundled into ControlCore's jar.
@@ -114,12 +116,14 @@ is a separate plugin, so it is never bundled into ControlCore's jar.
 - `HyUiControlPanel` (inbound): opens `Common/UI/Custom/Pages/control-panel-hyui.html` with
   `PageBuilder` on the player's world thread.
 
-Gradle uses `vineImplementation`, not `vineMod`: `runServer` loads ControlCore from the classpath, so
-HyUI's classes must be on that classpath as well or ControlCore cannot see them. hytale-tools stages
-it both in `run/mods` and on the shared runtime classpath, and still does not bundle it. On a real
-server both jars sit in `mods/` and see each other.
+HyUI is only `compileOnly` for now, so `runServer` does not load it. To test it in the dev server,
+use `vineImplementation`, not `vineMod`: `runServer` loads ControlCore from the classpath, so HyUI's
+classes must be on that classpath as well or ControlCore cannot see them. hytale-tools stages it both
+in `run/mods` and on the shared runtime classpath, and still does not bundle it. On a real server
+both jars sit in `mods/` and see each other.
 
 HyUI 0.9.8 (latest as of 2026-10) declares `ServerVersion >=0.5.0-pre.9 <0.6.0`. On 0.7.2 it loads
 with a warning but fails the check above, so the built-in panel is used. When HyUI publishes a
 0.7-compatible build, bump the CurseMaven file id in `build.gradle.kts`; the check passes and HyUI
-takes over without code changes.
+takes over without code changes. Note that `control-panel-hyui.html` and `ControlPanel.ui` are separate
+layouts; keep them in sync if both are used.

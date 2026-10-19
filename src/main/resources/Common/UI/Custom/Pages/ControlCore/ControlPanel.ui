@@ -1,5 +1,8 @@
 $C = "../../Common.ui";
 
+@SectionTitleStyle = (...$C.@DefaultLabelStyle, RenderBold: true, FontSize: 18);
+@SubsectionTitleStyle = (...$C.@DefaultLabelStyle, RenderBold: true, RenderUppercase: true, FontSize: 13, TextColor: #878e9c);
+@NoteStyle = (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, Wrap: true);
 @RowLabelStyle = (...$C.@DefaultLabelStyle, RenderBold: true, VerticalAlignment: Center);
 @RowValueStyle = (...$C.@DefaultLabelStyle, VerticalAlignment: Center, Wrap: true);
 
@@ -7,7 +10,7 @@ $C.@PageOverlay {
   LayoutMode: Middle;
 
   $C.@DecoratedContainer {
-    Anchor: (Width: 560);
+    Anchor: (Width: 680);
 
     #Title {
       $C.@Title {
@@ -19,95 +22,300 @@ $C.@PageOverlay {
       LayoutMode: Top;
       Padding: (Full: 16);
 
-      Label {
-        Text: "Main Server Configuration";
-        Style: (...$C.@DefaultLabelStyle, RenderBold: true, FontSize: 18);
-        Anchor: (Bottom: 4);
-      }
-
-      Label {
-        Text: "Current values of the server config. Editing comes in a later version.";
-        Style: (...$C.@DefaultLabelStyle, TextColor: #878e9c, Wrap: true);
-        Anchor: (Bottom: 14);
-      }
-
-      Group {
+      Group #TabButtons {
         LayoutMode: Left;
-        Anchor: (Bottom: 8);
+        Anchor: (Height: 32, Bottom: 14);
+
+        $C.@SmallSecondaryTextButton #ServerTabButton {
+          @Text = "Server Configs";
+          Anchor: (Width: 160, Height: 30, Right: 6);
+        }
+
+        $C.@SmallSecondaryTextButton #PlayerTabButton {
+          @Text = "Player Prefs";
+          Anchor: (Width: 160, Height: 30, Right: 6);
+        }
+
+        $C.@SmallSecondaryTextButton #KeymapTabButton {
+          @Text = "Keymaps";
+          Anchor: (Width: 160, Height: 30, Right: 6);
+        }
+      }
+
+      Group #ServerTab {
+        LayoutMode: Top;
 
         Label {
-          Text: "Server Name";
-          Anchor: (Width: 180);
-          Style: @RowLabelStyle;
+          Text: "Main Server Configuration";
+          Style: @SectionTitleStyle;
+          Anchor: (Bottom: 4);
         }
 
-        Label #ServerName {
-          FlexWeight: 1;
-          Style: @RowValueStyle;
+        Label {
+          Text: "Current values of the server config. Editing comes in a later version.";
+          Style: @NoteStyle;
+          Anchor: (Bottom: 12);
+        }
+
+        Label {
+          Text: "Identity";
+          Style: @SubsectionTitleStyle;
+          Anchor: (Bottom: 6);
+        }
+
+        Group {
+          LayoutMode: Left;
+          Anchor: (Bottom: 6);
+
+          Label {
+            Text: "Server Name";
+            Anchor: (Width: 200);
+            Style: @RowLabelStyle;
+          }
+
+          Label #ServerName {
+            FlexWeight: 1;
+            Style: @RowValueStyle;
+          }
+        }
+
+        Group {
+          LayoutMode: Left;
+          Anchor: (Bottom: 6);
+
+          Label {
+            Text: "MOTD";
+            Anchor: (Width: 200);
+            Style: @RowLabelStyle;
+          }
+
+          Label #Motd {
+            FlexWeight: 1;
+            Style: @RowValueStyle;
+          }
+        }
+
+        Group {
+          LayoutMode: Left;
+          Anchor: (Bottom: 12);
+
+          Label {
+            Text: "Password";
+            Anchor: (Width: 200);
+            Style: @RowLabelStyle;
+          }
+
+          Label #Password {
+            FlexWeight: 1;
+            Style: @RowValueStyle;
+          }
+        }
+
+        Label {
+          Text: "Capacity";
+          Style: @SubsectionTitleStyle;
+          Anchor: (Bottom: 6);
+        }
+
+        Group {
+          LayoutMode: Left;
+          Anchor: (Bottom: 6);
+
+          Label {
+            Text: "Max Players";
+            Anchor: (Width: 200);
+            Style: @RowLabelStyle;
+          }
+
+          Label #MaxPlayers {
+            FlexWeight: 1;
+            Style: @RowValueStyle;
+          }
+        }
+
+        Group {
+          LayoutMode: Left;
+          Anchor: (Bottom: 12);
+
+          Label {
+            Text: "Max View Radius";
+            Anchor: (Width: 200);
+            Style: @RowLabelStyle;
+          }
+
+          Label #MaxViewRadius {
+            FlexWeight: 1;
+            Style: @RowValueStyle;
+          }
+        }
+
+        Label {
+          Text: "Connection Timeouts";
+          Style: @SubsectionTitleStyle;
+          Anchor: (Bottom: 6);
+        }
+
+        Group {
+          LayoutMode: Left;
+          Anchor: (Bottom: 6);
+
+          Label {
+            Text: "Play Timeout";
+            Anchor: (Width: 200);
+            Style: @RowLabelStyle;
+          }
+
+          Label #PlayTimeout {
+            FlexWeight: 1;
+            Style: @RowValueStyle;
+          }
         }
       }
 
-      Group {
-        LayoutMode: Left;
-        Anchor: (Bottom: 8);
+      Group #PlayerTab {
+        LayoutMode: Top;
+        Visible: false;
 
         Label {
-          Text: "MOTD";
-          Anchor: (Width: 180);
-          Style: @RowLabelStyle;
+          Text: "Player Preferences";
+          Style: @SectionTitleStyle;
+          Anchor: (Bottom: 4);
         }
 
-        Label #Motd {
-          FlexWeight: 1;
-          Style: @RowValueStyle;
+        Label {
+          Text: "Preview: preferences are not saved yet.";
+          Style: @NoteStyle;
+          Anchor: (Bottom: 12);
+        }
+
+        $C.@CheckBoxWithLabel #PrefDarkMode {
+          @Text = "Dark mode";
+          @Checked = false;
+        }
+
+        $C.@CheckBoxWithLabel #PrefCompactLayout {
+          @Text = "Compact layout";
+          @Checked = false;
+        }
+
+        $C.@CheckBoxWithLabel #PrefShowHints {
+          @Text = "Show UI hints";
+          @Checked = true;
+        }
+
+        Group {
+          LayoutMode: Left;
+          Anchor: (Top: 6);
+
+          Label {
+            Text: "UI Scale";
+            Anchor: (Width: 200);
+            Style: @RowLabelStyle;
+          }
+
+          Label {
+            Text: "100%";
+            FlexWeight: 1;
+            Style: @RowValueStyle;
+          }
         }
       }
 
-      Group {
-        LayoutMode: Left;
-        Anchor: (Bottom: 8);
+      Group #KeymapTab {
+        LayoutMode: Top;
+        Visible: false;
 
         Label {
-          Text: "Password";
-          Anchor: (Width: 180);
-          Style: @RowLabelStyle;
+          Text: "Keymaps";
+          Style: @SectionTitleStyle;
+          Anchor: (Bottom: 4);
         }
-
-        Label #Password {
-          FlexWeight: 1;
-          Style: @RowValueStyle;
-        }
-      }
-
-      Group {
-        LayoutMode: Left;
-        Anchor: (Bottom: 8);
 
         Label {
-          Text: "Max Players";
-          Anchor: (Width: 180);
-          Style: @RowLabelStyle;
+          Text: "Map commands to keys. \"Server Default\" is the recommended binding. Rebinding comes in a later version.";
+          Style: @NoteStyle;
+          Anchor: (Bottom: 12);
         }
 
-        Label #MaxPlayers {
-          FlexWeight: 1;
-          Style: @RowValueStyle;
+        Group {
+          LayoutMode: Left;
+          Anchor: (Height: 32, Bottom: 6);
+
+          Label {
+            Text: "Open Control Panel";
+            Anchor: (Width: 200);
+            Style: @RowLabelStyle;
+          }
+
+          Label {
+            Text: "Unbound";
+            FlexWeight: 1;
+            Style: @RowValueStyle;
+          }
+
+          $C.@SmallSecondaryTextButton #RebindOpenPanel {
+            @Text = "Rebind";
+            Anchor: (Width: 100, Height: 30, Right: 6);
+          }
+
+          $C.@SmallTertiaryTextButton #ResetOpenPanel {
+            @Text = "Server Default";
+            Anchor: (Width: 140, Height: 30);
+          }
         }
-      }
 
-      Group {
-        LayoutMode: Left;
-        Anchor: (Bottom: 8);
+        Group {
+          LayoutMode: Left;
+          Anchor: (Height: 32, Bottom: 6);
 
-        Label {
-          Text: "Max View Radius";
-          Anchor: (Width: 180);
-          Style: @RowLabelStyle;
+          Label {
+            Text: "Reload Server Config";
+            Anchor: (Width: 200);
+            Style: @RowLabelStyle;
+          }
+
+          Label {
+            Text: "Unbound";
+            FlexWeight: 1;
+            Style: @RowValueStyle;
+          }
+
+          $C.@SmallSecondaryTextButton #RebindReloadServer {
+            @Text = "Rebind";
+            Anchor: (Width: 100, Height: 30, Right: 6);
+          }
+
+          $C.@SmallTertiaryTextButton #ResetReloadServer {
+            @Text = "Server Default";
+            Anchor: (Width: 140, Height: 30);
+          }
         }
 
-        Label #MaxViewRadius {
-          FlexWeight: 1;
-          Style: @RowValueStyle;
+        Group {
+          LayoutMode: Left;
+          Anchor: (Height: 32, Bottom: 6);
+
+          Label {
+            Text: "Toggle Debug";
+            Anchor: (Width: 200);
+            Style: @RowLabelStyle;
+          }
+
+          Label {
+            Text: "Unbound";
+            FlexWeight: 1;
+            Style: @RowValueStyle;
+          }
+
+          $C.@SmallSecondaryTextButton #RebindToggleDebug {
+            @Text = "Rebind";
+            Anchor: (Width: 100, Height: 30, Right: 6);
+          }
+
+          $C.@SmallTertiaryTextButton #ResetToggleDebug {
+            @Text = "Server Default";
+            Anchor: (Width: 140, Height: 30);
+          }
         }
       }
 

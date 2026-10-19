@@ -2,6 +2,7 @@ package net.ofatech.controlcore.application.controlpanel;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
@@ -19,7 +20,8 @@ import org.junit.jupiter.api.Test;
 
 class ControlPanelServiceTest {
 
-    private static final ServerSettings SERVER = new ServerSettings("Caitos Hytale Server", "WELCOME", true, 10, 5);
+    private static final ServerSettings SERVER =
+            new ServerSettings("Caitos Hytale Server", "WELCOME", true, 10, 5, Duration.ofMinutes(10));
 
     private final FakeSettings settings = new FakeSettings();
     private final FakePlayers players = new FakePlayers();
