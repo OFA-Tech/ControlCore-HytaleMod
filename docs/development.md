@@ -21,6 +21,12 @@ Architecture and rules are in [architecture.md](architecture.md); Hytale and mod
 
 Things to know:
 
+- Only one dev server can run at a time (port 5520). `prepareRunServer` is untracked, so leftover
+  `run/logs/*.lck` files from a crashed server no longer break `runServer`.
+- The console reads commands from stdin without a leading `/` (`cc-settings`, `stop`). To script it,
+  start `gradlew runServer` with redirected stdin and write lines to it (a small PowerShell wrapper with
+  `System.Diagnostics.Process` + `RedirectStandardInput` works); `stop` shuts the server down cleanly.
+
 - `runServer` links `run/mods/OFATech_ControlCore` (the plugin's data folder) to `src/main/resources`.
   `Settings.json`, `Settings.json.bak` and `players.json` therefore appear there; they are git-ignored
   and excluded from the jar.
@@ -73,13 +79,18 @@ case and the built-in panel is used. HyUI is only `compileOnly` for now; see
 Done (branch `restructure-template`): template structure, `/open-admin-config` with the
 `<base>.admin` permission, built-in panel with three tabs, `ControlCoreApi` for other mods.
 
+Done: settings registry (`ControlCoreApi.settings()`, `/cc-*` commands, `SettingValues.json`), verified
+on the dev server from the console (list/get/set/reset, invalid input, persistence across a restart).
+
 Open:
+
+- **Mod Settings tab:** list and edit every registered setting in the panel (rows generated from
+  `SettingsApi.snapshot`). Needs dynamic `.ui` appends; check `UICommandBuilder` in the 0.7.2 jar first.
+- **Player Prefs tab:** replace the preview checkboxes with the player-scope settings.
 
 - **Server Configs tab:** values are read-only. Editing needs a write method on the
   `ServerConfiguration` port (Hytale's `HytaleServerConfig` has setters) plus input fields and a Save
   button whose event reads the fields with `@` keys.
-- **Player Prefs tab:** preview only. Store the preferences per player (the `PlayerData` port already
-  persists key/value data in `players.json`).
 - **Keymaps tab:** preview only; the Rebind and Server Default buttons are disabled. Needs a design for
   how key bindings are captured and applied.
 - `control-panel-hyui.html` is kept for when HyUI supports 0.7; it is a separate layout from

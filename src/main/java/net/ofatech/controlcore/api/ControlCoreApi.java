@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface ControlCoreApi {
 
     /** Version of this API contract (semantic versioning). */
-    String VERSION = "1.0.0";
+    String VERSION = "1.1.0";
 
     /**
      * @return the running API
@@ -36,4 +36,11 @@ public interface ControlCoreApi {
     ControlPanelApi controlPanel();
 
     ControlCoreEvents events();
+
+    /**
+     * The shared settings registry.
+     *
+     * @since 1.1.0
+     */
+    SettingsApi settings();
 }

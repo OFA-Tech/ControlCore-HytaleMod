@@ -5,17 +5,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
+import net.ofatech.controlcore.application.event.DomainEventBus;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.ModSettings;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.ServerSettings;
+import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.platform.Capabilities;
 import net.ofatech.controlcore.domain.result.ErrorType;
+import net.ofatech.controlcore.fakes.FakePlayerData;
 import net.ofatech.controlcore.fakes.FakePlayers;
+import net.ofatech.controlcore.fakes.FakeSettingStore;
 import net.ofatech.controlcore.fakes.FakeSettings;
 import net.ofatech.controlcore.fakes.RecordingControlPanelView;
+import net.ofatech.controlcore.fakes.RecordingLog;
 import org.junit.jupiter.api.Test;
 
 class ControlPanelServiceTest {
@@ -28,6 +34,7 @@ class ControlPanelServiceTest {
     private final RecordingControlPanelView builtIn = new RecordingControlPanelView();
     private final RecordingControlPanelView uiMod = new RecordingControlPanelView();
     private final PlayerInfo admin = players.join("Admin");
+    private SettingsRegistry registry;
 
     private ControlPanelService service(Optional<ControlPanelView> capability) {
         Capabilities capabilities = new Capabilities() {
@@ -36,7 +43,22 @@ class ControlPanelServiceTest {
                 return type == ControlPanelView.class ? capability.map(type::cast) : Optional.empty();
             }
         };
-        return new ControlPanelService(settings, players, () -> SERVER, builtIn, capabilities);
+        RecordingLog log = new RecordingLog();
+        DomainEventBus bus = new DomainEventBus(log);
+        registry = new SettingsRegistry(new FakeSettingStore(), new FakePlayerData(), bus, bus, log);
+        return new ControlPanelService(
+                new ControlPanelSettings(registry, settings), players, () -> SERVER, builtIn, capabilities);
+    }
+
+    @Test
+    void theSwitchCanBeChangedLiveThroughTheRegistry() {
+        var service = service(Optional.empty());
+
+        registry.write(SettingId.of(ControlPanelSettings.ENABLED_ID), Optional.empty(), "false");
+
+        assertThat(service.isAvailable()).isFalse();
+        assertThat(service.open(admin.id(), ControlPanelRequest.ALL).error().code())
+                .isEqualTo("ControlPanel.Disabled");
     }
 
     @Test

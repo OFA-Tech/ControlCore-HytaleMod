@@ -27,9 +27,10 @@ A platform contains translations only, never feature logic.
 | `ServerConfiguration` | `server/HytaleServerConfiguration` | `HytaleServer.getConfig()` |
 | `ControlPanelView` | `ui/HytaleControlPanelView`, `ControlPanelPage` | `InteractiveCustomUIPage`, `PageManager`, `.ui` layout |
 | `PlayerData` | `infrastructure/persistence/JsonPlayerDataStore` | none; `players.json` in the plugin data folder |
+| `SettingStore` | `infrastructure/persistence/JsonSettingStore` | none; `SettingValues.json` in the plugin data folder |
 | `Clock` | `infrastructure/system/SystemClock` | none |
 
-The last two are not Hytale code, but `HytalePlatform.bind` creates them because it knows the data
+The last three are not Hytale code, but `HytalePlatform.bind` creates them because it knows the data
 folder.
 
 ### Updating Hytale

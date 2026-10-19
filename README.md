@@ -40,7 +40,12 @@ The long-term vision is a common configuration backbone where compatible mods ca
   current server config (name, MOTD, password set or not, max players, view radius, play timeout);
   **Player Prefs** and **Keymaps** are previews. Editing and rebinding are not wired yet. When a compatible
   [HyUI](https://www.curseforge.com/hytale/mods/hyui) is installed, its HTML panel is used instead.
-- `Settings.json` in the mod's data folder: `ControlPanelEnabled` (default `true`).
+- **Settings registry**: mods register typed settings (server-wide or per-player preferences) through
+  `ControlCoreApi.settings()`; ControlCore validates and stores them and reports changes. Admins use
+  `/cc-settings`, `/cc-get`, `/cc-set`, `/cc-reset` (`<base permission>.settings`); players use `/cc-prefs`,
+  `/cc-pref`, `/cc-pref-reset`. See [docs/api.md](docs/api.md#settings-registry).
+- `Settings.json` in the mod's data folder: `ControlPanelEnabled` (default `true`), the default of the
+  `controlcore:control-panel-enabled` setting. Changed values live in `SettingValues.json`.
 - Public API for other mods: `ControlCoreApi` (see [docs/api.md](docs/api.md)).
 
 Built on Hytale server **0.7.2** (`>=0.7.2 <0.8.0`), Java 25, Gradle 9.8.1 and

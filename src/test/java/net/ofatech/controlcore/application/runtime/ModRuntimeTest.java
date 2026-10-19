@@ -8,6 +8,8 @@ import net.ofatech.controlcore.api.ControlCoreApi;
 import net.ofatech.controlcore.domain.event.PlayerJoined;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
+import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
+import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.fakes.FakePlatform;
 import net.ofatech.controlcore.fakes.RecordingControlPanelView;
 import net.ofatech.controlcore.fakes.TestModPlatforms;
@@ -116,6 +118,74 @@ class ModRuntimeTest {
 
         assertThat(joined).hasSize(1);
         assertThat(result.isSuccess()).isTrue();
+    }
+
+    @Test
+    void settingsCommandsAreRegisteredWithTheirPermissions() {
+        runtime.setup();
+
+        assertThat(platform.commands.commands)
+                .containsKeys("cc-settings", "cc-get", "cc-set", "cc-reset", "cc-prefs", "cc-pref", "cc-pref-reset");
+        assertThat(platform.commands.commands.get("cc-set").spec().permission()).contains("settings");
+        assertThat(platform.commands.commands.get("cc-pref").spec().permission())
+                .isEmpty();
+        assertThat(platform.commands.commands.get("cc-pref").spec().playerOnly())
+                .isTrue();
+    }
+
+    @Test
+    void adminsCanSwitchThePanelOffAndOnWithSettingsCommands() {
+        runtime.setup();
+        runtime.start();
+        PlayerInfo admin = platform.players.join("Admin");
+
+        var set = platform.commands.run(
+                "cc-set", admin, Map.of("id", "ControlCore:Control-Panel-Enabled", "value", "off"));
+        var blocked = platform.commands.run(COMMAND, admin, Map.of());
+        var reset = platform.commands.run("cc-reset", admin, Map.of("id", "controlcore:control-panel-enabled"));
+        var opened = platform.commands.run(COMMAND, admin, Map.of());
+
+        assertThat(set.value().text()).contains("controlcore:control-panel-enabled is now false.");
+        assertThat(platform.settingStore.values).isEmpty();
+        assertThat(blocked.error().code()).isEqualTo("ControlPanel.Disabled");
+        assertThat(reset.value().text()).contains("controlcore:control-panel-enabled is now true (default).");
+        assertThat(opened.isSuccess()).isTrue();
+        assertThat(platform.log.contains("Admin set controlcore:control-panel-enabled = false"))
+                .isTrue();
+    }
+
+    @Test
+    void listAndGetDescribeSettings() {
+        runtime.setup();
+        PlayerInfo admin = platform.players.join("Admin");
+
+        var list = platform.commands.run("cc-settings", admin, Map.of());
+        var get = platform.commands.run("cc-get", admin, Map.of("id", "controlcore:control-panel-enabled"));
+        var bad = platform.commands.run("cc-get", admin, Map.of("id", "nope"));
+
+        assertThat(list.value().text().orElseThrow())
+                .contains("[ControlCore]", "controlcore:control-panel-enabled = true (default)");
+        assertThat(get.value().text().orElseThrow()).contains("Control panel enabled", "Type: boolean");
+        assertThat(bad.error().code()).isEqualTo("Settings.InvalidId");
+    }
+
+    @Test
+    void otherModsCanRegisterSettingsAndPlayersSetTheirPreferences() {
+        runtime.setup();
+        PlayerInfo player = platform.players.join("Player");
+        var settings = ControlCoreApi.get().settings();
+        var compact = settings.register(SettingDefinition.player("hud:compact", SettingType.bool(), false))
+                .value();
+
+        var set = platform.commands.run("cc-pref", player, Map.of("id", "hud:compact", "value", "yes"));
+        var prefs = platform.commands.run("cc-prefs", player, Map.of());
+        var wrongScope = platform.commands.run(
+                "cc-pref", player, Map.of("id", "controlcore:control-panel-enabled", "value", "false"));
+
+        assertThat(set.isSuccess()).isTrue();
+        assertThat(compact.get(player.id())).isTrue();
+        assertThat(prefs.value().text().orElseThrow()).contains("hud:compact = true");
+        assertThat(wrongScope.error().code()).isEqualTo("Settings.WrongScope");
     }
 
     @Test

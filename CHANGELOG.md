@@ -13,6 +13,13 @@
 - `/open-admin-config` now requires the `<base permission>.admin` node.
 
 ### Added
+- Shared settings registry (`ControlCoreApi.settings()`, API 1.1.0): mods register typed settings
+  (`bool`, `integer`, `decimal`, `text`, `choice`) with server or player scope; values are validated,
+  stored in `SettingValues.json` / `players.json` and reported through `SettingChanged`.
+- Commands `/cc-settings`, `/cc-get`, `/cc-set`, `/cc-reset` (`<base>.settings`) and `/cc-prefs`,
+  `/cc-pref`, `/cc-pref-reset` (players, their own preferences).
+- `controlcore:control-panel-enabled` setting: `ControlPanelEnabled` in `Settings.json` is now its
+  default, and `/cc-set` changes it without a restart.
 - Built-in control panel with native Hytale UI (`Pages/ControlCore/ControlPanel.ui`) showing the current
   server config; used whenever HyUI is missing or incompatible (HyUI 0.9.8 crashes worlds on 0.7).
 - `ControlCoreApi` / `ControlPanelApi` for other mods; `Result` / `Error` for expected failures.

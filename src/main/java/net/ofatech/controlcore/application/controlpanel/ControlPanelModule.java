@@ -16,7 +16,7 @@ public final class ControlPanelModule implements FeatureModule {
     @Override
     public void start(ModuleContext context) {
         if (!controlPanel.isAvailable()) {
-            context.log().info("Control panel is disabled in Settings.json");
+            context.log().info("Control panel is disabled (setting " + ControlPanelSettings.ENABLED_ID + ")");
         } else if (controlPanel.usesUiMod()) {
             context.log().info("Control panel is available (HyUI): /open-admin-config");
         } else {

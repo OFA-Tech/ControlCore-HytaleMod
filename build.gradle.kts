@@ -91,7 +91,8 @@ tasks.withType<Javadoc>().configureEach {
 
 // runServer links run/mods/<Group>_<Name> (the plugin's data folder) to src/main/resources,
 // so runtime files written there must never be packaged.
-val runtimeDataFiles = listOf("Settings.json", "Settings.json.bak", "players.json", "players.json.tmp")
+val runtimeDataFiles = listOf("Settings.json", "Settings.json.bak", "players.json", "players.json.tmp",
+    "SettingValues.json", "SettingValues.json.tmp")
 
 tasks.processResources {
     exclude(runtimeDataFiles)
@@ -99,6 +100,12 @@ tasks.processResources {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+// The run directory holds the server's log lock files (run/logs/*.lck), which Windows will not let Gradle
+// hash while a server runs or after one crashed. Tracking it gains nothing: the task must always run.
+tasks.matching { it.name == "prepareRunServer" }.configureEach {
+    doNotTrackState("The run directory contains locked server log files")
 }
 
 tasks.named<Jar>("jar") {

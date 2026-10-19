@@ -3,6 +3,7 @@ package net.ofatech.controlcore.infrastructure.platforms.hytale;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
+import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
 import net.ofatech.controlcore.domain.ports.game.Messenger;
@@ -17,6 +18,7 @@ import net.ofatech.controlcore.domain.ports.platform.PortBinder;
 import net.ofatech.controlcore.domain.ports.system.Clock;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.infrastructure.persistence.JsonPlayerDataStore;
+import net.ofatech.controlcore.infrastructure.persistence.JsonSettingStore;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.command.HytaleCommandRegistrar;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.config.HytaleSettingsProvider;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.event.HytaleGameEvents;
@@ -58,6 +60,9 @@ public final class HytalePlatform implements Platform {
         binder.bind(
                 PlayerData.class,
                 new JsonPlayerDataStore(plugin.getDataDirectory().resolve("players.json"), log));
+        binder.bind(
+                SettingStore.class,
+                new JsonSettingStore(plugin.getDataDirectory().resolve("SettingValues.json"), log));
         binder.bind(
                 CommandRegistrar.class,
                 new HytaleCommandRegistrar(plugin.getCommandRegistry(), plugin.getBasePermission(), log));

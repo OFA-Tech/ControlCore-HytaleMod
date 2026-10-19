@@ -18,11 +18,12 @@ All of them live in `application/<feature>/` except `ModPlatform`, which lives i
 
 Constructor parameters are resolved by type:
 
-- **Ports** (`Players`, `Messenger`, `Permissions`, `Scheduler`, `PlayerData`, `SettingsProvider`,
+- **Ports** (`Players`, `Messenger`, `Permissions`, `Scheduler`, `PlayerData`, `SettingsProvider`, `SettingStore`,
   `CommandRegistrar`, `ModLookup`, `Clock`, `Log`), bound by the platform.
 - **Runtime objects**: `EventPublisher`, `ControlCoreEvents`, `Capabilities`, `ModuleContext`.
 - **Your own classes**, created once and shared, for example `ControlPanelService`.
-- **Interfaces with one `@AutoService` provider**, for example `ControlPanelApi` → `ControlPanelService`.
+- **Interfaces with one `@AutoService` provider**, for example `ControlPanelApi` → `ControlPanelService`
+  and `SettingsApi` → `SettingsRegistry`.
 
 Generic parameters (`Optional<X>`, `List<X>`) are not supported. Ask `Capabilities` for optional
 things instead.
@@ -75,7 +76,8 @@ public final class SayBye implements ModEventHandler<PlayerLeft> {
 }
 ```
 
-Game events available today: `PlayerJoined`, `PlayerLeft`. To get a new Hytale event, translate it in
+Events available today: `PlayerJoined`, `PlayerLeft` (from Hytale) and `SettingChanged` (from the
+settings registry). To get a new Hytale event, translate it in
 `platforms/hytale/event/HytaleGameEvents` (see [platforms.md](platforms.md)).
 
 ## Feature modules
@@ -105,6 +107,30 @@ public final class Autosave implements ModTask {
 ```
 
 Tasks run off the world thread. Do not touch world or entity state directly from a task.
+
+## Settings
+
+ControlCore's own features use the same registry as other mods. Put the settings of a feature in a small
+class that registers them in its constructor and exposes typed getters, then inject that class:
+
+```java
+public final class ControlPanelSettings {
+    private final Setting<Boolean> enabled;
+
+    public ControlPanelSettings(SettingsApi settings, SettingsProvider defaults) {
+        this.enabled = settings.register(SettingDefinition.server(
+                        "controlcore:control-panel-enabled", SettingType.bool(),
+                        defaults.current().controlPanelEnabled())
+                .named("Control panel enabled")).value();
+    }
+
+    public boolean panelEnabled() { return enabled.get(); }
+}
+```
+
+Read the value on every use (`enabled.get()`), so `/cc-set` takes effect without a restart. Values in
+`Settings.json` only serve as defaults for these settings. See [api.md](api.md#settings-registry) for
+types, scopes and commands.
 
 ## Testing
 

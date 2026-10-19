@@ -34,12 +34,14 @@ infrastructure  implementations of ports
 ```
 net/ofatech/controlcore/
 ├── Main.java                          plugin entry point (manifest "Main"), delegates to ModRuntime
-├── api/                               ControlCoreApi, ControlCoreApiProvider, ControlPanelApi, ControlCoreEvents
+├── api/                               ControlCoreApi, ControlCoreApiProvider, ControlPanelApi, ControlCoreEvents,
+│                                      SettingsApi, Setting
 ├── domain/
 │   ├── result/                        Result, Error, ErrorType
 │   ├── model/                         PlayerId, PlayerInfo, ModSettings, ControlPanelRequest
+│   │   └── settings/                  SettingId, SettingType, SettingScope, SettingDefinition, SettingSnapshot
 │   ├── event/                         DomainEvent, CancellableEvent, Subscription,
-│   │                                  PlayerJoined, PlayerLeft
+│   │                                  PlayerJoined, PlayerLeft, SettingChanged
 │   ├── guard/                         Guard, DomainException
 │   └── ports/
 │       ├── platform/                  Platform, PortBinder, ModPlatform, CapabilityBinder, Capabilities
@@ -50,7 +52,7 @@ net/ofatech/controlcore/
 │       ├── event/                     EventPublisher
 │       ├── mods/                      ModLookup
 │       ├── capability/                ControlPanelView (built-in, or offered by a UI mod)
-│       ├── config/                    SettingsProvider
+│       ├── config/                    SettingsProvider, SettingStore
 │       └── system/                    Clock, Log
 ├── application/
 │   ├── component/                     ModCommand, ModEventHandler, FeatureModule, ModTask,
@@ -59,11 +61,12 @@ net/ofatech/controlcore/
 │   │                                  ControlCoreApiService
 │   ├── event/                         DomainEventBus
 │   ├── controlpanel/                  ControlPanelService, OpenControlPanelCommand,
-│   ├──                                ControlPanelModule
+│   │                                  ControlPanelModule, ControlPanelSettings
+│   ├── settings/                      SettingsRegistry (SettingsApi), /cc-* commands
 │   └── persistence/                   PlayerDataFlushTask
 └── infrastructure/
     ├── system/                        SystemClock
-    ├── persistence/                   JsonPlayerDataStore
+    ├── persistence/                   JsonPlayerDataStore, JsonSettingStore
     └── platforms/
         ├── hytale/                    HytalePlatform + command/ config/ event/ log/ mapping/ mods/
         │                              player/ server/ ui/ world/

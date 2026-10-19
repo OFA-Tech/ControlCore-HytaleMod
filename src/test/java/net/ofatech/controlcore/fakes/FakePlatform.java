@@ -3,6 +3,7 @@ package net.ofatech.controlcore.fakes;
 import net.ofatech.controlcore.domain.model.ServerSettings;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
+import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
 import net.ofatech.controlcore.domain.ports.game.Messenger;
@@ -26,6 +27,7 @@ public final class FakePlatform implements Platform {
     public final FakePlayers players = new FakePlayers();
     public final FakeMessenger messenger = new FakeMessenger();
     public final FakePlayerData playerData = new FakePlayerData();
+    public final FakeSettingStore settingStore = new FakeSettingStore();
     public final FakeScheduler scheduler = new FakeScheduler();
     public final FakeCommandRegistrar commands = new FakeCommandRegistrar();
     public final FakeModLookup mods = new FakeModLookup();
@@ -48,6 +50,7 @@ public final class FakePlatform implements Platform {
         binder.bind(Messenger.class, messenger);
         binder.bind(Permissions.class, (player, node) -> true);
         binder.bind(PlayerData.class, playerData);
+        binder.bind(SettingStore.class, settingStore);
         binder.bind(Scheduler.class, scheduler);
         binder.bind(CommandRegistrar.class, commands);
         binder.bind(ModLookup.class, mods);

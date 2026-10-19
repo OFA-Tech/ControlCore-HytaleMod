@@ -11,6 +11,8 @@ src/main/resources/Settings.json
 src/main/resources/Settings.json.bak
 src/main/resources/players.json
 src/main/resources/players.json.tmp
+src/main/resources/SettingValues.json
+src/main/resources/SettingValues.json.tmp
 
 ### IntelliJ IDEA ###
 .idea/
