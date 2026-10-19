@@ -1,0 +1,129 @@
+package net.ofatech.controlcore.application.runtime;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.util.Map;
+import net.ofatech.controlcore.api.ControlCoreApi;
+import net.ofatech.controlcore.domain.event.PlayerJoined;
+import net.ofatech.controlcore.domain.model.ControlPanelRequest;
+import net.ofatech.controlcore.domain.model.PlayerInfo;
+import net.ofatech.controlcore.fakes.FakePlatform;
+import net.ofatech.controlcore.fakes.TestModPlatforms;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+/** Builds every discovered component against fake ports: the "does it all resolve" test. */
+class ModRuntimeTest {
+
+    private static final String COMMAND = "open-admin-config";
+
+    private final FakePlatform platform = new FakePlatform();
+    private final ModRuntime runtime = new ModRuntime(platform, ModRuntimeTest.class.getClassLoader());
+
+    @BeforeEach
+    void reset() {
+        TestModPlatforms.OPENED.clear();
+    }
+
+    @AfterEach
+    void shutDown() {
+        runtime.shutdown();
+    }
+
+    @Test
+    void setupResolvesAndRegistersEveryComponent() {
+        runtime.setup();
+
+        assertThat(platform.commands.commands).containsKey(COMMAND);
+        var spec = platform.commands.commands.get(COMMAND).spec();
+        assertThat(spec.permission()).contains("admin");
+        assertThat(spec.playerOnly()).isTrue();
+        assertThat(platform.connectedPublisher).isNotNull();
+        assertThat(platform.log.contains("Set up on Fake")).isTrue();
+    }
+
+    @Test
+    void commandOpensThePanelWhenAUiModIsLoaded() {
+        platform.mods.loaded.add(TestModPlatforms.WORKING);
+        runtime.setup();
+        runtime.start();
+        PlayerInfo admin = platform.players.join("Admin");
+
+        var result = platform.commands.run(COMMAND, admin, Map.of());
+
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(result.value().text()).isEmpty();
+        assertThat(TestModPlatforms.OPENED).containsExactly(admin.id());
+        assertThat(platform.log.contains("Control panel is available")).isTrue();
+    }
+
+    @Test
+    void commandExplainsWhenNoUiModIsLoaded() {
+        runtime.setup();
+        runtime.start();
+        PlayerInfo admin = platform.players.join("Admin");
+
+        var result = platform.commands.run(COMMAND, admin, Map.of());
+
+        assertThat(result.error().code()).isEqualTo("ControlPanel.UiUnavailable");
+        assertThat(platform.log.contains("Ellie:HyUI is not installed")).isTrue();
+        assertThat(platform.log.contains("Control panel is unavailable")).isTrue();
+    }
+
+    @Test
+    void aBrokenModPlatformStaysIsolated() {
+        platform.mods.loaded.add(TestModPlatforms.WORKING);
+        platform.mods.loaded.add(TestModPlatforms.BROKEN);
+        runtime.setup();
+
+        runtime.start();
+
+        assertThat(platform.log.contains("Integration with Test:Broken failed")).isTrue();
+        assertThat(ControlCoreApi.get().controlPanel().isAvailable()).isTrue();
+    }
+
+    @Test
+    void apiIsAvailableOnlyBetweenSetupAndShutdown() {
+        assertThat(ControlCoreApi.find()).isEmpty();
+        assertThatThrownBy(ControlCoreApi::get).isInstanceOf(IllegalStateException.class);
+
+        runtime.setup();
+        ControlCoreApi api = ControlCoreApi.get();
+        assertThat(api.apiVersion()).isEqualTo(ControlCoreApi.VERSION);
+
+        runtime.shutdown();
+        assertThat(ControlCoreApi.find()).isEmpty();
+    }
+
+    @Test
+    void otherModsCanOpenThePanelAndListenToGameEvents() {
+        platform.mods.loaded.add(TestModPlatforms.WORKING);
+        runtime.setup();
+        runtime.start();
+        PlayerInfo admin = platform.players.join("Admin");
+        var joined = new java.util.ArrayList<PlayerJoined>();
+        ControlCoreApi.get().events().subscribe(PlayerJoined.class, joined::add);
+
+        platform.connectedPublisher.publish(new PlayerJoined(admin));
+        var result = ControlCoreApi.get().controlPanel().open(admin.id(), ControlPanelRequest.ALL);
+
+        assertThat(joined).hasSize(1);
+        assertThat(result.isSuccess()).isTrue();
+    }
+
+    @Test
+    void tasksAreScheduledAndRunOnceMoreAtShutdown() {
+        runtime.setup();
+        runtime.start();
+
+        assertThat(platform.scheduler.entries).hasSize(1);
+        platform.scheduler.runAll();
+        assertThat(platform.playerData.flushes).isEqualTo(1);
+
+        runtime.shutdown();
+        assertThat(platform.scheduler.entries.getFirst().cancelled).isTrue();
+        assertThat(platform.playerData.flushes).isEqualTo(2);
+    }
+}
