@@ -222,13 +222,23 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                                     new DropdownEntryInfo(LocalizableString.fromString(option.label()), option.label()))
                             .toList());
             commands.set(filter + ".Value", current.filter().label());
+            String match = key.search + "Match";
+            commands.set(
+                    match + ".Entries",
+                    Arrays.stream(SettingSearch.Match.values())
+                            .map(option ->
+                                    new DropdownEntryInfo(LocalizableString.fromString(option.label()), option.label()))
+                            .toList());
+            commands.set(match + ".Value", current.match().label());
             EventData search = new EventData()
                     .append(Action.KEY, SEARCH)
                     .append(Action.SECTION, key.name())
                     .append(Action.VALUE, key.search + ".Value")
-                    .append(Action.FILTER, filter + ".Value");
+                    .append(Action.FILTER, filter + ".Value")
+                    .append(Action.MATCH, match + ".Value");
             events.addEventBinding(CustomUIEventBindingType.ValueChanged, key.search, search);
             events.addEventBinding(CustomUIEventBindingType.ValueChanged, filter, search);
+            events.addEventBinding(CustomUIEventBindingType.ValueChanged, match, search);
             applySearch(key, section, commands, false);
         });
         for (Tab tab : Tab.values()) {
@@ -285,7 +295,12 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             addBind(action);
         } else if (SEARCH.equals(name)) {
             sectionOf(action.section).ifPresent(key -> {
-                searches.put(key, SettingSearch.parse(action.value, SettingSearch.Filter.of(action.filter)));
+                searches.put(
+                        key,
+                        SettingSearch.parse(
+                                action.value,
+                                SettingSearch.Filter.of(action.filter),
+                                SettingSearch.Match.of(action.match)));
                 UICommandBuilder update = new UICommandBuilder();
                 applySearch(key, sections.get(key), update, true);
                 sendUpdate(update, false);
@@ -652,6 +667,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         static final String NAME = "@BindName";
         static final String KEYS = "@BindKeys";
         static final String FILTER = "@Filter";
+        static final String MATCH = "@Match";
 
         static final BuilderCodec<Action> CODEC = BuilderCodec.builder(Action.class, Action::new)
                 .append(
@@ -691,6 +707,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                         (action, value) -> action.filter = value,
                         action -> action.filter)
                 .add()
+                .append(
+                        new KeyedCodec<>(MATCH, Codec.STRING),
+                        (action, value) -> action.match = value,
+                        action -> action.match)
+                .add()
                 .build();
 
         private String name;
@@ -701,5 +722,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         private String bindName;
         private String bindKeys;
         private String filter;
+        private String match;
     }
 }

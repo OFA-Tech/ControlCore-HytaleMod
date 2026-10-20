@@ -17,7 +17,9 @@
   words match the name, id, mod id, category, value, default or description (all must match; `ctrl+f`
   finds `CTRL + F`). Prefixes `name:`, `id:`, `mod:`, `cat:`, `key:`/`value:`, `default:`, `desc:`,
   `is:changed`/`is:default`, and `-` to exclude. A dropdown left of each search box (default All) limits words to
-  one field or shows only changed or default values. The search is kept while the panel is open.
+  one field or shows only changed or default values; a second dropdown picks how text is compared (Contains,
+  Equals, Starts with, Ends with, or their "Doesn't …" opposites; Equals/Starts/Ends compare the whole text).
+  The search is kept while the panel is open.
 - **Key actions** (API 1.3.0, `ControlCoreApi.keymaps()`): mods register `KeyAction.of(modId, action)`
   with a display name, a command and/or `onPress` code and default keys (`Key` and `GameAction`
   combinations). ControlCore detects them while players play (Q, E, R, F, O, 1-9, mouse buttons, Alt tap,

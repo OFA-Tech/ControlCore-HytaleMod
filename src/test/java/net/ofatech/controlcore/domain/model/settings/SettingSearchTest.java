@@ -75,6 +75,43 @@ class SettingSearchTest {
         assertThat(SettingSearch.Filter.of(null)).isEqualTo(SettingSearch.Filter.ALL);
     }
 
+    @Test
+    void theMatchDropdownComparesWordsAndCanNegate() {
+        assertThat(compared("go home", SettingSearch.Filter.NAME, SettingSearch.Match.EQUALS, home))
+                .as("spaces are ignored on both sides")
+                .isTrue();
+        assertThat(compared("go", SettingSearch.Filter.NAME, SettingSearch.Match.EQUALS, home))
+                .isFalse();
+        assertThat(compared("go", SettingSearch.Filter.NAME, SettingSearch.Match.STARTS_WITH, home))
+                .isTrue();
+        assertThat(compared("home", SettingSearch.Filter.NAME, SettingSearch.Match.STARTS_WITH, home))
+                .isFalse();
+        assertThat(compared("+f", SettingSearch.Filter.VALUE, SettingSearch.Match.ENDS_WITH, home))
+                .isTrue();
+        assertThat(compared("ctrl", SettingSearch.Filter.VALUE, SettingSearch.Match.NOT_CONTAINS, home))
+                .isFalse();
+        assertThat(compared("alt", SettingSearch.Filter.VALUE, SettingSearch.Match.NOT_CONTAINS, home))
+                .isTrue();
+        assertThat(compared("homes", SettingSearch.Filter.MOD, SettingSearch.Match.NOT_EQUALS, welcome))
+                .isTrue();
+        assertThat(compared("go", SettingSearch.Filter.NAME, SettingSearch.Match.NOT_STARTS_WITH, home))
+                .isFalse();
+        assertThat(compared("home", SettingSearch.Filter.NAME, SettingSearch.Match.NOT_ENDS_WITH, home))
+                .isFalse();
+        assertThat(compared("-ctrl", SettingSearch.Filter.VALUE, SettingSearch.Match.NOT_CONTAINS, home))
+                .as("a minus flips a Doesn't match back")
+                .isTrue();
+        assertThat(compared("anything", SettingSearch.Filter.CHANGED, SettingSearch.Match.NOT_CONTAINS, welcome))
+                .isTrue();
+        assertThat(SettingSearch.Match.of("Doesn't end with")).isEqualTo(SettingSearch.Match.NOT_ENDS_WITH);
+        assertThat(SettingSearch.Match.of("nonsense")).isEqualTo(SettingSearch.Match.CONTAINS);
+    }
+
+    private static boolean compared(
+            String query, SettingSearch.Filter filter, SettingSearch.Match match, SettingSnapshot snapshot) {
+        return SettingSearch.parse(query, filter, match).matches(snapshot, "Sent to players when they join.");
+    }
+
     private static boolean filtered(String query, SettingSearch.Filter filter, SettingSnapshot snapshot) {
         return SettingSearch.parse(query, filter).matches(snapshot, "Sent to players when they join.");
     }

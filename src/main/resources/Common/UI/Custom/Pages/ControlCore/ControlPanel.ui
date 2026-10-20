@@ -68,6 +68,10 @@ $C.@PageOverlay {
           Anchor: (Height: 34, Bottom: 8);
 
           $C.@DropdownBox #ServerSearchFilter {
+            Anchor: (Width: 150, Right: 6);
+          }
+
+          $C.@DropdownBox #ServerSearchMatch {
             Anchor: (Width: 170, Right: 6);
           }
 
@@ -110,6 +114,10 @@ $C.@PageOverlay {
           Anchor: (Height: 34, Bottom: 8);
 
           $C.@DropdownBox #SettingsSearchFilter {
+            Anchor: (Width: 150, Right: 6);
+          }
+
+          $C.@DropdownBox #SettingsSearchMatch {
             Anchor: (Width: 170, Right: 6);
           }
 
@@ -152,6 +160,10 @@ $C.@PageOverlay {
           Anchor: (Height: 34, Bottom: 8);
 
           $C.@DropdownBox #PlayerSearchFilter {
+            Anchor: (Width: 150, Right: 6);
+          }
+
+          $C.@DropdownBox #PlayerSearchMatch {
             Anchor: (Width: 170, Right: 6);
           }
 
@@ -256,6 +268,10 @@ $C.@PageOverlay {
             Anchor: (Height: 34, Bottom: 8);
 
             $C.@DropdownBox #ServerKeymapSearchFilter {
+              Anchor: (Width: 150, Right: 6);
+            }
+
+            $C.@DropdownBox #ServerKeymapSearchMatch {
               Anchor: (Width: 170, Right: 6);
             }
 
@@ -291,6 +307,10 @@ $C.@PageOverlay {
             Anchor: (Height: 34, Bottom: 8);
 
             $C.@DropdownBox #KeymapSearchFilter {
+              Anchor: (Width: 150, Right: 6);
+            }
+
+            $C.@DropdownBox #KeymapSearchMatch {
               Anchor: (Width: 170, Right: 6);
             }
 

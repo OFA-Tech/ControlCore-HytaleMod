@@ -65,16 +65,74 @@ public final class SettingSearch {
         }
     }
 
+    /** How each word is compared with a field, picked in the second dropdown next to the search box. */
+    public enum Match {
+        CONTAINS("Contains", Operator.CONTAINS, false),
+        EQUALS("Equals", Operator.EQUALS, false),
+        STARTS_WITH("Starts with", Operator.STARTS_WITH, false),
+        ENDS_WITH("Ends with", Operator.ENDS_WITH, false),
+        NOT_CONTAINS("Doesn't contain", Operator.CONTAINS, true),
+        NOT_EQUALS("Doesn't equal", Operator.EQUALS, true),
+        NOT_STARTS_WITH("Doesn't start with", Operator.STARTS_WITH, true),
+        NOT_ENDS_WITH("Doesn't end with", Operator.ENDS_WITH, true);
+
+        private final String label;
+        private final Operator operator;
+        private final boolean negated;
+
+        Match(String label, Operator operator, boolean negated) {
+            this.label = label;
+            this.operator = operator;
+            this.negated = negated;
+        }
+
+        /** @return the text shown in the dropdown */
+        public String label() {
+            return label;
+        }
+
+        /** @param label a dropdown label or name; unknown or {@code null} gives {@link #CONTAINS} */
+        public static Match of(String label) {
+            if (label != null) {
+                for (Match match : values()) {
+                    if (match.label.equalsIgnoreCase(label.strip())
+                            || match.name().equalsIgnoreCase(label.strip())) {
+                        return match;
+                    }
+                }
+            }
+            return CONTAINS;
+        }
+    }
+
+    private enum Operator {
+        CONTAINS,
+        EQUALS,
+        STARTS_WITH,
+        ENDS_WITH;
+
+        boolean test(String text, String word) {
+            return switch (this) {
+                case CONTAINS -> text.contains(word);
+                case EQUALS -> text.equals(word);
+                case STARTS_WITH -> text.startsWith(word);
+                case ENDS_WITH -> text.endsWith(word);
+            };
+        }
+    }
+
     /** A search that matches everything. */
-    public static final SettingSearch ALL = new SettingSearch("", Filter.ALL, List.of());
+    public static final SettingSearch ALL = new SettingSearch("", Filter.ALL, Match.CONTAINS, List.of());
 
     private final String text;
     private final Filter filter;
+    private final Match match;
     private final List<Term> terms;
 
-    private SettingSearch(String text, Filter filter, List<Term> terms) {
+    private SettingSearch(String text, Filter filter, Match match, List<Term> terms) {
         this.text = text;
         this.filter = filter;
+        this.match = match;
         this.terms = terms;
     }
 
@@ -88,12 +146,26 @@ public final class SettingSearch {
      * @param filter what the dropdown is set to
      */
     public static SettingSearch parse(String text, Filter filter) {
+        return parse(text, filter, Match.CONTAINS);
+    }
+
+    /**
+     * @param text what the player typed; {@code null} or blank matches everything the filter lets through
+     * @param filter what the first dropdown is set to
+     * @param match how words are compared (the second dropdown); a {@code "Doesn't …"} match excludes rows where
+     *     the word matches, and a {@code -} in front of a word flips it again
+     */
+    public static SettingSearch parse(String text, Filter filter, Match match) {
         String query = text == null ? "" : text.strip();
         List<Term> terms = new ArrayList<>();
         if (filter == Filter.CHANGED || filter == Filter.UNCHANGED) {
-            terms.add(new Term(Field.IS, filter == Filter.CHANGED ? "changed" : "default", false));
+            terms.add(new Term(Field.IS, filter == Filter.CHANGED ? "changed" : "default", false, Operator.EQUALS));
         }
-        for (String word : query.isEmpty() ? new String[0] : query.split("\\s+")) {
+        // Equals, starts with and ends with compare the whole text as one phrase; contains checks each word.
+        String[] words = query.isEmpty()
+                ? new String[0]
+                : match.operator == Operator.CONTAINS ? query.split("\\s+") : new String[] {query};
+        for (String word : words) {
             boolean negated = word.startsWith("-") && word.length() > 1;
             String body = (negated ? word.substring(1) : word).toLowerCase(Locale.ROOT);
             Field field = filter.field;
@@ -106,10 +178,12 @@ public final class SettingSearch {
                 }
             }
             if (!body.isEmpty()) {
-                terms.add(new Term(field, compact(body), negated));
+                terms.add(new Term(field, compact(body), negated != match.negated, match.operator));
             }
         }
-        return terms.isEmpty() && filter == Filter.ALL ? ALL : new SettingSearch(query, filter, List.copyOf(terms));
+        return terms.isEmpty() && filter == Filter.ALL
+                ? (match == Match.CONTAINS ? ALL : new SettingSearch("", filter, match, List.of()))
+                : new SettingSearch(query, filter, match, List.copyOf(terms));
     }
 
     /** @return what the player typed */
@@ -117,9 +191,14 @@ public final class SettingSearch {
         return text;
     }
 
-    /** @return what the dropdown is set to */
+    /** @return what the first dropdown is set to */
     public Filter filter() {
         return filter;
+    }
+
+    /** @return how words are compared (the second dropdown) */
+    public Match match() {
+        return match;
     }
 
     public boolean isEmpty() {
@@ -169,7 +248,7 @@ public final class SettingSearch {
         }
     }
 
-    private record Term(Field field, String word, boolean negated) {
+    private record Term(Field field, String word, boolean negated, Operator operator) {
 
         boolean matches(SettingSnapshot snapshot, String description) {
             SettingDefinition<?> definition = snapshot.definition();
@@ -198,7 +277,7 @@ public final class SettingSearch {
         }
 
         private boolean has(String text) {
-            return text != null && compact(text).contains(word);
+            return text != null && operator.test(compact(text), word);
         }
     }
 }
