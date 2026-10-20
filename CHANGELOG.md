@@ -13,6 +13,31 @@
 - `/open-admin-config` now requires the `<base permission>.admin` node.
 
 ### Added
+- **Search** in every control panel list (Server Configs, Mod Settings, Player Prefs, both Keymaps views):
+  words match the name, id, mod id, category, value, default or description (all must match; `ctrl+f`
+  finds `CTRL + F`). Prefixes `name:`, `id:`, `mod:`, `cat:`, `key:`/`value:`, `default:`, `desc:`,
+  `is:changed`/`is:default`, and `-` to exclude. A dropdown left of each search box (default All) limits words to
+  one field or shows only changed or default values; a second dropdown picks how text is compared (Contains,
+  Equals, Starts with, Ends with, or their "Doesn't …" opposites; Equals/Starts/Ends compare the whole text).
+  The search is kept while the panel is open.
+- **Key actions** (API 1.3.0, `ControlCoreApi.keymaps()`): mods register `KeyAction.of(modId, action)`
+  with a display name, a command and/or `onPress` code and default keys (`Key` and `GameAction`
+  combinations). ControlCore detects them while players play (Q, E, R, F, O, 1-9, mouse buttons, Alt tap,
+  with Ctrl/Alt/Shift/Space held), cancels the key's game action, and runs the command as the player on a
+  virtual thread. Players rebind in the **Keymaps** tab (now also in `/prefs`) or with `/cc-keys`,
+  `/cc-bind`, `/cc-bind-reset`; admins use `/cc-bind-server` and `/cc-bind-server-reset`. Keys Hytale
+  does not report are kept and marked not available. ControlCore registers `controlcore:open-preferences`
+  (`CTRL + F`).
+- Key actions can run as the server console (`.runAsServer()`) and be limited to a permission
+  (`.permission(node)`); server-run actions without one need `<base>.keys.server`. Players only see and
+  trigger actions they may use.
+- Admins create their own key binds without a mod: `/cc-keybind-add`, `/cc-keybind-add-server`,
+  `/cc-keybind-remove`, `/cc-keybind-list` and a form in the admin panel's Keymaps tab with Edit and Remove
+  on each bind (saved in `CustomKeyBinds.json`). Adding a name again replaces it; quotes around the
+  command are dropped.
+- The admin panel's Keymaps tab switches between **Server defaults** (the keys everyone gets; Default goes back
+  to the mod's) and **My keys** (only yours; Default goes back to the server's). Open panels follow changes.
+- `/cc-input-probe` and `/cc-key-probe input` (admin): show what the client reports for each key.
 - **Server Configs** tab lists every key of the server's `config.json`, read from Hytale's config
   definition: live keys (name, MOTD, max players, max view radius, connection timeouts, require join
   permission) apply at once, restart keys (world defaults, rate limit, backup, update, world map) apply

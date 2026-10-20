@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface ControlCoreApi {
 
     /** Version of this API contract (semantic versioning). */
-    String VERSION = "1.2.0";
+    String VERSION = "1.3.0";
 
     /**
      * @return the running API
@@ -43,4 +43,11 @@ public interface ControlCoreApi {
      * @since 1.1.0
      */
     SettingsApi settings();
+
+    /**
+     * Key actions: commands and code players run with keys, rebindable per player.
+     *
+     * @since 1.3.0
+     */
+    KeymapsApi keymaps();
 }

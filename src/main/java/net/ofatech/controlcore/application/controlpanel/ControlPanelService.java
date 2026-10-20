@@ -3,6 +3,7 @@ package net.ofatech.controlcore.application.controlpanel;
 import com.google.auto.service.AutoService;
 import net.ofatech.controlcore.api.ControlPanelApi;
 import net.ofatech.controlcore.api.SettingsApi;
+import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.domain.model.ControlPanelContent;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
@@ -24,6 +25,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final Capabilities capabilities;
     private final SettingsApi registry;
     private final ServerConfigEditor serverConfig;
+    private final KeymapsEditor keymaps;
 
     public ControlPanelService(
             ControlPanelSettings settings,
@@ -32,7 +34,8 @@ public final class ControlPanelService implements ControlPanelApi {
             ControlPanelView platformView,
             Capabilities capabilities,
             SettingsApi registry,
-            ServerConfigEditor serverConfig) {
+            ServerConfigEditor serverConfig,
+            KeymapsEditor keymaps) {
         this.settings = settings;
         this.players = players;
         this.server = server;
@@ -40,6 +43,7 @@ public final class ControlPanelService implements ControlPanelApi {
         this.capabilities = capabilities;
         this.registry = registry;
         this.serverConfig = serverConfig;
+        this.keymaps = keymaps;
     }
 
     @Override
@@ -74,6 +78,7 @@ public final class ControlPanelService implements ControlPanelApi {
         return view.open(
                 player,
                 request,
-                new ControlPanelContent(server.read(), serverConfig, registry, settings.startTab(player)));
+                new ControlPanelContent(
+                        server.read(), serverConfig, registry, keymaps, keymaps, settings.startTab(player)));
     }
 }

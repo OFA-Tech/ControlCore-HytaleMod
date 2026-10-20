@@ -124,6 +124,8 @@ summaries. `ServerConfigEditor` turns each key into a `server:*` setting (`Conne
 Open:
 
 - Settings registered while a panel is open appear after reopening it.
+- **Search:** each list has a search field (`#…Search`, `ValueChanged`); `SettingSearch` (domain) parses it and
+  `ControlPanelPage.applySearch` hides rows that do not match, plus headings with no shown row.
 - **Server Configs tab:** the password and structured keys are read-only (edit them in
   `config.json`). Changes made with Hytale's own `/maxplayers` or `/maxviewradius` are not pushed to open
   panels (Hytale has no event for them); they show after reopening. Keys without a default (backup

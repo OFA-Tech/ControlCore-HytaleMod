@@ -41,13 +41,22 @@ The long-term vision is a common configuration backbone where compatible mods ca
   running apply at once, others are saved and apply after a restart, and internal ones (password, storage,
   mods) are shown read-only;
   **Mod Settings** lists and edits every registered server setting; **Player Prefs** edits your own
-  preferences; **Keymaps** is a preview (rebinding is not wired yet). Any player can open their own
-  preferences with `/prefs`. Open panels update when a setting changes elsewhere. When a compatible
+  preferences; **Keymaps** edits the server's default keys (admins) and your own key bindings. Every list has a search box
+  (for example `mod:controlcore`, `key:ctrl+f`, `is:changed`). Any player can open their own preferences and
+  key bindings with `/prefs`. Open panels update when a setting changes elsewhere. When a compatible
   [HyUI](https://www.curseforge.com/hytale/mods/hyui) is installed, its HTML panel is used instead.
 - **Settings registry**: mods register typed settings (server-wide or per-player preferences) through
   `ControlCoreApi.settings()`; ControlCore validates and stores them and reports changes. Admins use
   `/cc-settings`, `/cc-get`, `/cc-set`, `/cc-reset` (`<base permission>.settings`); players use `/cc-prefs`,
   `/cc-pref`, `/cc-pref-reset`. See [docs/api.md](docs/api.md#settings-registry).
+- **Key actions**: mods register a command or code with default keys through `ControlCoreApi.keymaps()`
+  (`KeyAction.of(modId, action).displayName(..).command(..).defaultKeys(Key.CTRL, Key.F)`); players
+  rebind them in Keymaps or with `/cc-keys`, `/cc-bind`, `/cc-bind-reset`; admins set server keys with
+  `/cc-bind-server`. Actions can run as the server (`.runAsServer()`, limited by permission), and admins
+  can create their own binds without a mod (`/cc-keybind-add`, `/cc-keybind-add-server`, or the admin
+  panel's Keymaps tab). Hytale only reports some keys to servers (Q, E, R, F, O, 1-9, mouse buttons, Alt tap,
+  with Ctrl/Alt/Shift/Space held); others are kept and marked not available. See
+  [docs/api.md](docs/api.md#key-actions).
 - ControlCore's own settings: `controlcore:control-panel-enabled`, `controlcore:welcome-message` (sent to
   joining players, `{player}` is their name), and per-player `controlcore:show-welcome-message` and
   `controlcore:panel-start-tab`.

@@ -3,12 +3,17 @@ package net.ofatech.controlcore.infrastructure.platforms.hytale;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
+import net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore;
+import net.ofatech.controlcore.domain.ports.config.KeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
+import net.ofatech.controlcore.domain.ports.game.CommandRunner;
+import net.ofatech.controlcore.domain.ports.game.InputProbe;
 import net.ofatech.controlcore.domain.ports.game.Messenger;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
 import net.ofatech.controlcore.domain.ports.game.PlayerData;
+import net.ofatech.controlcore.domain.ports.game.PlayerInput;
 import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.game.Scheduler;
 import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
@@ -17,11 +22,16 @@ import net.ofatech.controlcore.domain.ports.platform.Platform;
 import net.ofatech.controlcore.domain.ports.platform.PortBinder;
 import net.ofatech.controlcore.domain.ports.system.Clock;
 import net.ofatech.controlcore.domain.ports.system.Log;
+import net.ofatech.controlcore.infrastructure.persistence.JsonCustomKeyBindStore;
+import net.ofatech.controlcore.infrastructure.persistence.JsonKeyBindStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonPlayerDataStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonSettingStore;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.command.HytaleCommandRegistrar;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.config.HytaleSettingsProvider;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.event.HytaleGameEvents;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleCommandRunner;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleInputProbe;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytalePlayerInput;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.log.HytaleLog;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.mods.HytaleModLookup;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytaleMessenger;
@@ -55,7 +65,7 @@ public final class HytalePlatform implements Platform {
         binder.bind(SettingsProvider.class, new HytaleSettingsProvider(plugin.getDataDirectory(), log));
         binder.bind(Players.class, players);
         binder.bind(Messenger.class, new HytaleMessenger());
-        binder.bind(Permissions.class, new HytalePermissions());
+        binder.bind(Permissions.class, new HytalePermissions(plugin.getBasePermission()));
         binder.bind(Scheduler.class, new HytaleScheduler(plugin.getTaskRegistry(), log));
         binder.bind(
                 PlayerData.class,
@@ -69,6 +79,15 @@ public final class HytalePlatform implements Platform {
         binder.bind(ModLookup.class, new HytaleModLookup());
         binder.bind(ServerConfiguration.class, new HytaleServerConfiguration(log));
         binder.bind(ControlPanelView.class, new HytaleControlPanelView(log));
+        binder.bind(InputProbe.class, new HytaleInputProbe(log));
+        binder.bind(PlayerInput.class, new HytalePlayerInput(log));
+        binder.bind(CommandRunner.class, new HytaleCommandRunner(log));
+        binder.bind(
+                KeyBindStore.class,
+                new JsonKeyBindStore(plugin.getDataDirectory().resolve("KeyBinds.json"), log));
+        binder.bind(
+                CustomKeyBindStore.class,
+                new JsonCustomKeyBindStore(plugin.getDataDirectory().resolve("CustomKeyBinds.json"), log));
     }
 
     @Override
