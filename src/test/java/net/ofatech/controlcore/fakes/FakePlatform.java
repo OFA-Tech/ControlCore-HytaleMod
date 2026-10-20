@@ -6,6 +6,7 @@ import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
 import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
+import net.ofatech.controlcore.domain.ports.game.InputProbe;
 import net.ofatech.controlcore.domain.ports.game.Messenger;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
 import net.ofatech.controlcore.domain.ports.game.PlayerData;
@@ -56,6 +57,7 @@ public final class FakePlatform implements Platform {
         binder.bind(ModLookup.class, mods);
         binder.bind(ServerConfiguration.class, serverConfig);
         binder.bind(ControlPanelView.class, controlPanel);
+        binder.bind(InputProbe.class, player -> false);
     }
 
     @Override

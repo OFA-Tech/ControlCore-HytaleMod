@@ -6,6 +6,7 @@ import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
 import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
+import net.ofatech.controlcore.domain.ports.game.InputProbe;
 import net.ofatech.controlcore.domain.ports.game.Messenger;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
 import net.ofatech.controlcore.domain.ports.game.PlayerData;
@@ -22,6 +23,7 @@ import net.ofatech.controlcore.infrastructure.persistence.JsonSettingStore;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.command.HytaleCommandRegistrar;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.config.HytaleSettingsProvider;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.event.HytaleGameEvents;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleInputProbe;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.log.HytaleLog;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.mods.HytaleModLookup;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytaleMessenger;
@@ -69,6 +71,7 @@ public final class HytalePlatform implements Platform {
         binder.bind(ModLookup.class, new HytaleModLookup());
         binder.bind(ServerConfiguration.class, new HytaleServerConfiguration(log));
         binder.bind(ControlPanelView.class, new HytaleControlPanelView(log));
+        binder.bind(InputProbe.class, new HytaleInputProbe(log));
     }
 
     @Override
