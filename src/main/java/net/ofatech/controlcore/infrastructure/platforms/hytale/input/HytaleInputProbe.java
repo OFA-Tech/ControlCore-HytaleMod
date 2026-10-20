@@ -4,6 +4,7 @@ import com.hypixel.hytale.protocol.MovementStates;
 import com.hypixel.hytale.protocol.Packet;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
+import com.hypixel.hytale.protocol.packets.interface_.ChatMessage;
 import com.hypixel.hytale.protocol.packets.player.ClientMovement;
 import com.hypixel.hytale.protocol.packets.player.MouseInteraction;
 import com.hypixel.hytale.protocol.packets.window.ClientOpenWindow;
@@ -34,6 +35,7 @@ public final class HytaleInputProbe implements InputProbe, PlayerPacketWatcher {
     private final Set<UUID> probing = ConcurrentHashMap.newKeySet();
     private final Map<UUID, String> lastMovement = new ConcurrentHashMap<>();
     private final Map<String, Long> lastOther = new ConcurrentHashMap<>();
+    private final Set<String> seenChains = ConcurrentHashMap.newKeySet();
     private volatile boolean registered;
 
     public HytaleInputProbe(Log log) {
@@ -49,6 +51,7 @@ public final class HytaleInputProbe implements InputProbe, PlayerPacketWatcher {
         UUID id = player.value();
         if (probing.remove(id)) {
             lastMovement.remove(id);
+            seenChains.removeIf(key -> key.startsWith(id + ":"));
             return false;
         }
         probing.add(id);
@@ -73,7 +76,9 @@ public final class HytaleInputProbe implements InputProbe, PlayerPacketWatcher {
             case SyncInteractionChains chains -> {
                 if (chains.updates != null) {
                     for (SyncInteractionChain chain : chains.updates) {
-                        if (chain.initial) {
+                        String key = player.getUuid() + ":" + chain.interactionType + ":" + chain.chainId;
+                        if (chain.initial || seenChains.add(key)) {
+                            seenChains.add(key);
                             lines.add(chain(chain));
                         }
                     }
@@ -86,6 +91,7 @@ public final class HytaleInputProbe implements InputProbe, PlayerPacketWatcher {
                 }
             }
             case ClientOpenWindow window -> lines.add("Open window " + window.type);
+            case ChatMessage chat -> lines.add("Chat: " + chat.message);
             case ClientMovement movement -> {
                 String states = states(movement.movementStates);
                 String previous = lastMovement.put(player.getUuid(), states);
@@ -97,7 +103,7 @@ public final class HytaleInputProbe implements InputProbe, PlayerPacketWatcher {
                 String name = packet.getClass().getSimpleName();
                 long now = System.currentTimeMillis();
                 Long last = lastOther.put(player.getUuid() + name, now);
-                if (last == null || now - last > REPEAT_MILLIS) {
+                if (!name.equals("Pong") && (last == null || now - last > REPEAT_MILLIS)) {
                     lines.add("Packet " + name + " (id " + packet.getId() + ")");
                 }
             }
