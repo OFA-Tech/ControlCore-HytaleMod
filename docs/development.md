@@ -106,12 +106,20 @@ sections in the `ControlPanelRequest` and ignores events for the others). Open p
 changes made elsewhere (`SettingsEditor.onAnyChange`): the page updates on the player's world thread and
 skips values it already shows, so its own saves don't echo.
 
+Done: **Server Configs** tab edits the server's own config through `ServerConfigEditor`, which presents
+server name, MOTD, max players, max view radius and play timeout as `server:*` settings so the panel
+reuses its rows. `HytaleServerConfiguration.write` mirrors Hytale's `/maxplayers` and `/maxviewradius`
+commands: the setters mark the config changed, a new max view radius is pushed to online players on
+their world threads, and `HytaleServerConfig.save` writes `config.json` at once. "Default" means the
+value of a fresh server (`new HytaleServerConfig()`, `TimeoutProfile.defaults()`). The name, MOTD and
+timeout are read when a player connects, so they apply to new connections.
+
 Open:
 
 - Settings registered while a panel is open appear after reopening it.
-- **Server Configs tab:** values are read-only. Editing needs a write method on the
-  `ServerConfiguration` port (Hytale's `HytaleServerConfig` has setters) plus input fields and a Save
-  button whose event reads the fields with `@` keys.
+- **Server Configs tab:** the password is shown but not editable (set it in `config.json`). Changes
+  made with Hytale's own `/maxplayers` or `/maxviewradius` are not pushed to open panels (Hytale has no
+  event for them); they show after reopening.
 - **Keymaps tab:** preview only; the Rebind and Server Default buttons are disabled. Needs a design for
   how key bindings are captured and applied.
 - `control-panel-hyui.html` is kept for when HyUI supports 0.7; it is a separate layout from

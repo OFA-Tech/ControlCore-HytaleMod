@@ -3,7 +3,9 @@ package net.ofatech.controlcore.infrastructure.platforms.hytale.ui;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import net.ofatech.controlcore.domain.event.SettingChanged;
+import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
@@ -100,6 +102,11 @@ final class SettingsSection {
     /** @return the setting's current value as this section shows it */
     Result<SettingSnapshot> current(SettingId id) {
         return settings.read(id, player);
+    }
+
+    /** Listens to changes of the settings this section edits (and others; filter with {@link #concerns}). */
+    Subscription listen(Consumer<? super SettingChanged> listener) {
+        return settings.onAnyChange(listener);
     }
 
     /** @return whether a change affects a row of this section (for preferences: the viewer's own) */

@@ -6,6 +6,7 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 import net.ofatech.controlcore.application.event.DomainEventBus;
+import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.ModSettings;
@@ -13,11 +14,13 @@ import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.ServerSettings;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
+import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.platform.Capabilities;
 import net.ofatech.controlcore.domain.result.ErrorType;
 import net.ofatech.controlcore.fakes.FakePlayerData;
 import net.ofatech.controlcore.fakes.FakePlayers;
+import net.ofatech.controlcore.fakes.FakeServerConfiguration;
 import net.ofatech.controlcore.fakes.FakeSettingStore;
 import net.ofatech.controlcore.fakes.FakeSettings;
 import net.ofatech.controlcore.fakes.RecordingControlPanelView;
@@ -46,8 +49,15 @@ class ControlPanelServiceTest {
         RecordingLog log = new RecordingLog();
         DomainEventBus bus = new DomainEventBus(log);
         registry = new SettingsRegistry(new FakeSettingStore(), new FakePlayerData(), bus, bus, log);
+        var server = new FakeServerConfiguration(SERVER);
         return new ControlPanelService(
-                new ControlPanelSettings(registry, settings), players, () -> SERVER, builtIn, capabilities, registry);
+                new ControlPanelSettings(registry, settings),
+                players,
+                server,
+                builtIn,
+                capabilities,
+                registry,
+                new ServerConfigEditor(server, bus, bus, log));
     }
 
     @Test
@@ -70,6 +80,14 @@ class ControlPanelServiceTest {
         assertThat(result.isSuccess()).isTrue();
         assertThat(builtIn.opened).containsExactly(new RecordingControlPanelView.Opened(admin.id(), SERVER));
         assertThat(builtIn.lastContent.settings()).isSameAs(registry);
+        assertThat(builtIn.lastContent.serverConfig().snapshot(SettingScope.SERVER, Optional.empty()))
+                .extracting(snapshot -> snapshot.id().toString())
+                .containsExactly(
+                        "server:name",
+                        "server:motd",
+                        "server:max-players",
+                        "server:max-view-radius",
+                        "server:play-timeout");
         assertThat(service.isAvailable()).isTrue();
         assertThat(service.usesUiMod()).isFalse();
     }

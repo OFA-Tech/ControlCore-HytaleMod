@@ -16,7 +16,6 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import java.time.Duration;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -24,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import javax.annotation.Nonnull;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
@@ -35,7 +35,6 @@ import net.ofatech.controlcore.domain.model.ServerSettings;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
-import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -95,12 +94,24 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         }
     }
 
-    /** Where a settings section is drawn. */
-    private record Target(String list, String status) {}
+    /** A list of settings in the panel and where it is drawn. */
+    private enum Section {
+        SERVER_CONFIG("#ServerList", "#ServerStatus"),
+        SETTINGS("#SettingsList", "#SettingsStatus"),
+        PREFS("#PlayerList", "#PlayerStatus");
 
-    private static final Map<SettingScope, Target> TARGETS = Map.of(
-            SettingScope.SERVER, new Target("#SettingsList", "#SettingsStatus"),
-            SettingScope.PLAYER, new Target("#PlayerList", "#PlayerStatus"));
+        private final String list;
+        private final String status;
+
+        Section(String list, String status) {
+            this.list = list;
+            this.status = status;
+        }
+
+        String row(int index) {
+            return list + "[" + index + "]";
+        }
+    }
 
     /** Buttons shown for upcoming features; disabled until they are wired. */
     private static final List<String> NOT_WIRED_YET = List.of(
@@ -112,21 +123,19 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             "#ResetToggleDebug");
 
     private final ServerSettings server;
-    private final SettingsEditor settings;
     private final Log log;
     private final Set<Tab> tabs = EnumSet.noneOf(Tab.class);
-    private final Map<SettingScope, SettingsSection> sections = new EnumMap<>(SettingScope.class);
-    private final Map<SettingScope, Map<SettingId, Integer>> rowIndexes = new EnumMap<>(SettingScope.class);
+    private final Map<Section, SettingsSection> sections = new EnumMap<>(Section.class);
+    private final Map<Section, Map<SettingId, Integer>> rowIndexes = new EnumMap<>(Section.class);
     /** Value each row currently shows, to skip change notifications the panel caused itself (world thread). */
     private final Map<SettingId, String> shown = new HashMap<>();
 
-    private volatile Subscription changes;
+    private final List<Subscription> subscriptions = new CopyOnWriteArrayList<>();
     private Tab selected;
 
     ControlPanelPage(PlayerRef player, ControlPanelRequest request, ControlPanelContent content, Log log) {
         super(player, CustomPageLifetime.CanDismiss, Action.CODEC);
         this.server = content.server();
-        this.settings = content.settings();
         this.log = log;
         ControlPanelRequest shownSections = request.isEmpty() ? ControlPanelRequest.PLAYER_PREFERENCES : request;
         for (Tab tab : Tab.values()) {
@@ -139,15 +148,25 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         Optional<PlayerId> viewer = Optional.of(PlayerId.of(player.getUuid()));
         if (shownSections.includeServerSettings()) {
             sections.put(
-                    SettingScope.SERVER,
+                    Section.SERVER_CONFIG,
                     new SettingsSection(
-                            settings, SettingScope.SERVER, viewer, "No server settings are registered yet."));
+                            content.serverConfig(),
+                            SettingScope.SERVER,
+                            viewer,
+                            "The server config cannot be edited on this platform."));
+            sections.put(
+                    Section.SETTINGS,
+                    new SettingsSection(
+                            content.settings(), SettingScope.SERVER, viewer, "No server settings are registered yet."));
         }
         if (shownSections.includePlayerPreferences()) {
             sections.put(
-                    SettingScope.PLAYER,
+                    Section.PREFS,
                     new SettingsSection(
-                            settings, SettingScope.PLAYER, viewer, "No mod has registered player preferences yet."));
+                            content.settings(),
+                            SettingScope.PLAYER,
+                            viewer,
+                            "No mod has registered player preferences yet."));
         }
     }
 
@@ -159,16 +178,14 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             @Nonnull Store<EntityStore> store) {
         commands.append(LAYOUT);
         if (tabs.contains(Tab.SERVER)) {
-            commands.set("#ServerName.Text", orDash(server.serverName()));
-            commands.set("#Motd.Text", orDash(server.motd()));
             commands.set(
-                    "#Password.Text", server.passwordProtected() ? "Set (private server)" : "None (public server)");
-            commands.set("#MaxPlayers.Text", Integer.toString(server.maxPlayers()));
-            commands.set("#MaxViewRadius.Text", Integer.toString(server.maxViewRadius()));
-            commands.set("#PlayTimeout.Text", describe(server.playTimeout()));
+                    "#Password.Text",
+                    server.passwordProtected()
+                            ? "Set (private server). Change it in config.json."
+                            : "None (public server). Set one in config.json.");
         }
         NOT_WIRED_YET.forEach(button -> commands.set(button + ".Disabled", true));
-        sections.values().forEach(section -> buildSection(section, commands, events));
+        sections.forEach((key, section) -> buildSection(key, section, commands, events));
         for (Tab tab : Tab.values()) {
             commands.set(tab.button + ".Visible", tabs.contains(tab));
         }
@@ -180,8 +197,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                     CustomUIEventBindingType.Activating, tab.button, EventData.of(Action.KEY, TAB_PREFIX + tab.name()));
         }
         events.addEventBinding(CustomUIEventBindingType.Activating, "#CloseButton", EventData.of(Action.KEY, CLOSE));
-        if (changes == null && !sections.isEmpty()) {
-            changes = settings.onAnyChange(this::onSettingChanged);
+        if (subscriptions.isEmpty()) {
+            sections.forEach((key, section) ->
+                    subscriptions.add(section.listen(change -> onSettingChanged(key, section, change))));
         }
     }
 
@@ -200,60 +218,55 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         } else if (name.startsWith(TAB_PREFIX)) {
             selectTab(name.substring(TAB_PREFIX.length()));
         } else {
-            sectionOf(action.section).ifPresent(section -> handleSettingAction(section, name, action));
+            sectionOf(action.section).ifPresent(key -> handleSettingAction(key, sections.get(key), name, action));
         }
     }
 
-    private void buildSection(SettingsSection section, UICommandBuilder commands, UIEventBuilder events) {
-        Target target = TARGETS.get(section.scope());
+    private void buildSection(Section key, SettingsSection section, UICommandBuilder commands, UIEventBuilder events) {
         Map<SettingId, Integer> indexes = new HashMap<>();
-        rowIndexes.put(section.scope(), indexes);
-        commands.set(target.status() + ".Text", "");
+        rowIndexes.put(key, indexes);
+        commands.set(key.status + ".Text", "");
         List<SettingsSection.Entry> entries = section.entries();
         for (int index = 0; index < entries.size(); index++) {
-            String element = target.list() + "[" + index + "]";
+            String element = key.row(index);
             switch (entries.get(index)) {
                 case SettingsSection.Heading heading -> {
-                    commands.append(target.list(), HEADING);
+                    commands.append(key.list, HEADING);
                     commands.set(element + ".Text", heading.text());
                 }
                 case SettingsSection.Row row -> {
                     indexes.put(row.id(), index);
                     shown.put(row.id(), row.snapshot().value());
-                    buildRow(section.scope(), row, element, commands, events);
+                    buildRow(key, row, element, commands, events);
                 }
             }
         }
     }
 
     private static void buildRow(
-            SettingScope scope,
-            SettingsSection.Row row,
-            String element,
-            UICommandBuilder commands,
-            UIEventBuilder events) {
+            Section key, SettingsSection.Row row, String element, UICommandBuilder commands, UIEventBuilder events) {
         SettingSnapshot snapshot = row.snapshot();
         String input = element + " #Input";
         String id = snapshot.id().toString();
         switch (row.kind()) {
             case TEXT -> {
-                commands.append(TARGETS.get(scope).list(), TEXT_ROW);
+                commands.append(key.list, TEXT_ROW);
                 commands.set(
                         input + ".PlaceholderText", snapshot.definition().type().describe());
                 events.addEventBinding(
                         CustomUIEventBindingType.Activating,
                         element + " #Save",
-                        action(SAVE, scope, id).append(Action.VALUE, input + ".Value"));
+                        action(SAVE, key, id).append(Action.VALUE, input + ".Value"));
             }
             case TOGGLE -> {
-                commands.append(TARGETS.get(scope).list(), TOGGLE_ROW);
+                commands.append(key.list, TOGGLE_ROW);
                 events.addEventBinding(
                         CustomUIEventBindingType.ValueChanged,
                         input,
-                        action(CHECK, scope, id).append(Action.CHECKED, input + ".Value"));
+                        action(CHECK, key, id).append(Action.CHECKED, input + ".Value"));
             }
             case CHOICE -> {
-                commands.append(TARGETS.get(scope).list(), CHOICE_ROW);
+                commands.append(key.list, CHOICE_ROW);
                 commands.set(
                         input + ".Entries",
                         SettingsSection.options(snapshot).stream()
@@ -262,16 +275,16 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 events.addEventBinding(
                         CustomUIEventBindingType.ValueChanged,
                         input,
-                        action(CHOOSE, scope, id).append(Action.VALUE, input + ".Value"));
+                        action(CHOOSE, key, id).append(Action.VALUE, input + ".Value"));
             }
         }
         commands.set(element + " #Label.Text", snapshot.definition().displayName());
         commands.set(element + " #Description.Text", SettingsSection.describe(snapshot));
         showValue(row.kind(), input, snapshot, commands);
-        events.addEventBinding(CustomUIEventBindingType.Activating, element + " #Reset", action(RESET, scope, id));
+        events.addEventBinding(CustomUIEventBindingType.Activating, element + " #Reset", action(RESET, key, id));
     }
 
-    private void handleSettingAction(SettingsSection section, String name, Action action) {
+    private void handleSettingAction(Section key, SettingsSection section, String name, Action action) {
         Result<SettingSnapshot> result = switch (name) {
             case SAVE, CHOOSE -> section.save(action.id, action.value);
             case CHECK -> section.check(action.id, action.checked);
@@ -284,29 +297,26 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         // Check boxes and dropdowns already show what the player picked. Setting their value again could fire
         // ValueChanged once more, so only text fields (normalised input) and resets are written back.
         boolean writeBack = SAVE.equals(name) || RESET.equals(name);
-        Target target = TARGETS.get(section.scope());
         UICommandBuilder update = new UICommandBuilder();
         result.onSuccess(snapshot -> {
                     shown.put(snapshot.id(), snapshot.value());
-                    update.set(target.status() + ".Text", SettingsSection.saved(snapshot));
-                    Integer index = rowIndexes.get(section.scope()).get(snapshot.id());
+                    update.set(key.status + ".Text", SettingsSection.saved(snapshot));
+                    Integer index = rowIndexes.get(key).get(snapshot.id());
                     if (writeBack && index != null) {
-                        String element = target.list() + "[" + index + "]";
                         showValue(
                                 SettingsSection.kindOf(snapshot.definition().type()),
-                                element + " #Input",
+                                key.row(index) + " #Input",
                                 snapshot,
                                 update);
                     }
                 })
-                .onFailure(error -> update.set(target.status() + ".Text", error.description()));
+                .onFailure(error -> update.set(key.status + ".Text", error.description()));
         sendUpdate(update, false);
     }
 
     /** Called on the thread that changed the setting; the panel is updated on the player's world thread. */
-    private void onSettingChanged(SettingChanged change) {
-        SettingsSection section = sections.get(change.scope());
-        if (section == null || !section.concerns(change)) {
+    private void onSettingChanged(Section key, SettingsSection section, SettingChanged change) {
+        if (!section.concerns(change)) {
             return;
         }
         Ref<EntityStore> ref = playerRef.getReference();
@@ -315,16 +325,17 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             return;
         }
         Store<EntityStore> store = ref.getStore();
-        store.getExternalData().getWorld().execute(() -> refresh(ref, store, section, change.id()));
+        store.getExternalData().getWorld().execute(() -> refresh(ref, store, key, section, change.id()));
     }
 
-    private void refresh(Ref<EntityStore> ref, Store<EntityStore> store, SettingsSection section, SettingId id) {
+    private void refresh(
+            Ref<EntityStore> ref, Store<EntityStore> store, Section key, SettingsSection section, SettingId id) {
         try {
             if (!isOpen(ref, store)) {
                 stopListening();
                 return;
             }
-            Integer index = rowIndexes.getOrDefault(section.scope(), Map.of()).get(id);
+            Integer index = rowIndexes.getOrDefault(key, Map.of()).get(id);
             if (index == null) {
                 return;
             }
@@ -333,14 +344,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                     return;
                 }
                 shown.put(id, snapshot.value());
-                Target target = TARGETS.get(section.scope());
                 UICommandBuilder update = new UICommandBuilder();
                 showValue(
                         SettingsSection.kindOf(snapshot.definition().type()),
-                        target.list() + "[" + index + "] #Input",
+                        key.row(index) + " #Input",
                         snapshot,
                         update);
-                update.set(target.status() + ".Text", SettingsSection.changedElsewhere(snapshot));
+                update.set(key.status + ".Text", SettingsSection.changedElsewhere(snapshot));
                 sendUpdate(update, false);
             });
         } catch (RuntimeException e) {
@@ -357,9 +367,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     }
 
     private void stopListening() {
-        Subscription subscription = changes;
-        changes = null;
-        if (subscription != null) {
+        for (Subscription subscription : subscriptions) {
+            subscriptions.remove(subscription);
             subscription.close();
         }
     }
@@ -372,17 +381,17 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         }
     }
 
-    private static EventData action(String name, SettingScope scope, String id) {
+    private static EventData action(String name, Section key, String id) {
         return new EventData()
                 .append(Action.KEY, name)
-                .append(Action.SECTION, scope.name())
+                .append(Action.SECTION, key.name())
                 .append(Action.ID, id);
     }
 
-    private Optional<SettingsSection> sectionOf(String scope) {
-        for (SettingScope candidate : SettingScope.values()) {
-            if (candidate.name().equals(scope)) {
-                return Optional.ofNullable(sections.get(candidate));
+    private Optional<Section> sectionOf(String name) {
+        for (Section candidate : Section.values()) {
+            if (candidate.name().equals(name) && sections.containsKey(candidate)) {
+                return Optional.of(candidate);
             }
         }
         return Optional.empty();
@@ -405,21 +414,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             commands.set(tab.group + ".Visible", tab == selected);
             commands.set(tab.button + ".Disabled", tab == selected);
         }
-    }
-
-    private static String describe(Duration duration) {
-        if (duration.isZero()) {
-            return "-";
-        }
-        long minutes = duration.toMinutes();
-        String readable = duration.toSecondsPart() == 0 && minutes > 0
-                ? minutes + (minutes == 1 ? " minute" : " minutes")
-                : duration.toSeconds() + " seconds";
-        return readable + " (" + duration + ")";
-    }
-
-    private static String orDash(String text) {
-        return text.isBlank() ? "-" : text;
     }
 
     /** Data sent by the client when a bound element is used. */

@@ -18,8 +18,9 @@ request picks the tabs: `ControlPanelRequest.ALL` is the admin panel, `ControlPa
 (1.2.0) only the player's own preferences, safe for anyone and available even when the admin panel is
 disabled. It returns errors such as `ControlPanel.Disabled`, `ControlPanel.PlayerNotFound` and
 `ControlPanel.NothingToShow`.
-Translated game events (`PlayerJoined`, `PlayerLeft`) and `SettingChanged` are delivered on the events
-bus.
+Translated game events (`PlayerJoined`, `PlayerLeft`), `SettingChanged` and `ServerConfigChanged`
+(1.2.0; a server config field such as `server:motd` changed in the control panel) are delivered on the
+events bus.
 
 ## Settings registry
 

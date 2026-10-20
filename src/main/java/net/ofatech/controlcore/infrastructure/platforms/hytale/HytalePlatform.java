@@ -67,7 +67,7 @@ public final class HytalePlatform implements Platform {
                 CommandRegistrar.class,
                 new HytaleCommandRegistrar(plugin.getCommandRegistry(), plugin.getBasePermission(), log));
         binder.bind(ModLookup.class, new HytaleModLookup());
-        binder.bind(ServerConfiguration.class, new HytaleServerConfiguration());
+        binder.bind(ServerConfiguration.class, new HytaleServerConfiguration(log));
         binder.bind(ControlPanelView.class, new HytaleControlPanelView(log));
     }
 
