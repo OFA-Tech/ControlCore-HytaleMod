@@ -195,6 +195,21 @@ class KeyDispatcherTest {
                 .isEqualTo("Keys.ReservedId");
     }
 
+    @Test
+    void quotedCommandsAreUnquotedAndAddingAgainReplaces() {
+        keymaps.addCustom("announce", "ctrl+r", "\"say {player} pressed it\"", true);
+        keymaps.addCustom("announce", "ctrl+e", "'/say edited'", false);
+        input.hold(caio, KeySignal.CROUCHING);
+        input.press(caio, KeySignal.ABILITY_2);
+
+        assertThat(commands()).containsExactly("say edited");
+        assertThat(keymaps.findCustom("custom:announce").orElseThrow())
+                .isEqualTo(new net.ofatech.controlcore.domain.model.keys.CustomKeyBind(
+                        "announce", "CTRL + E", "say edited", false));
+        assertThat(KeyAction.normalizeCommand("  \"/home x\" ")).isEqualTo("home x");
+        assertThat(KeyAction.normalizeCommand("say \"hi\"")).isEqualTo("say \"hi\"");
+    }
+
     private List<String> commands() {
         return runner.runs.stream().map(RecordingCommandRunner.Run::command).toList();
     }

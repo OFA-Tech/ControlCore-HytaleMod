@@ -25,7 +25,7 @@ public final class AddServerKeyBindCommand implements ModCommand {
     @Override
     public CommandSpec spec() {
         return CommandSpec.named("cc-keybind-add-server")
-                .description("Create a key bind that runs a command as the server (only for players with "
+                .description("Create or replace a key bind that runs a command as the server (only for players with "
                         + KeymapRegistry.SERVER_KEYS_NODE + ")")
                 .arg("name", ArgType.STRING, "Name, for example announce (becomes custom:announce)")
                 .arg("keys", ArgType.STRING, "Keys joined with +, alternatives with |, for example ctrl+o")

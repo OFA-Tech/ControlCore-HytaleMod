@@ -145,7 +145,7 @@ $C.@PageOverlay {
         }
 
         Label {
-          Text: "Your key bindings. Write keys joined with +, for example ctrl+f or alt+3; separate alternatives with |; none unbinds. Players can also use /cc-keys and /cc-bind.";
+          Text: "Your key bindings. Write keys joined with +, for example ctrl+f or alt+3; separate alternatives with |; none unbinds. Players can also use /cc-keys and /cc-bind. The form adds a bind of your own; saving an existing name replaces it.";
           Style: @NoteStyle;
           Anchor: (Bottom: 8);
         }
@@ -187,7 +187,7 @@ $C.@PageOverlay {
             }
 
             $C.@SmallSecondaryTextButton #NewBindAdd {
-              @Text = "Add bind";
+              @Text = "Save bind";
               Anchor: (Width: 110, Height: 32, Left: 6);
             }
           }

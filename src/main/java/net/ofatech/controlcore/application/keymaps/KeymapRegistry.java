@@ -207,6 +207,17 @@ public final class KeymapRegistry implements KeymapsApi {
         });
     }
 
+    /** @return the saved admin bind with that name ({@code custom:} optional) */
+    public Optional<CustomKeyBind> findCustom(String name) {
+        Result<SettingId> parsed = customId(name);
+        return Optional.of(parsed)
+                .filter(Result::isSuccess)
+                .map(Result::value)
+                .flatMap(id -> customBinds.all().stream()
+                        .filter(bind -> bind.name().equals(id.key()))
+                        .findFirst());
+    }
+
     /** Listens to changes of players' own bindings, reported as player-scoped {@link SettingChanged} events. */
     public Subscription onChange(Consumer<? super SettingChanged> listener) {
         listeners.add(listener);
@@ -227,7 +238,7 @@ public final class KeymapRegistry implements KeymapsApi {
     }
 
     private Result<KeyAction> customAction(String name, String keys, String command, boolean runAsServer) {
-        if (command == null || command.strip().replaceFirst("^/", "").isBlank()) {
+        if (command == null || KeyAction.normalizeCommand(command).isBlank()) {
             return Result.failure(Error.validation("Keys.NothingToRun", "Write the command the keys should run."));
         }
         return customId(name)

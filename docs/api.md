@@ -124,7 +124,8 @@ api.keymaps().register(KeyAction.of("admintools", "announce")
   runs the command as the console with every permission; without its own `.permission(..)` it needs
   ControlCore's `<base>.keys.server` node (operators have it). Each server-run press is logged.
 - **Admins' own binds** (no mod needed): `/cc-keybind-add`, `/cc-keybind-add-server` or the form in the admin
-  panel's Keymaps tab create `custom:<name>` actions, saved in `CustomKeyBinds.json`; mods cannot register
+  panel's Keymaps tab create `custom:<name>` actions (adding a name again replaces it; the panel's rows have
+  Edit and Remove buttons; quotes around the command are dropped), saved in `CustomKeyBinds.json`; mods cannot register
   in the `custom` namespace (`Keys.ReservedId`).
 - **Errors:** `Keys.NothingToRun`, `Keys.UnknownAction`, `Keys.InvalidCombo`, `Keys.InvalidName`,
   `Keys.ReservedId`.
@@ -141,6 +142,7 @@ api.keymaps().register(KeyAction.of("admintools", "announce")
 | `/cc-keybind-add <name> <keys> <command>` | `<base>.settings` | create `custom:<name>`, run as the player who presses it |
 | `/cc-keybind-add-server <name> <keys> <command>` | `<base>.settings` | create `custom:<name>`, run as the server (usable with `<base>.keys.server`) |
 | `/cc-keybind-remove <name>` | `<base>.settings` | delete a bind created by an admin |
+| `/cc-keybind-list` | `<base>.settings` | list the binds admins created, with their commands |
 
 ControlCore registers `controlcore:open-preferences` (runs `/prefs`, default `CTRL + F`).
 

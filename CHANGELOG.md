@@ -25,8 +25,9 @@
   (`.permission(node)`); server-run actions without one need `<base>.keys.server`. Players only see and
   trigger actions they may use.
 - Admins create their own key binds without a mod: `/cc-keybind-add`, `/cc-keybind-add-server`,
-  `/cc-keybind-remove` and an "Add bind" form in the admin panel's Keymaps tab (saved in
-  `CustomKeyBinds.json`).
+  `/cc-keybind-remove`, `/cc-keybind-list` and a form in the admin panel's Keymaps tab with Edit and Remove
+  on each bind (saved in `CustomKeyBinds.json`). Adding a name again replaces it; quotes around the
+  command are dropped.
 - `/cc-input-probe` and `/cc-key-probe input` (admin): show what the client reports for each key.
 - **Server Configs** tab lists every key of the server's `config.json`, read from Hytale's config
   definition: live keys (name, MOTD, max players, max view radius, connection timeouts, require join

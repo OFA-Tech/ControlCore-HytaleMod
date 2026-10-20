@@ -66,6 +66,16 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
     }
 
     @Override
+    public Optional<net.ofatech.controlcore.domain.model.keys.CustomKeyBind> find(String name) {
+        return keymaps.findCustom(name);
+    }
+
+    @Override
+    public Result<String> remove(String name) {
+        return keymaps.removeCustom(name).map(action -> "Removed the key bind " + action.id() + ".");
+    }
+
+    @Override
     public Subscription onAnyChange(Consumer<? super SettingChanged> listener) {
         return keymaps.onChange(listener);
     }

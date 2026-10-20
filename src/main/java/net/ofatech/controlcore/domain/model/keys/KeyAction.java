@@ -55,8 +55,7 @@ public record KeyAction(
         Guard.notNull(onPress, "onPress");
         Guard.notNull(defaultKeys, "defaultKeys");
         Guard.notNull(permission, "permission");
-        command = command.map(String::strip)
-                .map(text -> text.startsWith("/") ? text.substring(1).strip() : text);
+        command = command.map(KeyAction::normalizeCommand);
         if (command.isPresent() && command.get().isBlank()) {
             throw new DomainException("The command of key action " + id + " is empty");
         }
@@ -183,6 +182,21 @@ public record KeyAction(
     public Optional<String> commandFor(PlayerId player, String name) {
         return command.map(text ->
                 text.replace("{player}", name).replace("{uuid}", player.value().toString()));
+    }
+
+    /**
+     * @return {@code text} without surrounding whitespace, one pair of surrounding quotes (people quote commands
+     *     with spaces) and the leading {@code /}
+     */
+    public static String normalizeCommand(String text) {
+        String command = text.strip();
+        if (command.length() >= 2) {
+            char first = command.charAt(0);
+            if ((first == '"' || first == '\'') && command.charAt(command.length() - 1) == first) {
+                command = command.substring(1, command.length() - 1).strip();
+            }
+        }
+        return command.startsWith("/") ? command.substring(1).strip() : command;
     }
 
     private KeyAction withDefaults(KeyBinds binds) {

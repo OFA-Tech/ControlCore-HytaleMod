@@ -53,6 +53,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private static final String TOGGLE_ROW = "Pages/ControlCore/SettingToggleRow.ui";
     private static final String CHOICE_ROW = "Pages/ControlCore/SettingChoiceRow.ui";
     private static final String INFO_ROW = "Pages/ControlCore/SettingInfoRow.ui";
+    private static final String CUSTOM_BIND_ROW = "Pages/ControlCore/SettingCustomBindRow.ui";
 
     private static final String CLOSE = "Close";
     private static final String TAB_PREFIX = "Tab:";
@@ -61,6 +62,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private static final String CHOOSE = "Choose";
     private static final String RESET = "Reset";
     private static final String ADD_BIND = "AddBind";
+    private static final String EDIT_BIND = "EditBind";
+    private static final String REMOVE_BIND = "RemoveBind";
+    private static final String CUSTOM_NAMESPACE = "custom";
 
     private enum Tab {
         SERVER(ControlPanelTab.SERVER_CONFIGS, "#ServerTab", "#ServerTabButton"),
@@ -225,6 +229,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             close();
         } else if (ADD_BIND.equals(name)) {
             addBind(action);
+        } else if (EDIT_BIND.equals(name)) {
+            editBind(action.id);
+        } else if (REMOVE_BIND.equals(name)) {
+            removeBind(action.id);
         } else if (name.startsWith(TAB_PREFIX)) {
             selectTab(name.substring(TAB_PREFIX.length()));
         } else {
@@ -247,7 +255,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 case SettingsSection.Row row -> {
                     indexes.put(row.id(), index);
                     shown.put(shownKey(key, row.id()), row.snapshot().value());
-                    buildRow(key, section, row, element, commands, events);
+                    boolean customBind = canAddBinds
+                            && key == Section.KEYMAPS
+                            && CUSTOM_NAMESPACE.equals(row.id().namespace());
+                    buildRow(key, section, row, element, customBind, commands, events);
                 }
             }
         }
@@ -258,6 +269,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             SettingsSection section,
             SettingsSection.Row row,
             String element,
+            boolean customBind,
             UICommandBuilder commands,
             UIEventBuilder events) {
         SettingSnapshot snapshot = row.snapshot();
@@ -265,7 +277,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         String id = snapshot.id().toString();
         switch (row.kind()) {
             case TEXT -> {
-                commands.append(key.list, TEXT_ROW);
+                commands.append(key.list, customBind ? CUSTOM_BIND_ROW : TEXT_ROW);
+                if (customBind) {
+                    events.addEventBinding(
+                            CustomUIEventBindingType.Activating, element + " #Edit", action(EDIT_BIND, key, id));
+                    events.addEventBinding(
+                            CustomUIEventBindingType.Activating, element + " #Remove", action(REMOVE_BIND, key, id));
+                }
                 commands.set(input + ".PlaceholderText", section.placeholder(snapshot));
                 events.addEventBinding(
                         CustomUIEventBindingType.Activating,
@@ -327,6 +345,42 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         sendUpdate(update, false);
     }
 
+    private void editBind(String id) {
+        if (!canAddBinds || id == null) {
+            return;
+        }
+        UICommandBuilder update = new UICommandBuilder();
+        customKeyBinds
+                .find(id)
+                .ifPresentOrElse(
+                        bind -> {
+                            update.set("#NewBindName.Value", bind.name());
+                            update.set("#NewBindKeys.Value", bind.keys());
+                            update.set("#NewBindCommand.Value", bind.command());
+                            update.set("#NewBindAsServer.Value", bind.runAsServer());
+                            update.set(
+                                    Section.KEYMAPS.status + ".Text",
+                                    "Editing custom:" + bind.name() + ": change it above and click Save bind.");
+                        },
+                        () -> update.set(Section.KEYMAPS.status + ".Text", "There is no key bind " + id + "."));
+        sendUpdate(update, false);
+    }
+
+    private void removeBind(String id) {
+        if (!canAddBinds || id == null) {
+            return;
+        }
+        Result<String> result = customKeyBinds.remove(id);
+        if (result.isSuccess()) {
+            rebuild();
+        }
+        UICommandBuilder update = new UICommandBuilder();
+        update.set(
+                Section.KEYMAPS.status + ".Text",
+                result.isSuccess() ? result.value() : result.error().description());
+        sendUpdate(update, false);
+    }
+
     private void addBind(Action action) {
         if (!canAddBinds) {
             return;
@@ -344,6 +398,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             update.set("#NewBindName.Value", "");
             update.set("#NewBindKeys.Value", "");
             update.set("#NewBindCommand.Value", "");
+            update.set("#NewBindAsServer.Value", false);
         }
         sendUpdate(update, false);
     }

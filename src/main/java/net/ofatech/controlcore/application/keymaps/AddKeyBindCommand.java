@@ -22,7 +22,7 @@ public final class AddKeyBindCommand implements ModCommand {
     @Override
     public CommandSpec spec() {
         return CommandSpec.named("cc-keybind-add")
-                .description("Create a key bind that runs a command as the player who presses it")
+                .description("Create or replace a key bind that runs a command as the player who presses it")
                 .arg("name", ArgType.STRING, "Name, for example warp-spawn (becomes custom:warp-spawn)")
                 .arg("keys", ArgType.STRING, "Keys joined with +, alternatives with |, for example ctrl+f")
                 .arg("command", ArgType.GREEDY_STRING, "Command to run; {player} and {uuid} are filled in")
@@ -35,7 +35,8 @@ public final class AddKeyBindCommand implements ModCommand {
     }
 
     static Result<Reply> add(KeymapRegistry keymaps, CommandContext context, boolean runAsServer) {
+        boolean existed = keymaps.findCustom(context.string("name")).isPresent();
         return keymaps.addCustom(context.string("name"), context.string("keys"), context.string("command"), runAsServer)
-                .map(action -> Reply.of(KeymapsText.created(action)));
+                .map(action -> Reply.of((existed ? "Replaced. " : "") + KeymapsText.created(action)));
     }
 }
