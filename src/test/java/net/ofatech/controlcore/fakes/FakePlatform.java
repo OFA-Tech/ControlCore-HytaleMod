@@ -57,7 +57,18 @@ public final class FakePlatform implements Platform {
         binder.bind(ModLookup.class, mods);
         binder.bind(ServerConfiguration.class, serverConfig);
         binder.bind(ControlPanelView.class, controlPanel);
-        binder.bind(InputProbe.class, player -> false);
+        binder.bind(InputProbe.class, new InputProbe() {
+            @Override
+            public boolean toggle(net.ofatech.controlcore.domain.model.PlayerId player) {
+                return false;
+            }
+
+            @Override
+            public net.ofatech.controlcore.domain.result.Result<Void> openKeyTest(
+                    net.ofatech.controlcore.domain.model.PlayerId player, String target) {
+                return net.ofatech.controlcore.domain.result.Result.success();
+            }
+        });
     }
 
     @Override

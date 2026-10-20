@@ -1,5 +1,7 @@
 package net.ofatech.controlcore.infrastructure.platforms.hytale.input;
 
+import com.hypixel.hytale.component.Ref;
+import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.MovementStates;
 import com.hypixel.hytale.protocol.Packet;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChain;
@@ -9,11 +11,16 @@ import com.hypixel.hytale.protocol.packets.player.ClientMovement;
 import com.hypixel.hytale.protocol.packets.player.MouseInteraction;
 import com.hypixel.hytale.protocol.packets.window.ClientOpenWindow;
 import com.hypixel.hytale.server.core.Message;
+import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.adapter.PlayerPacketWatcher;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import com.hypixel.hytale.server.core.universe.Universe;
+import com.hypixel.hytale.server.core.universe.world.World;
+import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -21,6 +28,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
 import net.ofatech.controlcore.domain.ports.system.Log;
+import net.ofatech.controlcore.domain.result.Error;
+import net.ofatech.controlcore.domain.result.Result;
 
 /**
  * Watches inbound packets of players who turned the probe on and describes the ones that come from key presses:
@@ -56,6 +65,36 @@ public final class HytaleInputProbe implements InputProbe, PlayerPacketWatcher {
         }
         probing.add(id);
         return true;
+    }
+
+    @Override
+    public Result<Void> openKeyTest(PlayerId player, String target) {
+        KeyProbePage.Target where;
+        try {
+            where = KeyProbePage.Target.valueOf(target.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            return Result.failure(Error.validation(
+                    "InputProbe.UnknownTarget",
+                    "Unknown target '" + target + "'. Use one of: " + KEY_TEST_TARGETS + "."));
+        }
+        PlayerRef playerRef = Universe.get().getPlayer(player.value());
+        Ref<EntityStore> entity = playerRef != null ? playerRef.getReference() : null;
+        if (entity == null || !entity.isValid()) {
+            return Result.failure(Error.notFound("InputProbe.PlayerNotFound", "That player is not in a world."));
+        }
+        Store<EntityStore> store = entity.getStore();
+        World world = store.getExternalData().getWorld();
+        world.execute(() -> {
+            try {
+                Player component = store.getComponent(entity, Player.getComponentType());
+                if (component != null && entity.isValid()) {
+                    component.getPageManager().openCustomPage(entity, store, new KeyProbePage(playerRef, where, log));
+                }
+            } catch (RuntimeException e) {
+                log.error("Could not open the key test for " + playerRef.getUsername(), e);
+            }
+        });
+        return Result.success();
     }
 
     @Override
