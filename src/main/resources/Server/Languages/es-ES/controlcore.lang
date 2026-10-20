@@ -2,15 +2,15 @@
 # Los marcadores entre {llaves} los rellena ControlCore; déjalos como están.
 
 # ---- Control panel layout ----
-ui.bind.as_server = Ejecutar como el servidor (solo los jugadores con el permiso keys.server, como los operadores, pueden usarlo)
+ui.bind.asServer = Ejecutar como el servidor (solo los jugadores con el permiso keys.server, como los operadores, pueden usarlo)
 ui.bind.save = Guardar atajo
 ui.close = Cerrar
 ui.default = Por defecto
 ui.edit = Editar
-ui.keymaps.mine_intro = Tus propios atajos; solo cambian para ti. Por defecto vuelve a las teclas del servidor. Une teclas con +, por ejemplo ctrl+f o alt+3; separa alternativas con |; none quita el atajo. También puedes usar /cc-keys y /cc-bind.
-ui.keymaps.mode_mine = Mis teclas
-ui.keymaps.mode_server = Valores del servidor
-ui.keymaps.server_intro = Valores del servidor: las teclas que recibe cada jugador hasta que elige las suyas. Por defecto vuelve a las teclas del mod. Une teclas con +, por ejemplo ctrl+f; separa alternativas con |; none quita el atajo. El formulario crea un atajo propio; guardar con un nombre existente lo reemplaza.
+ui.keymaps.mineIntro = Tus propios atajos; solo cambian para ti. Por defecto vuelve a las teclas del servidor. Une teclas con +, por ejemplo ctrl+f o alt+3; separa alternativas con |; none quita el atajo. También puedes usar /cc-keys y /cc-bind.
+ui.keymaps.modeMine = Mis teclas
+ui.keymaps.modeServer = Valores del servidor
+ui.keymaps.serverIntro = Valores del servidor: las teclas que recibe cada jugador hasta que elige las suyas. Por defecto vuelve a las teclas del mod. Une teclas con +, por ejemplo ctrl+f; separa alternativas con |; none quita el atajo. El formulario crea un atajo propio; guardar con un nombre existente lo reemplaza.
 ui.prefs.intro = Tus preferencias, registradas por ControlCore y otros mods. Los jugadores también pueden usar /cc-prefs.
 ui.prefs.title = Preferencias del jugador
 ui.remove = Eliminar
@@ -19,9 +19,9 @@ ui.server.intro = Todas las claves del config.json del servidor. Los cambios se 
 ui.server.title = Configuración principal del servidor
 ui.settings.intro = Ajustes del servidor registrados por ControlCore y otros mods. Los cambios se aplican al momento.
 ui.tabs.keymaps = Teclas
-ui.tabs.mod_settings = Ajustes de mods
-ui.tabs.player_prefs = Preferencias
-ui.tabs.server_configs = Config. del servidor
+ui.tabs.modSettings = Ajustes de mods
+ui.tabs.playerPrefs = Preferencias
+ui.tabs.serverConfigs = Config. del servidor
 ui.title = ControlCore
 # ---- Control panel ----
 panel.bind.command_hint = comando, p. ej. warp spawn {player}

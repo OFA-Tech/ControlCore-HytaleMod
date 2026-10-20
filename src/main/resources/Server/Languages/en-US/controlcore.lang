@@ -2,15 +2,15 @@
 # Placeholders in {braces} are filled in by ControlCore; keep them as they are.
 
 # ---- Control panel layout ----
-ui.bind.as_server = Run as the server (only players with the keys.server permission, such as operators, can use it)
+ui.bind.asServer = Run as the server (only players with the keys.server permission, such as operators, can use it)
 ui.bind.save = Save bind
 ui.close = Close
 ui.default = Default
 ui.edit = Edit
-ui.keymaps.mine_intro = Your own key bindings; they only change for you. Default goes back to the server's keys. Write keys joined with +, for example ctrl+f or alt+3; separate alternatives with |; none unbinds. You can also use /cc-keys and /cc-bind.
-ui.keymaps.mode_mine = My keys
-ui.keymaps.mode_server = Server defaults
-ui.keymaps.server_intro = Server defaults: the keys every player gets until they choose their own. Default goes back to the mod's keys. Write keys joined with +, for example ctrl+f; separate alternatives with |; none unbinds. The form adds a bind of your own; saving an existing name replaces it.
+ui.keymaps.mineIntro = Your own key bindings; they only change for you. Default goes back to the server's keys. Write keys joined with +, for example ctrl+f or alt+3; separate alternatives with |; none unbinds. You can also use /cc-keys and /cc-bind.
+ui.keymaps.modeMine = My keys
+ui.keymaps.modeServer = Server defaults
+ui.keymaps.serverIntro = Server defaults: the keys every player gets until they choose their own. Default goes back to the mod's keys. Write keys joined with +, for example ctrl+f; separate alternatives with |; none unbinds. The form adds a bind of your own; saving an existing name replaces it.
 ui.prefs.intro = Your own preferences, registered by ControlCore and other mods. Players can also use /cc-prefs.
 ui.prefs.title = Player Preferences
 ui.remove = Remove
@@ -19,9 +19,9 @@ ui.server.intro = Every key of the server's config.json. Changes are saved strai
 ui.server.title = Main Server Configuration
 ui.settings.intro = Server settings registered by ControlCore and other mods. Changes apply immediately.
 ui.tabs.keymaps = Keymaps
-ui.tabs.mod_settings = Mod Settings
-ui.tabs.player_prefs = Player Prefs
-ui.tabs.server_configs = Server Configs
+ui.tabs.modSettings = Mod Settings
+ui.tabs.playerPrefs = Player Prefs
+ui.tabs.serverConfigs = Server Configs
 ui.title = ControlCore
 # ---- Control panel ----
 panel.bind.command_hint = command, e.g. warp spawn {player}

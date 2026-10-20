@@ -19,7 +19,7 @@ class LanguageFilesTest {
 
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{([A-Za-z0-9_]+)}");
     private static final Pattern KEY_IN_CODE = Pattern.compile("\"(controlcore\\.[a-z0-9_.\\-]*[a-z0-9_])\"");
-    private static final Pattern UI_KEY = Pattern.compile("%(controlcore\\.[a-z0-9_.\\-]+);");
+    private static final Pattern UI_KEY = Pattern.compile("%(controlcore\\.[A-Za-z0-9_.\\-]+);");
 
     private final BundledTranslations bundled = new BundledTranslations();
 
@@ -46,6 +46,19 @@ class LanguageFilesTest {
         used.removeIf(key -> key.endsWith(".") || key.equals("controlcore.tabs"));
         assertThat(used).isNotEmpty();
         assertThat(english).containsAll(used);
+    }
+
+    @Test
+    void layoutKeysUseOnlyCharactersTheClientParses() throws IOException {
+        // The client refuses a layout whose %key; has anything but letters, digits and dots ("Expected ;, found
+        // _") and then cannot join the server at all.
+        Set<String> keys = new TreeSet<>();
+        collect(
+                Path.of("src/main/resources/Common/UI/Custom/Pages/ControlCore"),
+                ".ui",
+                Pattern.compile("%([^;\\s]*);"),
+                keys);
+        assertThat(keys).isNotEmpty().allMatch(key -> key.matches("[A-Za-z0-9.]+"), "letters, digits and dots");
     }
 
     private static Set<String> placeholders(String text) {

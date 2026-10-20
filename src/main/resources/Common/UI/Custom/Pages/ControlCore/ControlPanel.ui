@@ -28,17 +28,17 @@ $C.@PageOverlay {
         Anchor: (Height: 32, Bottom: 14);
 
         $C.@SmallSecondaryTextButton #ServerTabButton {
-          @Text = %controlcore.ui.tabs.server_configs;
+          @Text = %controlcore.ui.tabs.serverConfigs;
           Anchor: (Width: 160, Height: 30, Right: 6);
         }
 
         $C.@SmallSecondaryTextButton #SettingsTabButton {
-          @Text = %controlcore.ui.tabs.mod_settings;
+          @Text = %controlcore.ui.tabs.modSettings;
           Anchor: (Width: 160, Height: 30, Right: 6);
         }
 
         $C.@SmallSecondaryTextButton #PlayerTabButton {
-          @Text = %controlcore.ui.tabs.player_prefs;
+          @Text = %controlcore.ui.tabs.playerPrefs;
           Anchor: (Width: 160, Height: 30, Right: 6);
         }
 
@@ -98,7 +98,7 @@ $C.@PageOverlay {
         Visible: false;
 
         Label {
-          Text: %controlcore.ui.tabs.mod_settings;
+          Text: %controlcore.ui.tabs.modSettings;
           Style: @SectionTitleStyle;
           Anchor: (Bottom: 4);
         }
@@ -201,12 +201,12 @@ $C.@PageOverlay {
           Anchor: (Height: 34, Bottom: 8);
 
           $C.@SmallSecondaryTextButton #KeymapModeServer {
-            @Text = %controlcore.ui.keymaps.mode_server;
+            @Text = %controlcore.ui.keymaps.modeServer;
             Anchor: (Width: 170, Height: 32, Right: 6);
           }
 
           $C.@SmallSecondaryTextButton #KeymapModeMine {
-            @Text = %controlcore.ui.keymaps.mode_mine;
+            @Text = %controlcore.ui.keymaps.modeMine;
             Anchor: (Width: 120, Height: 32);
           }
         }
@@ -216,7 +216,7 @@ $C.@PageOverlay {
           Visible: false;
 
           Label {
-            Text: %controlcore.ui.keymaps.server_intro;
+            Text: %controlcore.ui.keymaps.serverIntro;
             Style: @NoteStyle;
             Anchor: (Bottom: 8);
           }
@@ -251,7 +251,7 @@ $C.@PageOverlay {
               }
 
               Label {
-                Text: %controlcore.ui.bind.as_server;
+                Text: %controlcore.ui.bind.asServer;
                 FlexWeight: 1;
                 Style: @NoteStyle;
               }
@@ -297,7 +297,7 @@ $C.@PageOverlay {
           LayoutMode: Top;
 
           Label {
-            Text: %controlcore.ui.keymaps.mine_intro;
+            Text: %controlcore.ui.keymaps.mineIntro;
             Style: @NoteStyle;
             Anchor: (Bottom: 8);
           }
