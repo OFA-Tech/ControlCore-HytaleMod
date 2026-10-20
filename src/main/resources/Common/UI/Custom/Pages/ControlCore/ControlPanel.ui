@@ -58,123 +58,21 @@ $C.@PageOverlay {
         }
 
         Label {
-          Text: "Current values of the server config. Editing comes in a later version.";
+          Text: "Every key of the server's config.json. Changes are saved straight away; some only apply after a restart, and read-only keys are edited in the file.";
           Style: @NoteStyle;
-          Anchor: (Bottom: 12);
+          Anchor: (Bottom: 8);
         }
 
-        Label {
-          Text: "Identity";
-          Style: @SubsectionTitleStyle;
-          Anchor: (Bottom: 6);
+        Label #ServerStatus {
+          Style: @StatusStyle;
+          Anchor: (Bottom: 8);
         }
 
-        Group {
-          LayoutMode: Left;
-          Anchor: (Bottom: 6);
-
-          Label {
-            Text: "Server Name";
-            Anchor: (Width: 200);
-            Style: @RowLabelStyle;
-          }
-
-          Label #ServerName {
-            FlexWeight: 1;
-            Style: @RowValueStyle;
-          }
-        }
-
-        Group {
-          LayoutMode: Left;
-          Anchor: (Bottom: 6);
-
-          Label {
-            Text: "MOTD";
-            Anchor: (Width: 200);
-            Style: @RowLabelStyle;
-          }
-
-          Label #Motd {
-            FlexWeight: 1;
-            Style: @RowValueStyle;
-          }
-        }
-
-        Group {
-          LayoutMode: Left;
-          Anchor: (Bottom: 12);
-
-          Label {
-            Text: "Password";
-            Anchor: (Width: 200);
-            Style: @RowLabelStyle;
-          }
-
-          Label #Password {
-            FlexWeight: 1;
-            Style: @RowValueStyle;
-          }
-        }
-
-        Label {
-          Text: "Capacity";
-          Style: @SubsectionTitleStyle;
-          Anchor: (Bottom: 6);
-        }
-
-        Group {
-          LayoutMode: Left;
-          Anchor: (Bottom: 6);
-
-          Label {
-            Text: "Max Players";
-            Anchor: (Width: 200);
-            Style: @RowLabelStyle;
-          }
-
-          Label #MaxPlayers {
-            FlexWeight: 1;
-            Style: @RowValueStyle;
-          }
-        }
-
-        Group {
-          LayoutMode: Left;
-          Anchor: (Bottom: 12);
-
-          Label {
-            Text: "Max View Radius";
-            Anchor: (Width: 200);
-            Style: @RowLabelStyle;
-          }
-
-          Label #MaxViewRadius {
-            FlexWeight: 1;
-            Style: @RowValueStyle;
-          }
-        }
-
-        Label {
-          Text: "Connection Timeouts";
-          Style: @SubsectionTitleStyle;
-          Anchor: (Bottom: 6);
-        }
-
-        Group {
-          LayoutMode: Left;
-          Anchor: (Bottom: 6);
-
-          Label {
-            Text: "Play Timeout";
-            Anchor: (Width: 200);
-            Style: @RowLabelStyle;
-          }
-
-          Label #PlayTimeout {
-            FlexWeight: 1;
-            Style: @RowValueStyle;
-          }
+        Group #ServerList {
+          LayoutMode: TopScrolling;
+          ScrollbarStyle: $C.@DefaultScrollbarStyle;
+          Anchor: (Height: 340);
+          Padding: (Right: 10);
         }
       }
 

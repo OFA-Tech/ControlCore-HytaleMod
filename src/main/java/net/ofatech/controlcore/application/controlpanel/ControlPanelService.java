@@ -3,6 +3,7 @@ package net.ofatech.controlcore.application.controlpanel;
 import com.google.auto.service.AutoService;
 import net.ofatech.controlcore.api.ControlPanelApi;
 import net.ofatech.controlcore.api.SettingsApi;
+import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.domain.model.ControlPanelContent;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -22,6 +23,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final ControlPanelView platformView;
     private final Capabilities capabilities;
     private final SettingsApi registry;
+    private final ServerConfigEditor serverConfig;
 
     public ControlPanelService(
             ControlPanelSettings settings,
@@ -29,13 +31,15 @@ public final class ControlPanelService implements ControlPanelApi {
             ServerConfiguration server,
             ControlPanelView platformView,
             Capabilities capabilities,
-            SettingsApi registry) {
+            SettingsApi registry,
+            ServerConfigEditor serverConfig) {
         this.settings = settings;
         this.players = players;
         this.server = server;
         this.platformView = platformView;
         this.capabilities = capabilities;
         this.registry = registry;
+        this.serverConfig = serverConfig;
     }
 
     @Override
@@ -67,6 +71,9 @@ public final class ControlPanelService implements ControlPanelApi {
                 .find(ControlPanelView.class)
                 .filter(uiMod -> request.equals(ControlPanelRequest.ALL))
                 .orElse(platformView);
-        return view.open(player, request, new ControlPanelContent(server.read(), registry, settings.startTab(player)));
+        return view.open(
+                player,
+                request,
+                new ControlPanelContent(server.read(), serverConfig, registry, settings.startTab(player)));
     }
 }

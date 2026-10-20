@@ -36,8 +36,10 @@ The long-term vision is a common configuration backbone where compatible mods ca
 ## Current state
 
 - `/open-admin-config` opens the admin control panel. It needs the `<base permission>.admin` node;
-  operators have it. The built-in panel (native Hytale UI) has four tabs: **Server Configs** shows the
-  current server config (name, MOTD, password set or not, max players, view radius, play timeout);
+  operators have it. The built-in panel (native Hytale UI) has four tabs: **Server Configs** lists every
+  key of the server's `config.json`, read from Hytale's own config definition: keys the server uses while
+  running apply at once, others are saved and apply after a restart, and internal ones (password, storage,
+  mods) are shown read-only;
   **Mod Settings** lists and edits every registered server setting; **Player Prefs** edits your own
   preferences; **Keymaps** is a preview (rebinding is not wired yet). Any player can open their own
   preferences with `/prefs`. Open panels update when a setting changes elsewhere. When a compatible

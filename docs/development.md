@@ -106,12 +106,28 @@ sections in the `ControlPanelRequest` and ignores events for the others). Open p
 changes made elsewhere (`SettingsEditor.onAnyChange`): the page updates on the player's world thread and
 skips values it already shows, so its own saves don't echo.
 
+Done: **Server Configs** tab lists every key of `config.json`. `HytaleServerConfiguration` walks
+`HytaleServerConfig.CODEC` (its `BuilderCodec` entries, nested sections, inherited parent fields, docs
+and `RangeValidator` bounds), so keys added by future Hytale versions appear without code changes.
+Effective values come from the config's getters (keys missing from the file fall back to built-in
+defaults inside the getters); defaults are read the same way from `new HytaleServerConfig()`. A change
+is decoded into the live config object by the key's own codec field, so Hytale's validators run, and
+the config is saved at once (saves are chained; overlapping saves collide on `config.json.tmp`).
+`HytaleConfigAccess` decides what is editable: live keys (name, MOTD, max players, max view radius,
+connection timeouts, require join permission), restart keys (`Defaults.World/GameMode/HardcoreMode`,
+rate limit, backup, update, world map, display tmp tags) and everything else read-only, including keys
+it does not know. Structured values (storage providers, modules, mods, log levels) are one-line
+summaries. `ServerConfigEditor` turns each key into a `server:*` setting (`ConnectionTimeouts.PlayTimeout`
+-> `server:connection-timeouts.play-timeout`) with a `SettingAccess`; read-only rows use
+`SettingInfoRow.ui`. "Default" writes the value of a fresh server.
+
 Open:
 
 - Settings registered while a panel is open appear after reopening it.
-- **Server Configs tab:** values are read-only. Editing needs a write method on the
-  `ServerConfiguration` port (Hytale's `HytaleServerConfig` has setters) plus input fields and a Save
-  button whose event reads the fields with `@` keys.
+- **Server Configs tab:** the password and structured keys are read-only (edit them in
+  `config.json`). Changes made with Hytale's own `/maxplayers` or `/maxviewradius` are not pushed to open
+  panels (Hytale has no event for them); they show after reopening. Keys without a default (backup
+  directory, update patchline) cannot be reset from the panel.
 - **Keymaps tab:** preview only; the Rebind and Server Default buttons are disabled. Needs a design for
   how key bindings are captured and applied.
 - `control-panel-hyui.html` is kept for when HyUI supports 0.7; it is a separate layout from

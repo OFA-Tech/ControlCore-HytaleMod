@@ -1,0 +1,27 @@
+$C = "../../Common.ui";
+
+// One read-only value (a locked server config key). Appended by ControlPanelPage.
+Group {
+  LayoutMode: Top;
+  Anchor: (Bottom: 10);
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Height: 30);
+
+    Label #Label {
+      Anchor: (Width: 190, Right: 10);
+      Style: (...$C.@DefaultLabelStyle, RenderBold: true, VerticalAlignment: Center, Wrap: true);
+    }
+
+    Label #Value {
+      FlexWeight: 1;
+      Style: (...$C.@DefaultLabelStyle, TextColor: #c8ccd4, VerticalAlignment: Center, Wrap: true);
+    }
+  }
+
+  Label #Description {
+    Anchor: (Top: 2);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, Wrap: true);
+  }
+}

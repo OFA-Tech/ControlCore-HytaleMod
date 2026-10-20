@@ -24,7 +24,7 @@ A platform contains translations only, never feature logic.
 | `SettingsProvider` | `config/HytaleSettingsProvider` | `Config` + `BuilderCodec` (`Settings.json`) |
 | `ModLookup` | `mods/HytaleModLookup` | `PluginManager`, `PluginIdentifier` |
 | `Log` | `log/HytaleLog` | `HytaleLogger` |
-| `ServerConfiguration` | `server/HytaleServerConfiguration` | `HytaleServer.getConfig()` |
+| `ServerConfiguration` | `server/HytaleServerConfiguration` | `HytaleServer.getConfig()`, `HytaleServerConfig.save` |
 | `ControlPanelView` | `ui/HytaleControlPanelView`, `ControlPanelPage` | `InteractiveCustomUIPage`, `PageManager`, `.ui` layout |
 | `PlayerData` | `infrastructure/persistence/JsonPlayerDataStore` | none; `players.json` in the plugin data folder |
 | `SettingStore` | `infrastructure/persistence/JsonSettingStore` | none; `SettingValues.json` in the plugin data folder |
@@ -105,7 +105,9 @@ A feature asks `Capabilities.find(ControlPanelView.class)` and does not care whi
    opens `ControlPanelPage`, an `InteractiveCustomUIPage` with the layout
    `src/main/resources/Common/UI/Custom/Pages/ControlCore/ControlPanel.ui` (Hytale's `.ui` syntax,
    styles from `Common.ui`). Values come from the `ServerConfiguration` port
-   (`HytaleServerConfiguration` reads `HytaleServer.get().getConfig()`). Tabs are text buttons:
+   (`HytaleServerConfiguration` reads and writes `HytaleServer.get().getConfig()` and saves it with
+   `HytaleServerConfig.save`). Each settings tab (Server Configs, Mod Settings, Player Prefs) is a
+   scrolling list filled at runtime with one row document per setting (`Setting*Row.ui`). Tabs are text buttons:
    each click is an event binding handled in `handleDataEvent`, which sends an update toggling the
    `#...Tab.Visible` groups and disabling the selected tab's button. (Hytale's `TabNavigation`
    element only supports icon tabs.)

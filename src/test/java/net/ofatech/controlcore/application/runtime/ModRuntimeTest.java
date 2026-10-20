@@ -76,7 +76,7 @@ class ModRuntimeTest {
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(platform.controlPanel.opened)
-                .containsExactly(new RecordingControlPanelView.Opened(admin.id(), platform.server));
+                .containsExactly(new RecordingControlPanelView.Opened(admin.id(), platform.serverConfig.settings));
         assertThat(platform.log.contains("Ellie:HyUI is not installed")).isTrue();
         assertThat(platform.log.contains("Control panel is available (built-in Hytale UI)"))
                 .isTrue();
