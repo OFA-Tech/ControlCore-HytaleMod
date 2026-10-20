@@ -17,6 +17,8 @@ import net.ofatech.controlcore.application.component.ModTask;
 import net.ofatech.controlcore.application.component.ModuleContext;
 import net.ofatech.controlcore.application.component.TaskSchedule;
 import net.ofatech.controlcore.application.event.DomainEventBus;
+import net.ofatech.controlcore.application.text.CommandTexts;
+import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.event.DomainEvent;
 import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
@@ -76,7 +78,13 @@ public final class ModRuntime {
 
         List<String> failures = new ArrayList<>();
         CommandRegistrar commands = context.commands();
-        each(ModCommand.class, failures, command -> commands.register(command.spec(), command::execute));
+        Texts texts = injector.get(Texts.class);
+        each(
+                ModCommand.class,
+                failures,
+                command -> commands.register(
+                        CommandTexts.spec(command.spec(), texts),
+                        CommandTexts.handler(command.spec(), command::execute, texts)));
         each(eventHandlerType(), failures, handler -> subscriptions.add(subscribe(handler)));
         each(FeatureModule.class, failures, module -> {
             if (module.isEnabled(context)) {

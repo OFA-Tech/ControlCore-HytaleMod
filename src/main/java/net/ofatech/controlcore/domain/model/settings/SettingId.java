@@ -46,9 +46,10 @@ public record SettingId(String namespace, String key) implements Comparable<Sett
             }
         }
         return Result.failure(Error.validation(
-                "Settings.InvalidId",
-                "'" + text + "' is not a setting id. Use namespace:key, for example "
-                        + "controlcore:control-panel-enabled."));
+                        "Settings.InvalidId",
+                        "'" + text + "' is not a setting id. Use namespace:key, for example "
+                                + "controlcore:control-panel-enabled.")
+                .localized("controlcore.errors.settings.invalidid", "text", text));
     }
 
     /**

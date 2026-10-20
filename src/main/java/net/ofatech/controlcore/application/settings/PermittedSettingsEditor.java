@@ -80,8 +80,12 @@ public final class PermittedSettingsEditor implements SettingsEditor {
             }
             if (!rights.canEdit()) {
                 return Result.failure(Error.forbidden(
-                        "Settings.Forbidden",
-                        "You may not change " + snapshot.definition().displayName() + "."));
+                                "Settings.Forbidden",
+                                "You may not change " + snapshot.definition().displayName() + ".")
+                        .localized(
+                                "controlcore.errors.settings.forbidden",
+                                "displayName",
+                                snapshot.definition().displayName()));
             }
             return Result.success(true);
         });
@@ -100,6 +104,7 @@ public final class PermittedSettingsEditor implements SettingsEditor {
     }
 
     private static <T> Result<T> unknown(SettingId id) {
-        return Result.failure(Error.notFound("Settings.UnknownSetting", "There is no setting " + id + "."));
+        return Result.failure(Error.notFound("Settings.UnknownSetting", "There is no setting " + id + ".")
+                .localized("controlcore.errors.settings.unknownsetting_2", "id", id));
     }
 }

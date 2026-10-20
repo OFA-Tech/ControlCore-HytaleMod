@@ -4,8 +4,10 @@ import com.google.auto.service.AutoService;
 import java.util.ArrayList;
 import java.util.List;
 import net.ofatech.controlcore.application.component.ModCommand;
+import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
+import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.command.CommandContext;
 import net.ofatech.controlcore.domain.ports.command.CommandSpec;
 import net.ofatech.controlcore.domain.ports.command.Reply;
@@ -15,9 +17,11 @@ import net.ofatech.controlcore.domain.result.Result;
 public final class ListKeysCommand implements ModCommand {
 
     private final KeymapRegistry keymaps;
+    private final Texts texts;
 
-    public ListKeysCommand(KeymapRegistry keymaps) {
+    public ListKeysCommand(KeymapRegistry keymaps, Texts texts) {
         this.keymaps = keymaps;
+        this.texts = texts;
     }
 
     @Override
@@ -30,22 +34,25 @@ public final class ListKeysCommand implements ModCommand {
         var player = context.sender().player().map(info -> info.id());
         List<KeyAction> actions = player.map(keymaps::actionsFor).orElseGet(keymaps::actions);
         if (actions.isEmpty()) {
-            return Result.success(Reply.of("No key actions are registered."));
+            return Result.success(Reply.of(tr(context).t("controlcore.keys.list.none")));
         }
         List<String> lines = new ArrayList<>();
-        lines.add("Key actions (change with /cc-bind <id> <keys>, for example /cc-bind controlcore:open-preferences"
-                + " ctrl+f):");
+        lines.add(tr(context).t("controlcore.keys.list.title"));
         for (KeyAction action : actions) {
-            lines.add("- " + line(action, player.orElse(null)));
+            lines.add("- " + line(tr(context), action, player.orElse(null)));
         }
         return Result.success(Reply.of(String.join("\n", lines)));
     }
 
-    private String line(KeyAction action, PlayerId player) {
+    private String line(Translator tr, KeyAction action, PlayerId player) {
         if (player != null && keymaps.ownKeys(action.id(), player).isPresent()) {
-            return KeymapsText.line(action, keymaps.keysFor(action.id(), player), "yours");
+            return KeymapsText.line(tr, action, keymaps.keysFor(action.id(), player), "yours");
         }
         boolean serverChoice = !keymaps.serverKeys(action.id()).equals(action.defaultKeys());
-        return KeymapsText.line(action, keymaps.serverKeys(action.id()), serverChoice ? "server" : "default");
+        return KeymapsText.line(tr, action, keymaps.serverKeys(action.id()), serverChoice ? "server" : "default");
+    }
+
+    private Translator tr(CommandContext context) {
+        return texts.forSender(context.sender());
     }
 }

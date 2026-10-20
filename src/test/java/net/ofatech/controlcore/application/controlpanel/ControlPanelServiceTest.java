@@ -62,16 +62,19 @@ class ControlPanelServiceTest {
                 capabilities,
                 registry,
                 new ServerConfigEditor(server, bus, bus, log),
-                new KeymapsEditor(new KeymapRegistry(
-                        new FakeKeyBindStore(),
-                        new net.ofatech.controlcore.fakes.FakeCustomKeyBindStore(),
-                        new FakePlayerData(),
-                        (player, node) -> true,
-                        log)),
+                new KeymapsEditor(
+                        new KeymapRegistry(
+                                new FakeKeyBindStore(),
+                                new net.ofatech.controlcore.fakes.FakeCustomKeyBindStore(),
+                                new FakePlayerData(),
+                                (player, node) -> true,
+                                log),
+                        net.ofatech.controlcore.fakes.TestTexts.of(registry, players)),
                 new SettingPermissionPolicy(
                         new net.ofatech.controlcore.fakes.FakeSettingPermissionStore(),
                         (player, node) -> true,
-                        registry));
+                        registry),
+                net.ofatech.controlcore.fakes.TestTexts.of(registry, players));
     }
 
     @Test

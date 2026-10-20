@@ -29,7 +29,8 @@ public final class HytaleControlPanelView implements ControlPanelView {
         PlayerRef playerRef = Universe.get().getPlayer(player.value());
         Ref<EntityStore> entity = playerRef != null ? playerRef.getReference() : null;
         if (entity == null || !entity.isValid()) {
-            return Result.failure(Error.notFound("ControlPanel.PlayerNotFound", "That player is not in a world."));
+            return Result.failure(Error.notFound("ControlPanel.PlayerNotFound", "That player is not in a world.")
+                    .localized("controlcore.errors.controlpanel.playernotfound_2"));
         }
         Store<EntityStore> store = entity.getStore();
         World world = store.getExternalData().getWorld();

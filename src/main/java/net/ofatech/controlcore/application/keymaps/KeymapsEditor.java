@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -16,6 +17,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
+import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -30,9 +32,22 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
     static final int MAX_LENGTH = 200;
 
     private final KeymapRegistry keymaps;
+    private final Texts texts;
+    private final Translator tr;
 
-    public KeymapsEditor(KeymapRegistry keymaps) {
+    public KeymapsEditor(KeymapRegistry keymaps, Texts texts) {
+        this(keymaps, texts, texts.forServer());
+    }
+
+    private KeymapsEditor(KeymapRegistry keymaps, Texts texts, Translator tr) {
         this.keymaps = keymaps;
+        this.texts = texts;
+        this.tr = tr;
+    }
+
+    /** @return this editor with descriptions and replies in {@code viewer}'s language */
+    public KeymapsEditor viewedBy(PlayerId viewer) {
+        return new KeymapsEditor(keymaps, texts, texts.forPlayer(Optional.of(viewer)));
     }
 
     @Override
@@ -80,7 +95,7 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
 
     @Override
     public Result<String> add(String name, String keys, String command, boolean runAsServer) {
-        return keymaps.addCustom(name, keys, command, runAsServer).map(KeymapsText::created);
+        return keymaps.addCustom(name, keys, command, runAsServer).map(action -> KeymapsText.created(tr, action));
     }
 
     @Override
@@ -90,7 +105,7 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
 
     @Override
     public Result<String> remove(String name) {
-        return keymaps.removeCustom(name).map(action -> "Removed the key bind " + action.id() + ".");
+        return keymaps.removeCustom(name).map(action -> KeymapsText.removed(tr, action));
     }
 
     @Override
@@ -102,11 +117,12 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
         KeyBinds server = keymaps.serverKeys(action.id());
         Optional<KeyBinds> own = keymaps.ownKeys(action.id(), player);
         KeyBinds current = own.orElse(server);
-        String problems = KeymapsText.problems(current);
-        String description = joined(action.description(), KeymapsText.runs(action) + ".", problems);
+        String problems = KeymapsText.problems(tr, current);
+        String description =
+                joined(tr.translate(action.descriptionText()), KeymapsText.runs(tr, action) + ".", problems);
         SettingDefinition<String> definition = SettingDefinition.player(
                         action.id().toString(), SettingType.text(MAX_LENGTH), server.toString())
-                .named(action.displayName())
+                .named(action.nameText())
                 .describedAs(description)
                 .inCategory(action.modId());
         return new SettingSnapshot(definition, current.toString(), own.isPresent());
@@ -115,11 +131,13 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
     private SettingSnapshot serverSnapshot(KeyAction action) {
         KeyBinds modKeys = keymaps.modKeys(action.id());
         KeyBinds current = keymaps.serverKeys(action.id());
-        String description =
-                joined(action.description(), KeymapsText.runs(action) + ".", KeymapsText.problems(current));
+        String description = joined(
+                tr.translate(action.descriptionText()),
+                KeymapsText.runs(tr, action) + ".",
+                KeymapsText.problems(tr, current));
         SettingDefinition<String> definition = SettingDefinition.server(
                         action.id().toString(), SettingType.text(MAX_LENGTH), modKeys.toString())
-                .named(action.displayName())
+                .named(action.nameText())
                 .describedAs(description)
                 .inCategory(action.modId());
         return new SettingSnapshot(definition, current.toString(), keymaps.hasServerKeys(action.id()));
@@ -129,7 +147,8 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
         return keymaps.find(id)
                 .map(Result::success)
                 .orElseGet(() ->
-                        Result.failure(Error.notFound("Keys.UnknownAction", "There is no key action '" + id + "'.")));
+                        Result.failure(Error.notFound("Keys.UnknownAction", "There is no key action '" + id + "'.")
+                                .localized("controlcore.errors.keys.unknownaction_2", "id", id)));
     }
 
     private Result<KeyAction> action(SettingId id, PlayerId viewer) {
@@ -137,13 +156,14 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
                 .filter(action -> keymaps.canUse(action, viewer))
                 .map(Result::success)
                 .orElseGet(() ->
-                        Result.failure(Error.notFound("Keys.UnknownAction", "There is no key action '" + id + "'.")));
+                        Result.failure(Error.notFound("Keys.UnknownAction", "There is no key action '" + id + "'.")
+                                .localized("controlcore.errors.keys.unknownaction_2", "id", id)));
     }
 
     private static Result<PlayerId> player(Optional<PlayerId> player) {
         return player.map(Result::success)
-                .orElseGet(
-                        () -> Result.failure(Error.validation("Keys.WrongScope", "Key bindings belong to a player.")));
+                .orElseGet(() -> Result.failure(Error.validation("Keys.WrongScope", "Key bindings belong to a player.")
+                        .localized("controlcore.errors.keys.wrongscope")));
     }
 
     private static String joined(String... parts) {

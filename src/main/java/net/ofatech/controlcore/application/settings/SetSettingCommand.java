@@ -3,9 +3,11 @@ package net.ofatech.controlcore.application.settings;
 import com.google.auto.service.AutoService;
 import java.util.Optional;
 import net.ofatech.controlcore.application.component.ModCommand;
+import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
+import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.command.ArgType;
 import net.ofatech.controlcore.domain.ports.command.CommandContext;
 import net.ofatech.controlcore.domain.ports.command.CommandSpec;
@@ -18,11 +20,13 @@ public final class SetSettingCommand implements ModCommand {
 
     private final SettingsRegistry settings;
     private final SettingPermissionPolicy permissions;
+    private final Texts texts;
     private final Log log;
 
-    public SetSettingCommand(SettingsRegistry settings, SettingPermissionPolicy permissions, Log log) {
+    public SetSettingCommand(SettingsRegistry settings, SettingPermissionPolicy permissions, Texts texts, Log log) {
         this.settings = settings;
         this.permissions = permissions;
+        this.texts = texts;
         this.log = log;
     }
 
@@ -38,11 +42,16 @@ public final class SetSettingCommand implements ModCommand {
     public Result<Reply> execute(CommandContext context) {
         return SettingId.parse(context.string("id"))
                 .flatMap(id -> permitted(context).write(id, Optional.empty(), context.string("value")))
-                .onSuccess(snapshot -> log.info(context.sender().name() + " set " + SettingsText.line(snapshot)))
-                .map(snapshot -> Reply.of(SettingsText.changed(snapshot)));
+                .onSuccess(snapshot ->
+                        log.info(context.sender().name() + " set " + SettingsText.line(texts.forServer(), snapshot)))
+                .map(snapshot -> Reply.of(SettingsText.changed(tr(context), snapshot)));
     }
 
     private SettingsEditor permitted(CommandContext context) {
         return permissions.editor(settings, context.sender().player().map(PlayerInfo::id));
+    }
+
+    private Translator tr(CommandContext context) {
+        return texts.forSender(context.sender());
     }
 }

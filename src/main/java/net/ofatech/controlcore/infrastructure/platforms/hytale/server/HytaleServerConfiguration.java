@@ -168,11 +168,13 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
         Optional<Key> found =
                 keys().stream().filter(key -> key.path().equals(path)).findFirst();
         if (found.isEmpty()) {
-            return Result.failure(Error.notFound("ServerConfig.UnknownKey", "config.json has no key " + path + "."));
+            return Result.failure(Error.notFound("ServerConfig.UnknownKey", "config.json has no key " + path + ".")
+                    .localized("controlcore.errors.serverconfig.unknownkey", "path", path));
         }
         Key key = found.get();
         if (accessOf(key) == SettingAccess.READ_ONLY) {
-            return Result.failure(Error.forbidden("ServerConfig.ReadOnly", path + " cannot be changed here."));
+            return Result.failure(Error.forbidden("ServerConfig.ReadOnly", path + " cannot be changed here.")
+                    .localized("controlcore.errors.serverconfig.readonly_2", "path", path));
         }
         HytaleServerConfig config = current.get();
         Result<BsonValue> bson = toBson(key, value);
@@ -182,7 +184,8 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
         Object owner = owner(config, key.segments());
         if (owner == null) {
             return Result.failure(
-                    Error.unavailable("ServerConfig.Unavailable", "The section of " + path + " is not loaded."));
+                    Error.unavailable("ServerConfig.Unavailable", "The section of " + path + " is not loaded.")
+                            .localized("controlcore.errors.serverconfig.unavailable", "path", path));
         }
         try {
             if (path.equals(MAX_VIEW_RADIUS)) {
@@ -191,7 +194,8 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
                 decode(key.field(), new BsonDocument(key.last(), bson.value()), owner);
             }
         } catch (RuntimeException e) {
-            return Result.failure(Error.validation("ServerConfig.InvalidValue", path + ": " + reason(e)));
+            return Result.failure(Error.validation("ServerConfig.InvalidValue", path + ": " + reason(e))
+                    .localized("controlcore.errors.serverconfig.invalidvalue", "path", path, "e", reason(e)));
         }
         config.markChanged();
         if (path.equals(MAX_VIEW_RADIUS)) {
@@ -483,7 +487,8 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
                                             .encode(Duration.ofSeconds(seconds), ExtraInfo.THREAD_LOCAL.get()));
                 }
                 case SUMMARY ->
-                    Result.failure(Error.forbidden("ServerConfig.ReadOnly", key.path() + " cannot be changed here."));
+                    Result.failure(Error.forbidden("ServerConfig.ReadOnly", key.path() + " cannot be changed here.")
+                            .localized("controlcore.errors.serverconfig.readonly_2", "path", key.path()));
             };
         } catch (NumberFormatException e) {
             return invalid(key, text);
@@ -492,7 +497,8 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
 
     private static <T> Result<T> invalid(Key key, String text) {
         return Result.failure(
-                Error.validation("ServerConfig.InvalidValue", "\"" + text + "\" is not a valid " + key.path() + "."));
+                Error.validation("ServerConfig.InvalidValue", "\"" + text + "\" is not a valid " + key.path() + ".")
+                        .localized("controlcore.errors.serverconfig.invalidvalue_2", "text", text, "path", key.path()));
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

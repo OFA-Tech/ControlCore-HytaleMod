@@ -3,6 +3,8 @@ package net.ofatech.controlcore.application.keymaps;
 import com.google.auto.service.AutoService;
 import net.ofatech.controlcore.application.component.ModCommand;
 import net.ofatech.controlcore.application.settings.SettingsPermissions;
+import net.ofatech.controlcore.application.text.Texts;
+import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.command.ArgType;
 import net.ofatech.controlcore.domain.ports.command.CommandContext;
 import net.ofatech.controlcore.domain.ports.command.CommandSpec;
@@ -17,9 +19,11 @@ import net.ofatech.controlcore.domain.result.Result;
 public final class AddServerKeyBindCommand implements ModCommand {
 
     private final KeymapRegistry keymaps;
+    private final Texts texts;
 
-    public AddServerKeyBindCommand(KeymapRegistry keymaps) {
+    public AddServerKeyBindCommand(KeymapRegistry keymaps, Texts texts) {
         this.keymaps = keymaps;
+        this.texts = texts;
     }
 
     @Override
@@ -35,6 +39,10 @@ public final class AddServerKeyBindCommand implements ModCommand {
 
     @Override
     public Result<Reply> execute(CommandContext context) {
-        return AddKeyBindCommand.add(keymaps, context, true);
+        return AddKeyBindCommand.add(keymaps, context, true, tr(context));
+    }
+
+    private Translator tr(CommandContext context) {
+        return texts.forSender(context.sender());
     }
 }

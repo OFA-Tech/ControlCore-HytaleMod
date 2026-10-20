@@ -344,7 +344,10 @@ class ModRuntimeTest {
         assertThat(platform.controlPanel.lastContent.startTab()).isEqualTo(ControlPanelTab.MOD_SETTINGS);
         assertThat(platform.controlPanel.lastContent.settings().snapshot(SettingScope.SERVER, Optional.empty()))
                 .extracting(snapshot -> snapshot.id().toString())
-                .containsExactly("controlcore:control-panel-enabled", "controlcore:welcome-message");
+                .containsExactly(
+                        "controlcore:control-panel-enabled",
+                        "controlcore:server-language",
+                        "controlcore:welcome-message");
     }
 
     @Test

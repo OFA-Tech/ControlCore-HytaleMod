@@ -2,6 +2,8 @@ package net.ofatech.controlcore.application.settings;
 
 import com.google.auto.service.AutoService;
 import net.ofatech.controlcore.application.component.ModCommand;
+import net.ofatech.controlcore.application.text.Texts;
+import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.command.ArgType;
 import net.ofatech.controlcore.domain.ports.command.CommandContext;
 import net.ofatech.controlcore.domain.ports.command.CommandSpec;
@@ -15,10 +17,12 @@ public final class SetSettingPermissionCommand implements ModCommand {
 
     private final SettingPermissionPolicy permissions;
     private final Log log;
+    private final Texts texts;
 
-    public SetSettingPermissionCommand(SettingPermissionPolicy permissions, Log log) {
+    public SetSettingPermissionCommand(SettingPermissionPolicy permissions, Log log, Texts texts) {
         this.permissions = permissions;
         this.log = log;
+        this.texts = texts;
     }
 
     @Override
@@ -37,9 +41,11 @@ public final class SetSettingPermissionCommand implements ModCommand {
         return permissions
                 .setRule(target, context.string("side"), context.string("node"))
                 .flatMap(rule -> SettingPermissionPolicy.target(target).map(key -> {
-                    String text = SettingPermissionsText.rule(key, rule);
-                    log.info(context.sender().name() + " set the setting permission " + text);
-                    return Reply.of("Saved: " + text);
+                    log.info(context.sender().name() + " set the setting permission "
+                            + SettingPermissionsText.rule(texts.forServer(), key, rule));
+                    Translator tr = texts.forSender(context.sender());
+                    return Reply.of(
+                            tr.t("controlcore.permissions.saved", "rule", SettingPermissionsText.rule(tr, key, rule)));
                 }));
     }
 }

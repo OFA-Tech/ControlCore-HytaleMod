@@ -21,7 +21,7 @@ Group {
     }
 
     $C.@SmallTertiaryTextButton #Reset {
-      @Text = "Default";
+      @Text = %controlcore.ui.default;
       Anchor: (Width: 90, Height: 32, Left: 6);
     }
   }

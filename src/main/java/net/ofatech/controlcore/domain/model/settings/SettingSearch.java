@@ -210,8 +210,21 @@ public final class SettingSearch {
      * @param description the description line the row shows
      */
     public boolean matches(SettingSnapshot snapshot, String description) {
+        return matches(
+                snapshot,
+                snapshot.definition().displayName(),
+                snapshot.definition().category(),
+                description);
+    }
+
+    /**
+     * @param name the row's name as shown (translated); the definition's own name matches too
+     * @param category the row's category as shown (translated); the definition's own category matches too
+     * @param description the description line the row shows
+     */
+    public boolean matches(SettingSnapshot snapshot, String name, String category, String description) {
         for (Term term : terms) {
-            if (term.matches(snapshot, description) == term.negated) {
+            if (term.matches(snapshot, name, category, description) == term.negated) {
                 return false;
             }
         }
@@ -250,13 +263,13 @@ public final class SettingSearch {
 
     private record Term(Field field, String word, boolean negated, Operator operator) {
 
-        boolean matches(SettingSnapshot snapshot, String description) {
+        boolean matches(SettingSnapshot snapshot, String name, String category, String description) {
             SettingDefinition<?> definition = snapshot.definition();
             return switch (field) {
-                case NAME -> has(definition.displayName());
+                case NAME -> has(definition.displayName()) || has(name);
                 case ID -> has(definition.id().toString());
                 case MOD -> has(definition.id().namespace());
-                case CATEGORY -> has(definition.category());
+                case CATEGORY -> has(definition.category()) || has(category);
                 case VALUE -> has(snapshot.value());
                 case DEFAULT -> has(definition.formattedDefault());
                 case DESCRIPTION -> has(description);
@@ -268,8 +281,10 @@ public final class SettingSearch {
                     };
                 case ANY ->
                     has(definition.displayName())
+                            || has(name)
                             || has(definition.id().toString())
                             || has(definition.category())
+                            || has(category)
                             || has(snapshot.value())
                             || has(definition.formattedDefault())
                             || has(description);

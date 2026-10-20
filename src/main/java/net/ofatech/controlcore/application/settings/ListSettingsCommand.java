@@ -3,9 +3,11 @@ package net.ofatech.controlcore.application.settings;
 import com.google.auto.service.AutoService;
 import java.util.Optional;
 import net.ofatech.controlcore.application.component.ModCommand;
+import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
+import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.command.CommandContext;
 import net.ofatech.controlcore.domain.ports.command.CommandSpec;
 import net.ofatech.controlcore.domain.ports.command.Reply;
@@ -17,10 +19,12 @@ public final class ListSettingsCommand implements ModCommand {
 
     private final SettingsRegistry settings;
     private final SettingPermissionPolicy permissions;
+    private final Texts texts;
 
-    public ListSettingsCommand(SettingsRegistry settings, SettingPermissionPolicy permissions) {
+    public ListSettingsCommand(SettingsRegistry settings, SettingPermissionPolicy permissions, Texts texts) {
         this.settings = settings;
         this.permissions = permissions;
+        this.texts = texts;
     }
 
     @Override
@@ -36,17 +40,28 @@ public final class ListSettingsCommand implements ModCommand {
                 && context.sender().player().isPresent()
                 && !permissions.isAdmin(context.sender().player().get().id())) {
             return Result.failure(Error.forbidden(
-                    "Settings.Forbidden", "You may not see any server settings. Your own preferences: /cc-prefs"));
+                            "Settings.Forbidden",
+                            "You may not see any server settings. Your own preferences: /cc-prefs")
+                    .localized("controlcore.errors.settings.none_visible"));
         }
-        String server = SettingsText.list("Server settings", serverSettings, "No server settings.");
+        String server = SettingsText.list(
+                tr(context),
+                tr(context).t("controlcore.settings.list.server"),
+                serverSettings,
+                tr(context).t("controlcore.settings.list.no_server"));
         String player = SettingsText.list(
-                "Player preferences (defaults)",
+                tr(context),
+                tr(context).t("controlcore.settings.list.player_defaults"),
                 visible.snapshot(SettingScope.PLAYER, Optional.empty()),
-                "No player preferences.");
+                tr(context).t("controlcore.settings.list.no_player"));
         return Result.success(Reply.of(server + "\n" + player));
     }
 
     private SettingsEditor permitted(CommandContext context) {
         return permissions.editor(settings, context.sender().player().map(PlayerInfo::id));
+    }
+
+    private Translator tr(CommandContext context) {
+        return texts.forSender(context.sender());
     }
 }

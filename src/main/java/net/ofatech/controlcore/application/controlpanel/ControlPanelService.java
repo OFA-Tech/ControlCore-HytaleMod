@@ -8,6 +8,7 @@ import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.application.settings.PermittedSettingsEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
+import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.ControlPanelContent;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -32,6 +33,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final ServerConfigEditor serverConfig;
     private final KeymapsEditor keymaps;
     private final SettingPermissionPolicy permissions;
+    private final Texts texts;
 
     public ControlPanelService(
             ControlPanelSettings settings,
@@ -42,7 +44,8 @@ public final class ControlPanelService implements ControlPanelApi {
             SettingsApi registry,
             ServerConfigEditor serverConfig,
             KeymapsEditor keymaps,
-            SettingPermissionPolicy permissions) {
+            SettingPermissionPolicy permissions,
+            Texts texts) {
         this.settings = settings;
         this.players = players;
         this.server = server;
@@ -52,6 +55,7 @@ public final class ControlPanelService implements ControlPanelApi {
         this.serverConfig = serverConfig;
         this.keymaps = keymaps;
         this.permissions = permissions;
+        this.texts = texts;
     }
 
     /**
@@ -82,15 +86,19 @@ public final class ControlPanelService implements ControlPanelApi {
     public Result<Void> open(PlayerId player, ControlPanelRequest request) {
         if (request.isEmpty()) {
             return Result.failure(
-                    Error.validation("ControlPanel.NothingToShow", "The request does not include any section."));
+                    Error.validation("ControlPanel.NothingToShow", "The request does not include any section.")
+                            .localized("controlcore.errors.controlpanel.nothingtoshow"));
         }
         if (request.includesAdminSections() && !settings.panelEnabled()) {
             return Result.failure(Error.unavailable(
-                    "ControlPanel.Disabled",
-                    "The control panel is disabled (setting " + ControlPanelSettings.ENABLED_ID + ")."));
+                            "ControlPanel.Disabled",
+                            "The control panel is disabled (setting " + ControlPanelSettings.ENABLED_ID + ").")
+                    .localized(
+                            "controlcore.errors.controlpanel.disabled", "ENABLED_ID", ControlPanelSettings.ENABLED_ID));
         }
         if (players.find(player).isEmpty()) {
-            return Result.failure(Error.notFound("ControlPanel.PlayerNotFound", "That player is not online."));
+            return Result.failure(Error.notFound("ControlPanel.PlayerNotFound", "That player is not online.")
+                    .localized("controlcore.errors.controlpanel.playernotfound"));
         }
         // The HyUI page is the full admin layout, so narrower requests always use the built-in panel.
         ControlPanelView view = capabilities
@@ -104,9 +112,10 @@ public final class ControlPanelService implements ControlPanelApi {
                         server.read(),
                         permitted(serverConfig, player),
                         permitted(registry, player),
-                        keymaps,
-                        keymaps,
+                        keymaps.viewedBy(player),
+                        keymaps.viewedBy(player),
                         settings.startTab(player),
-                        permissions.isAdmin(player)));
+                        permissions.isAdmin(player),
+                        texts.forPlayer(Optional.of(player))));
     }
 }

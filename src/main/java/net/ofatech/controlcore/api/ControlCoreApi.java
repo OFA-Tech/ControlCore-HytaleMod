@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface ControlCoreApi {
 
     /** Version of this API contract (semantic versioning). */
-    String VERSION = "1.4.0";
+    String VERSION = "1.5.0";
 
     /**
      * @return the running API

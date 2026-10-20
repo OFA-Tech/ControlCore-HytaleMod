@@ -105,19 +105,22 @@ public record KeyCombo(List<KeyInput> inputs) {
                 held.add(signal.get());
             } else if (press != null) {
                 return Result.failure(Error.validation(
-                        "Keys.NotDetectable",
-                        "Only one of these can be in a combination: Q, E, R, F, O, 1-9 and the mouse buttons."));
+                                "Keys.NotDetectable",
+                                "Only one of these can be in a combination: Q, E, R, F, O, 1-9 and the mouse buttons.")
+                        .localized("controlcore.errors.keys.notdetectable"));
             } else {
                 press = signal.get();
             }
         }
         if (!missing.isEmpty()) {
             return Result.failure(Error.validation(
-                    "Keys.NotDetectable",
-                    "Hytale does not tell servers about " + String.join(", ", missing) + " yet."));
+                            "Keys.NotDetectable",
+                            "Hytale does not tell servers about " + String.join(", ", missing) + " yet.")
+                    .localized("controlcore.errors.keys.notdetectable_2", "missing", String.join(", ", missing)));
         }
         if (held.contains(KeySignal.MOVING) && held.contains(KeySignal.STANDING_STILL)) {
-            return Result.failure(Error.validation("Keys.NotDetectable", "Move and Stand still cannot be combined."));
+            return Result.failure(Error.validation("Keys.NotDetectable", "Move and Stand still cannot be combined.")
+                    .localized("controlcore.errors.keys.notdetectable_3"));
         }
         return Result.success(new KeyTrigger(Optional.ofNullable(press), held));
     }
@@ -157,6 +160,7 @@ public record KeyCombo(List<KeyInput> inputs) {
     }
 
     private static <T> Result<T> invalid(String description) {
-        return Result.failure(Error.validation("Keys.InvalidCombo", description));
+        return Result.failure(Error.validation("Keys.InvalidCombo", description)
+                .localized("controlcore.errors.keys.invalidcombo", "reason", description));
     }
 }

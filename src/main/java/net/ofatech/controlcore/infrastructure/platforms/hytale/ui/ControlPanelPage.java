@@ -21,6 +21,7 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -37,6 +38,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSearch;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
+import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -69,7 +71,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private static final String CUSTOM_NAMESPACE = "custom";
     private static final String KEYMAP_MODE_SERVER = "KeymapMode:Server";
     private static final String SEARCH = "Search";
-    private static final String SEARCH_HINT = "Search: words, mod:, name:, key:ctrl+f, is:changed, -word";
     private static final String KEYMAP_MODE_MINE = "KeymapMode:Mine";
 
     private enum Tab {
@@ -145,6 +146,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private final Map<Section, SettingSearch> searches = new EnumMap<>(Section.class);
 
     private final List<Subscription> subscriptions = new CopyOnWriteArrayList<>();
+    private final Translator tr;
     private Tab selected;
     /** Admin panel only: whether the Keymaps tab edits the server's keys (else the viewer's own). */
     private boolean editingServerKeys = true;
@@ -152,6 +154,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     ControlPanelPage(PlayerRef player, ControlPanelRequest request, ControlPanelContent content, Log log) {
         super(player, CustomPageLifetime.CanDismiss, Action.CODEC);
         this.log = log;
+        this.tr = content.translator();
         this.customKeyBinds = content.customKeyBinds();
         ControlPanelRequest shownSections = request.isEmpty() ? ControlPanelRequest.PLAYER_PREFERENCES : request;
         this.canAddBinds = content.manageKeys() && shownSections.includeRegisteredActions();
@@ -170,11 +173,16 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                             content.serverConfig(),
                             SettingScope.SERVER,
                             viewer,
-                            "No server config values to show here."));
+                            tr.t("controlcore.panel.empty.server_config"),
+                            tr));
             sections.put(
                     Section.SETTINGS,
                     new SettingsSection(
-                            content.settings(), SettingScope.SERVER, viewer, "No server settings to show here."));
+                            content.settings(),
+                            SettingScope.SERVER,
+                            viewer,
+                            tr.t("controlcore.panel.empty.settings"),
+                            tr));
         }
         if (shownSections.includePlayerPreferences()) {
             sections.put(
@@ -183,13 +191,18 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                             content.settings(),
                             SettingScope.PLAYER,
                             viewer,
-                            "No mod has registered player preferences yet."));
+                            tr.t("controlcore.panel.empty.prefs"),
+                            tr));
         }
         if (shownSections.includeRegisteredActions()) {
             sections.put(
                     Section.KEYMAPS,
                     SettingsSection.keymaps(
-                            content.keymaps(), SettingScope.PLAYER, viewer, "No mod has registered key actions yet."));
+                            content.keymaps(),
+                            SettingScope.PLAYER,
+                            viewer,
+                            tr.t("controlcore.panel.empty.keymaps"),
+                            tr));
         }
         if (canAddBinds) {
             sections.put(
@@ -198,7 +211,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                             content.keymaps(),
                             SettingScope.SERVER,
                             viewer,
-                            "No key actions yet. Mods register them, or add your own above."));
+                            tr.t("controlcore.panel.empty.server_keymaps"),
+                            tr));
         }
     }
 
@@ -213,21 +227,25 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             buildSection(key, section, commands, events);
             SettingSearch current = searches.getOrDefault(key, SettingSearch.ALL);
             String filter = key.search + "Filter";
-            commands.set(key.search + ".PlaceholderText", SEARCH_HINT);
+            commands.set(key.search + ".PlaceholderText", tr.t("controlcore.panel.search_hint"));
             commands.set(key.search + ".Value", current.text());
             commands.set(
                     filter + ".Entries",
                     Arrays.stream(SettingSearch.Filter.values())
-                            .map(option ->
-                                    new DropdownEntryInfo(LocalizableString.fromString(option.label()), option.label()))
+                            .map(option -> new DropdownEntryInfo(
+                                    LocalizableString.fromString(tr.t("controlcore.panel.filter."
+                                            + option.name().toLowerCase(Locale.ROOT))),
+                                    option.label()))
                             .toList());
             commands.set(filter + ".Value", current.filter().label());
             String match = key.search + "Match";
             commands.set(
                     match + ".Entries",
                     Arrays.stream(SettingSearch.Match.values())
-                            .map(option ->
-                                    new DropdownEntryInfo(LocalizableString.fromString(option.label()), option.label()))
+                            .map(option -> new DropdownEntryInfo(
+                                    LocalizableString.fromString(tr.t("controlcore.panel.match."
+                                            + option.name().toLowerCase(Locale.ROOT))),
+                                    option.label()))
                             .toList());
             commands.set(match + ".Value", current.match().label());
             EventData search = new EventData()
@@ -252,9 +270,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                     EventData.of(Action.KEY, KEYMAP_MODE_SERVER));
             events.addEventBinding(
                     CustomUIEventBindingType.Activating, "#KeymapModeMine", EventData.of(Action.KEY, KEYMAP_MODE_MINE));
-            commands.set("#NewBindName.PlaceholderText", "name, e.g. warp-spawn");
-            commands.set("#NewBindKeys.PlaceholderText", "keys, e.g. ctrl+r");
-            commands.set("#NewBindCommand.PlaceholderText", "command, e.g. warp spawn {player}");
+            commands.set("#NewBindName.PlaceholderText", tr.t("controlcore.panel.bind.name_hint"));
+            commands.set("#NewBindKeys.PlaceholderText", tr.t("controlcore.panel.bind.keys_hint"));
+            commands.set("#NewBindCommand.PlaceholderText", tr.t("controlcore.panel.bind.command_hint"));
             events.addEventBinding(
                     CustomUIEventBindingType.Activating,
                     "#NewBindAdd",
@@ -387,7 +405,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 commands.set(
                         input + ".Entries",
                         SettingsSection.options(snapshot).stream()
-                                .map(option -> new DropdownEntryInfo(LocalizableString.fromString(option), option))
+                                .map(option -> new DropdownEntryInfo(
+                                        LocalizableString.fromString(section.option(snapshot, option)), option))
                                 .toList());
                 events.addEventBinding(
                         CustomUIEventBindingType.ValueChanged,
@@ -396,9 +415,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             }
             case INFO -> commands.append(key.list, INFO_ROW);
         }
-        commands.set(element + " #Label.Text", snapshot.definition().displayName());
+        commands.set(element + " #Label.Text", section.name(snapshot));
         commands.set(element + " #Description.Text", section.description(snapshot));
-        showValue(row.kind(), element, snapshot, commands);
+        showValue(section, row.kind(), element, snapshot, commands);
         if (row.kind() != SettingsSection.Kind.INFO) {
             events.addEventBinding(CustomUIEventBindingType.Activating, element + " #Reset", action(RESET, key, id));
         }
@@ -421,13 +440,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         result.onSuccess(snapshot -> {
                     shown.put(shownKey(key, snapshot.id()), snapshot.value());
                     latest.put(shownKey(key, snapshot.id()), snapshot);
-                    update.set(key.status + ".Text", SettingsSection.saved(snapshot));
+                    update.set(key.status + ".Text", section.saved(snapshot));
                     Integer index = rowIndexes.get(key).get(snapshot.id());
                     if (writeBack && index != null) {
-                        showValue(SettingsSection.kindOf(snapshot), key.row(index), snapshot, update);
+                        showValue(section, SettingsSection.kindOf(snapshot), key.row(index), snapshot, update);
                     }
                 })
-                .onFailure(error -> update.set(key.status + ".Text", error.description()));
+                .onFailure(error -> update.set(key.status + ".Text", tr.error(error)));
         sendUpdate(update, false);
     }
 
@@ -446,9 +465,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                             update.set("#NewBindAsServer.Value", bind.runAsServer());
                             update.set(
                                     Section.SERVER_KEYMAPS.status + ".Text",
-                                    "Editing custom:" + bind.name() + ": change it above and click Save bind.");
+                                    tr.t("controlcore.panel.bind.editing", "name", bind.name()));
                         },
-                        () -> update.set(Section.SERVER_KEYMAPS.status + ".Text", "There is no key bind " + id + "."));
+                        () -> update.set(
+                                Section.SERVER_KEYMAPS.status + ".Text",
+                                tr.t("controlcore.panel.bind.unknown", "id", id)));
         sendUpdate(update, false);
     }
 
@@ -463,7 +484,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         UICommandBuilder update = new UICommandBuilder();
         update.set(
                 Section.SERVER_KEYMAPS.status + ".Text",
-                result.isSuccess() ? result.value() : result.error().description());
+                result.isSuccess() ? result.value() : tr.error(result.error()));
         sendUpdate(update, false);
     }
 
@@ -479,7 +500,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         UICommandBuilder update = new UICommandBuilder();
         update.set(
                 Section.SERVER_KEYMAPS.status + ".Text",
-                result.isSuccess() ? result.value() : result.error().description());
+                result.isSuccess() ? result.value() : tr.error(result.error()));
         if (result.isSuccess()) {
             update.set("#NewBindName.Value", "");
             update.set("#NewBindKeys.Value", "");
@@ -521,9 +542,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 shown.put(shownKey(key, id), snapshot.value());
                 latest.put(shownKey(key, id), snapshot);
                 UICommandBuilder update = new UICommandBuilder();
-                showValue(SettingsSection.kindOf(snapshot), key.row(index), snapshot, update);
+                showValue(section, SettingsSection.kindOf(snapshot), key.row(index), snapshot, update);
                 update.set(key.row(index) + " #Description.Text", section.description(snapshot));
-                update.set(key.status + ".Text", SettingsSection.changedElsewhere(snapshot));
+                update.set(key.status + ".Text", section.changedElsewhere(snapshot));
                 sendUpdate(update, false);
             });
         } catch (RuntimeException e) {
@@ -547,12 +568,16 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     }
 
     private static void showValue(
-            SettingsSection.Kind kind, String element, SettingSnapshot snapshot, UICommandBuilder commands) {
+            SettingsSection section,
+            SettingsSection.Kind kind,
+            String element,
+            SettingSnapshot snapshot,
+            UICommandBuilder commands) {
         String input = element + " #Input";
         switch (kind) {
             case TEXT, CHOICE -> commands.set(input + ".Value", snapshot.value());
             case TOGGLE -> commands.set(input + ".Value", Boolean.parseBoolean(snapshot.value()));
-            case INFO -> commands.set(element + " #Value.Text", SettingsSection.shownValue(snapshot));
+            case INFO -> commands.set(element + " #Value.Text", section.shownValue(snapshot));
         }
     }
 
@@ -609,7 +634,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 case SettingsSection.Row row -> {
                     rows++;
                     SettingSnapshot snapshot = latest.getOrDefault(shownKey(key, row.id()), row.snapshot());
-                    visible[index] = search.matches(snapshot, section.description(snapshot));
+                    visible[index] = search.matches(
+                            snapshot,
+                            section.name(snapshot),
+                            section.category(snapshot),
+                            section.description(snapshot));
                     if (visible[index]) {
                         matching++;
                         if (heading >= 0) {
@@ -628,10 +657,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 status = "";
             } else if (matching == 0) {
                 status = search.text().isEmpty()
-                        ? "Nothing is " + search.filter().label().toLowerCase(java.util.Locale.ROOT) + "."
-                        : "Nothing matches \"" + search.text() + "\".";
+                        ? tr.t("controlcore.panel.search.nothing_filtered")
+                        : tr.t("controlcore.panel.search.nothing", "text", search.text());
             } else {
-                status = matching + " of " + rows + " shown.";
+                status = tr.t("controlcore.panel.search.shown", "count", matching, "total", rows);
             }
             commands.set(key.status + ".Text", status);
         }

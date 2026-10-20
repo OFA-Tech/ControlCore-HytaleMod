@@ -6,6 +6,7 @@ import net.ofatech.controlcore.domain.model.ControlPanelTab;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 
 /** The control panel's settings in the shared registry; defaults come from {@code Settings.json}. */
@@ -22,18 +23,22 @@ public final class ControlPanelSettings {
                                 ENABLED_ID,
                                 SettingType.bool(),
                                 defaults.current().controlPanelEnabled())
-                        .named("Control panel enabled")
-                        .describedAs("Whether admins can open the control panel with /open-admin-config. Players"
-                                + " can always open their preferences with /prefs.")
-                        .inCategory("ControlCore"))
+                        .named(Text.key("controlcore.settings.control_panel_enabled.name", "Control panel enabled"))
+                        .describedAs(Text.key(
+                                "controlcore.settings.control_panel_enabled.desc",
+                                "Whether admins can open the control panel with /open-admin-config. Players"
+                                        + " can always open their preferences with /prefs."))
+                        .inCategory(Text.key("controlcore.settings.category", "ControlCore")))
                 .value();
         this.startTab = settings.register(SettingDefinition.player(
                                 START_TAB_ID,
                                 SettingType.choice(ControlPanelTab.labels().toArray(String[]::new)),
                                 ControlPanelTab.SERVER_CONFIGS.label())
-                        .named("Panel start tab")
-                        .describedAs("The tab the control panel opens on.")
-                        .inCategory("ControlCore"))
+                        .named(Text.key("controlcore.settings.panel_start_tab.name", "Panel start tab"))
+                        .describedAs(Text.key(
+                                "controlcore.settings.panel_start_tab.desc", "The tab the control panel opens on."))
+                        .inCategory(Text.key("controlcore.settings.category", "ControlCore"))
+                        .optionsKey("controlcore.tabs"))
                 .value();
     }
 

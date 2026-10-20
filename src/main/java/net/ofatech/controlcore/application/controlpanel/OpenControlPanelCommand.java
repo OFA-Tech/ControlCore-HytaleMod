@@ -32,7 +32,9 @@ public final class OpenControlPanelCommand implements ModCommand {
         // Not a command permission: players an admin lets see some settings may open the panel too.
         if (!controlPanel.mayOpenAdminPanel(sender.id())) {
             return Result.failure(Error.forbidden(
-                    "ControlPanel.Forbidden", "You do not have access to the admin panel. Your preferences: /prefs"));
+                            "ControlPanel.Forbidden",
+                            "You do not have access to the admin panel. Your preferences: /prefs")
+                    .localized("controlcore.errors.controlpanel.forbidden"));
         }
         return controlPanel.open(sender.id(), ControlPanelRequest.ALL).map(opened -> Reply.none());
     }

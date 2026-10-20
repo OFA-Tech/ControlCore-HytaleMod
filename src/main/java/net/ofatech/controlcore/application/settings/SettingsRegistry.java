@@ -67,8 +67,14 @@ public final class SettingsRegistry implements SettingsApi {
             if (existing.scope() != definition.scope()
                     || existing.type().valueType() != definition.type().valueType()) {
                 return Result.failure(Error.conflict(
-                        "Settings.Conflict",
-                        definition.id() + " is already registered as a " + describe(existing) + "."));
+                                "Settings.Conflict",
+                                definition.id() + " is already registered as a " + describe(existing) + ".")
+                        .localized(
+                                "controlcore.errors.settings.conflict",
+                                "id",
+                                definition.id(),
+                                "existing",
+                                describe(existing)));
             }
             definitions.put(definition.id(), definition);
             log.debug("Setting " + definition.id() + " re-registered");
@@ -155,7 +161,8 @@ public final class SettingsRegistry implements SettingsApi {
         SettingDefinition<?> definition = definitions.get(id);
         return definition != null
                 ? Result.success(definition)
-                : Result.failure(Error.notFound("Settings.UnknownSetting", "There is no setting " + id + "."));
+                : Result.failure(Error.notFound("Settings.UnknownSetting", "There is no setting " + id + ".")
+                        .localized("controlcore.errors.settings.unknownsetting_2", "id", id));
     }
 
     private <T> Result<SettingSnapshot> writeText(
@@ -197,11 +204,14 @@ public final class SettingsRegistry implements SettingsApi {
     private static Result<Void> checkScope(SettingDefinition<?> definition, Optional<PlayerId> player) {
         if (definition.scope() == SettingScope.SERVER && player.isPresent()) {
             return Result.failure(Error.validation(
-                    "Settings.WrongScope", definition.id() + " is a server setting, not a player preference."));
+                            "Settings.WrongScope", definition.id() + " is a server setting, not a player preference.")
+                    .localized("controlcore.errors.settings.wrongscope_2", "id", definition.id()));
         }
         if (definition.scope() == SettingScope.PLAYER && player.isEmpty()) {
             return Result.failure(Error.validation(
-                    "Settings.WrongScope", definition.id() + " is a player preference; each player sets their own."));
+                            "Settings.WrongScope",
+                            definition.id() + " is a player preference; each player sets their own.")
+                    .localized("controlcore.errors.settings.wrongscope_3", "id", definition.id()));
         }
         return Result.success();
     }

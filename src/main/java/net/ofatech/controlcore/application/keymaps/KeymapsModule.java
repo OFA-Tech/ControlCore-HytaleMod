@@ -5,6 +5,7 @@ import net.ofatech.controlcore.application.component.FeatureModule;
 import net.ofatech.controlcore.application.component.ModuleContext;
 import net.ofatech.controlcore.domain.model.keys.Key;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.game.PlayerInput;
 
 /** Registers ControlCore's own key actions and connects player input to the {@link KeyDispatcher}. */
@@ -27,8 +28,9 @@ public final class KeymapsModule implements FeatureModule {
     public void setup(ModuleContext context) {
         keymaps.loadCustom();
         keymaps.register(KeyAction.of("controlcore", OPEN_PREFERENCES)
-                .displayName("Open my preferences")
-                .describedAs("Opens your preferences and key bindings.")
+                .displayName(Text.key("controlcore.keys.actions.open_preferences.name", "Open my preferences"))
+                .describedAs(Text.key(
+                        "controlcore.keys.actions.open_preferences.desc", "Opens your preferences and key bindings."))
                 .command("prefs")
                 .defaultKeys(Key.CTRL, Key.F));
     }

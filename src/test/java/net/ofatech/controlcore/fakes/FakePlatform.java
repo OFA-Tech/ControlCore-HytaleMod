@@ -26,6 +26,8 @@ public final class FakePlatform implements Platform {
     public final FakeClock clock = new FakeClock();
     public final FakeSettings settings = new FakeSettings();
     public final FakePlayers players = new FakePlayers();
+    public final net.ofatech.controlcore.infrastructure.i18n.BundledTranslations translations =
+            new net.ofatech.controlcore.infrastructure.i18n.BundledTranslations();
     public final FakeMessenger messenger = new FakeMessenger();
     public final FakePlayerData playerData = new FakePlayerData();
     public final FakeSettingStore settingStore = new FakeSettingStore();
@@ -56,6 +58,7 @@ public final class FakePlatform implements Platform {
         binder.bind(Clock.class, clock);
         binder.bind(SettingsProvider.class, settings);
         binder.bind(Players.class, players);
+        binder.bind(net.ofatech.controlcore.domain.ports.system.Translations.class, translations);
         binder.bind(Messenger.class, messenger);
         binder.bind(Permissions.class, (player, node) -> !deniedNodes.contains(node));
         binder.bind(PlayerData.class, playerData);

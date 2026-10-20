@@ -3,6 +3,7 @@ package net.ofatech.controlcore.domain.model;
 import net.ofatech.controlcore.domain.guard.Guard;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
+import net.ofatech.controlcore.domain.model.text.Translator;
 
 /**
  * What a control panel view shows.
@@ -14,6 +15,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
  * @param customKeyBinds creates admins' own key actions (shown in the admin panel's Keymaps tab)
  * @param startTab the tab shown first
  * @param manageKeys whether the viewer may change the server's keys and admins' own binds
+ * @param translator shows text in the viewer's language (since API 1.5.0)
  */
 public record ControlPanelContent(
         ServerSettings server,
@@ -22,7 +24,8 @@ public record ControlPanelContent(
         SettingsEditor keymaps,
         CustomKeyBindEditor customKeyBinds,
         ControlPanelTab startTab,
-        boolean manageKeys) {
+        boolean manageKeys,
+        Translator translator) {
 
     public ControlPanelContent {
         Guard.notNull(server, "server");
@@ -31,5 +34,6 @@ public record ControlPanelContent(
         Guard.notNull(keymaps, "keymaps");
         Guard.notNull(customKeyBinds, "customKeyBinds");
         Guard.notNull(startTab, "startTab");
+        Guard.notNull(translator, "translator");
     }
 }

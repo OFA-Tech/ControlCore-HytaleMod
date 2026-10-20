@@ -14,6 +14,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
+import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -54,18 +55,27 @@ final class SettingsSection {
     private final Optional<PlayerId> player;
     private final String emptyText;
     private final boolean keys;
+    private final Translator tr;
 
-    SettingsSection(SettingsEditor settings, SettingScope scope, Optional<PlayerId> player, String emptyText) {
-        this(settings, scope, player, emptyText, false);
+    /** @param emptyText shown when there is nothing to list, already in the viewer's language */
+    SettingsSection(
+            SettingsEditor settings, SettingScope scope, Optional<PlayerId> player, String emptyText, Translator tr) {
+        this(settings, scope, player, emptyText, false, tr);
     }
 
     private SettingsSection(
-            SettingsEditor settings, SettingScope scope, Optional<PlayerId> player, String emptyText, boolean keys) {
+            SettingsEditor settings,
+            SettingScope scope,
+            Optional<PlayerId> player,
+            String emptyText,
+            boolean keys,
+            Translator tr) {
         this.settings = settings;
         this.scope = scope;
         this.player = scope == SettingScope.PLAYER ? player : Optional.empty();
         this.emptyText = emptyText;
         this.keys = keys;
+        this.tr = tr;
     }
 
     /**
@@ -73,26 +83,59 @@ final class SettingsSection {
      * own keys; {@code SERVER}: the server's keys for everyone.
      */
     static SettingsSection keymaps(
-            SettingsEditor keymaps, SettingScope scope, Optional<PlayerId> player, String emptyText) {
-        return new SettingsSection(keymaps, scope, player, emptyText, true);
+            SettingsEditor keymaps, SettingScope scope, Optional<PlayerId> player, String emptyText, Translator tr) {
+        return new SettingsSection(keymaps, scope, player, emptyText, true, tr);
     }
 
     /** @return the hint shown in an empty text field */
     String placeholder(SettingSnapshot snapshot) {
         return keys
-                ? "keys, for example ctrl+f or alt+3 | mouse_middle; none unbinds"
-                : snapshot.definition().type().describe();
+                ? tr.t("controlcore.panel.keys_hint")
+                : tr.translate(snapshot.definition().type().describeText());
+    }
+
+    /** @return the row's name in the viewer's language */
+    String name(SettingSnapshot snapshot) {
+        return tr.translate(snapshot.definition().nameText());
+    }
+
+    /** @return the row's category in the viewer's language */
+    String category(SettingSnapshot snapshot) {
+        return tr.translate(snapshot.definition().categoryText());
+    }
+
+    /** @return a choice's option in the viewer's language */
+    String option(SettingSnapshot snapshot, String option) {
+        return tr.translate(snapshot.definition().labels().option(option));
     }
 
     /** @return the description line under a row */
     String description(SettingSnapshot snapshot) {
-        if (!keys) {
-            return describe(snapshot);
-        }
         SettingDefinition<?> definition = snapshot.definition();
-        String details = (scope == SettingScope.SERVER ? "mod keys " : "server keys ") + definition.formattedDefault()
-                + " · " + definition.id();
-        return definition.description().isBlank() ? details : definition.description() + " (" + details + ")";
+        String text = tr.translate(definition.descriptionText()).strip();
+        String details;
+        if (keys) {
+            details = tr.t(
+                    scope == SettingScope.SERVER
+                            ? "controlcore.panel.keys_details_mod"
+                            : "controlcore.panel.keys_details_server",
+                    "keys",
+                    definition.formattedDefault(),
+                    "id",
+                    definition.id());
+        } else if (snapshot.access() == SettingAccess.READ_ONLY) {
+            details = tr.t("controlcore.panel.details_read_only", "id", definition.id());
+        } else {
+            details = tr.t(
+                    "controlcore.panel.details",
+                    "type",
+                    tr.translate(definition.type().describeText()),
+                    "default",
+                    shown(definition.formattedDefault(), snapshot),
+                    "id",
+                    definition.id());
+        }
+        return text.isBlank() ? details : text + " (" + details + ")";
     }
 
     SettingScope scope() {
@@ -111,7 +154,7 @@ final class SettingsSection {
         for (SettingSnapshot snapshot : snapshots) {
             if (!snapshot.definition().category().equals(category)) {
                 category = snapshot.definition().category();
-                entries.add(new Heading(category));
+                entries.add(new Heading(category(snapshot)));
             }
             entries.add(new Row(kindOf(snapshot), snapshot));
         }
@@ -126,7 +169,8 @@ final class SettingsSection {
     /** Saves the state of a check box. */
     Result<SettingSnapshot> check(String idText, Boolean checked) {
         if (checked == null) {
-            return Result.failure(Error.validation("ControlPanel.MissingValue", "The check box sent no value."));
+            return Result.failure(Error.validation("ControlPanel.MissingValue", "The check box sent no value.")
+                    .localized("controlcore.errors.controlpanel.missingvalue"));
         }
         return save(idText, checked.toString());
     }
@@ -166,40 +210,46 @@ final class SettingsSection {
         };
     }
 
-    /** @return the description line under a row: description, type and default */
-    static String describe(SettingSnapshot snapshot) {
-        SettingDefinition<?> definition = snapshot.definition();
-        String details = snapshot.access() == SettingAccess.READ_ONLY
-                ? "read-only · " + definition.id()
-                : definition.type().describe() + ", default " + shown(definition.formattedDefault()) + " · "
-                        + definition.id();
-        return definition.description().isBlank() ? details : definition.description() + " (" + details + ")";
-    }
-
     /** @return the status line after a successful change */
-    static String saved(SettingSnapshot snapshot) {
-        return "Saved: " + snapshot.definition().displayName() + " = " + shown(snapshot.value())
-                + (snapshot.overridden() ? "" : " (default)")
-                + (snapshot.access() == SettingAccess.APPLIES_AFTER_RESTART ? ". Applies after a restart." : "");
+    String saved(SettingSnapshot snapshot) {
+        String key = snapshot.overridden() ? "controlcore.panel.saved" : "controlcore.panel.saved_default";
+        if (snapshot.access() == SettingAccess.APPLIES_AFTER_RESTART) {
+            key += "_restart";
+        }
+        return tr.t(key, "name", name(snapshot), "value", shown(snapshot.value(), snapshot));
     }
 
     /** @return the value shown in a read-only row */
-    static String shownValue(SettingSnapshot snapshot) {
-        return shown(snapshot.value());
+    String shownValue(SettingSnapshot snapshot) {
+        return shown(snapshot.value(), snapshot);
     }
 
     /** @return the status line after a change made outside this panel */
-    static String changedElsewhere(SettingSnapshot snapshot) {
-        return "Changed elsewhere: " + snapshot.definition().displayName() + " = " + shown(snapshot.value())
-                + (snapshot.overridden() ? "" : " (default)");
+    String changedElsewhere(SettingSnapshot snapshot) {
+        return tr.t(
+                snapshot.overridden()
+                        ? "controlcore.panel.changed_elsewhere"
+                        : "controlcore.panel.changed_elsewhere_default",
+                "name",
+                name(snapshot),
+                "value",
+                shown(snapshot.value(), snapshot));
+    }
+
+    /** @return {@code error} in the viewer's language */
+    String error(Error error) {
+        return tr.error(error);
     }
 
     static List<String> options(SettingSnapshot snapshot) {
         return snapshot.definition().type() instanceof SettingType.ChoiceType choice ? choice.options() : List.of();
     }
 
-    private static String shown(String value) {
-        return value.isEmpty() ? "(empty)" : value;
+    private String shown(String value, SettingSnapshot snapshot) {
+        if (value.isEmpty()) {
+            return tr.t("controlcore.settings.empty");
+        }
+        return snapshot.definition().type() instanceof SettingType.ChoiceType ? option(snapshot, value) : value;
     }
 
     private static Result<SettingId> id(String text) {

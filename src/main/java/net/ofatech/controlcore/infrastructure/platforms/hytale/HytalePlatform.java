@@ -23,6 +23,8 @@ import net.ofatech.controlcore.domain.ports.platform.Platform;
 import net.ofatech.controlcore.domain.ports.platform.PortBinder;
 import net.ofatech.controlcore.domain.ports.system.Clock;
 import net.ofatech.controlcore.domain.ports.system.Log;
+import net.ofatech.controlcore.domain.ports.system.Translations;
+import net.ofatech.controlcore.infrastructure.i18n.BundledTranslations;
 import net.ofatech.controlcore.infrastructure.persistence.JsonCustomKeyBindStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonKeyBindStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonPlayerDataStore;
@@ -31,6 +33,7 @@ import net.ofatech.controlcore.infrastructure.persistence.JsonSettingStore;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.command.HytaleCommandRegistrar;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.config.HytaleSettingsProvider;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.event.HytaleGameEvents;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.i18n.HytaleTranslations;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleCommandRunner;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleInputProbe;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytalePlayerInput;
@@ -68,6 +71,7 @@ public final class HytalePlatform implements Platform {
         binder.bind(Players.class, players);
         binder.bind(Messenger.class, new HytaleMessenger());
         binder.bind(Permissions.class, new HytalePermissions(plugin.getBasePermission()));
+        binder.bind(Translations.class, new HytaleTranslations(new BundledTranslations()));
         binder.bind(Scheduler.class, new HytaleScheduler(plugin.getTaskRegistry(), log));
         binder.bind(
                 PlayerData.class,

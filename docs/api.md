@@ -7,7 +7,7 @@ types, so the API survives Hytale updates.
 
 | Type | Purpose |
 |---|---|
-| `ControlCoreApi` | entry point: `get()`, `find()`, `apiVersion()`, `controlPanel()`, `events()`, `settings()`, `keymaps()` (1.3.0); setting permissions (1.4.0) |
+| `ControlCoreApi` | entry point: `get()`, `find()`, `apiVersion()`, `controlPanel()`, `events()`, `settings()`, `keymaps()` (1.3.0); setting permissions (1.4.0); translations (1.5.0) |
 | `ControlPanelApi` | `isAvailable()`, `open(player, request)` |
 | `ControlCoreEvents` | `subscribe(eventType, listener)` returning a closable `Subscription` |
 | `SettingsApi` (1.1.0) | shared settings registry: `register(definition)`, `definitions()`, `snapshot(scope, player)`, `read` / `write` / `reset` by id, `onAnyChange(listener)` (1.2.0) |
@@ -103,6 +103,41 @@ api.settings().setCategoryPermission("Homes", SettingPermission.of("homes.staff"
 | `/cc-pref-reset <id>` | any player | return a preference to the default |
 
 `<base>` is ControlCore's base permission; operators have every node.
+
+## Translations (API 1.5.0)
+
+ControlCore shows its panel, command replies, errors and command help in each player's **game language**
+(`en-US`, `pt-BR` and `es-ES` are included). A text missing in that language falls back to the
+**Server language** setting (`controlcore:server-language`, also used for the console), then English.
+Players can change their game language at any time; ControlCore reads it every time it shows text.
+
+Mods can have their setting and key texts translated too. Pass a `Text.key(key, englishFallback)` instead
+of a plain string and ship the keys in your own language files:
+
+```java
+SettingDefinition.server("homes:max-homes", SettingType.integer(1, 50), 3)
+        .named(Text.key("homes.settings.max_homes", "Max homes"))
+        .describedAs(Text.key("homes.settings.max_homes.desc", "How many homes each player may set"))
+        .inCategory(Text.key("homes.settings.category", "Homes"));
+SettingDefinition.player("homes:sort", SettingType.choice("Name", "Distance"), "Name")
+        .optionsKey("homes.sort");                      // option "Distance" -> homes.sort.distance
+KeyAction.of("homes", "go-home").displayName(Text.key("homes.keys.go_home", "Go home"));
+```
+
+```
+# src/main/resources/Server/Languages/pt-BR/homes.lang   (keys are read as homes.<key>)
+settings.max_homes = Máximo de casas
+settings.max_homes.desc = Quantas casas cada jogador pode definir
+sort.distance = Distância
+keys.go_home = Ir para casa
+```
+
+- Plain strings keep working and are shown as they are.
+- Only the shown text is translated: ids, stored values and the search's own words stay the same. Search
+  also matches the translated names.
+- Placeholders are written `{name}` and filled with `Text.key(...).with("name", value)`.
+- The server config keys' names and section headings are translated; Hytale's own descriptions stay in
+  English.
 
 ## Key actions
 

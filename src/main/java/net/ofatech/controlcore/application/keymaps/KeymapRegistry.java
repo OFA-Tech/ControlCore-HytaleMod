@@ -17,6 +17,7 @@ import net.ofatech.controlcore.domain.model.keys.KeyAction;
 import net.ofatech.controlcore.domain.model.keys.KeyBinds;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.KeyBindStore;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
@@ -65,7 +66,8 @@ public final class KeymapRegistry implements KeymapsApi {
     public Result<KeyAction> register(KeyAction action) {
         if (action != null && CUSTOM.equals(action.modId())) {
             return Result.failure(Error.validation(
-                    "Keys.ReservedId", "The namespace '" + CUSTOM + "' is for key actions admins create."));
+                            "Keys.ReservedId", "The namespace '" + CUSTOM + "' is for key actions admins create.")
+                    .localized("controlcore.errors.keys.reservedid", "CUSTOM", CUSTOM));
         }
         return put(action);
     }
@@ -243,11 +245,13 @@ public final class KeymapRegistry implements KeymapsApi {
 
     private Result<KeyAction> put(KeyAction action) {
         if (action == null) {
-            return Result.failure(Error.validation("Keys.NothingToRun", "The key action is missing."));
+            return Result.failure(Error.validation("Keys.NothingToRun", "The key action is missing.")
+                    .localized("controlcore.errors.keys.nothingtorun"));
         }
         if (action.command().isEmpty() && action.onPress().isEmpty()) {
-            return Result.failure(Error.validation(
-                    "Keys.NothingToRun", "Key action " + action.id() + " needs a command or onPress."));
+            return Result.failure(
+                    Error.validation("Keys.NothingToRun", "Key action " + action.id() + " needs a command or onPress.")
+                            .localized("controlcore.errors.keys.nothingtorun_2", "id", action.id()));
         }
         actions.put(action.id(), action);
         log.debug("Registered key action " + action.id() + " (" + action.defaultKeys() + ")");
@@ -256,13 +260,14 @@ public final class KeymapRegistry implements KeymapsApi {
 
     private Result<KeyAction> customAction(String name, String keys, String command, boolean runAsServer) {
         if (command == null || KeyAction.normalizeCommand(command).isBlank()) {
-            return Result.failure(Error.validation("Keys.NothingToRun", "Write the command the keys should run."));
+            return Result.failure(Error.validation("Keys.NothingToRun", "Write the command the keys should run.")
+                    .localized("controlcore.errors.keys.nothingtorun_3"));
         }
         return customId(name)
                 .flatMap(id -> KeyBinds.parse(keys).map(binds -> {
                     KeyAction action = KeyAction.of(CUSTOM, id.key())
                             .displayName(id.key())
-                            .describedAs("Added by an admin.")
+                            .describedAs(Text.key("controlcore.keys.custom.added_by_admin", "Added by an admin."))
                             .command(command)
                             .defaultKeys(binds);
                     return runAsServer ? action.runAsServer() : action;
@@ -278,14 +283,16 @@ public final class KeymapRegistry implements KeymapsApi {
         return id.isSuccess()
                 ? id
                 : Result.failure(Error.validation(
-                        "Keys.InvalidName",
-                        "'" + text + "' is not a valid name: use lower case letters, digits, - and _."));
+                                "Keys.InvalidName",
+                                "'" + text + "' is not a valid name: use lower case letters, digits, - and _.")
+                        .localized("controlcore.errors.keys.invalidname", "text", text));
     }
 
     private Result<KeyAction> known(SettingId id) {
         return find(id).map(Result::success)
                 .orElseGet(() -> Result.failure(Error.notFound(
-                        "Keys.UnknownAction", "There is no key action '" + id + "'. See /cc-keys for the list.")));
+                                "Keys.UnknownAction", "There is no key action '" + id + "'. See /cc-keys for the list.")
+                        .localized("controlcore.errors.keys.unknownaction", "id", id)));
     }
 
     private Result<KeyAction> usable(SettingId id, PlayerId player) {
@@ -293,8 +300,9 @@ public final class KeymapRegistry implements KeymapsApi {
                 .flatMap(action -> canUse(action, player)
                         ? Result.success(action)
                         : Result.failure(Error.notFound(
-                                "Keys.UnknownAction",
-                                "There is no key action '" + id + "'. See /cc-keys for the list.")));
+                                        "Keys.UnknownAction",
+                                        "There is no key action '" + id + "'. See /cc-keys for the list.")
+                                .localized("controlcore.errors.keys.unknownaction", "id", id)));
     }
 
     private KeyBinds defaults(SettingId id) {

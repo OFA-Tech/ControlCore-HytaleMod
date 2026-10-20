@@ -12,6 +12,8 @@ import net.ofatech.controlcore.domain.model.settings.SettingPermission;
 import net.ofatech.controlcore.domain.model.settings.SettingRights;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
+import net.ofatech.controlcore.domain.model.text.Text;
+import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.config.SettingPermissionStore;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
 import net.ofatech.controlcore.domain.result.Error;
@@ -49,13 +51,17 @@ public final class SettingPermissionPolicy {
     }
 
     /** One side of a resolved rule: the node ({@code empty} = ControlCore's default) and where it came from. */
-    public record Rule(Optional<String> node, String source) {
+    public record Rule(Optional<String> node, Text source) {
 
         /** @return the rule as players read it */
-        public String describe(SettingScope scope) {
-            String who = node.map(value -> value.equals(SettingPermission.EVERYONE) ? "everyone" : value)
-                    .orElse(scope == SettingScope.SERVER ? "admins" : "everyone");
-            return who + " (" + source + ")";
+        public String describe(Translator tr, SettingScope scope) {
+            String who = node.map(value ->
+                            value.equals(SettingPermission.EVERYONE) ? tr.t("controlcore.permissions.everyone") : value)
+                    .orElse(tr.t(
+                            scope == SettingScope.SERVER
+                                    ? "controlcore.permissions.admins"
+                                    : "controlcore.permissions.everyone"));
+            return tr.t("controlcore.permissions.who", "who", who, "source", tr.translate(source));
         }
     }
 
@@ -115,13 +121,15 @@ public final class SettingPermissionPolicy {
         }
         String sideText = side == null ? "" : side.strip().toLowerCase(Locale.ROOT);
         if (!sideText.equals("view") && !sideText.equals("edit") && !sideText.equals("both")) {
-            return Result.failure(Error.validation(
-                    "Settings.InvalidPermissionSide", "Choose view, edit or both, not '" + side + "'."));
+            return Result.failure(
+                    Error.validation("Settings.InvalidPermissionSide", "Choose view, edit or both, not '" + side + "'.")
+                            .localized("controlcore.errors.settings.invalidpermissionside", "side", side));
         }
         String value = node == null ? "" : node.strip();
         if (value.isEmpty()) {
             return Result.failure(
-                    Error.validation("Settings.InvalidPermission", "Give a permission node, everyone or default."));
+                    Error.validation("Settings.InvalidPermission", "Give a permission node, everyone or default.")
+                            .localized("controlcore.errors.settings.invalidpermission"));
         }
         String newNode = value.equalsIgnoreCase("default") ? null : value;
         try {
@@ -135,7 +143,8 @@ public final class SettingPermissionPolicy {
             store.put(key.value(), rule);
             return Result.success(rule);
         } catch (RuntimeException e) {
-            return Result.failure(Error.validation("Settings.InvalidPermission", e.getMessage()));
+            return Result.failure(Error.validation("Settings.InvalidPermission", e.getMessage())
+                    .localized("controlcore.errors.settings.invalidpermission_2", "reason", e.getMessage()));
         }
     }
 
@@ -154,36 +163,45 @@ public final class SettingPermissionPolicy {
             return SettingId.parse(text).map(id -> SETTING + id);
         }
         return Result.failure(Error.validation(
-                "Settings.InvalidPermissionTarget",
-                "Name a setting id (homes:max-homes), category:<name> or mod:<mod id>, not '" + target + "'."));
+                        "Settings.InvalidPermissionTarget",
+                        "Name a setting id (homes:max-homes), category:<name> or mod:<mod id>, not '" + target + "'.")
+                .localized("controlcore.errors.settings.invalidpermissiontarget", "target", target));
     }
 
     private Rule resolve(SettingDefinition<?> definition, Function<SettingPermission, Optional<String>> side) {
         Map<String, SettingPermission> rules = store.all();
         String category = definition.category().strip().toLowerCase(Locale.ROOT);
-        String[][] admin = {
-            {SETTING + definition.id(), "admin rule for this setting"},
-            {CATEGORY + category, "admin rule for category " + definition.category()},
-            {
-                MOD + definition.id().namespace(),
-                "admin rule for mod " + definition.id().namespace()
-            }
+        String[] targets = {
+            SETTING + definition.id(),
+            CATEGORY + category,
+            MOD + definition.id().namespace()
         };
-        for (String[] candidate : admin) {
-            Optional<String> node = Optional.ofNullable(rules.get(candidate[0])).flatMap(side);
+        Text[] sources = {
+            Text.key("controlcore.permissions.source.admin_setting", "admin rule for this setting"),
+            Text.key("controlcore.permissions.source.admin_category", "admin rule for category {category}")
+                    .with("category", definition.category()),
+            Text.key("controlcore.permissions.source.admin_mod", "admin rule for mod {mod}")
+                    .with("mod", definition.id().namespace())
+        };
+        for (int index = 0; index < targets.length; index++) {
+            Optional<String> node =
+                    Optional.ofNullable(rules.get(targets[index])).flatMap(side);
             if (node.isPresent()) {
-                return new Rule(node, candidate[1]);
+                return new Rule(node, sources[index]);
             }
         }
         Optional<String> own = side.apply(definition.permission());
         if (own.isPresent()) {
-            return new Rule(own, "set by the mod");
+            return new Rule(own, Text.key("controlcore.permissions.source.mod", "set by the mod"));
         }
         Optional<String> fromCategory = side.apply(settings.categoryPermission(definition.category()));
         if (fromCategory.isPresent()) {
-            return new Rule(fromCategory, "set by the mod for category " + definition.category());
+            return new Rule(
+                    fromCategory,
+                    Text.key("controlcore.permissions.source.mod_category", "set by the mod for category {category}")
+                            .with("category", definition.category()));
         }
-        return new Rule(Optional.empty(), "default");
+        return new Rule(Optional.empty(), Text.key("controlcore.permissions.source.default", "default"));
     }
 
     private boolean passes(PlayerId player, Rule rule, SettingScope scope) {

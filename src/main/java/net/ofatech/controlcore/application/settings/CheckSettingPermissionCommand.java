@@ -4,9 +4,11 @@ import com.google.auto.service.AutoService;
 import java.util.Optional;
 import net.ofatech.controlcore.application.component.ModCommand;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
+import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
+import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.command.ArgType;
 import net.ofatech.controlcore.domain.ports.command.CommandContext;
 import net.ofatech.controlcore.domain.ports.command.CommandSpec;
@@ -21,12 +23,17 @@ public final class CheckSettingPermissionCommand implements ModCommand {
     private final SettingPermissionPolicy permissions;
     private final SettingsRegistry settings;
     private final ServerConfigEditor serverConfig;
+    private final Texts texts;
 
     public CheckSettingPermissionCommand(
-            SettingPermissionPolicy permissions, SettingsRegistry settings, ServerConfigEditor serverConfig) {
+            SettingPermissionPolicy permissions,
+            SettingsRegistry settings,
+            ServerConfigEditor serverConfig,
+            Texts texts) {
         this.permissions = permissions;
         this.settings = settings;
         this.serverConfig = serverConfig;
+        this.texts = texts;
     }
 
     @Override
@@ -41,10 +48,13 @@ public final class CheckSettingPermissionCommand implements ModCommand {
     public Result<Reply> execute(CommandContext context) {
         return SettingId.parse(context.string("id")).flatMap(this::definition).map(definition -> {
             SettingPermissionPolicy.Resolved rule = permissions.resolve(definition);
-            return Reply.of(definition.displayName() + " (" + definition.id() + ")\n"
-                    + "- see: " + rule.view().describe(definition.scope()) + "\n"
-                    + "- change: " + rule.edit().describe(definition.scope()) + "\n"
-                    + "ControlCore admins (settings or admin permission) may always see and change it.");
+            Translator tr = texts.forSender(context.sender());
+            return Reply.of(tr.translate(definition.nameText()) + " (" + definition.id() + ")\n"
+                    + "- "
+                    + tr.t("controlcore.permissions.see", "rule", rule.view().describe(tr, definition.scope()))
+                    + "\n- "
+                    + tr.t("controlcore.permissions.change", "rule", rule.edit().describe(tr, definition.scope()))
+                    + "\n" + tr.t("controlcore.permissions.admins_always"));
         });
     }
 
@@ -56,6 +66,7 @@ public final class CheckSettingPermissionCommand implements ModCommand {
         Result<SettingSnapshot> config = serverConfig.read(id, Optional.empty());
         return config.isSuccess()
                 ? Result.success(config.value().definition())
-                : Result.failure(Error.notFound("Settings.UnknownSetting", "There is no setting " + id + "."));
+                : Result.failure(Error.notFound("Settings.UnknownSetting", "There is no setting " + id + ".")
+                        .localized("controlcore.errors.settings.unknownsetting_2", "id", id));
     }
 }
