@@ -63,6 +63,10 @@ $C.@PageOverlay {
           Anchor: (Bottom: 8);
         }
 
+        $C.@TextField #ServerSearch {
+          Anchor: (Height: 34, Bottom: 8);
+        }
+
         Label #ServerStatus {
           Style: @StatusStyle;
           Anchor: (Bottom: 8);
@@ -71,7 +75,7 @@ $C.@PageOverlay {
         Group #ServerList {
           LayoutMode: TopScrolling;
           ScrollbarStyle: $C.@DefaultScrollbarStyle;
-          Anchor: (Height: 340);
+          Anchor: (Height: 298);
           Padding: (Right: 10);
         }
       }
@@ -92,6 +96,10 @@ $C.@PageOverlay {
           Anchor: (Bottom: 8);
         }
 
+        $C.@TextField #SettingsSearch {
+          Anchor: (Height: 34, Bottom: 8);
+        }
+
         Label #SettingsStatus {
           Style: @StatusStyle;
           Anchor: (Bottom: 8);
@@ -100,7 +108,7 @@ $C.@PageOverlay {
         Group #SettingsList {
           LayoutMode: TopScrolling;
           ScrollbarStyle: $C.@DefaultScrollbarStyle;
-          Anchor: (Height: 340);
+          Anchor: (Height: 298);
           Padding: (Right: 10);
         }
       }
@@ -121,6 +129,10 @@ $C.@PageOverlay {
           Anchor: (Bottom: 8);
         }
 
+        $C.@TextField #PlayerSearch {
+          Anchor: (Height: 34, Bottom: 8);
+        }
+
         Label #PlayerStatus {
           Style: @StatusStyle;
           Anchor: (Bottom: 8);
@@ -129,7 +141,7 @@ $C.@PageOverlay {
         Group #PlayerList {
           LayoutMode: TopScrolling;
           ScrollbarStyle: $C.@DefaultScrollbarStyle;
-          Anchor: (Height: 340);
+          Anchor: (Height: 298);
           Padding: (Right: 10);
         }
       }
@@ -212,6 +224,10 @@ $C.@PageOverlay {
             }
           }
 
+          $C.@TextField #ServerKeymapSearch {
+            Anchor: (Height: 34, Bottom: 8);
+          }
+
           Label #ServerKeymapStatus {
             Style: @StatusStyle;
             Anchor: (Bottom: 8);
@@ -220,7 +236,7 @@ $C.@PageOverlay {
           Group #ServerKeymapList {
             LayoutMode: TopScrolling;
             ScrollbarStyle: $C.@DefaultScrollbarStyle;
-            Anchor: (Height: 220);
+            Anchor: (Height: 178);
             Padding: (Right: 10);
           }
         }
@@ -234,6 +250,10 @@ $C.@PageOverlay {
             Anchor: (Bottom: 8);
           }
 
+          $C.@TextField #KeymapSearch {
+            Anchor: (Height: 34, Bottom: 8);
+          }
+
           Label #KeymapStatus {
             Style: @StatusStyle;
             Anchor: (Bottom: 8);
@@ -242,7 +262,7 @@ $C.@PageOverlay {
           Group #KeymapList {
             LayoutMode: TopScrolling;
             ScrollbarStyle: $C.@DefaultScrollbarStyle;
-            Anchor: (Height: 300);
+            Anchor: (Height: 258);
             Padding: (Right: 10);
           }
         }

@@ -34,6 +34,7 @@ import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
+import net.ofatech.controlcore.domain.model.settings.SettingSearch;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Result;
@@ -66,6 +67,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private static final String REMOVE_BIND = "RemoveBind";
     private static final String CUSTOM_NAMESPACE = "custom";
     private static final String KEYMAP_MODE_SERVER = "KeymapMode:Server";
+    private static final String SEARCH = "Search";
+    private static final String SEARCH_HINT = "Search: words, mod:, name:, key:ctrl+f, is:changed, -word";
     private static final String KEYMAP_MODE_MINE = "KeymapMode:Mine";
 
     private enum Tab {
@@ -104,18 +107,20 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
 
     /** A list of settings in the panel and where it is drawn. */
     private enum Section {
-        SERVER_CONFIG("#ServerList", "#ServerStatus"),
-        SETTINGS("#SettingsList", "#SettingsStatus"),
-        PREFS("#PlayerList", "#PlayerStatus"),
-        KEYMAPS("#KeymapList", "#KeymapStatus"),
-        SERVER_KEYMAPS("#ServerKeymapList", "#ServerKeymapStatus");
+        SERVER_CONFIG("#ServerList", "#ServerStatus", "#ServerSearch"),
+        SETTINGS("#SettingsList", "#SettingsStatus", "#SettingsSearch"),
+        PREFS("#PlayerList", "#PlayerStatus", "#PlayerSearch"),
+        KEYMAPS("#KeymapList", "#KeymapStatus", "#KeymapSearch"),
+        SERVER_KEYMAPS("#ServerKeymapList", "#ServerKeymapStatus", "#ServerKeymapSearch");
 
         private final String list;
         private final String status;
+        private final String search;
 
-        Section(String list, String status) {
+        Section(String list, String status, String search) {
             this.list = list;
             this.status = status;
+            this.search = search;
         }
 
         String row(int index) {
@@ -131,6 +136,12 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private final Map<Section, Map<SettingId, Integer>> rowIndexes = new EnumMap<>(Section.class);
     /** Value each row currently shows, to skip change notifications the panel caused itself (world thread). */
     private final Map<String, String> shown = new HashMap<>();
+    /** Latest snapshot of each row (same keys as {@link #shown}), used to filter rows by the search. */
+    private final Map<String, SettingSnapshot> latest = new HashMap<>();
+    /** Rows and headings of each section in display order, as built. */
+    private final Map<Section, List<SettingsSection.Entry>> built = new EnumMap<>(Section.class);
+    /** The search typed into each section; kept when the page is rebuilt. */
+    private final Map<Section, SettingSearch> searches = new EnumMap<>(Section.class);
 
     private final List<Subscription> subscriptions = new CopyOnWriteArrayList<>();
     private Tab selected;
@@ -197,7 +208,21 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             @Nonnull UIEventBuilder events,
             @Nonnull Store<EntityStore> store) {
         commands.append(LAYOUT);
-        sections.forEach((key, section) -> buildSection(key, section, commands, events));
+        sections.forEach((key, section) -> {
+            buildSection(key, section, commands, events);
+            commands.set(key.search + ".PlaceholderText", SEARCH_HINT);
+            commands.set(
+                    key.search + ".Value",
+                    searches.getOrDefault(key, SettingSearch.ALL).text());
+            events.addEventBinding(
+                    CustomUIEventBindingType.ValueChanged,
+                    key.search,
+                    new EventData()
+                            .append(Action.KEY, SEARCH)
+                            .append(Action.SECTION, key.name())
+                            .append(Action.VALUE, key.search + ".Value"));
+            applySearch(key, section, commands, false);
+        });
         for (Tab tab : Tab.values()) {
             commands.set(tab.button + ".Visible", tabs.contains(tab));
         }
@@ -250,6 +275,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             close();
         } else if (ADD_BIND.equals(name)) {
             addBind(action);
+        } else if (SEARCH.equals(name)) {
+            sectionOf(action.section).ifPresent(key -> {
+                searches.put(key, SettingSearch.parse(action.value));
+                UICommandBuilder update = new UICommandBuilder();
+                applySearch(key, sections.get(key), update, true);
+                sendUpdate(update, false);
+            });
         } else if (KEYMAP_MODE_SERVER.equals(name) || KEYMAP_MODE_MINE.equals(name)) {
             if (canAddBinds) {
                 editingServerKeys = KEYMAP_MODE_SERVER.equals(name);
@@ -273,6 +305,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         rowIndexes.put(key, indexes);
         commands.set(key.status + ".Text", "");
         List<SettingsSection.Entry> entries = section.entries();
+        built.put(key, entries);
         for (int index = 0; index < entries.size(); index++) {
             String element = key.row(index);
             switch (entries.get(index)) {
@@ -283,6 +316,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 case SettingsSection.Row row -> {
                     indexes.put(row.id(), index);
                     shown.put(shownKey(key, row.id()), row.snapshot().value());
+                    latest.put(shownKey(key, row.id()), row.snapshot());
                     boolean customBind = canAddBinds
                             && key == Section.SERVER_KEYMAPS
                             && CUSTOM_NAMESPACE.equals(row.id().namespace());
@@ -363,6 +397,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         UICommandBuilder update = new UICommandBuilder();
         result.onSuccess(snapshot -> {
                     shown.put(shownKey(key, snapshot.id()), snapshot.value());
+                    latest.put(shownKey(key, snapshot.id()), snapshot);
                     update.set(key.status + ".Text", SettingsSection.saved(snapshot));
                     Integer index = rowIndexes.get(key).get(snapshot.id());
                     if (writeBack && index != null) {
@@ -461,6 +496,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                     return;
                 }
                 shown.put(shownKey(key, id), snapshot.value());
+                latest.put(shownKey(key, id), snapshot);
                 UICommandBuilder update = new UICommandBuilder();
                 showValue(SettingsSection.kindOf(snapshot), key.row(index), snapshot, update);
                 update.set(key.row(index) + " #Description.Text", section.description(snapshot));
@@ -526,6 +562,53 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 sendUpdate(update, false);
                 return;
             }
+        }
+    }
+
+    /**
+     * Shows only the rows matching the section's search, and the headings of categories with a shown row.
+     *
+     * @param report whether to say in the status line how many rows match
+     */
+    private void applySearch(Section key, SettingsSection section, UICommandBuilder commands, boolean report) {
+        List<SettingsSection.Entry> entries = built.getOrDefault(key, List.of());
+        SettingSearch search = searches.getOrDefault(key, SettingSearch.ALL);
+        boolean[] visible = new boolean[entries.size()];
+        int rows = 0;
+        int matching = 0;
+        int heading = -1;
+        for (int index = 0; index < entries.size(); index++) {
+            switch (entries.get(index)) {
+                case SettingsSection.Heading ignored -> {
+                    heading = index;
+                    visible[index] = search.isEmpty();
+                }
+                case SettingsSection.Row row -> {
+                    rows++;
+                    SettingSnapshot snapshot = latest.getOrDefault(shownKey(key, row.id()), row.snapshot());
+                    visible[index] = search.matches(snapshot, section.description(snapshot));
+                    if (visible[index]) {
+                        matching++;
+                        if (heading >= 0) {
+                            visible[heading] = true;
+                        }
+                    }
+                }
+            }
+        }
+        for (int index = 0; index < entries.size(); index++) {
+            commands.set(key.row(index) + ".Visible", visible[index]);
+        }
+        if (report) {
+            String status;
+            if (search.isEmpty()) {
+                status = "";
+            } else if (matching == 0) {
+                status = "Nothing matches \"" + search.text() + "\".";
+            } else {
+                status = matching + " of " + rows + " shown.";
+            }
+            commands.set(key.status + ".Text", status);
         }
     }
 

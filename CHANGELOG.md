@@ -13,6 +13,10 @@
 - `/open-admin-config` now requires the `<base permission>.admin` node.
 
 ### Added
+- **Search** in every control panel list (Server Configs, Mod Settings, Player Prefs, both Keymaps views):
+  words match the name, id, mod id, category, value, default or description (all must match; `ctrl+f`
+  finds `CTRL + F`). Prefixes `name:`, `id:`, `mod:`, `cat:`, `key:`/`value:`, `default:`, `desc:`,
+  `is:changed`/`is:default`, and `-` to exclude. The search is kept while the panel is open.
 - **Key actions** (API 1.3.0, `ControlCoreApi.keymaps()`): mods register `KeyAction.of(modId, action)`
   with a display name, a command and/or `onPress` code and default keys (`Key` and `GameAction`
   combinations). ControlCore detects them while players play (Q, E, R, F, O, 1-9, mouse buttons, Alt tap,
