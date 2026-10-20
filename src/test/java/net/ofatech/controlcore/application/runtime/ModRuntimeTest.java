@@ -83,6 +83,22 @@ class ModRuntimeTest {
     }
 
     @Test
+    void anyPlayerCanOpenTheirPreferences() {
+        runtime.setup();
+        runtime.start();
+        PlayerInfo player = platform.players.join("Player");
+        var spec = platform.commands.commands.get("prefs").spec();
+
+        var result = platform.commands.run("prefs", player, Map.of());
+
+        assertThat(spec.permission()).isEmpty();
+        assertThat(spec.playerOnly()).isTrue();
+        assertThat(result.isSuccess()).isTrue();
+        assertThat(platform.controlPanel.players()).containsExactly(player.id());
+        assertThat(platform.controlPanel.lastRequest).isEqualTo(ControlPanelRequest.PLAYER_PREFERENCES);
+    }
+
+    @Test
     void aBrokenModPlatformStaysIsolated() {
         platform.mods.loaded.add(TestModPlatforms.WORKING);
         platform.mods.loaded.add(TestModPlatforms.BROKEN);

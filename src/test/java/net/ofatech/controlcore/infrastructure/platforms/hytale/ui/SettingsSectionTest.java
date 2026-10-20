@@ -2,12 +2,15 @@ package net.ofatech.controlcore.infrastructure.platforms.hytale.ui;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.ArrayList;
 import java.util.Optional;
 import java.util.UUID;
 import net.ofatech.controlcore.application.event.DomainEventBus;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
+import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
+import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.fakes.FakePlayerData;
@@ -89,6 +92,26 @@ class SettingsSectionTest {
         assertThat(unknown.error().code()).isEqualTo("Settings.InvalidId");
         assertThat(SettingsSection.describe(saved.value()))
                 .isEqualTo("Homes per player (integer 1..9, default 3 · homes:max)");
+    }
+
+    @Test
+    void sectionsOnlyCareAboutTheirOwnChanges() {
+        registry.register(SettingDefinition.server("homes:max", SettingType.integer(1, 9), 3));
+        var sounds = registry.register(SettingDefinition.player("chat:sounds", SettingType.bool(), true))
+                .value();
+        var changes = new ArrayList<SettingChanged>();
+        registry.onAnyChange(changes::add);
+        var server = section(SettingScope.SERVER);
+        var prefs = section(SettingScope.PLAYER);
+
+        sounds.set(PlayerId.of(UUID.randomUUID()), false);
+        sounds.set(viewer, false);
+        registry.write(SettingId.of("homes:max"), Optional.empty(), "5");
+
+        assertThat(changes).hasSize(3);
+        assertThat(changes).extracting(prefs::concerns).containsExactly(false, true, false);
+        assertThat(changes).extracting(server::concerns).containsExactly(false, false, true);
+        assertThat(prefs.current(changes.get(1).id()).value().value()).isEqualTo("false");
     }
 
     @Test

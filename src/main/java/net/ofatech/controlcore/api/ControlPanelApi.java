@@ -11,10 +11,12 @@ public interface ControlPanelApi {
     boolean isAvailable();
 
     /**
-     * Opens the panel for an online player. Does not check permissions; callers decide who may open it.
+     * Opens the panel for an online player, showing only the sections in {@code request}. Does not check
+     * permissions; callers decide who may open it. {@link ControlPanelRequest#PLAYER_PREFERENCES} is safe for
+     * any player and works even when the panel is disabled.
      *
-     * @return success, or an error such as {@code ControlPanel.Disabled}, {@code ControlPanel.PlayerNotFound}
-     *     or {@code ControlPanel.UiUnavailable}
+     * @return success, or an error such as {@code ControlPanel.Disabled}, {@code ControlPanel.PlayerNotFound},
+     *     {@code ControlPanel.NothingToShow} or {@code ControlPanel.UiUnavailable}
      */
     Result<Void> open(PlayerId player, ControlPanelRequest request);
 }

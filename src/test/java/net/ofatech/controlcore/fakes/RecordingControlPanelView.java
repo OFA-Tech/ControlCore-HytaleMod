@@ -16,11 +16,13 @@ public final class RecordingControlPanelView implements ControlPanelView {
 
     public final List<Opened> opened = new CopyOnWriteArrayList<>();
     public volatile ControlPanelContent lastContent;
+    public volatile ControlPanelRequest lastRequest;
 
     @Override
     public Result<Void> open(PlayerId player, ControlPanelRequest request, ControlPanelContent content) {
         opened.add(new Opened(player, content.server()));
         lastContent = content;
+        lastRequest = request;
         return Result.success();
     }
 

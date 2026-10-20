@@ -23,7 +23,8 @@ public final class ControlPanelSettings {
                                 SettingType.bool(),
                                 defaults.current().controlPanelEnabled())
                         .named("Control panel enabled")
-                        .describedAs("Whether admins can open the control panel with /open-admin-config.")
+                        .describedAs("Whether admins can open the control panel with /open-admin-config. Players"
+                                + " can always open their preferences with /prefs.")
                         .inCategory("ControlCore"))
                 .value();
         this.startTab = settings.register(SettingDefinition.player(

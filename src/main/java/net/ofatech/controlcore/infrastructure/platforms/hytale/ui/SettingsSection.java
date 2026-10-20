@@ -3,6 +3,7 @@ package net.ofatech.controlcore.infrastructure.platforms.hytale.ui;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
@@ -96,6 +97,17 @@ final class SettingsSection {
         return id(idText).flatMap(id -> settings.reset(id, player));
     }
 
+    /** @return the setting's current value as this section shows it */
+    Result<SettingSnapshot> current(SettingId id) {
+        return settings.read(id, player);
+    }
+
+    /** @return whether a change affects a row of this section (for preferences: the viewer's own) */
+    boolean concerns(SettingChanged change) {
+        return change.scope() == scope
+                && (scope == SettingScope.SERVER || change.player().equals(player));
+    }
+
     static Kind kindOf(SettingType<?> type) {
         return switch (type) {
             case SettingType.BooleanType _ -> Kind.TOGGLE;
@@ -115,6 +127,12 @@ final class SettingsSection {
     /** @return the status line after a successful change */
     static String saved(SettingSnapshot snapshot) {
         return "Saved: " + snapshot.definition().displayName() + " = " + shown(snapshot.value())
+                + (snapshot.overridden() ? "" : " (default)");
+    }
+
+    /** @return the status line after a change made outside this panel */
+    static String changedElsewhere(SettingSnapshot snapshot) {
+        return "Changed elsewhere: " + snapshot.definition().displayName() + " = " + shown(snapshot.value())
                 + (snapshot.overridden() ? "" : " (default)");
     }
 
