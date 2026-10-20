@@ -6,6 +6,8 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 import net.ofatech.controlcore.application.event.DomainEventBus;
+import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
+import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
@@ -18,6 +20,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.platform.Capabilities;
 import net.ofatech.controlcore.domain.result.ErrorType;
+import net.ofatech.controlcore.fakes.FakeKeyBindStore;
 import net.ofatech.controlcore.fakes.FakePlayerData;
 import net.ofatech.controlcore.fakes.FakePlayers;
 import net.ofatech.controlcore.fakes.FakeServerConfiguration;
@@ -57,7 +60,8 @@ class ControlPanelServiceTest {
                 builtIn,
                 capabilities,
                 registry,
-                new ServerConfigEditor(server, bus, bus, log));
+                new ServerConfigEditor(server, bus, bus, log),
+                new KeymapsEditor(new KeymapRegistry(new FakeKeyBindStore(), new FakePlayerData(), log)));
     }
 
     @Test

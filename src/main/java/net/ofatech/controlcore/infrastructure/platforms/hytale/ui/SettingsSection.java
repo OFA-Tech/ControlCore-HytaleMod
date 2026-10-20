@@ -53,12 +53,41 @@ final class SettingsSection {
     private final SettingScope scope;
     private final Optional<PlayerId> player;
     private final String emptyText;
+    private final boolean keys;
 
     SettingsSection(SettingsEditor settings, SettingScope scope, Optional<PlayerId> player, String emptyText) {
+        this(settings, scope, player, emptyText, false);
+    }
+
+    private SettingsSection(
+            SettingsEditor settings, SettingScope scope, Optional<PlayerId> player, String emptyText, boolean keys) {
         this.settings = settings;
         this.scope = scope;
         this.player = scope == SettingScope.PLAYER ? player : Optional.empty();
         this.emptyText = emptyText;
+        this.keys = keys;
+    }
+
+    /** A section of key bindings: the rows are key actions, the values key combinations. */
+    static SettingsSection keymaps(SettingsEditor keymaps, Optional<PlayerId> player, String emptyText) {
+        return new SettingsSection(keymaps, SettingScope.PLAYER, player, emptyText, true);
+    }
+
+    /** @return the hint shown in an empty text field */
+    String placeholder(SettingSnapshot snapshot) {
+        return keys
+                ? "keys, for example ctrl+f or alt+3 | mouse_middle; none unbinds"
+                : snapshot.definition().type().describe();
+    }
+
+    /** @return the description line under a row */
+    String description(SettingSnapshot snapshot) {
+        if (!keys) {
+            return describe(snapshot);
+        }
+        SettingDefinition<?> definition = snapshot.definition();
+        String details = "server keys " + definition.formattedDefault() + " · " + definition.id();
+        return definition.description().isBlank() ? details : definition.description() + " (" + details + ")";
     }
 
     SettingScope scope() {

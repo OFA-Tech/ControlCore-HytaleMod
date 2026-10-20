@@ -33,6 +33,9 @@ public final class FakePlatform implements Platform {
     public final FakeCommandRegistrar commands = new FakeCommandRegistrar();
     public final FakeModLookup mods = new FakeModLookup();
     public final RecordingControlPanelView controlPanel = new RecordingControlPanelView();
+    public final FakePlayerInput input = new FakePlayerInput();
+    public final RecordingCommandRunner commandRunner = new RecordingCommandRunner();
+    public final FakeKeyBindStore keyBinds = new FakeKeyBindStore();
     public final FakeServerConfiguration serverConfig = new FakeServerConfiguration(
             new ServerSettings("Test Server", "Welcome", false, 10, 5, java.time.Duration.ofMinutes(10)));
     public EventPublisher connectedPublisher;
@@ -57,6 +60,9 @@ public final class FakePlatform implements Platform {
         binder.bind(ModLookup.class, mods);
         binder.bind(ServerConfiguration.class, serverConfig);
         binder.bind(ControlPanelView.class, controlPanel);
+        binder.bind(net.ofatech.controlcore.domain.ports.game.PlayerInput.class, input);
+        binder.bind(net.ofatech.controlcore.domain.ports.game.CommandRunner.class, commandRunner);
+        binder.bind(net.ofatech.controlcore.domain.ports.config.KeyBindStore.class, keyBinds);
         binder.bind(InputProbe.class, new InputProbe() {
             @Override
             public boolean toggle(net.ofatech.controlcore.domain.model.PlayerId player) {

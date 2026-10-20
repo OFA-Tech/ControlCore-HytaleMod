@@ -99,6 +99,35 @@ class ModRuntimeTest {
     }
 
     @Test
+    void playersRunAndRebindKeyActionsOfOtherMods() {
+        runtime.setup();
+        runtime.start();
+        PlayerInfo player = platform.players.join("Player");
+        ControlCoreApi.get()
+                .keymaps()
+                .register(net.ofatech.controlcore.domain.model.keys.KeyAction.of("homes", "home")
+                        .displayName("Go home")
+                        .command("home")
+                        .defaultKeys(net.ofatech.controlcore.domain.model.keys.Key.R));
+
+        platform.input.press(player.id(), net.ofatech.controlcore.domain.model.keys.KeySignal.ABILITY_3);
+        var bind = platform.commands.run("cc-bind", player, Map.of("id", "homes:home", "keys", "ctrl+f"));
+        platform.clock.now = platform.clock.now.plusSeconds(1);
+        platform.input.hold(player.id(), net.ofatech.controlcore.domain.model.keys.KeySignal.CROUCHING);
+        platform.input.press(player.id(), net.ofatech.controlcore.domain.model.keys.KeySignal.USE);
+        var list = platform.commands.run("cc-keys", player, Map.of());
+
+        assertThat(bind.isSuccess()).isTrue();
+        assertThat(platform.commandRunner.runs)
+                .extracting(run -> run.command())
+                .containsExactly("home", "prefs", "home");
+        assertThat(list.value().text().orElseThrow())
+                .contains("Go home: CTRL + F (yours)", "Open my preferences: CTRL + F");
+        assertThat(platform.commands.commands.get("cc-bind-server").spec().permission())
+                .isPresent();
+    }
+
+    @Test
     void aBrokenModPlatformStaysIsolated() {
         platform.mods.loaded.add(TestModPlatforms.WORKING);
         platform.mods.loaded.add(TestModPlatforms.BROKEN);

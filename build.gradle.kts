@@ -92,7 +92,7 @@ tasks.withType<Javadoc>().configureEach {
 // runServer links run/mods/<Group>_<Name> (the plugin's data folder) to src/main/resources,
 // so runtime files written there must never be packaged.
 val runtimeDataFiles = listOf("Settings.json", "Settings.json.bak", "players.json", "players.json.tmp",
-    "SettingValues.json", "SettingValues.json.tmp")
+    "SettingValues.json", "SettingValues.json.tmp", "KeyBinds.json", "KeyBinds.json.tmp")
 
 tasks.processResources {
     exclude(runtimeDataFiles)

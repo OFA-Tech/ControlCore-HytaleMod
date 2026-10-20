@@ -98,7 +98,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private enum Section {
         SERVER_CONFIG("#ServerList", "#ServerStatus"),
         SETTINGS("#SettingsList", "#SettingsStatus"),
-        PREFS("#PlayerList", "#PlayerStatus");
+        PREFS("#PlayerList", "#PlayerStatus"),
+        KEYMAPS("#KeymapList", "#KeymapStatus");
 
         private final String list;
         private final String status;
@@ -113,21 +114,12 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         }
     }
 
-    /** Buttons shown for upcoming features; disabled until they are wired. */
-    private static final List<String> NOT_WIRED_YET = List.of(
-            "#RebindOpenPanel",
-            "#ResetOpenPanel",
-            "#RebindReloadServer",
-            "#ResetReloadServer",
-            "#RebindToggleDebug",
-            "#ResetToggleDebug");
-
     private final Log log;
     private final Set<Tab> tabs = EnumSet.noneOf(Tab.class);
     private final Map<Section, SettingsSection> sections = new EnumMap<>(Section.class);
     private final Map<Section, Map<SettingId, Integer>> rowIndexes = new EnumMap<>(Section.class);
     /** Value each row currently shows, to skip change notifications the panel caused itself (world thread). */
-    private final Map<SettingId, String> shown = new HashMap<>();
+    private final Map<String, String> shown = new HashMap<>();
 
     private final List<Subscription> subscriptions = new CopyOnWriteArrayList<>();
     private Tab selected;
@@ -166,6 +158,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                             viewer,
                             "No mod has registered player preferences yet."));
         }
+        if (shownSections.includeRegisteredActions()) {
+            sections.put(
+                    Section.KEYMAPS,
+                    SettingsSection.keymaps(content.keymaps(), viewer, "No mod has registered key actions yet."));
+        }
     }
 
     @Override
@@ -175,7 +172,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             @Nonnull UIEventBuilder events,
             @Nonnull Store<EntityStore> store) {
         commands.append(LAYOUT);
-        NOT_WIRED_YET.forEach(button -> commands.set(button + ".Disabled", true));
         sections.forEach((key, section) -> buildSection(key, section, commands, events));
         for (Tab tab : Tab.values()) {
             commands.set(tab.button + ".Visible", tabs.contains(tab));
@@ -227,23 +223,27 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 }
                 case SettingsSection.Row row -> {
                     indexes.put(row.id(), index);
-                    shown.put(row.id(), row.snapshot().value());
-                    buildRow(key, row, element, commands, events);
+                    shown.put(shownKey(key, row.id()), row.snapshot().value());
+                    buildRow(key, section, row, element, commands, events);
                 }
             }
         }
     }
 
     private static void buildRow(
-            Section key, SettingsSection.Row row, String element, UICommandBuilder commands, UIEventBuilder events) {
+            Section key,
+            SettingsSection section,
+            SettingsSection.Row row,
+            String element,
+            UICommandBuilder commands,
+            UIEventBuilder events) {
         SettingSnapshot snapshot = row.snapshot();
         String input = element + " #Input";
         String id = snapshot.id().toString();
         switch (row.kind()) {
             case TEXT -> {
                 commands.append(key.list, TEXT_ROW);
-                commands.set(
-                        input + ".PlaceholderText", snapshot.definition().type().describe());
+                commands.set(input + ".PlaceholderText", section.placeholder(snapshot));
                 events.addEventBinding(
                         CustomUIEventBindingType.Activating,
                         element + " #Save",
@@ -271,7 +271,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             case INFO -> commands.append(key.list, INFO_ROW);
         }
         commands.set(element + " #Label.Text", snapshot.definition().displayName());
-        commands.set(element + " #Description.Text", SettingsSection.describe(snapshot));
+        commands.set(element + " #Description.Text", section.description(snapshot));
         showValue(row.kind(), element, snapshot, commands);
         if (row.kind() != SettingsSection.Kind.INFO) {
             events.addEventBinding(CustomUIEventBindingType.Activating, element + " #Reset", action(RESET, key, id));
@@ -293,7 +293,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         boolean writeBack = SAVE.equals(name) || RESET.equals(name);
         UICommandBuilder update = new UICommandBuilder();
         result.onSuccess(snapshot -> {
-                    shown.put(snapshot.id(), snapshot.value());
+                    shown.put(shownKey(key, snapshot.id()), snapshot.value());
                     update.set(key.status + ".Text", SettingsSection.saved(snapshot));
                     Integer index = rowIndexes.get(key).get(snapshot.id());
                     if (writeBack && index != null) {
@@ -330,10 +330,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 return;
             }
             section.current(id).onSuccess(snapshot -> {
-                if (snapshot.value().equals(shown.get(id))) {
+                if (snapshot.value().equals(shown.get(shownKey(key, id)))) {
                     return;
                 }
-                shown.put(id, snapshot.value());
+                shown.put(shownKey(key, id), snapshot.value());
                 UICommandBuilder update = new UICommandBuilder();
                 showValue(SettingsSection.kindOf(snapshot), key.row(index), snapshot, update);
                 update.set(key.status + ".Text", SettingsSection.changedElsewhere(snapshot));
@@ -367,6 +367,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             case TOGGLE -> commands.set(input + ".Value", Boolean.parseBoolean(snapshot.value()));
             case INFO -> commands.set(element + " #Value.Text", SettingsSection.shownValue(snapshot));
         }
+    }
+
+    private static String shownKey(Section key, SettingId id) {
+        return key.name() + "|" + id;
     }
 
     private static EventData action(String name, Section key, String id) {

@@ -7,15 +7,16 @@ types, so the API survives Hytale updates.
 
 | Type | Purpose |
 |---|---|
-| `ControlCoreApi` | entry point: `get()`, `find()`, `apiVersion()`, `controlPanel()`, `events()`, `settings()` |
+| `ControlCoreApi` | entry point: `get()`, `find()`, `apiVersion()`, `controlPanel()`, `events()`, `settings()`, `keymaps()` (1.3.0) |
 | `ControlPanelApi` | `isAvailable()`, `open(player, request)` |
 | `ControlCoreEvents` | `subscribe(eventType, listener)` returning a closable `Subscription` |
 | `SettingsApi` (1.1.0) | shared settings registry: `register(definition)`, `definitions()`, `snapshot(scope, player)`, `read` / `write` / `reset` by id, `onAnyChange(listener)` (1.2.0) |
 | `Setting<T>` | handle returned by `register`: `get()`, `get(player)`, `set(..)`, `reset(..)`, `onChange(listener)` |
+| `KeymapsApi` (1.3.0) | key actions: `register(KeyAction)`, `unregister(id)`, `find(id)`, `actions()`, `keysFor(id, player)`, `serverKeys(id)`, `bind` / `resetBind` (a player's own), `bindServer` / `resetServerBind` |
 
 `ControlPanelApi.open` does not check permissions; the calling mod decides who may open the panel. The
 request picks the tabs: `ControlPanelRequest.ALL` is the admin panel, `ControlPanelRequest.PLAYER_PREFERENCES`
-(1.2.0) only the player's own preferences, safe for anyone and available even when the admin panel is
+(1.2.0) only the player's own preferences (and, since 1.3.0, their key bindings), safe for anyone and available even when the admin panel is
 disabled. It returns errors such as `ControlPanel.Disabled`, `ControlPanel.PlayerNotFound` and
 `ControlPanel.NothingToShow`.
 Translated game events (`PlayerJoined`, `PlayerLeft`), `SettingChanged` and `ServerConfigChanged`
@@ -75,6 +76,54 @@ ControlCoreApi.find().ifPresent(api -> {
 | `/cc-pref-reset <id>` | any player | return a preference to the default |
 
 `<base>` is ControlCore's base permission; operators have every node.
+
+## Key actions
+
+A mod registers what a key combination runs; ControlCore detects the keys while players play, lets every
+player rebind them (Keymaps tab, `/cc-bind`) and runs the command as the player, or the mod's code.
+
+```java
+ControlCoreApi.find().ifPresent(api -> api.keymaps().register(
+        KeyAction.of("homes", "go-home")               // mod id, action
+                .displayName("Go home")
+                .describedAs("Teleports you to your home.")
+                .command("home {player}")              // run as the player; {player} and {uuid} filled in
+                .defaultKeys(Key.CTRL, Key.NUM_3)      // held together
+                .alternativeKeys(Key.MOUSE_MIDDLE)     // optional: another combination
+                .onPress(player -> log("home!"))));    // optional: your own code (on a virtual thread)
+```
+
+- **Inputs** are `Key`s (every keyboard key and mouse button) and `GameAction`s (`CROUCH`, `SPRINT`,
+  `WALK_FORWARD`, `ABILITY_1`, `HOTBAR_3`, ...). Players write them as text: `ctrl+f`, `alt+3 | mouse_middle`,
+  `crouch+interact`, `none`.
+- **What the server can detect.** Hytale clients never send raw keys, only actions. Detected during play:
+  Q, E, R, F, O, 1-9, left/right/middle mouse (each as one press), a short tap of Alt while standing still,
+  and Ctrl, Alt, Shift or Space held together with them (or on their own, firing when they go down).
+  Q, E and right click only arrive when the held item has an ability or secondary action for them. Other
+  keys (H, Caps Lock, F-keys, WASD directions, ...) are accepted and saved but shown as "not available"
+  until Hytale reports them; the server cannot read a player's client keybinds either, so `Q` means
+  "ability 1".
+- **Precedence:** a player's own keys, else the server's (`/cc-bind-server`), else the mod's defaults. When
+  several actions match, the one with the most held keys wins (Ctrl+F over F); equal ones all run.
+- **Game actions:** the pressed key's own game action (ability, use, attack, game mode switch) is cancelled
+  unless the action calls `keepGameAction()`. Hotbar changes are never cancelled.
+- Commands run on a virtual thread through Hytale's command manager, with the player's permissions;
+  `onPress` code also runs on a virtual thread, so hop to the world thread for world changes. A 250 ms
+  cooldown stops repeats.
+- Server keys are saved to `KeyBinds.json`; players' keys go to `players.json` (key `keybind:<id>`).
+- **Errors:** `Keys.NothingToRun`, `Keys.UnknownAction`, `Keys.InvalidCombo`.
+
+### Key commands
+
+| Command | Who | Does |
+|---|---|---|
+| `/cc-keys` | anyone | list key actions with your keys and whether they can be detected |
+| `/cc-bind <id> <keys>` | any player | change your keys, for example `/cc-bind homes:go-home alt+3` |
+| `/cc-bind-reset <id>` | any player | go back to the server's keys |
+| `/cc-bind-server <id> <keys>` | `<base>.settings` | change the server's keys for everyone without their own |
+| `/cc-bind-server-reset <id>` | `<base>.settings` | go back to the mod's default keys |
+
+ControlCore registers `controlcore:open-preferences` (runs `/prefs`, default `CTRL + F`).
 
 ## Using it from another mod
 

@@ -145,90 +145,21 @@ $C.@PageOverlay {
         }
 
         Label {
-          Text: "Map commands to keys. \"Server Default\" is the recommended binding. Rebinding comes in a later version.";
+          Text: "Your key bindings. Write keys joined with +, for example ctrl+f or alt+3; separate alternatives with |; none unbinds. Players can also use /cc-keys and /cc-bind.";
           Style: @NoteStyle;
-          Anchor: (Bottom: 12);
+          Anchor: (Bottom: 8);
         }
 
-        Group {
-          LayoutMode: Left;
-          Anchor: (Height: 32, Bottom: 6);
-
-          Label {
-            Text: "Open Control Panel";
-            Anchor: (Width: 200);
-            Style: @RowLabelStyle;
-          }
-
-          Label {
-            Text: "Unbound";
-            FlexWeight: 1;
-            Style: @RowValueStyle;
-          }
-
-          $C.@SmallSecondaryTextButton #RebindOpenPanel {
-            @Text = "Rebind";
-            Anchor: (Width: 100, Height: 30, Right: 6);
-          }
-
-          $C.@SmallTertiaryTextButton #ResetOpenPanel {
-            @Text = "Server Default";
-            Anchor: (Width: 140, Height: 30);
-          }
+        Label #KeymapStatus {
+          Style: @StatusStyle;
+          Anchor: (Bottom: 8);
         }
 
-        Group {
-          LayoutMode: Left;
-          Anchor: (Height: 32, Bottom: 6);
-
-          Label {
-            Text: "Reload Server Config";
-            Anchor: (Width: 200);
-            Style: @RowLabelStyle;
-          }
-
-          Label {
-            Text: "Unbound";
-            FlexWeight: 1;
-            Style: @RowValueStyle;
-          }
-
-          $C.@SmallSecondaryTextButton #RebindReloadServer {
-            @Text = "Rebind";
-            Anchor: (Width: 100, Height: 30, Right: 6);
-          }
-
-          $C.@SmallTertiaryTextButton #ResetReloadServer {
-            @Text = "Server Default";
-            Anchor: (Width: 140, Height: 30);
-          }
-        }
-
-        Group {
-          LayoutMode: Left;
-          Anchor: (Height: 32, Bottom: 6);
-
-          Label {
-            Text: "Toggle Debug";
-            Anchor: (Width: 200);
-            Style: @RowLabelStyle;
-          }
-
-          Label {
-            Text: "Unbound";
-            FlexWeight: 1;
-            Style: @RowValueStyle;
-          }
-
-          $C.@SmallSecondaryTextButton #RebindToggleDebug {
-            @Text = "Rebind";
-            Anchor: (Width: 100, Height: 30, Right: 6);
-          }
-
-          $C.@SmallTertiaryTextButton #ResetToggleDebug {
-            @Text = "Server Default";
-            Anchor: (Width: 140, Height: 30);
-          }
+        Group #KeymapList {
+          LayoutMode: TopScrolling;
+          ScrollbarStyle: $C.@DefaultScrollbarStyle;
+          Anchor: (Height: 340);
+          Padding: (Right: 10);
         }
       }
 

@@ -13,6 +13,8 @@ src/main/resources/players.json
 src/main/resources/players.json.tmp
 src/main/resources/SettingValues.json
 src/main/resources/SettingValues.json.tmp
+src/main/resources/KeyBinds.json
+src/main/resources/KeyBinds.json.tmp
 
 ### IntelliJ IDEA ###
 .idea/

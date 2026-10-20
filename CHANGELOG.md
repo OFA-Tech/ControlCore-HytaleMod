@@ -13,6 +13,15 @@
 - `/open-admin-config` now requires the `<base permission>.admin` node.
 
 ### Added
+- **Key actions** (API 1.3.0, `ControlCoreApi.keymaps()`): mods register `KeyAction.of(modId, action)`
+  with a display name, a command and/or `onPress` code and default keys (`Key` and `GameAction`
+  combinations). ControlCore detects them while players play (Q, E, R, F, O, 1-9, mouse buttons, Alt tap,
+  with Ctrl/Alt/Shift/Space held), cancels the key's game action, and runs the command as the player on a
+  virtual thread. Players rebind in the **Keymaps** tab (now also in `/prefs`) or with `/cc-keys`,
+  `/cc-bind`, `/cc-bind-reset`; admins use `/cc-bind-server` and `/cc-bind-server-reset`. Keys Hytale
+  does not report are kept and marked not available. ControlCore registers `controlcore:open-preferences`
+  (`CTRL + F`).
+- `/cc-input-probe` and `/cc-key-probe input` (admin): show what the client reports for each key.
 - **Server Configs** tab lists every key of the server's `config.json`, read from Hytale's config
   definition: live keys (name, MOTD, max players, max view radius, connection timeouts, require join
   permission) apply at once, restart keys (world defaults, rate limit, backup, update, world map) apply
