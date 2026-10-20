@@ -115,6 +115,16 @@ public final class KeymapRegistry implements KeymapsApi {
         return serverBinds.get(id).flatMap(text -> parsed(id, text)).orElseGet(() -> defaults(id));
     }
 
+    /** @return whether an admin changed the server's keys of {@code id} (instead of using the mod's defaults) */
+    public boolean hasServerKeys(SettingId id) {
+        return serverBinds.get(id).flatMap(text -> parsed(id, text)).isPresent();
+    }
+
+    /** @return the action's own default keys (the mod's, or the admin's for {@code custom:*}) */
+    public KeyBinds modKeys(SettingId id) {
+        return defaults(id);
+    }
+
     /** @return the bindings the player chose themselves, if any */
     public Optional<KeyBinds> ownKeys(SettingId id, PlayerId player) {
         return playerData.get(player, PLAYER_KEY_PREFIX + id).flatMap(text -> parsed(id, text));
@@ -126,7 +136,7 @@ public final class KeymapRegistry implements KeymapsApi {
             String before = keysFor(id, player).toString();
             playerData.put(player, PLAYER_KEY_PREFIX + id, binds.toString());
             playerData.flush();
-            changed(id, player, before, binds.toString());
+            changed(id, Optional.of(player), before, binds.toString());
             return binds;
         });
     }
@@ -138,7 +148,7 @@ public final class KeymapRegistry implements KeymapsApi {
             playerData.remove(player, PLAYER_KEY_PREFIX + id);
             playerData.flush();
             KeyBinds after = keysFor(id, player);
-            changed(id, player, before, after.toString());
+            changed(id, Optional.of(player), before, after.toString());
             return after;
         });
     }
@@ -146,8 +156,10 @@ public final class KeymapRegistry implements KeymapsApi {
     @Override
     public Result<KeyBinds> bindServer(SettingId id, String keys) {
         return known(id).flatMap(action -> KeyBinds.parse(keys)).map(binds -> {
+            String before = serverKeys(id).toString();
             serverBinds.put(id, binds.toString());
             serverBinds.flush();
+            changed(id, Optional.empty(), before, binds.toString());
             return binds;
         });
     }
@@ -155,8 +167,10 @@ public final class KeymapRegistry implements KeymapsApi {
     @Override
     public Result<KeyBinds> resetServerBind(SettingId id) {
         return known(id).map(action -> {
+            String before = serverKeys(id).toString();
             serverBinds.remove(id);
             serverBinds.flush();
+            changed(id, Optional.empty(), before, defaults(id).toString());
             return defaults(id);
         });
     }
@@ -218,7 +232,10 @@ public final class KeymapRegistry implements KeymapsApi {
                         .findFirst());
     }
 
-    /** Listens to changes of players' own bindings, reported as player-scoped {@link SettingChanged} events. */
+    /**
+     * Listens to changes of bindings: a player's own are reported as player-scoped {@link SettingChanged} events,
+     * the server's as server-scoped ones.
+     */
     public Subscription onChange(Consumer<? super SettingChanged> listener) {
         listeners.add(listener);
         return () -> listeners.remove(listener);
@@ -294,8 +311,9 @@ public final class KeymapRegistry implements KeymapsApi {
         return Optional.of(binds.value());
     }
 
-    private void changed(SettingId id, PlayerId player, String before, String after) {
-        SettingChanged event = new SettingChanged(id, SettingScope.PLAYER, Optional.of(player), before, after);
+    private void changed(SettingId id, Optional<PlayerId> player, String before, String after) {
+        SettingScope scope = player.isPresent() ? SettingScope.PLAYER : SettingScope.SERVER;
+        SettingChanged event = new SettingChanged(id, scope, player, before, after);
         for (Consumer<? super SettingChanged> listener : listeners) {
             try {
                 listener.accept(event);

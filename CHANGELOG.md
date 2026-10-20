@@ -28,6 +28,8 @@
   `/cc-keybind-remove`, `/cc-keybind-list` and a form in the admin panel's Keymaps tab with Edit and Remove
   on each bind (saved in `CustomKeyBinds.json`). Adding a name again replaces it; quotes around the
   command are dropped.
+- The admin panel's Keymaps tab switches between **Server defaults** (the keys everyone gets; Default goes back
+  to the mod's) and **My keys** (only yours; Default goes back to the server's). Open panels follow changes.
 - `/cc-input-probe` and `/cc-key-probe input` (admin): show what the client reports for each key.
 - **Server Configs** tab lists every key of the server's `config.json`, read from Hytale's config
   definition: live keys (name, MOTD, max players, max view radius, connection timeouts, require join

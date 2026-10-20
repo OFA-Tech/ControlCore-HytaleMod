@@ -20,8 +20,10 @@ import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
 /**
- * Shows a player's key bindings as text preferences, so the control panel lists and edits them like settings:
- * one row per key action, the value is the bindings ({@code CTRL + F | MOUSE_MIDDLE}), the default the server's.
+ * Shows key bindings as text settings, so the control panel lists and edits them like settings: one row per key
+ * action, the value is the bindings ({@code CTRL + F | MOUSE_MIDDLE}). {@link SettingScope#PLAYER} rows are a
+ * player's own keys (default: the server's); {@link SettingScope#SERVER} rows are the server's keys for everyone
+ * (default: the mod's). Callers check that only admins edit the server's.
  */
 public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor {
 
@@ -35,7 +37,14 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
 
     @Override
     public List<SettingSnapshot> snapshot(SettingScope scope, Optional<PlayerId> player) {
-        if (scope != SettingScope.PLAYER || player.isEmpty()) {
+        if (scope == SettingScope.SERVER) {
+            return keymaps.actions().stream()
+                    .sorted(Comparator.comparing((KeyAction action) -> action.modId())
+                            .thenComparing(KeyAction::id))
+                    .map(this::serverSnapshot)
+                    .toList();
+        }
+        if (player.isEmpty()) {
             return List.of();
         }
         return keymaps.actionsFor(player.get()).stream()
@@ -47,16 +56,25 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
 
     @Override
     public Result<SettingSnapshot> read(SettingId id, Optional<PlayerId> player) {
+        if (player.isEmpty()) {
+            return known(id).map(this::serverSnapshot);
+        }
         return player(player).flatMap(viewer -> action(id, viewer).map(action -> snapshot(action, viewer)));
     }
 
     @Override
     public Result<SettingSnapshot> write(SettingId id, Optional<PlayerId> player, String text) {
+        if (player.isEmpty()) {
+            return keymaps.bindServer(id, text).flatMap(binds -> read(id, player));
+        }
         return player(player).flatMap(viewer -> keymaps.bind(id, viewer, text).flatMap(binds -> read(id, player)));
     }
 
     @Override
     public Result<SettingSnapshot> reset(SettingId id, Optional<PlayerId> player) {
+        if (player.isEmpty()) {
+            return keymaps.resetServerBind(id).flatMap(binds -> read(id, player));
+        }
         return player(player).flatMap(viewer -> keymaps.resetBind(id, viewer).flatMap(binds -> read(id, player)));
     }
 
@@ -92,6 +110,26 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
                 .describedAs(description)
                 .inCategory(action.modId());
         return new SettingSnapshot(definition, current.toString(), own.isPresent());
+    }
+
+    private SettingSnapshot serverSnapshot(KeyAction action) {
+        KeyBinds modKeys = keymaps.modKeys(action.id());
+        KeyBinds current = keymaps.serverKeys(action.id());
+        String description =
+                joined(action.description(), KeymapsText.runs(action) + ".", KeymapsText.problems(current));
+        SettingDefinition<String> definition = SettingDefinition.server(
+                        action.id().toString(), SettingType.text(MAX_LENGTH), modKeys.toString())
+                .named(action.displayName())
+                .describedAs(description)
+                .inCategory(action.modId());
+        return new SettingSnapshot(definition, current.toString(), keymaps.hasServerKeys(action.id()));
+    }
+
+    private Result<KeyAction> known(SettingId id) {
+        return keymaps.find(id)
+                .map(Result::success)
+                .orElseGet(() ->
+                        Result.failure(Error.notFound("Keys.UnknownAction", "There is no key action '" + id + "'.")));
     }
 
     private Result<KeyAction> action(SettingId id, PlayerId viewer) {

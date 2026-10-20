@@ -68,9 +68,13 @@ final class SettingsSection {
         this.keys = keys;
     }
 
-    /** A section of key bindings: the rows are key actions, the values key combinations. */
-    static SettingsSection keymaps(SettingsEditor keymaps, Optional<PlayerId> player, String emptyText) {
-        return new SettingsSection(keymaps, SettingScope.PLAYER, player, emptyText, true);
+    /**
+     * A section of key bindings: the rows are key actions, the values key combinations. {@code PLAYER}: the viewer's
+     * own keys; {@code SERVER}: the server's keys for everyone.
+     */
+    static SettingsSection keymaps(
+            SettingsEditor keymaps, SettingScope scope, Optional<PlayerId> player, String emptyText) {
+        return new SettingsSection(keymaps, scope, player, emptyText, true);
     }
 
     /** @return the hint shown in an empty text field */
@@ -86,7 +90,8 @@ final class SettingsSection {
             return describe(snapshot);
         }
         SettingDefinition<?> definition = snapshot.definition();
-        String details = "server keys " + definition.formattedDefault() + " · " + definition.id();
+        String details = (scope == SettingScope.SERVER ? "mod keys " : "server keys ") + definition.formattedDefault()
+                + " · " + definition.id();
         return definition.description().isBlank() ? details : definition.description() + " (" + details + ")";
     }
 
@@ -143,6 +148,9 @@ final class SettingsSection {
 
     /** @return whether a change affects a row of this section (for preferences: the viewer's own) */
     boolean concerns(SettingChanged change) {
+        if (keys && scope == SettingScope.PLAYER && change.scope() == SettingScope.SERVER) {
+            return true; // the server's keys apply to players who did not choose their own
+        }
         return change.scope() == scope
                 && (scope == SettingScope.SERVER || change.player().equals(player));
     }

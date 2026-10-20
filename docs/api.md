@@ -111,7 +111,10 @@ api.keymaps().register(KeyAction.of("admintools", "announce")
   keys (H, Caps Lock, F-keys, WASD directions, ...) are accepted and saved but shown as "not available"
   until Hytale reports them; the server cannot read a player's client keybinds either, so `Q` means
   "ability 1".
-- **Precedence:** a player's own keys, else the server's (`/cc-bind-server`), else the mod's defaults. When
+- **Precedence:** the mod's default keys apply until an admin changes the server's keys for everyone
+  (`/cc-bind-server`, or the admin panel's Keymaps tab on **Server defaults**); a player's own keys
+  (`/cc-bind`, Keymaps on **My keys**, or `/prefs`) only change them for that player and win over both.
+  Default on a player's row goes back to the server's keys; on a server row, to the mod's. When
   several actions match, the one with the most held keys wins (Ctrl+F over F); equal ones all run.
 - **Game actions:** the pressed key's own game action (ability, use, attack, game mode switch) is cancelled
   unless the action calls `keepGameAction()`. Hotbar changes are never cancelled.

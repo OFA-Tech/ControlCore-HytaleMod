@@ -41,7 +41,7 @@ The long-term vision is a common configuration backbone where compatible mods ca
   running apply at once, others are saved and apply after a restart, and internal ones (password, storage,
   mods) are shown read-only;
   **Mod Settings** lists and edits every registered server setting; **Player Prefs** edits your own
-  preferences; **Keymaps** edits your own key bindings. Any player can open their own preferences and
+  preferences; **Keymaps** edits the server's default keys (admins) and your own key bindings. Any player can open their own preferences and
   key bindings with `/prefs`. Open panels update when a setting changes elsewhere. When a compatible
   [HyUI](https://www.curseforge.com/hytale/mods/hyui) is installed, its HTML panel is used instead.
 - **Settings registry**: mods register typed settings (server-wide or per-player preferences) through

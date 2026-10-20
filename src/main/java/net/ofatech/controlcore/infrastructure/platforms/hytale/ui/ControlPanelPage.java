@@ -65,6 +65,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private static final String EDIT_BIND = "EditBind";
     private static final String REMOVE_BIND = "RemoveBind";
     private static final String CUSTOM_NAMESPACE = "custom";
+    private static final String KEYMAP_MODE_SERVER = "KeymapMode:Server";
+    private static final String KEYMAP_MODE_MINE = "KeymapMode:Mine";
 
     private enum Tab {
         SERVER(ControlPanelTab.SERVER_CONFIGS, "#ServerTab", "#ServerTabButton"),
@@ -105,7 +107,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         SERVER_CONFIG("#ServerList", "#ServerStatus"),
         SETTINGS("#SettingsList", "#SettingsStatus"),
         PREFS("#PlayerList", "#PlayerStatus"),
-        KEYMAPS("#KeymapList", "#KeymapStatus");
+        KEYMAPS("#KeymapList", "#KeymapStatus"),
+        SERVER_KEYMAPS("#ServerKeymapList", "#ServerKeymapStatus");
 
         private final String list;
         private final String status;
@@ -131,6 +134,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
 
     private final List<Subscription> subscriptions = new CopyOnWriteArrayList<>();
     private Tab selected;
+    /** Admin panel only: whether the Keymaps tab edits the server's keys (else the viewer's own). */
+    private boolean editingServerKeys = true;
 
     ControlPanelPage(PlayerRef player, ControlPanelRequest request, ControlPanelContent content, Log log) {
         super(player, CustomPageLifetime.CanDismiss, Action.CODEC);
@@ -171,7 +176,17 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         if (shownSections.includeRegisteredActions()) {
             sections.put(
                     Section.KEYMAPS,
-                    SettingsSection.keymaps(content.keymaps(), viewer, "No mod has registered key actions yet."));
+                    SettingsSection.keymaps(
+                            content.keymaps(), SettingScope.PLAYER, viewer, "No mod has registered key actions yet."));
+        }
+        if (canAddBinds) {
+            sections.put(
+                    Section.SERVER_KEYMAPS,
+                    SettingsSection.keymaps(
+                            content.keymaps(),
+                            SettingScope.SERVER,
+                            viewer,
+                            "No key actions yet. Mods register them, or add your own above."));
         }
     }
 
@@ -187,8 +202,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             commands.set(tab.button + ".Visible", tabs.contains(tab));
         }
         commands.set("#TabButtons.Visible", tabs.size() > 1);
-        commands.set("#CustomBindForm.Visible", canAddBinds);
         if (canAddBinds) {
+            events.addEventBinding(
+                    CustomUIEventBindingType.Activating,
+                    "#KeymapModeServer",
+                    EventData.of(Action.KEY, KEYMAP_MODE_SERVER));
+            events.addEventBinding(
+                    CustomUIEventBindingType.Activating, "#KeymapModeMine", EventData.of(Action.KEY, KEYMAP_MODE_MINE));
             commands.set("#NewBindName.PlaceholderText", "name, e.g. warp-spawn");
             commands.set("#NewBindKeys.PlaceholderText", "keys, e.g. ctrl+r");
             commands.set("#NewBindCommand.PlaceholderText", "command, e.g. warp spawn {player}");
@@ -203,6 +223,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                             .append(Action.CHECKED, "#NewBindAsServer.Value"));
         }
         showTab(commands);
+        showKeymapMode(commands);
 
         for (Tab tab : tabs) {
             events.addEventBinding(
@@ -229,6 +250,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             close();
         } else if (ADD_BIND.equals(name)) {
             addBind(action);
+        } else if (KEYMAP_MODE_SERVER.equals(name) || KEYMAP_MODE_MINE.equals(name)) {
+            if (canAddBinds) {
+                editingServerKeys = KEYMAP_MODE_SERVER.equals(name);
+                UICommandBuilder update = new UICommandBuilder();
+                showKeymapMode(update);
+                sendUpdate(update, false);
+            }
         } else if (EDIT_BIND.equals(name)) {
             editBind(action.id);
         } else if (REMOVE_BIND.equals(name)) {
@@ -256,7 +284,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                     indexes.put(row.id(), index);
                     shown.put(shownKey(key, row.id()), row.snapshot().value());
                     boolean customBind = canAddBinds
-                            && key == Section.KEYMAPS
+                            && key == Section.SERVER_KEYMAPS
                             && CUSTOM_NAMESPACE.equals(row.id().namespace());
                     buildRow(key, section, row, element, customBind, commands, events);
                 }
@@ -359,10 +387,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                             update.set("#NewBindCommand.Value", bind.command());
                             update.set("#NewBindAsServer.Value", bind.runAsServer());
                             update.set(
-                                    Section.KEYMAPS.status + ".Text",
+                                    Section.SERVER_KEYMAPS.status + ".Text",
                                     "Editing custom:" + bind.name() + ": change it above and click Save bind.");
                         },
-                        () -> update.set(Section.KEYMAPS.status + ".Text", "There is no key bind " + id + "."));
+                        () -> update.set(Section.SERVER_KEYMAPS.status + ".Text", "There is no key bind " + id + "."));
         sendUpdate(update, false);
     }
 
@@ -376,7 +404,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         }
         UICommandBuilder update = new UICommandBuilder();
         update.set(
-                Section.KEYMAPS.status + ".Text",
+                Section.SERVER_KEYMAPS.status + ".Text",
                 result.isSuccess() ? result.value() : result.error().description());
         sendUpdate(update, false);
     }
@@ -392,7 +420,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         }
         UICommandBuilder update = new UICommandBuilder();
         update.set(
-                Section.KEYMAPS.status + ".Text",
+                Section.SERVER_KEYMAPS.status + ".Text",
                 result.isSuccess() ? result.value() : result.error().description());
         if (result.isSuccess()) {
             update.set("#NewBindName.Value", "");
@@ -435,6 +463,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 shown.put(shownKey(key, id), snapshot.value());
                 UICommandBuilder update = new UICommandBuilder();
                 showValue(SettingsSection.kindOf(snapshot), key.row(index), snapshot, update);
+                update.set(key.row(index) + " #Description.Text", section.description(snapshot));
                 update.set(key.status + ".Text", SettingsSection.changedElsewhere(snapshot));
                 sendUpdate(update, false);
             });
@@ -498,6 +527,15 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 return;
             }
         }
+    }
+
+    private void showKeymapMode(UICommandBuilder commands) {
+        boolean server = canAddBinds && editingServerKeys;
+        commands.set("#KeymapModeButtons.Visible", canAddBinds);
+        commands.set("#ServerKeymaps.Visible", server);
+        commands.set("#MyKeymaps.Visible", !server);
+        commands.set("#KeymapModeServer.Disabled", server);
+        commands.set("#KeymapModeMine.Disabled", canAddBinds && !server);
     }
 
     private void showTab(UICommandBuilder commands) {
