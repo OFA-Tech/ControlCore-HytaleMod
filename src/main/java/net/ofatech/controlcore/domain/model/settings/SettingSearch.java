@@ -20,32 +20,83 @@ import java.util.Locale;
  *   <li>{@code is:changed} only values that differ from their default; {@code is:default} the others
  * </ul>
  *
- * A word starting with {@code -} excludes matches, for example {@code -mod:server}.
+ * A word starting with {@code -} excludes matches, for example {@code -mod:server}. A {@link Filter} picked next to
+ * the search box limits words without a prefix to one field, or shows only changed or unchanged values.
  */
 public final class SettingSearch {
 
+    /** What the dropdown next to the search box limits the search to. */
+    public enum Filter {
+        ALL("All", Field.ANY),
+        NAME("Name", Field.NAME),
+        MOD("Mod id", Field.MOD),
+        ID("Id", Field.ID),
+        CATEGORY("Category", Field.CATEGORY),
+        VALUE("Value / keys", Field.VALUE),
+        DEFAULT("Default", Field.DEFAULT),
+        DESCRIPTION("Description", Field.DESCRIPTION),
+        CHANGED("Changed only", Field.ANY),
+        UNCHANGED("Default only", Field.ANY);
+
+        private final String label;
+        private final Field field;
+
+        Filter(String label, Field field) {
+            this.label = label;
+            this.field = field;
+        }
+
+        /** @return the text shown in the dropdown */
+        public String label() {
+            return label;
+        }
+
+        /** @param label a dropdown label or name; unknown or {@code null} gives {@link #ALL} */
+        public static Filter of(String label) {
+            if (label != null) {
+                for (Filter filter : values()) {
+                    if (filter.label.equalsIgnoreCase(label.strip())
+                            || filter.name().equalsIgnoreCase(label.strip())) {
+                        return filter;
+                    }
+                }
+            }
+            return ALL;
+        }
+    }
+
     /** A search that matches everything. */
-    public static final SettingSearch ALL = new SettingSearch("", List.of());
+    public static final SettingSearch ALL = new SettingSearch("", Filter.ALL, List.of());
 
     private final String text;
+    private final Filter filter;
     private final List<Term> terms;
 
-    private SettingSearch(String text, List<Term> terms) {
+    private SettingSearch(String text, Filter filter, List<Term> terms) {
         this.text = text;
+        this.filter = filter;
         this.terms = terms;
     }
 
     /** @param text what the player typed; {@code null} or blank matches everything */
     public static SettingSearch parse(String text) {
+        return parse(text, Filter.ALL);
+    }
+
+    /**
+     * @param text what the player typed; {@code null} or blank matches everything the filter lets through
+     * @param filter what the dropdown is set to
+     */
+    public static SettingSearch parse(String text, Filter filter) {
         String query = text == null ? "" : text.strip();
-        if (query.isEmpty()) {
-            return ALL;
-        }
         List<Term> terms = new ArrayList<>();
-        for (String word : query.split("\\s+")) {
+        if (filter == Filter.CHANGED || filter == Filter.UNCHANGED) {
+            terms.add(new Term(Field.IS, filter == Filter.CHANGED ? "changed" : "default", false));
+        }
+        for (String word : query.isEmpty() ? new String[0] : query.split("\\s+")) {
             boolean negated = word.startsWith("-") && word.length() > 1;
             String body = (negated ? word.substring(1) : word).toLowerCase(Locale.ROOT);
-            Field field = Field.ANY;
+            Field field = filter.field;
             int colon = body.indexOf(':');
             if (colon > 0) {
                 Field prefixed = Field.of(body.substring(0, colon));
@@ -58,12 +109,17 @@ public final class SettingSearch {
                 terms.add(new Term(field, compact(body), negated));
             }
         }
-        return terms.isEmpty() ? ALL : new SettingSearch(query, List.copyOf(terms));
+        return terms.isEmpty() && filter == Filter.ALL ? ALL : new SettingSearch(query, filter, List.copyOf(terms));
     }
 
     /** @return what the player typed */
     public String text() {
         return text;
+    }
+
+    /** @return what the dropdown is set to */
+    public Filter filter() {
+        return filter;
     }
 
     public boolean isEmpty() {

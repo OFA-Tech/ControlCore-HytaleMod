@@ -63,8 +63,17 @@ $C.@PageOverlay {
           Anchor: (Bottom: 8);
         }
 
-        $C.@TextField #ServerSearch {
+        Group {
+          LayoutMode: Left;
           Anchor: (Height: 34, Bottom: 8);
+
+          $C.@DropdownBox #ServerSearchFilter {
+            Anchor: (Width: 170, Right: 6);
+          }
+
+          $C.@TextField #ServerSearch {
+            FlexWeight: 1;
+          }
         }
 
         Label #ServerStatus {
@@ -96,8 +105,17 @@ $C.@PageOverlay {
           Anchor: (Bottom: 8);
         }
 
-        $C.@TextField #SettingsSearch {
+        Group {
+          LayoutMode: Left;
           Anchor: (Height: 34, Bottom: 8);
+
+          $C.@DropdownBox #SettingsSearchFilter {
+            Anchor: (Width: 170, Right: 6);
+          }
+
+          $C.@TextField #SettingsSearch {
+            FlexWeight: 1;
+          }
         }
 
         Label #SettingsStatus {
@@ -129,8 +147,17 @@ $C.@PageOverlay {
           Anchor: (Bottom: 8);
         }
 
-        $C.@TextField #PlayerSearch {
+        Group {
+          LayoutMode: Left;
           Anchor: (Height: 34, Bottom: 8);
+
+          $C.@DropdownBox #PlayerSearchFilter {
+            Anchor: (Width: 170, Right: 6);
+          }
+
+          $C.@TextField #PlayerSearch {
+            FlexWeight: 1;
+          }
         }
 
         Label #PlayerStatus {
@@ -224,8 +251,17 @@ $C.@PageOverlay {
             }
           }
 
-          $C.@TextField #ServerKeymapSearch {
+          Group {
+            LayoutMode: Left;
             Anchor: (Height: 34, Bottom: 8);
+
+            $C.@DropdownBox #ServerKeymapSearchFilter {
+              Anchor: (Width: 170, Right: 6);
+            }
+
+            $C.@TextField #ServerKeymapSearch {
+              FlexWeight: 1;
+            }
           }
 
           Label #ServerKeymapStatus {
@@ -250,8 +286,17 @@ $C.@PageOverlay {
             Anchor: (Bottom: 8);
           }
 
-          $C.@TextField #KeymapSearch {
+          Group {
+            LayoutMode: Left;
             Anchor: (Height: 34, Bottom: 8);
+
+            $C.@DropdownBox #KeymapSearchFilter {
+              Anchor: (Width: 170, Right: 6);
+            }
+
+            $C.@TextField #KeymapSearch {
+              FlexWeight: 1;
+            }
           }
 
           Label #KeymapStatus {

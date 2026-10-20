@@ -57,6 +57,28 @@ class SettingSearchTest {
                 .isFalse();
     }
 
+    @Test
+    void theDropdownLimitsPlainWordsOrShowsChangedValues() {
+        assertThat(filtered("home", SettingSearch.Filter.NAME, home)).isTrue();
+        assertThat(filtered("homes", SettingSearch.Filter.NAME, home)).isFalse();
+        assertThat(filtered("homes", SettingSearch.Filter.MOD, home)).isTrue();
+        assertThat(filtered("ctrl", SettingSearch.Filter.VALUE, home)).isTrue();
+        assertThat(filtered("mod:homes", SettingSearch.Filter.NAME, home))
+                .as("prefixes still win")
+                .isTrue();
+        assertThat(filtered("", SettingSearch.Filter.CHANGED, welcome)).isTrue();
+        assertThat(filtered("", SettingSearch.Filter.CHANGED, home)).isFalse();
+        assertThat(filtered("", SettingSearch.Filter.UNCHANGED, home)).isTrue();
+        assertThat(SettingSearch.parse("", SettingSearch.Filter.CHANGED).isEmpty())
+                .isFalse();
+        assertThat(SettingSearch.Filter.of("Mod id")).isEqualTo(SettingSearch.Filter.MOD);
+        assertThat(SettingSearch.Filter.of(null)).isEqualTo(SettingSearch.Filter.ALL);
+    }
+
+    private static boolean filtered(String query, SettingSearch.Filter filter, SettingSnapshot snapshot) {
+        return SettingSearch.parse(query, filter).matches(snapshot, "Sent to players when they join.");
+    }
+
     private static boolean matches(String query, SettingSnapshot snapshot) {
         return SettingSearch.parse(query).matches(snapshot, "Sent to players when they join.");
     }
