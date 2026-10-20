@@ -8,7 +8,6 @@ import net.ofatech.controlcore.application.event.DomainEventBus;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
-import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.command.ArgType;
@@ -42,33 +41,39 @@ class TextsTest {
                     .get(key))
             : bundled.lookup(language, key);
 
-    private final Texts texts = new Texts(translations, players, registry);
+    private final Texts texts = new Texts(translations, players);
     private final PlayerInfo ana = players.join("Ana");
 
     @Test
-    void playersReadTheirGameLanguageAndTheConsoleTheServers() {
+    void playersReadTheirGameLanguageEachTimeAndTheConsoleEnglish() {
+        var forAna = texts.forPlayer(Optional.of(ana.id()));
         players.languages.put(ana.id(), "pt-BR");
+        assertThat(forAna.t("controlcore.ui.close")).isEqualTo("Fechar");
 
-        assertThat(texts.forPlayer(Optional.of(ana.id())).t("controlcore.ui.close"))
-                .isEqualTo("Fechar");
-        assertThat(texts.forServer().t("controlcore.ui.close")).isEqualTo("Close");
-
-        registry.write(SettingId.of(Texts.SERVER_LANGUAGE_ID), Optional.empty(), "es-ES");
-        assertThat(texts.forServer().t("controlcore.ui.close")).isEqualTo("Cerrar");
-        assertThat(texts.forPlayer(Optional.of(players.join("Bo").id())).t("controlcore.ui.close"))
-                .as("players whose game language is unknown read the server's")
+        players.languages.put(ana.id(), "es-ES");
+        assertThat(forAna.t("controlcore.ui.close"))
+                .as("changed in the game's options")
                 .isEqualTo("Cerrar");
+
+        assertThat(texts.forServer().t("controlcore.ui.close")).isEqualTo("Close");
+        assertThat(texts.forPlayer(Optional.of(players.join("Bo").id())).t("controlcore.ui.close"))
+                .as("players whose game language is unknown read English")
+                .isEqualTo("Close");
+        players.languages.put(ana.id(), "fr-FR");
+        assertThat(forAna.t("controlcore.ui.close"))
+                .as("a language ControlCore lacks")
+                .isEqualTo("Close");
     }
 
     @Test
-    void missingTextsFallBackToTheServerLanguageThenEnglishThenTheFallback() {
+    void missingTextsFallBackToEnglishThenTheFallback() {
         players.languages.put(ana.id(), "pt-BR");
         var forAna = texts.forPlayer(Optional.of(ana.id()));
         Text title = Text.key("homes.title", "Houses").with("player", "Ana");
 
         assertThat(forAna.translate(title)).as("English, the mod has no pt-BR").isEqualTo("Homes of Ana");
-        registry.write(SettingId.of(Texts.SERVER_LANGUAGE_ID), Optional.empty(), "es-ES");
-        assertThat(forAna.translate(title)).as("the server's language first").isEqualTo("Casas de Ana");
+        players.languages.put(ana.id(), "es-ES");
+        assertThat(forAna.translate(title)).isEqualTo("Casas de Ana");
         assertThat(forAna.translate(
                         Text.key("homes.nothing", "Nothing for {player}").with("player", "Ana")))
                 .isEqualTo("Nothing for Ana");

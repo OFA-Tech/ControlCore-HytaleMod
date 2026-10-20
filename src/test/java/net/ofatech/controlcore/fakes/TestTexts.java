@@ -14,9 +14,9 @@ public final class TestTexts {
 
     private TestTexts() {}
 
-    /** @return texts whose server language setting lives in {@code settings} */
+    /** @return texts for {@code players} */
     public static Texts of(SettingsApi settings, FakePlayers players) {
-        return new Texts(BUNDLED, players, settings);
+        return new Texts(BUNDLED, players);
     }
 
     /** @return texts with a registry of their own */

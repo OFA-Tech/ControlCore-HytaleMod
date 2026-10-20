@@ -14,8 +14,7 @@
 
 ### Added
 - **Translations** (API 1.5.0): the panel, command replies, errors and command help are shown in each
-  player's game language: English, Brazilian Portuguese and Spanish. Missing texts fall back to the new
-  **Server language** setting, then English. Mods translate their own setting and key texts with
+  player's game language: English, Brazilian Portuguese and Spanish. Missing texts fall back to English. Mods translate their own setting and key texts with
   `Text.key(key, fallback)` and their own `Server/Languages/<language>/<file>.lang` files.
 - **Permissions per setting** (API 1.4.0): mods set who may see and who may change a setting
   (`.viewPermission`, `.editPermission`, `.permission`) or a whole category (`setCategoryPermission`);

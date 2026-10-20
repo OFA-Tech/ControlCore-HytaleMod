@@ -46,7 +46,7 @@ The long-term vision is a common configuration backbone where compatible mods ca
   key bindings with `/prefs`. Open panels update when a setting changes elsewhere. When a compatible
   [HyUI](https://www.curseforge.com/hytale/mods/hyui) is installed, its HTML panel is used instead.
 - **Translations**: everything ControlCore shows follows each player's game language (English, Brazilian
-  Portuguese, Spanish), with a server language as fallback; mods can translate their own setting and key
+  Portuguese, Spanish), with English as fallback; mods can translate their own setting and key
   names. See [docs/api.md](docs/api.md#translations-api-150).
 - **Settings registry**: mods register typed settings (server-wide or per-player preferences) through
   `ControlCoreApi.settings()`; ControlCore validates and stores them and reports changes. Admins use

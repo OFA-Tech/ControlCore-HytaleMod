@@ -107,9 +107,9 @@ api.settings().setCategoryPermission("Homes", SettingPermission.of("homes.staff"
 ## Translations (API 1.5.0)
 
 ControlCore shows its panel, command replies, errors and command help in each player's **game language**
-(`en-US`, `pt-BR` and `es-ES` are included). A text missing in that language falls back to the
-**Server language** setting (`controlcore:server-language`, also used for the console), then English.
-Players can change their game language at any time; ControlCore reads it every time it shows text.
+(`en-US`, `pt-BR` and `es-ES` are included). A text missing in that language, or a language ControlCore
+lacks, falls back to English; the console reads English. Players can change their game language at any
+time; ControlCore reads it every time it shows text.
 
 Mods can have their setting and key texts translated too. Pass a `Text.key(key, englishFallback)` instead
 of a plain string and ship the keys in your own language files:
