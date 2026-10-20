@@ -1,21 +1,27 @@
 package net.ofatech.controlcore.domain.ports.game;
 
+import java.util.List;
 import net.ofatech.controlcore.domain.model.ServerSettings;
+import net.ofatech.controlcore.domain.model.serverconfig.ConfigEntry;
 import net.ofatech.controlcore.domain.result.Result;
 
-/** The host server's own configuration (name, MOTD, limits). */
+/** The host server's own configuration file. */
 public interface ServerConfiguration {
 
+    /** @return the commonly used values, typed */
     ServerSettings read();
 
-    /** @return the values a fresh server starts with */
-    ServerSettings defaults();
+    /** @return every key of the configuration, in file order, with whether it may be changed */
+    List<ConfigEntry> entries();
 
     /**
-     * Applies the editable values of {@code settings} (everything except the password) and saves the server
-     * config. Changes take effect where the server supports it, for example the view radius of online players.
+     * Changes one key and saves the configuration. Changes take effect where the server supports it, for
+     * example the view radius of online players.
      *
-     * @return the configuration after the change, or an error if it could not be applied or saved
+     * @param path {@link ConfigEntry#path()}
+     * @param value new value, written as {@link ConfigEntry#kind()} describes
+     * @return the entry after the change, or an error such as {@code ServerConfig.ReadOnly},
+     *     {@code ServerConfig.InvalidValue} or {@code ServerConfig.UnknownKey}
      */
-    Result<ServerSettings> write(ServerSettings settings);
+    Result<ConfigEntry> write(String path, String value);
 }

@@ -31,7 +31,6 @@ import net.ofatech.controlcore.domain.model.ControlPanelContent;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.ControlPanelTab;
 import net.ofatech.controlcore.domain.model.PlayerId;
-import net.ofatech.controlcore.domain.model.ServerSettings;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
@@ -52,6 +51,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private static final String TEXT_ROW = "Pages/ControlCore/SettingTextRow.ui";
     private static final String TOGGLE_ROW = "Pages/ControlCore/SettingToggleRow.ui";
     private static final String CHOICE_ROW = "Pages/ControlCore/SettingChoiceRow.ui";
+    private static final String INFO_ROW = "Pages/ControlCore/SettingInfoRow.ui";
 
     private static final String CLOSE = "Close";
     private static final String TAB_PREFIX = "Tab:";
@@ -122,7 +122,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             "#RebindToggleDebug",
             "#ResetToggleDebug");
 
-    private final ServerSettings server;
     private final Log log;
     private final Set<Tab> tabs = EnumSet.noneOf(Tab.class);
     private final Map<Section, SettingsSection> sections = new EnumMap<>(Section.class);
@@ -135,7 +134,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
 
     ControlPanelPage(PlayerRef player, ControlPanelRequest request, ControlPanelContent content, Log log) {
         super(player, CustomPageLifetime.CanDismiss, Action.CODEC);
-        this.server = content.server();
         this.log = log;
         ControlPanelRequest shownSections = request.isEmpty() ? ControlPanelRequest.PLAYER_PREFERENCES : request;
         for (Tab tab : Tab.values()) {
@@ -177,13 +175,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             @Nonnull UIEventBuilder events,
             @Nonnull Store<EntityStore> store) {
         commands.append(LAYOUT);
-        if (tabs.contains(Tab.SERVER)) {
-            commands.set(
-                    "#Password.Text",
-                    server.passwordProtected()
-                            ? "Set (private server). Change it in config.json."
-                            : "None (public server). Set one in config.json.");
-        }
         NOT_WIRED_YET.forEach(button -> commands.set(button + ".Disabled", true));
         sections.forEach((key, section) -> buildSection(key, section, commands, events));
         for (Tab tab : Tab.values()) {
@@ -277,11 +268,14 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                         input,
                         action(CHOOSE, key, id).append(Action.VALUE, input + ".Value"));
             }
+            case INFO -> commands.append(key.list, INFO_ROW);
         }
         commands.set(element + " #Label.Text", snapshot.definition().displayName());
         commands.set(element + " #Description.Text", SettingsSection.describe(snapshot));
-        showValue(row.kind(), input, snapshot, commands);
-        events.addEventBinding(CustomUIEventBindingType.Activating, element + " #Reset", action(RESET, key, id));
+        showValue(row.kind(), element, snapshot, commands);
+        if (row.kind() != SettingsSection.Kind.INFO) {
+            events.addEventBinding(CustomUIEventBindingType.Activating, element + " #Reset", action(RESET, key, id));
+        }
     }
 
     private void handleSettingAction(Section key, SettingsSection section, String name, Action action) {
@@ -303,11 +297,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                     update.set(key.status + ".Text", SettingsSection.saved(snapshot));
                     Integer index = rowIndexes.get(key).get(snapshot.id());
                     if (writeBack && index != null) {
-                        showValue(
-                                SettingsSection.kindOf(snapshot.definition().type()),
-                                key.row(index) + " #Input",
-                                snapshot,
-                                update);
+                        showValue(SettingsSection.kindOf(snapshot), key.row(index), snapshot, update);
                     }
                 })
                 .onFailure(error -> update.set(key.status + ".Text", error.description()));
@@ -345,11 +335,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 }
                 shown.put(id, snapshot.value());
                 UICommandBuilder update = new UICommandBuilder();
-                showValue(
-                        SettingsSection.kindOf(snapshot.definition().type()),
-                        key.row(index) + " #Input",
-                        snapshot,
-                        update);
+                showValue(SettingsSection.kindOf(snapshot), key.row(index), snapshot, update);
                 update.set(key.status + ".Text", SettingsSection.changedElsewhere(snapshot));
                 sendUpdate(update, false);
             });
@@ -374,10 +360,12 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     }
 
     private static void showValue(
-            SettingsSection.Kind kind, String input, SettingSnapshot snapshot, UICommandBuilder commands) {
+            SettingsSection.Kind kind, String element, SettingSnapshot snapshot, UICommandBuilder commands) {
+        String input = element + " #Input";
         switch (kind) {
             case TEXT, CHOICE -> commands.set(input + ".Value", snapshot.value());
             case TOGGLE -> commands.set(input + ".Value", Boolean.parseBoolean(snapshot.value()));
+            case INFO -> commands.set(element + " #Value.Text", SettingsSection.shownValue(snapshot));
         }
     }
 

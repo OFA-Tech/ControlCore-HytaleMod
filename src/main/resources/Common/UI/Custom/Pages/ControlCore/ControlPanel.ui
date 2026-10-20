@@ -58,7 +58,7 @@ $C.@PageOverlay {
         }
 
         Label {
-          Text: "The server's own config.json. Changes are saved straight away; the name, MOTD and timeout apply to new connections.";
+          Text: "Every key of the server's config.json. Changes are saved straight away; some only apply after a restart, and read-only keys are edited in the file.";
           Style: @NoteStyle;
           Anchor: (Bottom: 8);
         }
@@ -71,24 +71,8 @@ $C.@PageOverlay {
         Group #ServerList {
           LayoutMode: TopScrolling;
           ScrollbarStyle: $C.@DefaultScrollbarStyle;
-          Anchor: (Height: 310);
+          Anchor: (Height: 340);
           Padding: (Right: 10);
-        }
-
-        Group {
-          LayoutMode: Left;
-          Anchor: (Top: 8);
-
-          Label {
-            Text: "Password";
-            Anchor: (Width: 200);
-            Style: @RowLabelStyle;
-          }
-
-          Label #Password {
-            FlexWeight: 1;
-            Style: @RowValueStyle;
-          }
         }
       }
 

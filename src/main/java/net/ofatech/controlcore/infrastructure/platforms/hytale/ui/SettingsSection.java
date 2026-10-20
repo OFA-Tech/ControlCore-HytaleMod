@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
@@ -29,7 +30,9 @@ final class SettingsSection {
         /** Check box, saved when clicked. */
         TOGGLE,
         /** Dropdown, saved when an option is picked. */
-        CHOICE
+        CHOICE,
+        /** Value shown as text; not editable. */
+        INFO
     }
 
     /** One element of the list, in display order. */
@@ -76,7 +79,7 @@ final class SettingsSection {
                 category = snapshot.definition().category();
                 entries.add(new Heading(category));
             }
-            entries.add(new Row(kindOf(snapshot.definition().type()), snapshot));
+            entries.add(new Row(kindOf(snapshot), snapshot));
         }
         return entries;
     }
@@ -115,8 +118,11 @@ final class SettingsSection {
                 && (scope == SettingScope.SERVER || change.player().equals(player));
     }
 
-    static Kind kindOf(SettingType<?> type) {
-        return switch (type) {
+    static Kind kindOf(SettingSnapshot snapshot) {
+        if (snapshot.access() == SettingAccess.READ_ONLY) {
+            return Kind.INFO;
+        }
+        return switch (snapshot.definition().type()) {
             case SettingType.BooleanType _ -> Kind.TOGGLE;
             case SettingType.ChoiceType _ -> Kind.CHOICE;
             default -> Kind.TEXT;
@@ -126,15 +132,23 @@ final class SettingsSection {
     /** @return the description line under a row: description, type and default */
     static String describe(SettingSnapshot snapshot) {
         SettingDefinition<?> definition = snapshot.definition();
-        String details = definition.type().describe() + ", default " + shown(definition.formattedDefault()) + " · "
-                + definition.id();
+        String details = snapshot.access() == SettingAccess.READ_ONLY
+                ? "read-only · " + definition.id()
+                : definition.type().describe() + ", default " + shown(definition.formattedDefault()) + " · "
+                        + definition.id();
         return definition.description().isBlank() ? details : definition.description() + " (" + details + ")";
     }
 
     /** @return the status line after a successful change */
     static String saved(SettingSnapshot snapshot) {
         return "Saved: " + snapshot.definition().displayName() + " = " + shown(snapshot.value())
-                + (snapshot.overridden() ? "" : " (default)");
+                + (snapshot.overridden() ? "" : " (default)")
+                + (snapshot.access() == SettingAccess.APPLIES_AFTER_RESTART ? ". Applies after a restart." : "");
+    }
+
+    /** @return the value shown in a read-only row */
+    static String shownValue(SettingSnapshot snapshot) {
+        return shown(snapshot.value());
     }
 
     /** @return the status line after a change made outside this panel */

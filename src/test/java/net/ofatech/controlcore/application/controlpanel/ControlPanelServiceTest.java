@@ -82,12 +82,7 @@ class ControlPanelServiceTest {
         assertThat(builtIn.lastContent.settings()).isSameAs(registry);
         assertThat(builtIn.lastContent.serverConfig().snapshot(SettingScope.SERVER, Optional.empty()))
                 .extracting(snapshot -> snapshot.id().toString())
-                .containsExactly(
-                        "server:name",
-                        "server:motd",
-                        "server:max-players",
-                        "server:max-view-radius",
-                        "server:play-timeout");
+                .contains("server:server-name", "server:connection-timeouts.play-timeout", "server:ban-storage");
         assertThat(service.isAvailable()).isTrue();
         assertThat(service.usesUiMod()).isFalse();
     }

@@ -13,9 +13,12 @@
 - `/open-admin-config` now requires the `<base permission>.admin` node.
 
 ### Added
-- **Server Configs** tab is editable: server name, MOTD, max players, max view radius (online players
-  updated at once) and play timeout, with Save and Default (the value of a fresh server). Changes are
-  saved to the server's `config.json` straight away and published as `ServerConfigChanged`.
+- **Server Configs** tab lists every key of the server's `config.json`, read from Hytale's config
+  definition: live keys (name, MOTD, max players, max view radius, connection timeouts, require join
+  permission) apply at once, restart keys (world defaults, rate limit, backup, update, world map) apply
+  after a restart, everything else is read-only. Save and Default (the value of a fresh server);
+  changes are saved to `config.json` straight away and published as `ServerConfigChanged`.
+- API 1.2.0: `SettingSnapshot.access()` (`SettingAccess`: editable, applies after restart, read-only).
 - `/prefs`: any player opens the panel on their own preferences (no admin tabs); works even when the
   admin panel is disabled. API 1.2.0: `ControlPanelRequest.PLAYER_PREFERENCES`,
   `SettingsEditor.onAnyChange`.
