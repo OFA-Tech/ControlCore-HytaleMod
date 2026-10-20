@@ -30,12 +30,8 @@ final class KeyProbePage extends InteractiveCustomUIPage<KeyProbePage.Event> {
 
     /** Where the {@code KeyDown} binding is attached. */
     enum Target {
-        /** The text field (focused when the player clicks it). */
-        INPUT("#KeyInput"),
-        /** The group around the content. */
-        ROOT("#KeyRoot"),
-        /** No selector: the whole page. */
-        PAGE(null);
+        /** The text field, focused as soon as the screen opens. Binding KeyDown to a group crashes the client. */
+        INPUT("#KeyInput");
 
         final String selector;
 
@@ -64,7 +60,7 @@ final class KeyProbePage extends InteractiveCustomUIPage<KeyProbePage.Event> {
         commands.set(
                 "#Status.Text",
                 "KeyDown bound to " + target.name().toLowerCase(java.util.Locale.ROOT)
-                        + (target == Target.INPUT ? ". Click the field first, then press keys." : ". Press keys."));
+                        + ". Press keys without clicking anything first.");
         events.addEventBinding(CustomUIEventBindingType.KeyDown, target.selector, EventData.of(Event.SOURCE, "key"));
         events.addEventBinding(
                 CustomUIEventBindingType.ValueChanged,

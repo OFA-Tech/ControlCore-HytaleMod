@@ -29,6 +29,7 @@ $C.@PageOverlay {
         }
 
         $C.@TextField #KeyInput {
+          AutoFocus: true;
           Anchor: (Height: 34, Bottom: 10);
         }
 

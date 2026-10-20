@@ -10,7 +10,7 @@ import net.ofatech.controlcore.domain.result.Result;
 public interface InputProbe {
 
     /** Targets accepted by {@link #openKeyTest}. */
-    String KEY_TEST_TARGETS = "input, root, page";
+    String KEY_TEST_TARGETS = "input";
 
     /** @return whether the probe is now on for the player */
     boolean toggle(PlayerId player);
