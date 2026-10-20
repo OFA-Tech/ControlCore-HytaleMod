@@ -17,6 +17,12 @@ public final class RecordingCommandRunner implements CommandRunner {
         runs.add(new Run(player, command));
     }
 
+    /** Commands run as the server are recorded with a {@code null} player. */
+    @Override
+    public void runAsServer(String command) {
+        runs.add(new Run(null, command));
+    }
+
     @Override
     public void runInBackground(String description, Runnable work) {
         work.run();

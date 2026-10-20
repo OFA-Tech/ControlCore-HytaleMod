@@ -25,6 +25,7 @@ public final class KeymapsModule implements FeatureModule {
 
     @Override
     public void setup(ModuleContext context) {
+        keymaps.loadCustom();
         keymaps.register(KeyAction.of("controlcore", OPEN_PREFERENCES)
                 .displayName("Open my preferences")
                 .describedAs("Opens your preferences and key bindings.")

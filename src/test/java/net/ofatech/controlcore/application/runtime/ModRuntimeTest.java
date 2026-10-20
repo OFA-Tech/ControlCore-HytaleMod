@@ -128,6 +128,33 @@ class ModRuntimeTest {
     }
 
     @Test
+    void adminsCreateServerKeyBindsThatOnlyPermittedPlayersCanUse() {
+        runtime.setup();
+        runtime.start();
+        PlayerInfo admin = platform.players.join("Admin");
+
+        var add = platform.commands.run(
+                "cc-keybind-add-server",
+                admin,
+                Map.of("name", "announce", "keys", "ctrl+r", "command", "/say {player} pressed it"));
+        platform.input.hold(admin.id(), net.ofatech.controlcore.domain.model.keys.KeySignal.CROUCHING);
+        platform.input.press(admin.id(), net.ofatech.controlcore.domain.model.keys.KeySignal.ABILITY_3);
+        platform.deniedNodes.add("keys.server");
+        platform.clock.now = platform.clock.now.plusSeconds(1);
+        platform.input.press(admin.id(), net.ofatech.controlcore.domain.model.keys.KeySignal.ABILITY_3);
+        var remove = platform.commands.run("cc-keybind-remove", admin, Map.of("name", "announce"));
+
+        assertThat(add.value().text().orElseThrow()).contains("custom:announce", "as the server");
+        assertThat(platform.commandRunner.runs)
+                .containsExactly(
+                        new net.ofatech.controlcore.fakes.RecordingCommandRunner.Run(null, "say Admin pressed it"));
+        assertThat(remove.isSuccess()).isTrue();
+        assertThat(platform.customKeyBinds.binds).isEmpty();
+        assertThat(platform.commands.commands.get("cc-keybind-add").spec().permission())
+                .isPresent();
+    }
+
+    @Test
     void aBrokenModPlatformStaysIsolated() {
         platform.mods.loaded.add(TestModPlatforms.WORKING);
         platform.mods.loaded.add(TestModPlatforms.BROKEN);

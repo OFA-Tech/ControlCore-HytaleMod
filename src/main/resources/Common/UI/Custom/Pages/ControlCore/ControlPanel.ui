@@ -150,6 +150,49 @@ $C.@PageOverlay {
           Anchor: (Bottom: 8);
         }
 
+        Group #CustomBindForm {
+          LayoutMode: Top;
+          Visible: false;
+          Anchor: (Bottom: 8);
+
+          Group {
+            LayoutMode: Left;
+            Anchor: (Height: 38);
+
+            $C.@TextField #NewBindName {
+              Anchor: (Width: 150, Right: 6);
+            }
+
+            $C.@TextField #NewBindKeys {
+              Anchor: (Width: 140, Right: 6);
+            }
+
+            $C.@TextField #NewBindCommand {
+              FlexWeight: 1;
+            }
+          }
+
+          Group {
+            LayoutMode: Left;
+            Anchor: (Height: 34, Top: 4);
+
+            $C.@CheckBox #NewBindAsServer {
+              Anchor: (Width: 26, Height: 26, Right: 8);
+            }
+
+            Label {
+              Text: "Run as the server (only players with the keys.server permission, such as operators, can use it)";
+              FlexWeight: 1;
+              Style: @NoteStyle;
+            }
+
+            $C.@SmallSecondaryTextButton #NewBindAdd {
+              @Text = "Add bind";
+              Anchor: (Width: 110, Height: 32, Left: 6);
+            }
+          }
+        }
+
         Label #KeymapStatus {
           Style: @StatusStyle;
           Anchor: (Bottom: 8);
@@ -158,7 +201,7 @@ $C.@PageOverlay {
         Group #KeymapList {
           LayoutMode: TopScrolling;
           ScrollbarStyle: $C.@DefaultScrollbarStyle;
-          Anchor: (Height: 340);
+          Anchor: (Height: 280);
           Padding: (Right: 10);
         }
       }

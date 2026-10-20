@@ -51,7 +51,9 @@ The long-term vision is a common configuration backbone where compatible mods ca
 - **Key actions**: mods register a command or code with default keys through `ControlCoreApi.keymaps()`
   (`KeyAction.of(modId, action).displayName(..).command(..).defaultKeys(Key.CTRL, Key.F)`); players
   rebind them in Keymaps or with `/cc-keys`, `/cc-bind`, `/cc-bind-reset`; admins set server keys with
-  `/cc-bind-server`. Hytale only reports some keys to servers (Q, E, R, F, O, 1-9, mouse buttons, Alt tap,
+  `/cc-bind-server`. Actions can run as the server (`.runAsServer()`, limited by permission), and admins
+  can create their own binds without a mod (`/cc-keybind-add`, `/cc-keybind-add-server`, or the admin
+  panel's Keymaps tab). Hytale only reports some keys to servers (Q, E, R, F, O, 1-9, mouse buttons, Alt tap,
   with Ctrl/Alt/Shift/Space held); others are kept and marked not available. See
   [docs/api.md](docs/api.md#key-actions).
 - ControlCore's own settings: `controlcore:control-panel-enabled`, `controlcore:welcome-message` (sent to

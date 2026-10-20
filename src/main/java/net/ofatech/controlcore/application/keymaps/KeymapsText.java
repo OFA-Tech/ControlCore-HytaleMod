@@ -27,7 +27,9 @@ public final class KeymapsText {
     /** @return what the action does, for example {@code Runs /prefs} */
     public static String runs(KeyAction action) {
         String code = action.onPress().isPresent() ? "runs " + action.modId() + " code" : "";
-        String command = action.command().map(text -> "Runs /" + text).orElse("");
+        String command = action.command()
+                .map(text -> "Runs /" + text + (action.runsAsServer() ? " as the server" : ""))
+                .orElse("");
         if (command.isEmpty()) {
             return "R" + code.substring(1);
         }
@@ -39,6 +41,18 @@ public final class KeymapsText {
         String problems = problems(binds);
         return action.displayName() + ": " + binds + " (" + source + ") · " + action.id()
                 + (problems.isEmpty() ? "" : "\n  " + problems);
+    }
+
+    /** @return the reply after an admin created a key bind */
+    public static String created(KeyAction action) {
+        String problems = problems(action.defaultKeys());
+        String runs = runs(action);
+        return "Key bind " + action.id() + " (" + action.defaultKeys() + ") "
+                + Character.toLowerCase(runs.charAt(0)) + runs.substring(1) + "."
+                + (action.runsAsServer()
+                        ? " Only players with " + KeymapRegistry.SERVER_KEYS_NODE + " can use it."
+                        : "")
+                + (problems.isEmpty() ? "" : " " + problems);
     }
 
     /** @return the reply after a change */

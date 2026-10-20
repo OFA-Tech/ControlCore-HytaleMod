@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
 import net.ofatech.controlcore.domain.model.keys.KeyBinds;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
@@ -22,7 +23,7 @@ import net.ofatech.controlcore.domain.result.Result;
  * Shows a player's key bindings as text preferences, so the control panel lists and edits them like settings:
  * one row per key action, the value is the bindings ({@code CTRL + F | MOUSE_MIDDLE}), the default the server's.
  */
-public final class KeymapsEditor implements SettingsEditor {
+public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor {
 
     static final int MAX_LENGTH = 200;
 
@@ -37,7 +38,7 @@ public final class KeymapsEditor implements SettingsEditor {
         if (scope != SettingScope.PLAYER || player.isEmpty()) {
             return List.of();
         }
-        return keymaps.actions().stream()
+        return keymaps.actionsFor(player.get()).stream()
                 .sorted(Comparator.comparing((KeyAction action) -> action.modId())
                         .thenComparing(KeyAction::id))
                 .map(action -> snapshot(action, player.get()))
@@ -46,7 +47,7 @@ public final class KeymapsEditor implements SettingsEditor {
 
     @Override
     public Result<SettingSnapshot> read(SettingId id, Optional<PlayerId> player) {
-        return player(player).flatMap(viewer -> action(id).map(action -> snapshot(action, viewer)));
+        return player(player).flatMap(viewer -> action(id, viewer).map(action -> snapshot(action, viewer)));
     }
 
     @Override
@@ -57,6 +58,11 @@ public final class KeymapsEditor implements SettingsEditor {
     @Override
     public Result<SettingSnapshot> reset(SettingId id, Optional<PlayerId> player) {
         return player(player).flatMap(viewer -> keymaps.resetBind(id, viewer).flatMap(binds -> read(id, player)));
+    }
+
+    @Override
+    public Result<String> add(String name, String keys, String command, boolean runAsServer) {
+        return keymaps.addCustom(name, keys, command, runAsServer).map(KeymapsText::created);
     }
 
     @Override
@@ -78,8 +84,9 @@ public final class KeymapsEditor implements SettingsEditor {
         return new SettingSnapshot(definition, current.toString(), own.isPresent());
     }
 
-    private Result<KeyAction> action(SettingId id) {
+    private Result<KeyAction> action(SettingId id, PlayerId viewer) {
         return keymaps.find(id)
+                .filter(action -> keymaps.canUse(action, viewer))
                 .map(Result::success)
                 .orElseGet(() ->
                         Result.failure(Error.notFound("Keys.UnknownAction", "There is no key action '" + id + "'.")));

@@ -1,6 +1,7 @@
 package net.ofatech.controlcore.infrastructure.platforms.hytale.input;
 
 import com.hypixel.hytale.server.core.command.system.CommandManager;
+import com.hypixel.hytale.server.core.console.ConsoleSender;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import java.util.concurrent.ExecutorService;
@@ -32,6 +33,15 @@ public final class HytaleCommandRunner implements CommandRunner, AutoCloseable {
             }
             CommandManager.get().handleCommand(sender, command).join();
         });
+    }
+
+    @Override
+    public void runAsServer(String command) {
+        runInBackground(
+                "server command /" + command,
+                () -> CommandManager.get()
+                        .handleCommand(ConsoleSender.INSTANCE, command)
+                        .join());
     }
 
     @Override

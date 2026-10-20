@@ -27,14 +27,14 @@ public final class ListKeysCommand implements ModCommand {
 
     @Override
     public Result<Reply> execute(CommandContext context) {
-        List<KeyAction> actions = keymaps.actions();
+        var player = context.sender().player().map(info -> info.id());
+        List<KeyAction> actions = player.map(keymaps::actionsFor).orElseGet(keymaps::actions);
         if (actions.isEmpty()) {
             return Result.success(Reply.of("No key actions are registered."));
         }
         List<String> lines = new ArrayList<>();
         lines.add("Key actions (change with /cc-bind <id> <keys>, for example /cc-bind controlcore:open-preferences"
                 + " ctrl+f):");
-        var player = context.sender().player().map(info -> info.id());
         for (KeyAction action : actions) {
             lines.add("- " + line(action, player.orElse(null)));
         }

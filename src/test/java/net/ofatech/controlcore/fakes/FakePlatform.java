@@ -36,6 +36,10 @@ public final class FakePlatform implements Platform {
     public final FakePlayerInput input = new FakePlayerInput();
     public final RecordingCommandRunner commandRunner = new RecordingCommandRunner();
     public final FakeKeyBindStore keyBinds = new FakeKeyBindStore();
+    public final FakeCustomKeyBindStore customKeyBinds = new FakeCustomKeyBindStore();
+    /** Permission nodes players do not have; everything else is granted. */
+    public final java.util.Set<String> deniedNodes = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
     public final FakeServerConfiguration serverConfig = new FakeServerConfiguration(
             new ServerSettings("Test Server", "Welcome", false, 10, 5, java.time.Duration.ofMinutes(10)));
     public EventPublisher connectedPublisher;
@@ -52,7 +56,7 @@ public final class FakePlatform implements Platform {
         binder.bind(SettingsProvider.class, settings);
         binder.bind(Players.class, players);
         binder.bind(Messenger.class, messenger);
-        binder.bind(Permissions.class, (player, node) -> true);
+        binder.bind(Permissions.class, (player, node) -> !deniedNodes.contains(node));
         binder.bind(PlayerData.class, playerData);
         binder.bind(SettingStore.class, settingStore);
         binder.bind(Scheduler.class, scheduler);
@@ -63,6 +67,7 @@ public final class FakePlatform implements Platform {
         binder.bind(net.ofatech.controlcore.domain.ports.game.PlayerInput.class, input);
         binder.bind(net.ofatech.controlcore.domain.ports.game.CommandRunner.class, commandRunner);
         binder.bind(net.ofatech.controlcore.domain.ports.config.KeyBindStore.class, keyBinds);
+        binder.bind(net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore.class, customKeyBinds);
         binder.bind(InputProbe.class, new InputProbe() {
             @Override
             public boolean toggle(net.ofatech.controlcore.domain.model.PlayerId player) {

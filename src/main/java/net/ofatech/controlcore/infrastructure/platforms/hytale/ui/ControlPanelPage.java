@@ -31,6 +31,7 @@ import net.ofatech.controlcore.domain.model.ControlPanelContent;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.ControlPanelTab;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
@@ -59,6 +60,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private static final String CHECK = "Check";
     private static final String CHOOSE = "Choose";
     private static final String RESET = "Reset";
+    private static final String ADD_BIND = "AddBind";
 
     private enum Tab {
         SERVER(ControlPanelTab.SERVER_CONFIGS, "#ServerTab", "#ServerTabButton"),
@@ -115,6 +117,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     }
 
     private final Log log;
+    private final CustomKeyBindEditor customKeyBinds;
+    private final boolean canAddBinds;
     private final Set<Tab> tabs = EnumSet.noneOf(Tab.class);
     private final Map<Section, SettingsSection> sections = new EnumMap<>(Section.class);
     private final Map<Section, Map<SettingId, Integer>> rowIndexes = new EnumMap<>(Section.class);
@@ -127,7 +131,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     ControlPanelPage(PlayerRef player, ControlPanelRequest request, ControlPanelContent content, Log log) {
         super(player, CustomPageLifetime.CanDismiss, Action.CODEC);
         this.log = log;
+        this.customKeyBinds = content.customKeyBinds();
         ControlPanelRequest shownSections = request.isEmpty() ? ControlPanelRequest.PLAYER_PREFERENCES : request;
+        this.canAddBinds = shownSections.includeServerSettings() && shownSections.includeRegisteredActions();
         for (Tab tab : Tab.values()) {
             if (tab.shownFor(shownSections)) {
                 tabs.add(tab);
@@ -177,6 +183,21 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             commands.set(tab.button + ".Visible", tabs.contains(tab));
         }
         commands.set("#TabButtons.Visible", tabs.size() > 1);
+        commands.set("#CustomBindForm.Visible", canAddBinds);
+        if (canAddBinds) {
+            commands.set("#NewBindName.PlaceholderText", "name, e.g. warp-spawn");
+            commands.set("#NewBindKeys.PlaceholderText", "keys, e.g. ctrl+r");
+            commands.set("#NewBindCommand.PlaceholderText", "command, e.g. warp spawn {player}");
+            events.addEventBinding(
+                    CustomUIEventBindingType.Activating,
+                    "#NewBindAdd",
+                    new EventData()
+                            .append(Action.KEY, ADD_BIND)
+                            .append(Action.NAME, "#NewBindName.Value")
+                            .append(Action.KEYS, "#NewBindKeys.Value")
+                            .append(Action.VALUE, "#NewBindCommand.Value")
+                            .append(Action.CHECKED, "#NewBindAsServer.Value"));
+        }
         showTab(commands);
 
         for (Tab tab : tabs) {
@@ -202,6 +223,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         String name = action.name != null ? action.name : "";
         if (CLOSE.equals(name)) {
             close();
+        } else if (ADD_BIND.equals(name)) {
+            addBind(action);
         } else if (name.startsWith(TAB_PREFIX)) {
             selectTab(name.substring(TAB_PREFIX.length()));
         } else {
@@ -301,6 +324,27 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                     }
                 })
                 .onFailure(error -> update.set(key.status + ".Text", error.description()));
+        sendUpdate(update, false);
+    }
+
+    private void addBind(Action action) {
+        if (!canAddBinds) {
+            return;
+        }
+        Result<String> result =
+                customKeyBinds.add(action.bindName, action.bindKeys, action.value, Boolean.TRUE.equals(action.checked));
+        if (result.isSuccess()) {
+            rebuild();
+        }
+        UICommandBuilder update = new UICommandBuilder();
+        update.set(
+                Section.KEYMAPS.status + ".Text",
+                result.isSuccess() ? result.value() : result.error().description());
+        if (result.isSuccess()) {
+            update.set("#NewBindName.Value", "");
+            update.set("#NewBindKeys.Value", "");
+            update.set("#NewBindCommand.Value", "");
+        }
         sendUpdate(update, false);
     }
 
@@ -419,6 +463,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         static final String ID = "Id";
         static final String VALUE = "@Value";
         static final String CHECKED = "@Checked";
+        static final String NAME = "@BindName";
+        static final String KEYS = "@BindKeys";
 
         static final BuilderCodec<Action> CODEC = BuilderCodec.builder(Action.class, Action::new)
                 .append(
@@ -443,6 +489,16 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                         (action, value) -> action.checked = value,
                         action -> action.checked)
                 .add()
+                .append(
+                        new KeyedCodec<>(NAME, Codec.STRING),
+                        (action, value) -> action.bindName = value,
+                        action -> action.bindName)
+                .add()
+                .append(
+                        new KeyedCodec<>(KEYS, Codec.STRING),
+                        (action, value) -> action.bindKeys = value,
+                        action -> action.bindKeys)
+                .add()
                 .build();
 
         private String name;
@@ -450,5 +506,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         private String id;
         private String value;
         private Boolean checked;
+        private String bindName;
+        private String bindKeys;
     }
 }

@@ -6,8 +6,19 @@ import net.ofatech.controlcore.domain.ports.game.Permissions;
 
 public final class HytalePermissions implements Permissions {
 
+    private final String basePermission;
+
+    public HytalePermissions(String basePermission) {
+        this.basePermission = basePermission;
+    }
+
     @Override
     public boolean has(PlayerId player, String node) {
         return PermissionsModule.get().hasPermission(player.value(), node);
+    }
+
+    @Override
+    public boolean hasOwn(PlayerId player, String node) {
+        return has(player, basePermission + "." + node);
     }
 }

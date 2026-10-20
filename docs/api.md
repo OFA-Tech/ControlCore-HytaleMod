@@ -91,6 +91,14 @@ ControlCoreApi.find().ifPresent(api -> api.keymaps().register(
                 .defaultKeys(Key.CTRL, Key.NUM_3)      // held together
                 .alternativeKeys(Key.MOUSE_MIDDLE)     // optional: another combination
                 .onPress(player -> log("home!"))));    // optional: your own code (on a virtual thread)
+
+// run as the server console; only players with the permission can see or use it
+api.keymaps().register(KeyAction.of("admintools", "announce")
+        .displayName("Announce restart")
+        .command("say Restart in 5 minutes ({player})")
+        .runAsServer()
+        .permission("admintools.announce")             // optional; default: <base>.keys.server
+        .defaultKeys(Key.CTRL, Key.O));
 ```
 
 - **Inputs** are `Key`s (every keyboard key and mouse button) and `GameAction`s (`CROUCH`, `SPRINT`,
@@ -111,7 +119,15 @@ ControlCoreApi.find().ifPresent(api -> api.keymaps().register(
   `onPress` code also runs on a virtual thread, so hop to the world thread for world changes. A 250 ms
   cooldown stops repeats.
 - Server keys are saved to `KeyBinds.json`; players' keys go to `players.json` (key `keybind:<id>`).
-- **Errors:** `Keys.NothingToRun`, `Keys.UnknownAction`, `Keys.InvalidCombo`.
+- **Who can use it:** `.permission(node)` (a full node) limits an action to players who have it; they are
+  the only ones who see it in Keymaps and `/cc-keys`, and its keys do nothing for others. `.runAsServer()`
+  runs the command as the console with every permission; without its own `.permission(..)` it needs
+  ControlCore's `<base>.keys.server` node (operators have it). Each server-run press is logged.
+- **Admins' own binds** (no mod needed): `/cc-keybind-add`, `/cc-keybind-add-server` or the form in the admin
+  panel's Keymaps tab create `custom:<name>` actions, saved in `CustomKeyBinds.json`; mods cannot register
+  in the `custom` namespace (`Keys.ReservedId`).
+- **Errors:** `Keys.NothingToRun`, `Keys.UnknownAction`, `Keys.InvalidCombo`, `Keys.InvalidName`,
+  `Keys.ReservedId`.
 
 ### Key commands
 
@@ -122,6 +138,9 @@ ControlCoreApi.find().ifPresent(api -> api.keymaps().register(
 | `/cc-bind-reset <id>` | any player | go back to the server's keys |
 | `/cc-bind-server <id> <keys>` | `<base>.settings` | change the server's keys for everyone without their own |
 | `/cc-bind-server-reset <id>` | `<base>.settings` | go back to the mod's default keys |
+| `/cc-keybind-add <name> <keys> <command>` | `<base>.settings` | create `custom:<name>`, run as the player who presses it |
+| `/cc-keybind-add-server <name> <keys> <command>` | `<base>.settings` | create `custom:<name>`, run as the server (usable with `<base>.keys.server`) |
+| `/cc-keybind-remove <name>` | `<base>.settings` | delete a bind created by an admin |
 
 ControlCore registers `controlcore:open-preferences` (runs `/prefs`, default `CTRL + F`).
 

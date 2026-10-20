@@ -21,7 +21,7 @@ import net.ofatech.controlcore.domain.ports.system.Log;
 /**
  * Turns the signals players' clients send into key actions. A press fires the actions bound to it whose held keys
  * are all down; when several match, only those needing the most held keys fire (Ctrl+F wins over F). Combinations
- * without a press fire when their held keys all go down. Commands and code run in the background.
+ * without a press fire when their held keys all go down. Actions a player may not use (see\n * {@link KeymapRegistry#canUse}) are ignored for them. Commands and code run in the background.
  */
 public final class KeyDispatcher implements PlayerInput.Listener {
 
@@ -48,7 +48,7 @@ public final class KeyDispatcher implements PlayerInput.Listener {
         Set<KeySignal> current = held.getOrDefault(player, Set.of());
         List<KeyAction> best = new ArrayList<>();
         int bestHeld = -1;
-        for (KeyAction action : keymaps.actions()) {
+        for (KeyAction action : keymaps.actionsFor(player)) {
             int matched = matchedHeld(action, player, signal, current);
             if (matched > bestHeld) {
                 best.clear();
@@ -74,7 +74,7 @@ public final class KeyDispatcher implements PlayerInput.Listener {
         if (before.equals(now)) {
             return;
         }
-        for (KeyAction action : keymaps.actions()) {
+        for (KeyAction action : keymaps.actionsFor(player)) {
             for (KeyCombo combo : keymaps.keysFor(action.id(), player).combos()) {
                 KeyTrigger trigger = combo.trigger().orElse(null);
                 if (trigger != null && trigger.firesOnChange(before, now)) {
@@ -113,7 +113,14 @@ public final class KeyDispatcher implements PlayerInput.Listener {
         lastFired.put(key, now);
         String name = players.find(player).map(info -> info.name()).orElse(player.toString());
         log.debug("Key action " + action.id() + " for " + name);
-        action.commandFor(player, name).ifPresent(command -> runner.runAs(player, command));
+        action.commandFor(player, name).ifPresent(command -> {
+            if (action.runsAsServer()) {
+                log.info(name + " ran /" + command + " as the server with key action " + action.id());
+                runner.runAsServer(command);
+            } else {
+                runner.runAs(player, command);
+            }
+        });
         action.onPress()
                 .ifPresent(code -> runner.runInBackground("key action " + action.id(), () -> code.accept(player)));
         return true;

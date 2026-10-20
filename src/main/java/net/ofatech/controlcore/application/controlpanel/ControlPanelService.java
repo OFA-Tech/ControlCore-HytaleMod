@@ -78,6 +78,7 @@ public final class ControlPanelService implements ControlPanelApi {
         return view.open(
                 player,
                 request,
-                new ControlPanelContent(server.read(), serverConfig, registry, keymaps, settings.startTab(player)));
+                new ControlPanelContent(
+                        server.read(), serverConfig, registry, keymaps, keymaps, settings.startTab(player)));
     }
 }

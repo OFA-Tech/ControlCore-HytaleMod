@@ -3,6 +3,7 @@ package net.ofatech.controlcore.infrastructure.platforms.hytale;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
+import net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.KeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
@@ -21,6 +22,7 @@ import net.ofatech.controlcore.domain.ports.platform.Platform;
 import net.ofatech.controlcore.domain.ports.platform.PortBinder;
 import net.ofatech.controlcore.domain.ports.system.Clock;
 import net.ofatech.controlcore.domain.ports.system.Log;
+import net.ofatech.controlcore.infrastructure.persistence.JsonCustomKeyBindStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonKeyBindStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonPlayerDataStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonSettingStore;
@@ -63,7 +65,7 @@ public final class HytalePlatform implements Platform {
         binder.bind(SettingsProvider.class, new HytaleSettingsProvider(plugin.getDataDirectory(), log));
         binder.bind(Players.class, players);
         binder.bind(Messenger.class, new HytaleMessenger());
-        binder.bind(Permissions.class, new HytalePermissions());
+        binder.bind(Permissions.class, new HytalePermissions(plugin.getBasePermission()));
         binder.bind(Scheduler.class, new HytaleScheduler(plugin.getTaskRegistry(), log));
         binder.bind(
                 PlayerData.class,
@@ -83,6 +85,9 @@ public final class HytalePlatform implements Platform {
         binder.bind(
                 KeyBindStore.class,
                 new JsonKeyBindStore(plugin.getDataDirectory().resolve("KeyBinds.json"), log));
+        binder.bind(
+                CustomKeyBindStore.class,
+                new JsonCustomKeyBindStore(plugin.getDataDirectory().resolve("CustomKeyBinds.json"), log));
     }
 
     @Override

@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.keys.GameAction;
@@ -13,6 +15,7 @@ import net.ofatech.controlcore.domain.model.keys.KeyAction;
 import net.ofatech.controlcore.domain.model.keys.KeySignal;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.fakes.FakeClock;
+import net.ofatech.controlcore.fakes.FakeCustomKeyBindStore;
 import net.ofatech.controlcore.fakes.FakeKeyBindStore;
 import net.ofatech.controlcore.fakes.FakePlayerData;
 import net.ofatech.controlcore.fakes.FakePlayerInput;
@@ -29,7 +32,14 @@ class KeyDispatcherTest {
     private final FakeKeyBindStore serverBinds = new FakeKeyBindStore();
     private final RecordingCommandRunner runner = new RecordingCommandRunner();
     private final FakePlayerInput input = new FakePlayerInput();
-    private final KeymapRegistry keymaps = new KeymapRegistry(serverBinds, new FakePlayerData(), new RecordingLog());
+    private final FakeCustomKeyBindStore customBinds = new FakeCustomKeyBindStore();
+    private final Set<String> denied = new HashSet<>();
+    private final KeymapRegistry keymaps = new KeymapRegistry(
+            serverBinds,
+            customBinds,
+            new FakePlayerData(),
+            (player, node) -> !denied.contains(node),
+            new RecordingLog());
     private PlayerId caio;
 
     @BeforeEach
@@ -124,6 +134,65 @@ class KeyDispatcherTest {
     void actionsNeedSomethingToRun() {
         assertThat(keymaps.register(KeyAction.of("homes", "nothing")).error().code())
                 .isEqualTo("Keys.NothingToRun");
+    }
+
+    @Test
+    void serverRunActionsNeedTheirPermission() {
+        keymaps.register(KeyAction.of("admin", "announce")
+                .command("say hi from {player}")
+                .runAsServer()
+                .defaultKeys(Key.R));
+        keymaps.register(KeyAction.of("admin", "heal")
+                .command("heal")
+                .permission("admin.heal")
+                .defaultKeys(Key.Q));
+
+        denied.add(KeymapRegistry.SERVER_KEYS_NODE);
+        denied.add("admin.heal");
+        boolean cancelled = input.press(caio, KeySignal.ABILITY_3);
+        input.press(caio, KeySignal.ABILITY_1);
+        denied.clear();
+        input.press(caio, KeySignal.ABILITY_3);
+
+        assertThat(cancelled)
+                .as("a forbidden action keeps the key's game action")
+                .isFalse();
+        assertThat(runner.runs).containsExactly(new RecordingCommandRunner.Run(null, "say hi from Caio"));
+        denied.add("admin.heal");
+        assertThat(keymaps.actionsFor(caio))
+                .extracting(action -> action.id().toString())
+                .doesNotContain("admin:heal");
+        assertThat(keymaps.bind(SettingId.of("admin:heal"), caio, "f").isFailure())
+                .isTrue();
+    }
+
+    @Test
+    void adminsCreateAndRemoveTheirOwnBinds() {
+        var added = keymaps.addCustom("Warp-Spawn", "ctrl+r", "/warp spawn {player}", false);
+        keymaps.addCustom("announce", "alt", "say restart soon", true);
+        input.hold(caio, KeySignal.CROUCHING);
+        input.press(caio, KeySignal.ABILITY_3);
+
+        assertThat(added.value().id()).hasToString("custom:warp-spawn");
+        assertThat(customBinds.binds).containsKeys("warp-spawn", "announce");
+        assertThat(customBinds.binds.get("announce").runAsServer()).isTrue();
+        assertThat(commands()).containsExactly("warp spawn Caio");
+
+        var reloaded = new KeymapRegistry(
+                serverBinds, customBinds, new FakePlayerData(), (player, node) -> true, new RecordingLog());
+        reloaded.loadCustom();
+        assertThat(reloaded.find(SettingId.of("custom:announce")).orElseThrow().runsAsServer())
+                .isTrue();
+
+        assertThat(keymaps.removeCustom("custom:warp-spawn").isSuccess()).isTrue();
+        assertThat(keymaps.find(SettingId.of("custom:warp-spawn"))).isEmpty();
+        assertThat(customBinds.binds).containsOnlyKeys("announce");
+        assertThat(keymaps.addCustom("bad name!", "f", "x", false).error().code())
+                .isEqualTo("Keys.InvalidName");
+        assertThat(keymaps.register(KeyAction.of("custom", "sneaky").command("op me"))
+                        .error()
+                        .code())
+                .isEqualTo("Keys.ReservedId");
     }
 
     private List<String> commands() {
