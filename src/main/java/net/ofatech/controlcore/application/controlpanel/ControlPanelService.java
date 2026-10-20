@@ -1,13 +1,18 @@
 package net.ofatech.controlcore.application.controlpanel;
 
 import com.google.auto.service.AutoService;
+import java.util.Optional;
 import net.ofatech.controlcore.api.ControlPanelApi;
 import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
+import net.ofatech.controlcore.application.settings.PermittedSettingsEditor;
+import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.domain.model.ControlPanelContent;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.model.settings.SettingScope;
+import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
@@ -26,6 +31,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final SettingsApi registry;
     private final ServerConfigEditor serverConfig;
     private final KeymapsEditor keymaps;
+    private final SettingPermissionPolicy permissions;
 
     public ControlPanelService(
             ControlPanelSettings settings,
@@ -35,7 +41,8 @@ public final class ControlPanelService implements ControlPanelApi {
             Capabilities capabilities,
             SettingsApi registry,
             ServerConfigEditor serverConfig,
-            KeymapsEditor keymaps) {
+            KeymapsEditor keymaps,
+            SettingPermissionPolicy permissions) {
         this.settings = settings;
         this.players = players;
         this.server = server;
@@ -44,6 +51,21 @@ public final class ControlPanelService implements ControlPanelApi {
         this.registry = registry;
         this.serverConfig = serverConfig;
         this.keymaps = keymaps;
+        this.permissions = permissions;
+    }
+
+    /**
+     * @return whether the player may open the admin panel: ControlCore admins, and players an admin or mod let
+     *     see at least one server setting or server config value
+     */
+    public boolean mayOpenAdminPanel(PlayerId player) {
+        return permissions.isAdmin(player)
+                || permitted(serverConfig, player).seesAny(SettingScope.SERVER)
+                || permitted(registry, player).seesAny(SettingScope.SERVER);
+    }
+
+    private PermittedSettingsEditor permitted(SettingsEditor editor, PlayerId player) {
+        return new PermittedSettingsEditor(editor, permissions, Optional.of(player));
     }
 
     @Override
@@ -79,6 +101,12 @@ public final class ControlPanelService implements ControlPanelApi {
                 player,
                 request,
                 new ControlPanelContent(
-                        server.read(), serverConfig, registry, keymaps, keymaps, settings.startTab(player)));
+                        server.read(),
+                        permitted(serverConfig, player),
+                        permitted(registry, player),
+                        keymaps,
+                        keymaps,
+                        settings.startTab(player),
+                        permissions.isAdmin(player)));
     }
 }

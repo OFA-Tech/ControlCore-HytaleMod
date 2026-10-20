@@ -37,6 +37,7 @@ public final class FakePlatform implements Platform {
     public final RecordingCommandRunner commandRunner = new RecordingCommandRunner();
     public final FakeKeyBindStore keyBinds = new FakeKeyBindStore();
     public final FakeCustomKeyBindStore customKeyBinds = new FakeCustomKeyBindStore();
+    public final FakeSettingPermissionStore settingPermissions = new FakeSettingPermissionStore();
     /** Permission nodes players do not have; everything else is granted. */
     public final java.util.Set<String> deniedNodes = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
@@ -68,6 +69,7 @@ public final class FakePlatform implements Platform {
         binder.bind(net.ofatech.controlcore.domain.ports.game.CommandRunner.class, commandRunner);
         binder.bind(net.ofatech.controlcore.domain.ports.config.KeyBindStore.class, keyBinds);
         binder.bind(net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore.class, customKeyBinds);
+        binder.bind(net.ofatech.controlcore.domain.ports.config.SettingPermissionStore.class, settingPermissions);
         binder.bind(InputProbe.class, new InputProbe() {
             @Override
             public boolean toggle(net.ofatech.controlcore.domain.model.PlayerId player) {

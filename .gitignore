@@ -38,3 +38,5 @@ out/
 ### OS ###
 .DS_Store
 Thumbs.db
+src/main/resources/SettingPermissions.json
+src/main/resources/SettingPermissions.json.tmp

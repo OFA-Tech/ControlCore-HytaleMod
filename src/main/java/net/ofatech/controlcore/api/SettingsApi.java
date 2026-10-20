@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
+import net.ofatech.controlcore.domain.model.settings.SettingPermission;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -36,4 +37,20 @@ public interface SettingsApi extends SettingsEditor {
 
     /** @return every registered definition, sorted by id */
     List<SettingDefinition<?>> definitions();
+
+    /**
+     * Sets who may see and change every setting in a category that has no rule of its own (see
+     * {@link SettingDefinition#permission(String)}). Admins can still override it.
+     *
+     * @param category the category, as given to {@link SettingDefinition#inCategory}; case does not matter
+     * @param rule the rule; {@link SettingPermission#INHERIT} removes it
+     * @since API 1.4.0
+     */
+    void setCategoryPermission(String category, SettingPermission rule);
+
+    /**
+     * @return the rule a mod set for {@code category}, or {@link SettingPermission#INHERIT}
+     * @since API 1.4.0
+     */
+    SettingPermission categoryPermission(String category);
 }

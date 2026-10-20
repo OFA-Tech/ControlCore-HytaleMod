@@ -7,7 +7,7 @@ types, so the API survives Hytale updates.
 
 | Type | Purpose |
 |---|---|
-| `ControlCoreApi` | entry point: `get()`, `find()`, `apiVersion()`, `controlPanel()`, `events()`, `settings()`, `keymaps()` (1.3.0) |
+| `ControlCoreApi` | entry point: `get()`, `find()`, `apiVersion()`, `controlPanel()`, `events()`, `settings()`, `keymaps()` (1.3.0); setting permissions (1.4.0) |
 | `ControlPanelApi` | `isAvailable()`, `open(player, request)` |
 | `ControlCoreEvents` | `subscribe(eventType, listener)` returning a closable `Subscription` |
 | `SettingsApi` (1.1.0) | shared settings registry: `register(definition)`, `definitions()`, `snapshot(scope, player)`, `read` / `write` / `reset` by id, `onAnyChange(listener)` (1.2.0) |
@@ -56,23 +56,50 @@ ControlCoreApi.find().ifPresent(api -> {
 - **Re-registering** the same id with the same value type and scope (for example after `/plugin reload`)
   replaces the definition and keeps the stored values; another type or scope returns `Settings.Conflict`.
 - **Errors:** `Settings.InvalidId`, `Settings.UnknownSetting`, `Settings.InvalidValue`,
-  `Settings.WrongScope`, `Settings.Conflict`.
+  `Settings.WrongScope`, `Settings.Conflict`, `Settings.Forbidden` (may see but not change).
 - Keep the handle and call `get()` when you need the value; it is a map lookup. A stored value that no
   longer fits the type (say you narrowed a range) falls back to the default with one warning in the log.
 - Server values are saved immediately to `SettingValues.json`; player values go to `players.json`
   (key `setting:<id>`), flushed every 5 minutes and at shutdown.
 
+### Who may see and change a setting (API 1.4.0)
+
+```java
+SettingDefinition.server("homes:max-homes", SettingType.integer(1, 50), 3)
+        .viewPermission(SettingPermission.EVERYONE)   // everyone sees it read-only
+        .editPermission("homes.moderator");           // moderators may change it
+api.settings().setCategoryPermission("Homes", SettingPermission.of("homes.staff")); // a whole category
+```
+
+- **See** and **change** are separate. Players who may only see a setting get it read-only (panel and
+  `/cc-get`); without either it is hidden (panel, `/cc-settings`) and reported as unknown. Changing
+  implies seeing. `.permission(node)` sets both.
+- **Defaults:** server settings need `<base>.settings`; player preferences are everyone's own.
+  ControlCore admins (`<base>.settings` or `<base>.admin`) and the console may always see and change
+  everything.
+- **Admins override** mods' rules, per setting, category or mod, with `/cc-perm` (saved in
+  `SettingPermissions.json`). For each side the first rule that has one wins: admin rule for the setting
+  -> for its category -> for its mod -> the mod's rule on the setting -> the mod's category rule ->
+  default. `/cc-perm-check <id>` shows which rule decides.
+- The server's own config (`server:*` in Server Configs) follows the same rules, for example
+  `/cc-perm mod:server view everyone` or `/cc-perm server:motd edit staff.motd`.
+- `/open-admin-config` opens for admins and for anyone who may see at least one server setting or config
+  value; they only see those. Server default keys and admins' own key binds stay admin-only.
+
 ### Commands
 
 | Command | Who | Does |
 |---|---|---|
-| `/cc-settings` | `<base>.settings` | list every setting with its value (`(default)` if not changed) |
-| `/cc-get <id>` | `<base>.settings` | name, description, value, default, type and scope |
-| `/cc-set <id> <value>` | `<base>.settings` | change a server setting (the value may contain spaces) |
-| `/cc-reset <id>` | `<base>.settings` | return a server setting to its default |
+| `/cc-settings` | anyone (shows what you may see) | list settings with their value (`(default)` if not changed) |
+| `/cc-get <id>` | who may see it | name, description, value, default, type and scope |
+| `/cc-set <id> <value>` | who may change it | change a server setting (the value may contain spaces) |
+| `/cc-reset <id>` | who may change it | return a server setting to its default |
+| `/cc-perm <target> <view\|edit\|both> <node\|everyone\|default>` | `<base>.settings` | who may see or change a setting (`homes:max-homes`), a category (`category:Homes`) or a mod (`mod:homes`); `default` removes the rule |
+| `/cc-perms` | `<base>.settings` | list admins' rules |
+| `/cc-perm-check <id>` | `<base>.settings` | who may see and change one setting, and which rule decides it |
 | `/prefs` | any player | open the panel on your preferences (works even when the admin panel is disabled) |
 | `/cc-prefs` | any player | list your preferences |
-| `/cc-pref <id> <value>` | any player | change one of your preferences |
+| `/cc-pref <id> <value>` | any player (unless a rule limits it) | change one of your preferences |
 | `/cc-pref-reset <id>` | any player | return a preference to the default |
 
 `<base>` is ControlCore's base permission; operators have every node.

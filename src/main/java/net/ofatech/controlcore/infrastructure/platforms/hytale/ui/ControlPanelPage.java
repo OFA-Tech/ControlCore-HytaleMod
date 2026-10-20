@@ -154,7 +154,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         this.log = log;
         this.customKeyBinds = content.customKeyBinds();
         ControlPanelRequest shownSections = request.isEmpty() ? ControlPanelRequest.PLAYER_PREFERENCES : request;
-        this.canAddBinds = shownSections.includeServerSettings() && shownSections.includeRegisteredActions();
+        this.canAddBinds = content.manageKeys() && shownSections.includeRegisteredActions();
         for (Tab tab : Tab.values()) {
             if (tab.shownFor(shownSections)) {
                 tabs.add(tab);
@@ -170,11 +170,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                             content.serverConfig(),
                             SettingScope.SERVER,
                             viewer,
-                            "The server config cannot be edited on this platform."));
+                            "No server config values to show here."));
             sections.put(
                     Section.SETTINGS,
                     new SettingsSection(
-                            content.settings(), SettingScope.SERVER, viewer, "No server settings are registered yet."));
+                            content.settings(), SettingScope.SERVER, viewer, "No server settings to show here."));
         }
         if (shownSections.includePlayerPreferences()) {
             sections.put(

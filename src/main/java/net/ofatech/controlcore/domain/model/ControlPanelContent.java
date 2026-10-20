@@ -13,6 +13,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
  * @param keymaps the viewer's key bindings, as player settings (one per key action)
  * @param customKeyBinds creates admins' own key actions (shown in the admin panel's Keymaps tab)
  * @param startTab the tab shown first
+ * @param manageKeys whether the viewer may change the server's keys and admins' own binds
  */
 public record ControlPanelContent(
         ServerSettings server,
@@ -20,7 +21,8 @@ public record ControlPanelContent(
         SettingsEditor settings,
         SettingsEditor keymaps,
         CustomKeyBindEditor customKeyBinds,
-        ControlPanelTab startTab) {
+        ControlPanelTab startTab,
+        boolean manageKeys) {
 
     public ControlPanelContent {
         Guard.notNull(server, "server");

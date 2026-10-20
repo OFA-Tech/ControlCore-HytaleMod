@@ -5,6 +5,7 @@ import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
 import net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.KeyBindStore;
+import net.ofatech.controlcore.domain.ports.config.SettingPermissionStore;
 import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
@@ -25,6 +26,7 @@ import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.infrastructure.persistence.JsonCustomKeyBindStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonKeyBindStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonPlayerDataStore;
+import net.ofatech.controlcore.infrastructure.persistence.JsonSettingPermissionStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonSettingStore;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.command.HytaleCommandRegistrar;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.config.HytaleSettingsProvider;
@@ -88,6 +90,9 @@ public final class HytalePlatform implements Platform {
         binder.bind(
                 CustomKeyBindStore.class,
                 new JsonCustomKeyBindStore(plugin.getDataDirectory().resolve("CustomKeyBinds.json"), log));
+        binder.bind(
+                SettingPermissionStore.class,
+                new JsonSettingPermissionStore(plugin.getDataDirectory().resolve("SettingPermissions.json"), log));
     }
 
     @Override

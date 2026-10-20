@@ -11,7 +11,8 @@ import net.ofatech.controlcore.domain.result.Result;
  * SettingDefinition<Integer> maxHomes = SettingDefinition.server("homes:max-homes", SettingType.integer(1, 50), 3)
  *         .named("Max homes")
  *         .describedAs("How many homes each player may set")
- *         .inCategory("Homes");
+ *         .inCategory("Homes")
+ *         .editPermission("homes.moderator");
  * }</pre>
  *
  * @param id unique id, {@code namespace:key}
@@ -21,6 +22,8 @@ import net.ofatech.controlcore.domain.result.Result;
  * @param displayName short name shown in lists and the control panel
  * @param description one sentence explaining the setting; may be empty
  * @param category group shown in lists and the control panel; defaults to the namespace
+ * @param permission who may see and change it; {@link SettingPermission#INHERIT} uses the category's rule or
+ *     ControlCore's default (since API 1.4.0)
  * @param <T> Java type of the value
  */
 public record SettingDefinition<T>(
@@ -30,7 +33,8 @@ public record SettingDefinition<T>(
         SettingScope scope,
         String displayName,
         String description,
-        String category) {
+        String category,
+        SettingPermission permission) {
 
     public SettingDefinition {
         Guard.notNull(id, "id");
@@ -39,10 +43,23 @@ public record SettingDefinition<T>(
         Guard.notBlank(displayName, "displayName");
         Guard.notNull(description, "description");
         Guard.notBlank(category, "category");
+        Guard.notNull(permission, "permission");
         Result<T> valid = type.validate(defaultValue);
         if (valid.isFailure()) {
             throw new DomainException("Default of " + id + ": " + valid.error().description());
         }
+    }
+
+    /** A definition that inherits who may see and change it. */
+    public SettingDefinition(
+            SettingId id,
+            SettingType<T> type,
+            T defaultValue,
+            SettingScope scope,
+            String displayName,
+            String description,
+            String category) {
+        this(id, type, defaultValue, scope, displayName, description, category, SettingPermission.INHERIT);
     }
 
     /**
@@ -76,7 +93,7 @@ public record SettingDefinition<T>(
      * @return a copy with this display name
      */
     public SettingDefinition<T> named(String name) {
-        return new SettingDefinition<>(id, type, defaultValue, scope, name, description, category);
+        return new SettingDefinition<>(id, type, defaultValue, scope, name, description, category, permission);
     }
 
     /**
@@ -84,7 +101,7 @@ public record SettingDefinition<T>(
      * @return a copy with this description
      */
     public SettingDefinition<T> describedAs(String text) {
-        return new SettingDefinition<>(id, type, defaultValue, scope, displayName, text, category);
+        return new SettingDefinition<>(id, type, defaultValue, scope, displayName, text, category, permission);
     }
 
     /**
@@ -92,7 +109,7 @@ public record SettingDefinition<T>(
      * @return a copy in this category
      */
     public SettingDefinition<T> inCategory(String name) {
-        return new SettingDefinition<>(id, type, defaultValue, scope, displayName, description, name);
+        return new SettingDefinition<>(id, type, defaultValue, scope, displayName, description, name, permission);
     }
 
     /**
@@ -100,7 +117,43 @@ public record SettingDefinition<T>(
      * @return a copy with this default
      */
     public SettingDefinition<T> withDefault(T value) {
-        return new SettingDefinition<>(id, type, value, scope, displayName, description, category);
+        return new SettingDefinition<>(id, type, value, scope, displayName, description, category, permission);
+    }
+
+    /**
+     * Who may see and change the setting: players without {@code node} do not see it.
+     *
+     * @param node a full permission node, or {@link SettingPermission#EVERYONE}
+     * @return a copy with this rule for seeing and changing
+     * @since API 1.4.0
+     */
+    public SettingDefinition<T> permission(String node) {
+        return withPermission(SettingPermission.of(node));
+    }
+
+    /**
+     * Who may see the setting; players who may see but not change it get it read-only.
+     *
+     * @param node a full permission node, or {@link SettingPermission#EVERYONE}
+     * @since API 1.4.0
+     */
+    public SettingDefinition<T> viewPermission(String node) {
+        return withPermission(permission.withView(node));
+    }
+
+    /**
+     * Who may change the setting (they may also see it).
+     *
+     * @param node a full permission node, or {@link SettingPermission#EVERYONE}
+     * @since API 1.4.0
+     */
+    public SettingDefinition<T> editPermission(String node) {
+        return withPermission(permission.withEdit(node));
+    }
+
+    /** @since API 1.4.0 */
+    public SettingDefinition<T> withPermission(SettingPermission rule) {
+        return new SettingDefinition<>(id, type, defaultValue, scope, displayName, description, category, rule);
     }
 
     /** @return the default as text */

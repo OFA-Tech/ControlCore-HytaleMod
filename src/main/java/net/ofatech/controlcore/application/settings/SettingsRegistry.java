@@ -18,6 +18,7 @@ import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
+import net.ofatech.controlcore.domain.model.settings.SettingPermission;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.ports.config.SettingStore;
@@ -47,6 +48,7 @@ public final class SettingsRegistry implements SettingsApi {
     private final Log log;
     private final Map<SettingId, SettingDefinition<?>> definitions = new ConcurrentHashMap<>();
     private final Set<String> reportedInvalid = ConcurrentHashMap.newKeySet();
+    private final Map<String, SettingPermission> categoryPermissions = new ConcurrentHashMap<>();
 
     public SettingsRegistry(
             SettingStore store, PlayerData playerData, EventPublisher publisher, ControlCoreEvents events, Log log) {
@@ -74,6 +76,26 @@ public final class SettingsRegistry implements SettingsApi {
             log.debug("Setting " + definition.id() + " registered");
         }
         return Result.success(new Handle<>(definition.id(), definition.type().valueType()));
+    }
+
+    @Override
+    public void setCategoryPermission(String category, SettingPermission rule) {
+        Objects.requireNonNull(category, "category");
+        Objects.requireNonNull(rule, "rule");
+        String key = category.strip().toLowerCase(java.util.Locale.ROOT);
+        if (rule.isInherit()) {
+            categoryPermissions.remove(key);
+        } else {
+            categoryPermissions.put(key, rule);
+        }
+    }
+
+    @Override
+    public SettingPermission categoryPermission(String category) {
+        return category == null
+                ? SettingPermission.INHERIT
+                : categoryPermissions.getOrDefault(
+                        category.strip().toLowerCase(java.util.Locale.ROOT), SettingPermission.INHERIT);
     }
 
     @Override
