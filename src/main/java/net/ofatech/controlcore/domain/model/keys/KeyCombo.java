@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import net.ofatech.controlcore.domain.guard.DomainException;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -70,17 +71,22 @@ public record KeyCombo(List<KeyInput> inputs) {
      */
     public static Result<KeyCombo> parse(String text) {
         if (text == null || text.isBlank()) {
-            return invalid("Write at least one key, for example ctrl+f.");
+            return invalid(
+                    Text.key("controlcore.errors.keys.empty_combo", "Write at least one key, for example ctrl+f."));
         }
         List<KeyInput> inputs = new ArrayList<>();
         for (String part : text.split("\\+")) {
             Optional<KeyInput> input = input(part);
             if (input.isEmpty()) {
-                return invalid("'" + part.strip() + "' is not a key or game action. Examples: ctrl, f, 3, mouse_left,"
-                        + " crouch, walk_forward.");
+                return invalid(Text.key(
+                                "controlcore.errors.keys.unknown_key",
+                                "'{key}' is not a key or game action. Examples: ctrl, f, 3, mouse_left, crouch,"
+                                        + " walk_forward.")
+                        .with("key", part.strip()));
             }
             if (inputs.contains(input.get())) {
-                return invalid(input.get().name() + " is used twice in '" + text.strip() + "'.");
+                return invalid(Text.key("controlcore.errors.keys.used_twice", "{key} is used twice in '{text}'.")
+                        .with("key", input.get().name(), "text", text.strip()));
             }
             inputs.add(input.get());
         }
@@ -104,23 +110,28 @@ public record KeyCombo(List<KeyInput> inputs) {
             } else if (!signal.get().isPress()) {
                 held.add(signal.get());
             } else if (press != null) {
-                return Result.failure(Error.validation(
+                return Result.failure(
+                        Error.validation(
                                 "Keys.NotDetectable",
-                                "Only one of these can be in a combination: Q, E, R, F, O, 1-9 and the mouse buttons.")
-                        .localized("controlcore.errors.keys.notdetectable"));
+                                Text.key(
+                                        "controlcore.errors.keys.one_main_key",
+                                        "Only one of these can be in a combination: Q, E, R, F, O, 1-9 and the mouse buttons.")));
             } else {
                 press = signal.get();
             }
         }
         if (!missing.isEmpty()) {
             return Result.failure(Error.validation(
-                            "Keys.NotDetectable",
-                            "Hytale does not tell servers about " + String.join(", ", missing) + " yet.")
-                    .localized("controlcore.errors.keys.notdetectable_2", "missing", String.join(", ", missing)));
+                    "Keys.NotDetectable",
+                    Text.key(
+                                    "controlcore.errors.keys.not_detectable",
+                                    "Hytale does not tell servers about {missing} yet.")
+                            .with("missing", String.join(", ", missing))));
         }
         if (held.contains(KeySignal.MOVING) && held.contains(KeySignal.STANDING_STILL)) {
-            return Result.failure(Error.validation("Keys.NotDetectable", "Move and Stand still cannot be combined.")
-                    .localized("controlcore.errors.keys.notdetectable_3"));
+            return Result.failure(Error.validation(
+                    "Keys.NotDetectable",
+                    Text.key("controlcore.errors.keys.move_and_still", "Move and Stand still cannot be combined.")));
         }
         return Result.success(new KeyTrigger(Optional.ofNullable(press), held));
     }
@@ -159,8 +170,7 @@ public record KeyCombo(List<KeyInput> inputs) {
         return Optional.empty();
     }
 
-    private static <T> Result<T> invalid(String description) {
-        return Result.failure(Error.validation("Keys.InvalidCombo", description)
-                .localized("controlcore.errors.keys.invalidcombo", "reason", description));
+    private static <T> Result<T> invalid(Text message) {
+        return Result.failure(Error.validation("Keys.InvalidCombo", message));
     }
 }

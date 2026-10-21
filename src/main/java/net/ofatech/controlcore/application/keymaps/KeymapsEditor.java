@@ -17,6 +17,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
@@ -146,24 +147,27 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
     private Result<KeyAction> known(SettingId id) {
         return keymaps.find(id)
                 .map(Result::success)
-                .orElseGet(() ->
-                        Result.failure(Error.notFound("Keys.UnknownAction", "There is no key action '" + id + "'.")
-                                .localized("controlcore.errors.keys.unknownaction_2", "id", id)));
+                .orElseGet(() -> Result.failure(Error.notFound(
+                        "Keys.UnknownAction",
+                        Text.key("controlcore.errors.keys.unknown_action", "There is no key action '{id}'.")
+                                .with("id", id))));
     }
 
     private Result<KeyAction> action(SettingId id, PlayerId viewer) {
         return keymaps.find(id)
                 .filter(action -> keymaps.canUse(action, viewer))
                 .map(Result::success)
-                .orElseGet(() ->
-                        Result.failure(Error.notFound("Keys.UnknownAction", "There is no key action '" + id + "'.")
-                                .localized("controlcore.errors.keys.unknownaction_2", "id", id)));
+                .orElseGet(() -> Result.failure(Error.notFound(
+                        "Keys.UnknownAction",
+                        Text.key("controlcore.errors.keys.unknown_action", "There is no key action '{id}'.")
+                                .with("id", id))));
     }
 
     private static Result<PlayerId> player(Optional<PlayerId> player) {
         return player.map(Result::success)
-                .orElseGet(() -> Result.failure(Error.validation("Keys.WrongScope", "Key bindings belong to a player.")
-                        .localized("controlcore.errors.keys.wrongscope")));
+                .orElseGet(() -> Result.failure(Error.validation(
+                        "Keys.WrongScope",
+                        Text.key("controlcore.errors.keys.wrong_scope", "Key bindings belong to a player."))));
     }
 
     private static String joined(String... parts) {

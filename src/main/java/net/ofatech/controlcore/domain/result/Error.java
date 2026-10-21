@@ -1,70 +1,82 @@
 package net.ofatech.controlcore.domain.result;
 
 import java.util.Objects;
-import java.util.Optional;
 import net.ofatech.controlcore.domain.model.text.Text;
 
 /**
  * An expected failure.
  *
+ * <pre>{@code
+ * Error.notFound("Homes.Unknown", "There is no home " + name + ".")                       // fixed text
+ * Error.notFound("Homes.Unknown", Text.key("homes.errors.unknown", "There is no home {name}.").with("name", name))
+ * }</pre>
+ *
  * @param code stable machine-readable code, for example {@code "Greeting.PlayerNotFound"}
- * @param description human-readable message (English)
+ * @param message what to tell the player; a {@link Text#key translation key} is shown in their language
  * @param type failure category
- * @param text the message as a translation key, shown in the player's language (since API 1.5.0)
  */
-public record Error(String code, String description, ErrorType type, Optional<Text> text) {
+public record Error(String code, Text message, ErrorType type) {
 
     public Error {
         Objects.requireNonNull(code, "code");
-        Objects.requireNonNull(description, "description");
+        Objects.requireNonNull(message, "message");
         Objects.requireNonNull(type, "type");
-        Objects.requireNonNull(text, "text");
     }
 
     public Error(String code, String description, ErrorType type) {
-        this(code, description, type, Optional.empty());
+        this(code, Text.of(Objects.requireNonNull(description, "description")), type);
     }
 
-    /**
-     * @param key translation key of the message; {@link #description()} is its fallback
-     * @param nameValuePairs placeholder names and values, alternating
-     * @return a copy shown in the player's language
-     * @since API 1.5.0
-     */
-    public Error localized(String key, Object... nameValuePairs) {
-        return new Error(
-                code, description, type, Optional.of(Text.key(key, description).with(nameValuePairs)));
-    }
-
-    /**
-     * @return a copy shown in the player's language as {@code message}
-     * @since API 1.5.0
-     */
-    public Error withText(Text message) {
-        return new Error(code, description, type, Optional.of(message));
+    /** @return the message in English */
+    public String description() {
+        return message.fallbackText();
     }
 
     public static Error failure(String code, String description) {
         return new Error(code, description, ErrorType.FAILURE);
     }
 
+    public static Error failure(String code, Text message) {
+        return new Error(code, message, ErrorType.FAILURE);
+    }
+
     public static Error validation(String code, String description) {
         return new Error(code, description, ErrorType.VALIDATION);
+    }
+
+    public static Error validation(String code, Text message) {
+        return new Error(code, message, ErrorType.VALIDATION);
     }
 
     public static Error notFound(String code, String description) {
         return new Error(code, description, ErrorType.NOT_FOUND);
     }
 
+    public static Error notFound(String code, Text message) {
+        return new Error(code, message, ErrorType.NOT_FOUND);
+    }
+
     public static Error conflict(String code, String description) {
         return new Error(code, description, ErrorType.CONFLICT);
+    }
+
+    public static Error conflict(String code, Text message) {
+        return new Error(code, message, ErrorType.CONFLICT);
     }
 
     public static Error forbidden(String code, String description) {
         return new Error(code, description, ErrorType.FORBIDDEN);
     }
 
+    public static Error forbidden(String code, Text message) {
+        return new Error(code, message, ErrorType.FORBIDDEN);
+    }
+
     public static Error unavailable(String code, String description) {
         return new Error(code, description, ErrorType.UNAVAILABLE);
+    }
+
+    public static Error unavailable(String code, Text message) {
+        return new Error(code, message, ErrorType.UNAVAILABLE);
     }
 }

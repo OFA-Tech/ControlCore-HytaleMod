@@ -12,6 +12,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingRights;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -80,12 +81,9 @@ public final class PermittedSettingsEditor implements SettingsEditor {
             }
             if (!rights.canEdit()) {
                 return Result.failure(Error.forbidden(
-                                "Settings.Forbidden",
-                                "You may not change " + snapshot.definition().displayName() + ".")
-                        .localized(
-                                "controlcore.errors.settings.forbidden",
-                                "displayName",
-                                snapshot.definition().displayName()));
+                        "Settings.Forbidden",
+                        Text.key("controlcore.errors.settings.forbidden", "You may not change {name}.")
+                                .with("name", snapshot.definition().displayName())));
             }
             return Result.success(true);
         });
@@ -104,7 +102,9 @@ public final class PermittedSettingsEditor implements SettingsEditor {
     }
 
     private static <T> Result<T> unknown(SettingId id) {
-        return Result.failure(Error.notFound("Settings.UnknownSetting", "There is no setting " + id + ".")
-                .localized("controlcore.errors.settings.unknownsetting_2", "id", id));
+        return Result.failure(Error.notFound(
+                "Settings.UnknownSetting",
+                Text.key("controlcore.errors.settings.unknown_setting", "There is no setting {id}.")
+                        .with("id", id)));
     }
 }

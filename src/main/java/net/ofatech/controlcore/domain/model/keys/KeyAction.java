@@ -9,7 +9,6 @@ import net.ofatech.controlcore.domain.guard.DomainException;
 import net.ofatech.controlcore.domain.guard.Guard;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
-import net.ofatech.controlcore.domain.model.settings.SettingLabels;
 import net.ofatech.controlcore.domain.model.text.Text;
 
 /**
@@ -24,8 +23,8 @@ import net.ofatech.controlcore.domain.model.text.Text;
  * }</pre>
  *
  * @param id unique id, {@code modId:action}
- * @param displayName shown in the Keymaps tab and {@code /cc-keys}
- * @param description one sentence explaining the action; may be empty
+ * @param nameText shown in the Keymaps tab and {@code /cc-keys}
+ * @param descriptionText one sentence explaining the action; may be empty
  * @param command chat command, without or with {@code /}; {@code {player}} and {@code {uuid}} are filled in with
  *     the player who pressed the keys
  * @param onPress code the mod runs when the keys are pressed; called on a virtual thread, so move world work to
@@ -37,29 +36,27 @@ import net.ofatech.controlcore.domain.model.text.Text;
  *     player; only players with {@link #permission} (or ControlCore's {@code keys.server} node) can use it
  * @param permission full permission node a player needs to see and use the action; empty means everyone (for
  *     server-run actions: ControlCore's {@code <base>.keys.server})
- * @param labels translation keys of the display name and description (since API 1.5.0)
  */
 public record KeyAction(
         SettingId id,
-        String displayName,
-        String description,
+        Text nameText,
+        Text descriptionText,
         Optional<String> command,
         Optional<Consumer<PlayerId>> onPress,
         KeyBinds defaultKeys,
         boolean blocksGameAction,
         boolean runsAsServer,
-        Optional<String> permission,
-        SettingLabels labels) {
+        Optional<String> permission) {
 
     public KeyAction {
         Guard.notNull(id, "id");
-        Guard.notBlank(displayName, "displayName");
-        Guard.notNull(description, "description");
+        Guard.notNull(nameText, "nameText");
+        Guard.notBlank(nameText.fallbackText(), "displayName");
+        Guard.notNull(descriptionText, "descriptionText");
         Guard.notNull(command, "command");
         Guard.notNull(onPress, "onPress");
         Guard.notNull(defaultKeys, "defaultKeys");
         Guard.notNull(permission, "permission");
-        Guard.notNull(labels, "labels");
         command = command.map(KeyAction::normalizeCommand);
         if (command.isPresent() && command.get().isBlank()) {
             throw new DomainException("The command of key action " + id + " is empty");
@@ -81,15 +78,14 @@ public record KeyAction(
                 modId.strip().toLowerCase(Locale.ROOT), action.strip().toLowerCase(Locale.ROOT));
         return new KeyAction(
                 id,
-                id.key(),
-                "",
+                Text.of(id.key()),
+                Text.of(""),
                 Optional.empty(),
                 Optional.empty(),
                 KeyBinds.UNBOUND,
                 true,
                 false,
-                Optional.empty(),
-                SettingLabels.NONE);
+                Optional.empty());
     }
 
     public KeyAction displayName(String name) {
@@ -102,16 +98,7 @@ public record KeyAction(
      */
     public KeyAction displayName(Text name) {
         return new KeyAction(
-                id,
-                name.fallbackText(),
-                description,
-                command,
-                onPress,
-                defaultKeys,
-                blocksGameAction,
-                runsAsServer,
-                permission,
-                new SettingLabels(name.key(), labels.description(), Optional.empty(), Optional.empty()));
+                id, name, descriptionText, command, onPress, defaultKeys, blocksGameAction, runsAsServer, permission);
     }
 
     public KeyAction describedAs(String text) {
@@ -124,26 +111,17 @@ public record KeyAction(
      */
     public KeyAction describedAs(Text text) {
         return new KeyAction(
-                id,
-                displayName,
-                text.fallbackText(),
-                command,
-                onPress,
-                defaultKeys,
-                blocksGameAction,
-                runsAsServer,
-                permission,
-                new SettingLabels(labels.name(), text.key(), Optional.empty(), Optional.empty()));
+                id, nameText, text, command, onPress, defaultKeys, blocksGameAction, runsAsServer, permission);
     }
 
-    /** @return the display name, translated where the action has a key (since API 1.5.0) */
-    public Text nameText() {
-        return labels.name().map(key -> Text.key(key, displayName)).orElse(Text.of(displayName));
+    /** @return the display name in English */
+    public String displayName() {
+        return nameText.fallbackText();
     }
 
-    /** @return the description, translated where the action has a key (since API 1.5.0) */
-    public Text descriptionText() {
-        return labels.description().map(key -> Text.key(key, description)).orElse(Text.of(description));
+    /** @return the description in English */
+    public String description() {
+        return descriptionText.fallbackText();
     }
 
     /** @param text the chat command to run, for example {@code "home {player}"} */
@@ -151,15 +129,14 @@ public record KeyAction(
         Guard.notNull(text, "command");
         return new KeyAction(
                 id,
-                displayName,
-                description,
+                nameText,
+                descriptionText,
                 Optional.of(text),
                 onPress,
                 defaultKeys,
                 blocksGameAction,
                 runsAsServer,
-                permission,
-                labels);
+                permission);
     }
 
     /** @param action runs when the keys are pressed, on a virtual thread */
@@ -167,15 +144,14 @@ public record KeyAction(
         Guard.notNull(action, "onPress");
         return new KeyAction(
                 id,
-                displayName,
-                description,
+                nameText,
+                descriptionText,
                 command,
                 Optional.of(action),
                 defaultKeys,
                 blocksGameAction,
                 runsAsServer,
-                permission,
-                labels);
+                permission);
     }
 
     /** Sets the main default combination: the inputs are held together. */
@@ -205,7 +181,7 @@ public record KeyAction(
     /** Lets the game also do what the pressed key normally does (by default it is cancelled). */
     public KeyAction keepGameAction() {
         return new KeyAction(
-                id, displayName, description, command, onPress, defaultKeys, false, runsAsServer, permission, labels);
+                id, nameText, descriptionText, command, onPress, defaultKeys, false, runsAsServer, permission);
     }
 
     /**
@@ -215,16 +191,7 @@ public record KeyAction(
      */
     public KeyAction runAsServer() {
         return new KeyAction(
-                id,
-                displayName,
-                description,
-                command,
-                onPress,
-                defaultKeys,
-                blocksGameAction,
-                true,
-                permission,
-                labels);
+                id, nameText, descriptionText, command, onPress, defaultKeys, blocksGameAction, true, permission);
     }
 
     /** @param node full permission node a player needs to see and use this action */
@@ -232,15 +199,14 @@ public record KeyAction(
         Guard.notBlank(node, "permission");
         return new KeyAction(
                 id,
-                displayName,
-                description,
+                nameText,
+                descriptionText,
                 command,
                 onPress,
                 defaultKeys,
                 blocksGameAction,
                 runsAsServer,
-                Optional.of(node),
-                labels);
+                Optional.of(node));
     }
 
     /** @return the mod id part of {@link #id} */
@@ -271,15 +237,6 @@ public record KeyAction(
 
     private KeyAction withDefaults(KeyBinds binds) {
         return new KeyAction(
-                id,
-                displayName,
-                description,
-                command,
-                onPress,
-                binds,
-                blocksGameAction,
-                runsAsServer,
-                permission,
-                labels);
+                id, nameText, descriptionText, command, onPress, binds, blocksGameAction, runsAsServer, permission);
     }
 }

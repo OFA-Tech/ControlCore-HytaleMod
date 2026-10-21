@@ -7,6 +7,7 @@ import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.command.CommandContext;
 import net.ofatech.controlcore.domain.ports.command.CommandSpec;
@@ -40,9 +41,10 @@ public final class ListSettingsCommand implements ModCommand {
                 && context.sender().player().isPresent()
                 && !permissions.isAdmin(context.sender().player().get().id())) {
             return Result.failure(Error.forbidden(
-                            "Settings.Forbidden",
-                            "You may not see any server settings. Your own preferences: /cc-prefs")
-                    .localized("controlcore.errors.settings.none_visible"));
+                    "Settings.Forbidden",
+                    Text.key(
+                            "controlcore.errors.settings.none_visible",
+                            "You may not see any server settings. Your own preferences: /cc-prefs")));
         }
         String server = SettingsText.list(
                 tr(context),

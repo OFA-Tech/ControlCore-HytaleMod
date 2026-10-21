@@ -46,26 +46,29 @@ public record Text(Optional<String> key, String fallback, Map<String, String> pa
         return new Text(Optional.of(Guard.notBlank(key, "key")), Guard.notNull(fallback, "fallback"), Map.of());
     }
 
-    /** @return a copy where {@code {name}} is replaced by {@code value} */
-    public Text with(String name, Object value) {
-        Map<String, String> next = new LinkedHashMap<>(params);
-        next.put(Guard.notBlank(name, "name"), String.valueOf(value));
-        return new Text(key, fallback, next);
-    }
-
     /**
      * @param nameValuePairs placeholder names and values, alternating: {@code "id", id, "value", value}
-     * @return a copy with these placeholders
+     * @return a copy where each {@code {name}} is replaced by its value
      */
     public Text with(Object... nameValuePairs) {
         if (nameValuePairs.length % 2 != 0) {
             throw new IllegalArgumentException("Placeholders come in name, value pairs");
         }
-        Text text = this;
+        Map<String, String> next = new LinkedHashMap<>(params);
         for (int index = 0; index < nameValuePairs.length; index += 2) {
-            text = text.with(String.valueOf(nameValuePairs[index]), nameValuePairs[index + 1]);
+            next.put(
+                    Guard.notBlank(String.valueOf(nameValuePairs[index]), "name"),
+                    String.valueOf(nameValuePairs[index + 1]));
         }
-        return text;
+        return new Text(key, fallback, next);
+    }
+
+    /** @return a key part for {@code text}: {@code Server Configs} becomes {@code server_configs} */
+    public static String slug(String text) {
+        return text.strip()
+                .toLowerCase(java.util.Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "_")
+                .replaceAll("^_|_$", "");
     }
 
     /** @return the fallback with its placeholders filled in */

@@ -81,13 +81,13 @@ public sealed interface SettingType<T>
 
     private static <T> Result<T> invalid(String text, SettingType<?> type) {
         Text described = type.describeText();
-        Error error = Error.validation(INVALID_VALUE, "'" + text + "' is not a valid " + type.describe() + ".");
-        if (described.key().isPresent()) {
-            String key = described.key().get().replace("controlcore.types.", "controlcore.errors.invalid_value.");
-            Text message = new Text(Optional.of(key), error.description(), described.params()).with("value", text);
-            error = error.withText(message);
-        }
-        return Result.failure(error);
+        String english = "'" + text + "' is not a valid " + type.describe() + ".";
+        Text message = described
+                .key()
+                .map(key -> key.replace("controlcore.types.", "controlcore.errors.invalid_value."))
+                .map(key -> new Text(Optional.of(key), english, described.params()).with("value", text))
+                .orElse(Text.of(english));
+        return Result.failure(Error.validation(INVALID_VALUE, message));
     }
 
     /** {@code true} or {@code false}. */

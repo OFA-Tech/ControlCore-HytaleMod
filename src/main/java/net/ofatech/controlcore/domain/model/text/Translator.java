@@ -10,9 +10,6 @@ import net.ofatech.controlcore.domain.result.Error;
 @FunctionalInterface
 public interface Translator {
 
-    /** Shows every text's fallback (English); for tests and places without a viewer. */
-    Translator FALLBACK = Text::fallbackText;
-
     /** @return {@code text} in the viewer's language */
     String translate(Text text);
 
@@ -25,8 +22,8 @@ public interface Translator {
         return translate(Text.key(key, key).with(nameValuePairs));
     }
 
-    /** @return the error's message in the viewer's language, or its description */
+    /** @return the error's message in the viewer's language */
     default String error(Error error) {
-        return error.text().map(this::translate).orElse(error.description());
+        return translate(error.message());
     }
 }

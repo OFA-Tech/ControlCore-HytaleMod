@@ -121,15 +121,20 @@ public final class SettingPermissionPolicy {
         }
         String sideText = side == null ? "" : side.strip().toLowerCase(Locale.ROOT);
         if (!sideText.equals("view") && !sideText.equals("edit") && !sideText.equals("both")) {
-            return Result.failure(
-                    Error.validation("Settings.InvalidPermissionSide", "Choose view, edit or both, not '" + side + "'.")
-                            .localized("controlcore.errors.settings.invalidpermissionside", "side", side));
+            return Result.failure(Error.validation(
+                    "Settings.InvalidPermissionSide",
+                    Text.key(
+                                    "controlcore.errors.settings.invalid_permission_side",
+                                    "Choose view, edit or both, not '{side}'.")
+                            .with("side", side)));
         }
         String value = node == null ? "" : node.strip();
         if (value.isEmpty()) {
-            return Result.failure(
-                    Error.validation("Settings.InvalidPermission", "Give a permission node, everyone or default.")
-                            .localized("controlcore.errors.settings.invalidpermission"));
+            return Result.failure(Error.validation(
+                    "Settings.InvalidPermission",
+                    Text.key(
+                            "controlcore.errors.settings.invalid_permission",
+                            "Give a permission node, everyone or default.")));
         }
         String newNode = value.equalsIgnoreCase("default") ? null : value;
         try {
@@ -143,8 +148,7 @@ public final class SettingPermissionPolicy {
             store.put(key.value(), rule);
             return Result.success(rule);
         } catch (RuntimeException e) {
-            return Result.failure(Error.validation("Settings.InvalidPermission", e.getMessage())
-                    .localized("controlcore.errors.settings.invalidpermission_2", "reason", e.getMessage()));
+            return Result.failure(Error.validation("Settings.InvalidPermission", e.getMessage()));
         }
     }
 
@@ -163,9 +167,11 @@ public final class SettingPermissionPolicy {
             return SettingId.parse(text).map(id -> SETTING + id);
         }
         return Result.failure(Error.validation(
-                        "Settings.InvalidPermissionTarget",
-                        "Name a setting id (homes:max-homes), category:<name> or mod:<mod id>, not '" + target + "'.")
-                .localized("controlcore.errors.settings.invalidpermissiontarget", "target", target));
+                "Settings.InvalidPermissionTarget",
+                Text.key(
+                                "controlcore.errors.settings.invalid_permission_target",
+                                "Name a setting id (homes:max-homes), category:<name> or mod:<mod id>, not '{target}'.")
+                        .with("target", target)));
     }
 
     private Rule resolve(SettingDefinition<?> definition, Function<SettingPermission, Optional<String>> side) {

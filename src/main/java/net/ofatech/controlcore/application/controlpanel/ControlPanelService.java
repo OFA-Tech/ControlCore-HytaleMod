@@ -14,6 +14,7 @@ import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
@@ -85,20 +86,24 @@ public final class ControlPanelService implements ControlPanelApi {
     @Override
     public Result<Void> open(PlayerId player, ControlPanelRequest request) {
         if (request.isEmpty()) {
-            return Result.failure(
-                    Error.validation("ControlPanel.NothingToShow", "The request does not include any section.")
-                            .localized("controlcore.errors.controlpanel.nothingtoshow"));
+            return Result.failure(Error.validation(
+                    "ControlPanel.NothingToShow",
+                    Text.key(
+                            "controlcore.errors.controlpanel.nothing_to_show",
+                            "The request does not include any section.")));
         }
         if (request.includesAdminSections() && !settings.panelEnabled()) {
             return Result.failure(Error.unavailable(
-                            "ControlPanel.Disabled",
-                            "The control panel is disabled (setting " + ControlPanelSettings.ENABLED_ID + ").")
-                    .localized(
-                            "controlcore.errors.controlpanel.disabled", "ENABLED_ID", ControlPanelSettings.ENABLED_ID));
+                    "ControlPanel.Disabled",
+                    Text.key(
+                                    "controlcore.errors.controlpanel.disabled",
+                                    "The control panel is disabled (setting {id}).")
+                            .with("id", ControlPanelSettings.ENABLED_ID)));
         }
         if (players.find(player).isEmpty()) {
-            return Result.failure(Error.notFound("ControlPanel.PlayerNotFound", "That player is not online.")
-                    .localized("controlcore.errors.controlpanel.playernotfound"));
+            return Result.failure(Error.notFound(
+                    "ControlPanel.PlayerNotFound",
+                    Text.key("controlcore.errors.controlpanel.player_offline", "That player is not online.")));
         }
         // The HyUI page is the full admin layout, so narrower requests always use the built-in panel.
         ControlPanelView view = capabilities

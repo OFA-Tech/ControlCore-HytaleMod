@@ -90,8 +90,7 @@ class TextsTest {
         Error invalid = SettingType.integer(1, 9).parse("70").error();
 
         assertThat(forAna.translate(definition.nameText())).isEqualTo("Aba inicial do painel");
-        assertThat(forAna.translate(definition.labels().option("Server Configs")))
-                .isEqualTo("Config. do servidor");
+        assertThat(forAna.translate(definition.optionText("Server Configs"))).isEqualTo("Config. do servidor");
         assertThat(forAna.error(invalid)).isEqualTo("'70' não é um inteiro válido 1..9.");
         assertThat(invalid.description()).isEqualTo("'70' is not a valid integer 1..9.");
     }
@@ -108,8 +107,10 @@ class TextsTest {
         CommandSpec localized = CommandTexts.spec(spec, texts);
         Result<Reply> failed = CommandTexts.handler(
                         spec,
-                        context -> Result.failure(Error.notFound("Settings.UnknownSetting", "There is no setting x.")
-                                .localized("controlcore.errors.settings.unknownsetting_2", "id", "x")),
+                        context -> Result.failure(Error.notFound(
+                                "Settings.UnknownSetting",
+                                Text.key("controlcore.errors.settings.unknown_setting", "There is no setting {id}.")
+                                        .with("id", "x"))),
                         texts)
                 .handle(new FakeContext(CommandSender.of(ana)));
         Result<Reply> fromConsole = CommandTexts.handler(

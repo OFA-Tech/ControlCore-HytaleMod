@@ -97,8 +97,6 @@ public final class SettingsText {
         if (value.isEmpty()) {
             return tr.t("controlcore.settings.empty");
         }
-        return definition.type() instanceof SettingType.ChoiceType
-                ? tr.translate(definition.labels().option(value))
-                : value;
+        return definition.type() instanceof SettingType.ChoiceType ? tr.translate(definition.optionText(value)) : value;
     }
 }

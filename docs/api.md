@@ -136,6 +136,8 @@ keys.go_home = Ir para casa
 - Only the shown text is translated: ids, stored values and the search's own words stay the same. Search
   also matches the translated names.
 - Placeholders are written `{name}` and filled with `Text.key(...).with("name", value)`.
+- Errors take a `Text` too, so players see them in their language:
+  `Error.notFound("Homes.Unknown", Text.key("homes.errors.unknown", "There is no home {name}.").with("name", name))`.
 - The server config keys' names and section headings are translated; Hytale's own descriptions stay in
   English.
 

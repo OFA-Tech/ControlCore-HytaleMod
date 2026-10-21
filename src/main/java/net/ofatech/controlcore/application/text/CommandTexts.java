@@ -1,6 +1,7 @@
 package net.ofatech.controlcore.application.text;
 
 import java.util.List;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.command.ArgSpec;
 import net.ofatech.controlcore.domain.ports.command.CommandHandler;
 import net.ofatech.controlcore.domain.ports.command.CommandSpec;
@@ -35,8 +36,9 @@ public final class CommandTexts {
     public static CommandHandler handler(CommandSpec spec, CommandHandler handler, Texts texts) {
         return context -> {
             Result<Reply> result = spec.playerOnly() && !context.sender().isPlayer()
-                    ? Result.failure(Error.validation("Commands.PlayersOnly", "Only players can use this command.")
-                            .localized("controlcore.commands.players_only"))
+                    ? Result.failure(Error.validation(
+                            "Commands.PlayersOnly",
+                            Text.key("controlcore.commands.players_only", "Only players can use this command.")))
                     : handler.handle(context);
             if (result.isSuccess()) {
                 return result;

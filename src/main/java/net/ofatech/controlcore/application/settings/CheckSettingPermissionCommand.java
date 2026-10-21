@@ -8,6 +8,7 @@ import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.command.ArgType;
 import net.ofatech.controlcore.domain.ports.command.CommandContext;
@@ -66,7 +67,9 @@ public final class CheckSettingPermissionCommand implements ModCommand {
         Result<SettingSnapshot> config = serverConfig.read(id, Optional.empty());
         return config.isSuccess()
                 ? Result.success(config.value().definition())
-                : Result.failure(Error.notFound("Settings.UnknownSetting", "There is no setting " + id + ".")
-                        .localized("controlcore.errors.settings.unknownsetting_2", "id", id));
+                : Result.failure(Error.notFound(
+                        "Settings.UnknownSetting",
+                        Text.key("controlcore.errors.settings.unknown_setting", "There is no setting {id}.")
+                                .with("id", id)));
     }
 }

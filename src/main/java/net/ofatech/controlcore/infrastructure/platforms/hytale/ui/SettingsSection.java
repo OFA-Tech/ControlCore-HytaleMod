@@ -14,6 +14,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
@@ -106,7 +107,7 @@ final class SettingsSection {
 
     /** @return a choice's option in the viewer's language */
     String option(SettingSnapshot snapshot, String option) {
-        return tr.translate(snapshot.definition().labels().option(option));
+        return tr.translate(snapshot.definition().optionText(option));
     }
 
     /** @return the description line under a row */
@@ -169,8 +170,9 @@ final class SettingsSection {
     /** Saves the state of a check box. */
     Result<SettingSnapshot> check(String idText, Boolean checked) {
         if (checked == null) {
-            return Result.failure(Error.validation("ControlPanel.MissingValue", "The check box sent no value.")
-                    .localized("controlcore.errors.controlpanel.missingvalue"));
+            return Result.failure(Error.validation(
+                    "ControlPanel.MissingValue",
+                    Text.key("controlcore.errors.controlpanel.missing_value", "The check box sent no value.")));
         }
         return save(idText, checked.toString());
     }

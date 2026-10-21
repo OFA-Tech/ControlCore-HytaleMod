@@ -4,6 +4,7 @@ import com.google.auto.service.AutoService;
 import net.ofatech.controlcore.application.component.ModCommand;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.command.CommandContext;
 import net.ofatech.controlcore.domain.ports.command.CommandSpec;
 import net.ofatech.controlcore.domain.ports.command.Reply;
@@ -32,9 +33,10 @@ public final class OpenControlPanelCommand implements ModCommand {
         // Not a command permission: players an admin lets see some settings may open the panel too.
         if (!controlPanel.mayOpenAdminPanel(sender.id())) {
             return Result.failure(Error.forbidden(
-                            "ControlPanel.Forbidden",
-                            "You do not have access to the admin panel. Your preferences: /prefs")
-                    .localized("controlcore.errors.controlpanel.forbidden"));
+                    "ControlPanel.Forbidden",
+                    Text.key(
+                            "controlcore.errors.controlpanel.forbidden",
+                            "You do not have access to the admin panel. Your preferences: /prefs")));
         }
         return controlPanel.open(sender.id(), ControlPanelRequest.ALL).map(opened -> Reply.none());
     }

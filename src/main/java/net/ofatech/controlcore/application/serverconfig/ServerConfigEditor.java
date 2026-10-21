@@ -13,7 +13,6 @@ import net.ofatech.controlcore.domain.model.serverconfig.ConfigEntry;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
-import net.ofatech.controlcore.domain.model.settings.SettingLabels;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
@@ -90,10 +89,11 @@ public final class ServerConfigEditor implements SettingsEditor {
         return find(id).flatMap(entry -> entry.defaultValue()
                 .map(value -> apply(entry, value))
                 .orElseGet(() -> Result.failure(Error.validation(
-                                "ServerConfig.NoDefault",
-                                entry.name()
-                                        + " has no default value; type a value or remove the key from config.json.")
-                        .localized("controlcore.errors.serverconfig.nodefault", "name", entry.name()))));
+                        "ServerConfig.NoDefault",
+                        Text.key(
+                                        "controlcore.errors.serverconfig.no_default",
+                                        "{name} has no default value; type a value or remove the key from config.json.")
+                                .with("name", entry.name())))));
     }
 
     @Override
@@ -106,8 +106,10 @@ public final class ServerConfigEditor implements SettingsEditor {
 
     private Result<SettingSnapshot> apply(ConfigEntry entry, String value) {
         if (entry.access() == SettingAccess.READ_ONLY) {
-            return Result.failure(Error.forbidden("ServerConfig.ReadOnly", entry.name() + " cannot be changed here.")
-                    .localized("controlcore.errors.serverconfig.readonly", "name", entry.name()));
+            return Result.failure(Error.forbidden(
+                    "ServerConfig.ReadOnly",
+                    Text.key("controlcore.errors.serverconfig.read_only", "{name} cannot be changed here.")
+                            .with("name", entry.name())));
         }
         return server.write(entry.path(), value).map(after -> {
             if (!after.value().equals(entry.value())) {
@@ -126,8 +128,10 @@ public final class ServerConfigEditor implements SettingsEditor {
                 return Result.success(entry);
             }
         }
-        return Result.failure(Error.notFound("Settings.UnknownSetting", "There is no server config key " + id + ".")
-                .localized("controlcore.errors.settings.unknownsetting", "id", id));
+        return Result.failure(Error.notFound(
+                "Settings.UnknownSetting",
+                Text.key("controlcore.errors.settings.unknown_config_key", "There is no server config key {id}.")
+                        .with("id", id)));
     }
 
     static SettingSnapshot snapshotOf(ConfigEntry entry) {
@@ -157,8 +161,7 @@ public final class ServerConfigEditor implements SettingsEditor {
         return definition
                 .named(Text.key("controlcore.config.key." + id.key(), entry.name()))
                 .describedAs(describe(entry))
-                .inCategory(
-                        Text.key("controlcore.config.section." + SettingLabels.slug(entry.section()), entry.section()));
+                .inCategory(Text.key("controlcore.config.section." + Text.slug(entry.section()), entry.section()));
     }
 
     private static <T> SettingDefinition<T> server(SettingId id, SettingType<T> type, T defaultValue) {
@@ -193,7 +196,11 @@ public final class ServerConfigEditor implements SettingsEditor {
     }
 
     private static Error wrongScope(SettingId id) {
-        return Error.validation("Settings.WrongScope", id + " is part of the server config, not a player preference.")
-                .localized("controlcore.errors.settings.wrongscope", "id", id);
+        return Error.validation(
+                "Settings.WrongScope",
+                Text.key(
+                                "controlcore.errors.settings.config_not_preference",
+                                "{id} is part of the server config, not a player preference.")
+                        .with("id", id));
     }
 }
