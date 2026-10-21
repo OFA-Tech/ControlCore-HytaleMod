@@ -205,6 +205,7 @@ config.key.rate-limit.enabled = Enabled
 config.key.rate-limit.packets-per-second = Packets per second
 config.key.require-join-permission = Require join permission
 config.key.server-name = Server name
+config.key.sentry-dsn = Sentry DSN (error reports)
 config.key.universe-resource-storage = Universe resource storage
 config.key.update.auto-apply-delay-minutes = Auto apply delay minutes
 config.key.update.auto-apply-mode = Auto apply mode

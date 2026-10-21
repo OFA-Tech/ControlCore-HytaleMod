@@ -7,7 +7,7 @@ Architecture and rules are in [architecture.md](architecture.md); Hytale and mod
 ## Environment
 
 - JDK 25 (`JAVA_HOME` must point to it; Gradle uses `JAVA_HOME`, not the first `java` on `PATH`).
-- Hytale server **0.7.2**, `com.azuredoom.hytale-tools` 1.0.51, Gradle 9.8.1.
+- Hytale server **0.7.3** (the manifest still allows 0.7.2), `com.azuredoom.hytale-tools` 1.0.51, Gradle 9.8.1.
 - Strict build, as CI runs it: `./gradlew build -Pstrict` (tests, ArchUnit rules, warnings as errors).
   `-Werror` is only on with `-Pstrict`, because incremental compiles re-read `@AutoService` classes from
   bytecode and lose `@SuppressWarnings("rawtypes")`.
@@ -36,7 +36,7 @@ Things to know:
   `run/logs/*.lck` file. Stop the running server first (stale `.lck` files can be deleted once no
   server runs).
 - Lots of `WARN`/`SEVERE` lines from Hytale's own assets (block sets, NPC animations, `Reallocate`)
-  are normal on 0.7.2.
+  are normal on 0.7.x.
 
 ## Debugging
 
@@ -44,7 +44,7 @@ Things to know:
 - **Client log:** `%APPDATA%\Hytale\UserData\Logs\<date>_client.log`. When the server only says
   `left with reason: Crash`, the real reason (usually a custom UI error) is in the client log.
 - **Hytale API:** no sources are published. Inspect the server jar
-  (`~/.gradle/caches/modules-2/files-2.1/com.hypixel.hytale/Server/0.7.2/.../Server-0.7.2.jar`) with
+  (`~/.gradle/caches/modules-2/files-2.1/com.hypixel.hytale/Server/0.7.3/.../Server-0.7.3.jar`) with
   `javap -p` / `javap -c -p`, or run `./gradlew setupHytaleDev` for decompiled sources. Vanilla UI
   layouts to copy from are in the assets zip under `Common/UI/Custom/Pages/` (shared templates and
   styles in `Common/UI/Custom/Common.ui`).

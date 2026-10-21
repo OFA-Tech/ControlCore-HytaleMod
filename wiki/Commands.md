@@ -25,8 +25,9 @@ Admin commands also work from the server console; commands about your own prefer
 | `/cc-pref <id> <value>` | any player | change one of your preferences |
 | `/cc-pref-reset <id>` | any player | put a preference back to its default |
 
-Ids look like `mod:key`, for example `controlcore:welcome-message`. Server config keys are `server:…`, for example
-`server:motd` or `server:connection-timeouts.play-timeout`.
+Ids look like `mod:key`, for example `controlcore:welcome-message`. These commands cover mods' settings; the
+server's `config.json` keys are changed in the panel's **Server Configs** tab. Their ids (`server:motd`,
+`server:connection-timeouts.play-timeout`, …) are used with `/cc-perm` and `/cc-perm-check`.
 
 ```
 /cc-set controlcore:welcome-message Welcome, {player}!

@@ -3,7 +3,7 @@
 **ControlCore** gives Hytale server owners one in-game panel for everything they configure, and gives other mods
 a shared place for their settings, key binds and HUDs.
 
-> **Beta (0.x).** Requires Hytale server **0.7.2** (`>=0.7.2 <0.8.0`). Back up `mods/OFATech_ControlCore/` before
+> **Beta (0.x).** Requires Hytale server **0.7.2 or 0.7.3** (`>=0.7.2 <0.8.0`). Back up `mods/OFATech_ControlCore/` before
 > updating.
 
 ![ControlCore](https://raw.githubusercontent.com/OFA-Tech/ControlCore-HytaleMod/main/docs/images/icon.png)
