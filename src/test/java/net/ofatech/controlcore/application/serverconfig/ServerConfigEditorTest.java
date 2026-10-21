@@ -127,6 +127,26 @@ class ServerConfigEditorTest {
     }
 
     @Test
+    void restartKeysChangedSinceStartAreListedUntilChangedBack() {
+        editor.write(id("server:connection-timeouts.play-timeout"), SERVER_WIDE, "90");
+        assertThat(editor.pendingRestart()).as("applies at once").isEmpty();
+
+        editor.write(id("server:defaults.game-mode"), SERVER_WIDE, "Adventure");
+        editor.write(id("server:backup.enabled"), SERVER_WIDE, "true");
+        editor.write(id("server:defaults.game-mode"), SERVER_WIDE, "Creative");
+        editor.write(id("server:defaults.game-mode"), SERVER_WIDE, "Adventure");
+        assertThat(editor.pendingRestart())
+                .extracting(name -> name.fallbackText())
+                .containsExactly("Enabled", "Game mode");
+
+        editor.write(id("server:defaults.game-mode"), SERVER_WIDE, "Creative");
+        editor.reset(id("server:backup.enabled"), SERVER_WIDE);
+        assertThat(editor.pendingRestart())
+                .as("back to the values the server started with")
+                .isEmpty();
+    }
+
+    @Test
     void changesArePublishedOnceAndSeenByPanelListeners() {
         var published = new ArrayList<ServerConfigChanged>();
         var seen = new ArrayList<SettingChanged>();

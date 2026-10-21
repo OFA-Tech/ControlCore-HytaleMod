@@ -59,6 +59,7 @@ panel.match.not_ends_with = Doesn't end with
 panel.match.not_equals = Doesn't equal
 panel.match.not_starts_with = Doesn't start with
 panel.match.starts_with = Starts with
+panel.restart_pending = Restart the server to apply: {keys}.
 panel.saved = Saved: {name} = {value}
 panel.saved_default = Saved: {name} = {value} (default)
 panel.saved_default_restart = Saved: {name} = {value} (default). Applies after a restart.

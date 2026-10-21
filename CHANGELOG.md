@@ -13,6 +13,8 @@
 - `/open-admin-config` now requires the `<base permission>.admin` node.
 
 ### Added
+- **Restart reminder:** Server Configs lists the keys changed since the server started that only apply after a
+  restart (a key changed back drops off), and admins get the same note in chat when they join.
 - **Translations** (API 1.5.0): the panel, command replies, errors and command help are shown in each
   player's game language: English, Brazilian Portuguese and Spanish. Missing texts fall back to English. Mods translate their own setting and key texts with
   `Text.key(key, fallback)` and their own `Server/Languages/<language>/<file>.lang` files.

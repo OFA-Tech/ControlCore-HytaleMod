@@ -121,6 +121,7 @@ public final class ControlPanelService implements ControlPanelApi {
                         keymaps.viewedBy(player),
                         settings.startTab(player),
                         permissions.isAdmin(player),
-                        texts.forPlayer(Optional.of(player))));
+                        texts.forPlayer(Optional.of(player)),
+                        serverConfig::pendingRestart));
     }
 }

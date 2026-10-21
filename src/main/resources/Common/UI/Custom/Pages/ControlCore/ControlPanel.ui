@@ -63,6 +63,12 @@ $C.@PageOverlay {
           Anchor: (Bottom: 8);
         }
 
+        Label #ServerRestart {
+          Style: @StatusStyle;
+          Visible: false;
+          Anchor: (Bottom: 8);
+        }
+
         Group {
           LayoutMode: Left;
           Anchor: (Height: 34, Bottom: 8);

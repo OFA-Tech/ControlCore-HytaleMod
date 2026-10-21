@@ -1,8 +1,11 @@
 package net.ofatech.controlcore.domain.model;
 
+import java.util.List;
+import java.util.function.Supplier;
 import net.ofatech.controlcore.domain.guard.Guard;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 
 /**
@@ -16,6 +19,7 @@ import net.ofatech.controlcore.domain.model.text.Translator;
  * @param startTab the tab shown first
  * @param manageKeys whether the viewer may change the server's keys and admins' own binds
  * @param translator shows text in the viewer's language (since API 1.5.0)
+ * @param pendingRestart names of the server config keys changed since start that apply after a restart
  */
 public record ControlPanelContent(
         ServerSettings server,
@@ -25,7 +29,8 @@ public record ControlPanelContent(
         CustomKeyBindEditor customKeyBinds,
         ControlPanelTab startTab,
         boolean manageKeys,
-        Translator translator) {
+        Translator translator,
+        Supplier<List<Text>> pendingRestart) {
 
     public ControlPanelContent {
         Guard.notNull(server, "server");
@@ -35,5 +40,6 @@ public record ControlPanelContent(
         Guard.notNull(customKeyBinds, "customKeyBinds");
         Guard.notNull(startTab, "startTab");
         Guard.notNull(translator, "translator");
+        Guard.notNull(pendingRestart, "pendingRestart");
     }
 }
