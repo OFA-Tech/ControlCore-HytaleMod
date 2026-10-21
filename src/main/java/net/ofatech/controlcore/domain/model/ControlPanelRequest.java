@@ -1,7 +1,8 @@
 package net.ofatech.controlcore.domain.model;
 
 /**
- * Which sections of the control panel to show.
+ * Which sections of the control panel to show, passed to
+ * {@link net.ofatech.controlcore.api.ControlPanelApi#open(PlayerId, ControlPanelRequest)}.
  *
  * @param includeServerSettings the admin tabs: Server Configs and Mod Settings
  * @param includePlayerPreferences the viewer's own preferences
@@ -20,12 +21,20 @@ public record ControlPanelRequest(
      */
     public static final ControlPanelRequest PLAYER_PREFERENCES = new ControlPanelRequest(false, true, true);
 
-    /** @return whether an admin section is shown (Server Configs and Mod Settings) */
+    /**
+     * Tells whether the request shows an admin section; those need the control panel to be enabled.
+     *
+     * @return whether an admin section is shown (Server Configs and Mod Settings)
+     */
     public boolean includesAdminSections() {
         return includeServerSettings;
     }
 
-    /** @return whether anything is shown at all */
+    /**
+     * Tells whether the request shows no section at all.
+     *
+     * @return whether nothing is shown at all
+     */
     public boolean isEmpty() {
         return !includeServerSettings && !includePlayerPreferences && !includeRegisteredActions;
     }

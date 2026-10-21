@@ -13,7 +13,8 @@ import net.ofatech.controlcore.domain.model.text.Text;
 
 /**
  * Something a player can run with keys, registered by a mod or created by an admin. Players and admins can rebind
- * it in the control panel's Keymaps tab or with {@code /cc-bind}.
+ * it in the control panel's Keymaps tab or with {@code /cc-bind}. Instances are immutable: every builder method
+ * returns a changed copy. Register it with {@link net.ofatech.controlcore.api.KeymapsApi#register(KeyAction)}.
  *
  * <pre>{@code
  * KeyAction.of("homes", "go-home")
@@ -22,7 +23,7 @@ import net.ofatech.controlcore.domain.model.text.Text;
  *         .defaultKeys(Key.CTRL, Key.NUM_3);
  * }</pre>
  *
- * @param id unique id, {@code modId:action}
+ * @param id unique id, {@code modId:action}, for example {@code homes:go-home}
  * @param nameText shown in the Keymaps tab and {@code /cc-keys}
  * @param descriptionText one sentence explaining the action; may be empty
  * @param command chat command, without or with {@code /}; {@code {player}} and {@code {uuid}} are filled in with
@@ -48,6 +49,21 @@ public record KeyAction(
         boolean runsAsServer,
         Optional<String> permission) {
 
+    /**
+     * Creates a key action; prefer {@link #of(String, String)} and the builder methods. The command is normalized
+     * with {@link #normalizeCommand(String)} and a blank permission becomes empty.
+     *
+     * @param id unique id, {@code modId:action}
+     * @param nameText the display name; its English text must not be blank
+     * @param descriptionText one sentence explaining the action; may be empty
+     * @param command chat command to run, or empty
+     * @param onPress code to run, or empty
+     * @param defaultKeys default bindings
+     * @param blocksGameAction whether the game's own action of the pressed key is cancelled
+     * @param runsAsServer whether the command runs as the server console
+     * @param permission permission node needed to use the action, or empty for everyone
+     * @throws DomainException if an argument is {@code null}, the display name is blank or the command is empty
+     */
     public KeyAction {
         Guard.notNull(id, "id");
         Guard.notNull(nameText, "nameText");
@@ -65,11 +81,14 @@ public record KeyAction(
     }
 
     /**
-     * Starts a key action; its display name is {@code action} until {@link #displayName} is called.
+     * Starts a key action; its display name is {@code action} until {@link #displayName} is called. It has no
+     * command, no onPress code and no default keys yet, and it cancels the game's own action of the pressed key.
      *
-     * @param modId your mod's id, lower case (letters, digits, {@code -}, {@code _})
+     * @param modId your mod's id, lower case (letters, digits, {@code -}, {@code _}); upper case is lowered
      * @param action the action's name within your mod, lower case (letters, digits, {@code -}, {@code _},
-     *     {@code .})
+     *     {@code .}); upper case is lowered
+     * @return the new key action, with the id {@code modId:action}
+     * @throws DomainException if {@code modId} or {@code action} is blank or not a valid id part
      */
     public static KeyAction of(String modId, String action) {
         Guard.notBlank(modId, "modId");
@@ -88,12 +107,23 @@ public record KeyAction(
                 Optional.empty());
     }
 
+    /**
+     * Sets the name shown to players, in one language for everyone.
+     *
+     * @param name the display name, for example {@code "Go home"}
+     * @return a copy with the new display name
+     * @throws DomainException if {@code name} is {@code null} or blank
+     */
     public KeyAction displayName(String name) {
         return displayName(Text.of(name));
     }
 
     /**
-     * @param name shown to players in their language
+     * Sets the name shown to players, translated into each player's language.
+     *
+     * @param name shown to players in their language, for example {@code Text.key("homes.keys.go_home", "Go home")}
+     * @return a copy with the new display name
+     * @throws DomainException if {@code name} is {@code null} or its English text is blank
      * @since API 1.5.0
      */
     public KeyAction displayName(Text name) {
@@ -101,12 +131,23 @@ public record KeyAction(
                 id, name, descriptionText, command, onPress, defaultKeys, blocksGameAction, runsAsServer, permission);
     }
 
+    /**
+     * Sets the description shown to players, in one language for everyone.
+     *
+     * @param text one sentence explaining the action
+     * @return a copy with the new description
+     * @throws DomainException if {@code text} is {@code null}
+     */
     public KeyAction describedAs(String text) {
         return describedAs(Text.of(text));
     }
 
     /**
+     * Sets the description shown to players, translated into each player's language.
+     *
      * @param text one sentence explaining the action, in the player's language
+     * @return a copy with the new description
+     * @throws DomainException if {@code text} is {@code null}
      * @since API 1.5.0
      */
     public KeyAction describedAs(Text text) {
@@ -114,17 +155,31 @@ public record KeyAction(
                 id, nameText, text, command, onPress, defaultKeys, blocksGameAction, runsAsServer, permission);
     }
 
-    /** @return the display name in English */
+    /**
+     * Returns the display name in English (the fallback text of {@link #nameText}).
+     *
+     * @return the display name in English
+     */
     public String displayName() {
         return nameText.fallbackText();
     }
 
-    /** @return the description in English */
+    /**
+     * Returns the description in English (the fallback text of {@link #descriptionText}).
+     *
+     * @return the description in English; empty if none was set
+     */
     public String description() {
         return descriptionText.fallbackText();
     }
 
-    /** @param text the chat command to run, for example {@code "home {player}"} */
+    /**
+     * Sets the chat command the keys run, as the player unless {@link #runAsServer()} is called.
+     *
+     * @param text the chat command to run, for example {@code "home {player}"}; a leading {@code /} is removed
+     * @return a copy with the new command
+     * @throws DomainException if {@code text} is {@code null} or empty after normalizing
+     */
     public KeyAction command(String text) {
         Guard.notNull(text, "command");
         return new KeyAction(
@@ -139,7 +194,14 @@ public record KeyAction(
                 permission);
     }
 
-    /** @param action runs when the keys are pressed, on a virtual thread */
+    /**
+     * Sets code that runs when the keys are pressed, in addition to any command.
+     *
+     * @param action runs with the player who pressed the keys, on a virtual thread; move world work to the
+     *     world's thread
+     * @return a copy with the new code
+     * @throws DomainException if {@code action} is {@code null}
+     */
     public KeyAction onPress(Consumer<PlayerId> action) {
         Guard.notNull(action, "onPress");
         return new KeyAction(
@@ -154,7 +216,13 @@ public record KeyAction(
                 permission);
     }
 
-    /** Sets the main default combination: the inputs are held together. */
+    /**
+     * Sets the main default combination: the inputs are held together. Alternative combinations are kept.
+     *
+     * @param inputs the keys or game actions of the combination, for example {@code Key.CTRL, Key.NUM_3}
+     * @return a copy with the new main default combination
+     * @throws DomainException if {@code inputs} is empty, contains {@code null} or repeats an input
+     */
     public KeyAction defaultKeys(KeyInput... inputs) {
         List<KeyCombo> combos = new ArrayList<>();
         combos.add(KeyCombo.of(inputs));
@@ -162,7 +230,13 @@ public record KeyAction(
         return withDefaults(new KeyBinds(combos));
     }
 
-    /** Adds another default combination that also runs the action. */
+    /**
+     * Adds another default combination that also runs the action; adding one that is already there does nothing.
+     *
+     * @param inputs the keys or game actions held together
+     * @return a copy with the extra default combination
+     * @throws DomainException if {@code inputs} is empty, contains {@code null} or repeats an input
+     */
     public KeyAction alternativeKeys(KeyInput... inputs) {
         List<KeyCombo> combos = new ArrayList<>(defaultKeys.combos());
         KeyCombo combo = KeyCombo.of(inputs);
@@ -172,13 +246,23 @@ public record KeyAction(
         return withDefaults(new KeyBinds(combos));
     }
 
-    /** Sets every default combination at once. */
+    /**
+     * Sets every default combination at once.
+     *
+     * @param binds the default bindings; the first combination is the main one
+     * @return a copy with the new default bindings
+     * @throws DomainException if {@code binds} is {@code null}
+     */
     public KeyAction defaultKeys(KeyBinds binds) {
         Guard.notNull(binds, "defaultKeys");
         return withDefaults(binds);
     }
 
-    /** Lets the game also do what the pressed key normally does (by default it is cancelled). */
+    /**
+     * Lets the game also do what the pressed key normally does (by default it is cancelled).
+     *
+     * @return a copy that does not cancel the game's own action
+     */
     public KeyAction keepGameAction() {
         return new KeyAction(
                 id, nameText, descriptionText, command, onPress, defaultKeys, false, runsAsServer, permission);
@@ -188,13 +272,21 @@ public record KeyAction(
      * Runs {@link #command} as the server console, with every permission, instead of as the player. Only players
      * with {@link #permission(String)}, or ControlCore's {@code <base>.keys.server} node if none is set, can use
      * it; operators have every node.
+     *
+     * @return a copy whose command runs as the server
      */
     public KeyAction runAsServer() {
         return new KeyAction(
                 id, nameText, descriptionText, command, onPress, defaultKeys, blocksGameAction, true, permission);
     }
 
-    /** @param node full permission node a player needs to see and use this action */
+    /**
+     * Restricts the action to players with a permission node; others do not see it and cannot use it.
+     *
+     * @param node full permission node a player needs to see and use this action
+     * @return a copy that needs the permission
+     * @throws DomainException if {@code node} is {@code null} or blank
+     */
     public KeyAction permission(String node) {
         Guard.notBlank(node, "permission");
         return new KeyAction(
@@ -209,18 +301,31 @@ public record KeyAction(
                 Optional.of(node));
     }
 
-    /** @return the mod id part of {@link #id} */
+    /**
+     * Returns the mod id part of {@link #id}.
+     *
+     * @return the mod id, for example {@code homes} for {@code homes:go-home}
+     */
     public String modId() {
         return id.namespace();
     }
 
-    /** @return the command with {@code {player}} and {@code {uuid}} filled in, if the action has one */
+    /**
+     * Returns the command to run for a player, with the placeholders filled in.
+     *
+     * @param player the player who pressed the keys; fills in {@code {uuid}}
+     * @param name the player's name; fills in {@code {player}}
+     * @return the command with {@code {player}} and {@code {uuid}} filled in, or empty if the action has no command
+     */
     public Optional<String> commandFor(PlayerId player, String name) {
         return command.map(text ->
                 text.replace("{player}", name).replace("{uuid}", player.value().toString()));
     }
 
     /**
+     * Cleans up a chat command as typed by a person, for example {@code "/home"} becomes {@code home}.
+     *
+     * @param text the command text; must not be {@code null}
      * @return {@code text} without surrounding whitespace, one pair of surrounding quotes (people quote commands
      *     with spaces) and the leading {@code /}
      */

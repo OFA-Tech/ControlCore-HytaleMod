@@ -6,9 +6,9 @@ import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 
 /**
- * A registered setting got a new value, or was reset to its default.
+ * A registered setting or key bind got a new value, or was reset to its default.
  *
- * @param id the setting
+ * @param id the setting, for example {@code homes:max-homes}
  * @param scope server-wide or per player
  * @param player the player whose preference changed; empty for server settings
  * @param oldValue previous effective value, as text
