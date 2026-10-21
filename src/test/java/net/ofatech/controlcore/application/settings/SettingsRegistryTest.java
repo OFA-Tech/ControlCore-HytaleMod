@@ -27,15 +27,16 @@ class SettingsRegistryTest {
     private final DomainEventBus bus = new DomainEventBus(log);
     private final FakeSettingStore store = new FakeSettingStore();
     private final FakePlayerData playerData = new FakePlayerData();
-    private final SettingsRegistry registry = new SettingsRegistry(store, playerData, bus, bus, log);
+    private final SettingsRegistry registry = new SettingsRegistry(
+            store, playerData, bus, bus, log, new net.ofatech.controlcore.application.settings.ModNames());
     private final PlayerId alice = PlayerId.of(java.util.UUID.randomUUID());
     private final PlayerId bob = PlayerId.of(java.util.UUID.randomUUID());
 
     private final SettingDefinition<Integer> maxHomes = SettingDefinition.server(
-                    MAX_HOMES.toString(), SettingType.integer(1, 50), 3)
+                    MAX_HOMES.namespace(), MAX_HOMES.key(), SettingType.integer(1, 50), 3)
             .named("Max homes");
     private final SettingDefinition<Boolean> showHints =
-            SettingDefinition.player(SHOW_HINTS.toString(), SettingType.bool(), true);
+            SettingDefinition.player(SHOW_HINTS.namespace(), SHOW_HINTS.key(), SettingType.bool(), true);
 
     @Test
     void aNewSettingStartsAtItsDefault() {
@@ -126,9 +127,10 @@ class SettingsRegistryTest {
     void reRegisteringWithAnotherTypeOrScopeConflicts() {
         registry.register(maxHomes);
 
-        var otherType = registry.register(SettingDefinition.server(MAX_HOMES.toString(), SettingType.bool(), true));
-        var otherScope =
-                registry.register(SettingDefinition.player(MAX_HOMES.toString(), SettingType.integer(1, 50), 3));
+        var otherType = registry.register(
+                SettingDefinition.server(MAX_HOMES.namespace(), MAX_HOMES.key(), SettingType.bool(), true));
+        var otherScope = registry.register(
+                SettingDefinition.player(MAX_HOMES.namespace(), MAX_HOMES.key(), SettingType.integer(1, 50), 3));
 
         assertThat(otherType.error().code()).isEqualTo("Settings.Conflict");
         assertThat(otherScope.error().type()).isEqualTo(ErrorType.CONFLICT);
@@ -167,5 +169,23 @@ class SettingsRegistryTest {
         assertThat(registry.read(MAX_HOMES, Optional.empty()).value().overridden())
                 .isFalse();
         assertThat(log.lines.stream().filter(line -> line.startsWith("WARN"))).hasSize(1);
+    }
+
+    @Test
+    void headingsUseTheModNameSetBeforeOrAfterRegistering() {
+        registry.register(SettingDefinition.server("home_tp", "max", SettingType.integer(1, 9), 3)
+                .inCategory("Limits"));
+        assertThat(registry.definition(SettingId.of("home_tp:max"))
+                        .orElseThrow()
+                        .heading())
+                .isEqualTo("Home Tp: Limits");
+
+        registry.setModName("home_tp", "Home Teleports");
+        registry.register(SettingDefinition.player("home_tp", "hints", SettingType.bool(), true));
+
+        assertThat(registry.definitions())
+                .extracting(SettingDefinition::heading)
+                .contains("Home Teleports: Limits", "Home Teleports");
+        assertThat(registry.modName("controlcore").fallbackText()).isEqualTo("ControlCore");
     }
 }

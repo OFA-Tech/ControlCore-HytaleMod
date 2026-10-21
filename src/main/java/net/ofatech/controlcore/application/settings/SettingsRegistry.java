@@ -39,7 +39,7 @@ public final class SettingsRegistry implements SettingsApi {
     static final String PLAYER_KEY_PREFIX = "setting:";
 
     private static final Comparator<SettingSnapshot> DISPLAY_ORDER = Comparator.comparing(
-                    (SettingSnapshot snapshot) -> snapshot.definition().category())
+                    (SettingSnapshot snapshot) -> snapshot.definition().heading())
             .thenComparing(SettingSnapshot::id);
 
     private final SettingStore store;
@@ -47,22 +47,30 @@ public final class SettingsRegistry implements SettingsApi {
     private final EventPublisher publisher;
     private final ControlCoreEvents events;
     private final Log log;
+    private final ModNames modNames;
     private final Map<SettingId, SettingDefinition<?>> definitions = new ConcurrentHashMap<>();
     private final Set<String> reportedInvalid = ConcurrentHashMap.newKeySet();
     private final Map<String, SettingPermission> categoryPermissions = new ConcurrentHashMap<>();
 
     public SettingsRegistry(
-            SettingStore store, PlayerData playerData, EventPublisher publisher, ControlCoreEvents events, Log log) {
+            SettingStore store,
+            PlayerData playerData,
+            EventPublisher publisher,
+            ControlCoreEvents events,
+            Log log,
+            ModNames modNames) {
         this.store = store;
         this.playerData = playerData;
         this.publisher = publisher;
         this.events = events;
         this.log = log;
+        this.modNames = modNames;
     }
 
     @Override
     public <T> Result<Setting<T>> register(SettingDefinition<T> definition) {
         Objects.requireNonNull(definition, "definition");
+        definition = definition.withModName(modNames.of(definition.id().namespace()));
         SettingDefinition<?> existing = definitions.putIfAbsent(definition.id(), definition);
         if (existing != null) {
             if (existing.scope() != definition.scope()
@@ -78,6 +86,20 @@ public final class SettingsRegistry implements SettingsApi {
             log.debug("Setting " + definition.id() + " registered");
         }
         return Result.success(new Handle<>(definition.id(), definition.type().valueType()));
+    }
+
+    @Override
+    public void setModName(String modId, Text name) {
+        Objects.requireNonNull(modId, "modId");
+        modNames.set(modId, name);
+        Text shown = modNames.of(modId);
+        definitions.replaceAll((id, definition) ->
+                id.namespace().equalsIgnoreCase(modId.strip()) ? definition.withModName(shown) : definition);
+    }
+
+    @Override
+    public Text modName(String modId) {
+        return modNames.of(modId);
     }
 
     @Override

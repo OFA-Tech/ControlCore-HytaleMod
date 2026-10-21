@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import net.ofatech.controlcore.application.settings.ModNames;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
@@ -35,20 +36,22 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
     private final KeymapRegistry keymaps;
     private final Texts texts;
     private final Translator tr;
+    private final ModNames modNames;
 
-    public KeymapsEditor(KeymapRegistry keymaps, Texts texts) {
-        this(keymaps, texts, texts.forServer());
+    public KeymapsEditor(KeymapRegistry keymaps, Texts texts, ModNames modNames) {
+        this(keymaps, texts, texts.forServer(), modNames);
     }
 
-    private KeymapsEditor(KeymapRegistry keymaps, Texts texts, Translator tr) {
+    private KeymapsEditor(KeymapRegistry keymaps, Texts texts, Translator tr, ModNames modNames) {
         this.keymaps = keymaps;
         this.texts = texts;
         this.tr = tr;
+        this.modNames = modNames;
     }
 
     /** @return this editor with descriptions and replies in {@code viewer}'s language */
     public KeymapsEditor viewedBy(PlayerId viewer) {
-        return new KeymapsEditor(keymaps, texts, texts.forPlayer(Optional.of(viewer)));
+        return new KeymapsEditor(keymaps, texts, texts.forPlayer(Optional.of(viewer)), modNames);
     }
 
     @Override
@@ -122,10 +125,10 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
         String description =
                 joined(tr.translate(action.descriptionText()), KeymapsText.runs(tr, action) + ".", problems);
         SettingDefinition<String> definition = SettingDefinition.player(
-                        action.id().toString(), SettingType.text(MAX_LENGTH), server.toString())
+                        action.id().namespace(), action.id().key(), SettingType.text(MAX_LENGTH), server.toString())
                 .named(action.nameText())
                 .describedAs(description)
-                .inCategory(action.modId());
+                .withModName(modNames.of(action.modId()));
         return new SettingSnapshot(definition, current.toString(), own.isPresent());
     }
 
@@ -137,10 +140,10 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
                 KeymapsText.runs(tr, action) + ".",
                 KeymapsText.problems(tr, current));
         SettingDefinition<String> definition = SettingDefinition.server(
-                        action.id().toString(), SettingType.text(MAX_LENGTH), modKeys.toString())
+                        action.id().namespace(), action.id().key(), SettingType.text(MAX_LENGTH), modKeys.toString())
                 .named(action.nameText())
                 .describedAs(description)
-                .inCategory(action.modId());
+                .withModName(modNames.of(action.modId()));
         return new SettingSnapshot(definition, current.toString(), keymaps.hasServerKeys(action.id()));
     }
 

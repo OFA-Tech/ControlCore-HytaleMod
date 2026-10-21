@@ -20,24 +20,24 @@ public final class ControlPanelSettings {
 
     public ControlPanelSettings(SettingsApi settings, SettingsProvider defaults) {
         this.enabled = settings.register(SettingDefinition.server(
-                                ENABLED_ID,
+                                "controlcore",
+                                "control-panel-enabled",
                                 SettingType.bool(),
                                 defaults.current().controlPanelEnabled())
                         .named(Text.key("controlcore.settings.control_panel_enabled.name", "Control panel enabled"))
                         .describedAs(Text.key(
                                 "controlcore.settings.control_panel_enabled.desc",
                                 "Whether admins can open the control panel with /open-admin-config. Players"
-                                        + " can always open their preferences with /prefs."))
-                        .inCategory(Text.key("controlcore.settings.category", "ControlCore")))
+                                        + " can always open their preferences with /prefs.")))
                 .value();
         this.startTab = settings.register(SettingDefinition.player(
-                                START_TAB_ID,
+                                "controlcore",
+                                "panel-start-tab",
                                 SettingType.choice(ControlPanelTab.labels().toArray(String[]::new)),
                                 ControlPanelTab.SERVER_CONFIGS.label())
                         .named(Text.key("controlcore.settings.panel_start_tab.name", "Panel start tab"))
                         .describedAs(Text.key(
                                 "controlcore.settings.panel_start_tab.desc", "The tab the control panel opens on."))
-                        .inCategory(Text.key("controlcore.settings.category", "ControlCore"))
                         .optionsKey("controlcore.tabs"))
                 .value();
     }

@@ -52,7 +52,13 @@ class ControlPanelServiceTest {
         };
         RecordingLog log = new RecordingLog();
         DomainEventBus bus = new DomainEventBus(log);
-        registry = new SettingsRegistry(new FakeSettingStore(), new FakePlayerData(), bus, bus, log);
+        registry = new SettingsRegistry(
+                new FakeSettingStore(),
+                new FakePlayerData(),
+                bus,
+                bus,
+                log,
+                new net.ofatech.controlcore.application.settings.ModNames());
         var server = new FakeServerConfiguration(SERVER);
         return new ControlPanelService(
                 new ControlPanelSettings(registry, settings),
@@ -69,7 +75,8 @@ class ControlPanelServiceTest {
                                 new FakePlayerData(),
                                 (player, node) -> true,
                                 log),
-                        net.ofatech.controlcore.fakes.TestTexts.of(registry, players)),
+                        net.ofatech.controlcore.fakes.TestTexts.of(registry, players),
+                        new net.ofatech.controlcore.application.settings.ModNames()),
                 new SettingPermissionPolicy(
                         new net.ofatech.controlcore.fakes.FakeSettingPermissionStore(),
                         (player, node) -> true,

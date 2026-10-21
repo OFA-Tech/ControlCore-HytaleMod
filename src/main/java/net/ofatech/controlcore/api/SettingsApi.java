@@ -6,6 +6,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingPermission;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.result.Result;
 
 /**
@@ -14,7 +15,7 @@ import net.ofatech.controlcore.domain.result.Result;
  *
  * <pre>{@code
  * Setting<Integer> maxHomes = api.settings()
- *         .register(SettingDefinition.server("homes:max-homes", SettingType.integer(1, 50), 3).named("Max homes"))
+ *         .register(SettingDefinition.server("homes", "max-homes", SettingType.integer(1, 50), 3).named("Max homes"))
  *         .value();
  * int limit = maxHomes.get();
  * }</pre>
@@ -37,6 +38,28 @@ public interface SettingsApi extends SettingsEditor {
 
     /** @return every registered definition, sorted by id */
     List<SettingDefinition<?>> definitions();
+
+    /**
+     * Sets the name a mod's settings and keys are shown under ({@code <name>: <category>}). Without it the mod id
+     * is capitalised: {@code my-mod} is shown as {@code My Mod}.
+     *
+     * @param modId the mod id, the first part of its setting and key ids
+     * @param name the name, for example {@code Text.key("homes.mod_name", "Home Teleports")}; {@code null} goes back
+     *     to the capitalised id
+     * @since API 2.0.0
+     */
+    void setModName(String modId, Text name);
+
+    /** @see #setModName(String, Text) */
+    default void setModName(String modId, String name) {
+        setModName(modId, name == null ? null : Text.of(name));
+    }
+
+    /**
+     * @return the name {@code modId}'s settings and keys are shown under
+     * @since API 2.0.0
+     */
+    Text modName(String modId);
 
     /**
      * Sets who may see and change every setting in a category that has no rule of its own (see

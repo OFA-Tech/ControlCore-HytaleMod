@@ -24,15 +24,15 @@ public final class EmptyHandKeys implements FeatureModule {
 
     public EmptyHandKeys(SettingsApi settings, EmptyHandInput input) {
         this.input = input;
-        this.enabled = settings.register(SettingDefinition.server(ID, SettingType.bool(), true)
+        this.enabled = settings.register(SettingDefinition.server(
+                                "controlcore", "empty-hand-keys", SettingType.bool(), true)
                         .named(Text.key(
                                 "controlcore.settings.empty_hand_keys.name", "Report every key with an empty hand"))
                         .describedAs(Text.key(
                                 "controlcore.settings.empty_hand_keys.desc",
                                 "Right click, abilities 1, 2 and 4 and dodge reach the server with an empty hand (or a"
                                         + " plain block or item), so they can be bound. They still do nothing unless"
-                                        + " bound. Turn off if another mod changes the empty hand."))
-                        .inCategory(Text.key("controlcore.settings.category", "ControlCore")))
+                                        + " bound. Turn off if another mod changes the empty hand.")))
                 .value();
     }
 

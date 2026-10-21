@@ -112,6 +112,7 @@ types.text = texto (hasta {max} caracteres)
 # ---- Key actions ----
 keys.actions.open_preferences.desc = Abre tus preferencias y atajos de teclas.
 keys.actions.open_preferences.name = Abrir mis preferencias
+keys.custom_mod = Atajos personalizados
 keys.changed_server = Las teclas del servidor para {name} ahora son {keys}.
 keys.changed_yours = Tus teclas para {name} ahora son {keys}.
 keys.created = Atajo {id} ({keys}): {runs}.

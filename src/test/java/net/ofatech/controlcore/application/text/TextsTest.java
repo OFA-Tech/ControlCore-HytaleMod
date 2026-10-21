@@ -28,8 +28,13 @@ class TextsTest {
 
     private final RecordingLog log = new RecordingLog();
     private final DomainEventBus bus = new DomainEventBus(log);
-    private final SettingsRegistry registry =
-            new SettingsRegistry(new FakeSettingStore(), new FakePlayerData(), bus, bus, log);
+    private final SettingsRegistry registry = new SettingsRegistry(
+            new FakeSettingStore(),
+            new FakePlayerData(),
+            bus,
+            bus,
+            log,
+            new net.ofatech.controlcore.application.settings.ModNames());
     private final FakePlayers players = new FakePlayers();
     private final BundledTranslations bundled = new BundledTranslations();
     /** ControlCore's files plus a mod that has only an English and a Spanish text. */
@@ -84,7 +89,8 @@ class TextsTest {
     void settingsAndErrorsUseTheirKeys() {
         players.languages.put(ana.id(), "pt-BR");
         var forAna = texts.forPlayer(Optional.of(ana.id()));
-        var definition = SettingDefinition.server("homes:tab", SettingType.choice("Server Configs"), "Server Configs")
+        var definition = SettingDefinition.server(
+                        "homes", "tab", SettingType.choice("Server Configs"), "Server Configs")
                 .named(Text.key("controlcore.settings.panel_start_tab.name", "Start tab"))
                 .optionsKey("controlcore.tabs");
         Error invalid = SettingType.integer(1, 9).parse("70").error();

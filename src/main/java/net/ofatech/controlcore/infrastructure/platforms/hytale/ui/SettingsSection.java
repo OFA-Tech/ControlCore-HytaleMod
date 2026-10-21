@@ -102,7 +102,7 @@ final class SettingsSection {
 
     /** @return the row's category in the viewer's language */
     String category(SettingSnapshot snapshot) {
-        return tr.translate(snapshot.definition().categoryText());
+        return snapshot.definition().heading(tr);
     }
 
     /** @return a choice's option in the viewer's language */
@@ -153,8 +153,8 @@ final class SettingsSection {
         }
         String category = null;
         for (SettingSnapshot snapshot : snapshots) {
-            if (!snapshot.definition().category().equals(category)) {
-                category = snapshot.definition().category();
+            if (!snapshot.definition().heading().equals(category)) {
+                category = snapshot.definition().heading();
                 entries.add(new Heading(category(snapshot)));
             }
             entries.add(new Row(kindOf(snapshot), snapshot));

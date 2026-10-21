@@ -17,20 +17,20 @@ public final class WelcomeSettings {
     private final Setting<Boolean> show;
 
     public WelcomeSettings(SettingsApi settings) {
-        this.message = settings.register(SettingDefinition.server(MESSAGE_ID, SettingType.text(256), "")
-                        .named(Text.key("controlcore.settings.welcome_message.name", "Welcome message"))
-                        .describedAs(Text.key(
-                                "controlcore.settings.welcome_message.desc",
-                                "Sent to players when they join; {player} is replaced by their name. Empty"
-                                        + " sends nothing."))
-                        .inCategory(Text.key("controlcore.settings.category", "ControlCore")))
+        this.message = settings.register(
+                        SettingDefinition.server("controlcore", "welcome-message", SettingType.text(256), "")
+                                .named(Text.key("controlcore.settings.welcome_message.name", "Welcome message"))
+                                .describedAs(Text.key(
+                                        "controlcore.settings.welcome_message.desc",
+                                        "Sent to players when they join; {player} is replaced by their name. Empty"
+                                                + " sends nothing.")))
                 .value();
-        this.show = settings.register(SettingDefinition.player(SHOW_ID, SettingType.bool(), true)
+        this.show = settings.register(SettingDefinition.player(
+                                "controlcore", "show-welcome-message", SettingType.bool(), true)
                         .named(Text.key("controlcore.settings.show_welcome_message.name", "Show welcome message"))
                         .describedAs(Text.key(
                                 "controlcore.settings.show_welcome_message.desc",
-                                "Whether you get the server's welcome message when you join."))
-                        .inCategory(Text.key("controlcore.settings.category", "ControlCore")))
+                                "Whether you get the server's welcome message when you join.")))
                 .value();
     }
 

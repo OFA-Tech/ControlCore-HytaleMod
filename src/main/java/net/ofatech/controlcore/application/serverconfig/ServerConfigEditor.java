@@ -191,7 +191,9 @@ public final class ServerConfigEditor implements SettingsEditor {
     }
 
     private static <T> SettingDefinition<T> server(SettingId id, SettingType<T> type, T defaultValue) {
-        return SettingDefinition.server(id.toString(), type, defaultValue);
+        // The Server Configs tab only has the server's settings: headings are the config.json sections.
+        return SettingDefinition.server(id.namespace(), id.key(), type, defaultValue)
+                .withModName(Text.of(""));
     }
 
     /** Hytale's own description (English), with ControlCore's notes in the player's language. */

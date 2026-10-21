@@ -24,11 +24,9 @@ public final class SettingsText {
                 new StringBuilder(tr.t("controlcore.settings.list.title", "title", title, "count", snapshots.size()));
         String category = null;
         for (SettingSnapshot snapshot : snapshots) {
-            if (!snapshot.definition().category().equals(category)) {
-                category = snapshot.definition().category();
-                text.append("\n[")
-                        .append(tr.translate(snapshot.definition().categoryText()))
-                        .append(']');
+            if (!snapshot.definition().heading().equals(category)) {
+                category = snapshot.definition().heading();
+                text.append("\n[").append(snapshot.definition().heading(tr)).append(']');
             }
             text.append("\n  ").append(line(tr, snapshot));
         }

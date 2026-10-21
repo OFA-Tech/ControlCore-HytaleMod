@@ -303,7 +303,7 @@ class ModRuntimeTest {
         runtime.setup();
         PlayerInfo player = platform.players.join("Player");
         var settings = ControlCoreApi.get().settings();
-        var compact = settings.register(SettingDefinition.player("hud:compact", SettingType.bool(), false))
+        var compact = settings.register(SettingDefinition.player("hud", "compact", SettingType.bool(), false))
                 .value();
 
         var set = platform.commands.run("cc-pref", player, Map.of("id", "hud:compact", "value", "yes"));
