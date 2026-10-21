@@ -11,7 +11,7 @@ $C.@PageOverlay {
   LayoutMode: Middle;
 
   $C.@DecoratedContainer {
-    Anchor: (Width: 760);
+    Anchor: (Width: 1040);
 
     #Title {
       $C.@Title {
@@ -29,27 +29,27 @@ $C.@PageOverlay {
 
         $C.@SmallSecondaryTextButton #ServerTabButton {
           @Text = %controlcore.ui.tabs.serverConfigs;
-          Anchor: (Width: 132, Height: 30, Right: 6);
+          Anchor: (Width: 190, Height: 30, Right: 6);
         }
 
         $C.@SmallSecondaryTextButton #SettingsTabButton {
           @Text = %controlcore.ui.tabs.modSettings;
-          Anchor: (Width: 132, Height: 30, Right: 6);
+          Anchor: (Width: 190, Height: 30, Right: 6);
         }
 
         $C.@SmallSecondaryTextButton #PlayerTabButton {
           @Text = %controlcore.ui.tabs.playerPrefs;
-          Anchor: (Width: 132, Height: 30, Right: 6);
+          Anchor: (Width: 190, Height: 30, Right: 6);
         }
 
         $C.@SmallSecondaryTextButton #KeymapTabButton {
           @Text = %controlcore.ui.tabs.keymaps;
-          Anchor: (Width: 132, Height: 30, Right: 6);
+          Anchor: (Width: 190, Height: 30, Right: 6);
         }
 
         $C.@SmallSecondaryTextButton #ModsTabButton {
           @Text = %controlcore.ui.tabs.mods;
-          Anchor: (Width: 132, Height: 30, Right: 6);
+          Anchor: (Width: 190, Height: 30, Right: 6);
         }
       }
 
@@ -99,7 +99,7 @@ $C.@PageOverlay {
         Group #ServerList {
           LayoutMode: TopScrolling;
           ScrollbarStyle: $C.@DefaultScrollbarStyle;
-          Anchor: (Height: 298);
+          Anchor: (Height: 460);
           Padding: (Right: 10);
         }
       }
@@ -145,7 +145,7 @@ $C.@PageOverlay {
         Group #SettingsList {
           LayoutMode: TopScrolling;
           ScrollbarStyle: $C.@DefaultScrollbarStyle;
-          Anchor: (Height: 298);
+          Anchor: (Height: 460);
           Padding: (Right: 10);
         }
       }
@@ -191,7 +191,7 @@ $C.@PageOverlay {
         Group #PlayerList {
           LayoutMode: TopScrolling;
           ScrollbarStyle: $C.@DefaultScrollbarStyle;
-          Anchor: (Height: 298);
+          Anchor: (Height: 460);
           Padding: (Right: 10);
         }
       }
@@ -338,7 +338,7 @@ $C.@PageOverlay {
           Group #KeymapList {
             LayoutMode: TopScrolling;
             ScrollbarStyle: $C.@DefaultScrollbarStyle;
-            Anchor: (Height: 258);
+            Anchor: (Height: 420);
             Padding: (Right: 10);
           }
         }
@@ -381,7 +381,7 @@ $C.@PageOverlay {
         Group #ModsList {
           LayoutMode: TopScrolling;
           ScrollbarStyle: $C.@DefaultScrollbarStyle;
-          Anchor: (Height: 298);
+          Anchor: (Height: 460);
           Padding: (Right: 10);
         }
       }

@@ -397,3 +397,4 @@ mods.category = Pestaña Mods
 commands.cc-config.desc = Abre los ajustes de un mod
 commands.cc-config.arg.mod = Id del mod (Grupo:Nombre), nombre o prefijo de los ids, por ejemplo controlcore
 commands.cc-mods.desc = Lista los mods del servidor y si están en marcha
+panel.color_picked = Elegido {color}. Pulsa Guardar para usarlo.

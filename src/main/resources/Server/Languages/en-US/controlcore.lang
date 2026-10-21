@@ -397,3 +397,4 @@ mods.category = Mods tab
 commands.cc-config.desc = Open the settings of one mod
 commands.cc-config.arg.mod = Mod id (Group:Name), name or setting id prefix, for example controlcore
 commands.cc-mods.desc = List the server's mods and whether they run
+panel.color_picked = Picked {color}. Press Save to use it.

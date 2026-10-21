@@ -10,7 +10,7 @@ Group {
     Anchor: (Height: 30);
 
     Label #Label {
-      Anchor: (Width: 190, Right: 10);
+      Anchor: (Width: 240, Right: 10);
       Style: (...$C.@DefaultLabelStyle, RenderBold: true, VerticalAlignment: Center, Wrap: true);
     }
 

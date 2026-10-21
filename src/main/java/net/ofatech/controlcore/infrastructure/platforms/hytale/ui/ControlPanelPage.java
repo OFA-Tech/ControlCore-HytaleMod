@@ -60,6 +60,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private static final String TOGGLE_ROW = "Pages/ControlCore/SettingToggleRow.ui";
     private static final String INTEGER_ROW = "Pages/ControlCore/SettingIntegerRow.ui";
     private static final String DECIMAL_ROW = "Pages/ControlCore/SettingDecimalRow.ui";
+    private static final String COLOR_ROW = "Pages/ControlCore/SettingColorRow.ui";
     private static final String LIST_ROW = "Pages/ControlCore/SettingListRow.ui";
     private static final String LIST_ITEM = "Pages/ControlCore/SettingListItem.ui";
     private static final String MOD_ROW = "Pages/ControlCore/ModRow.ui";
@@ -83,6 +84,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     /** The slider was let go: save its value. */
     private static final String SLID = "Slid";
 
+    private static final String PICK = "Pick";
     private static final String ADD_ITEM = "AddItem";
     private static final String REMOVE_ITEM = "RemoveItem";
 
@@ -459,6 +461,20 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                         bar,
                         action(SLID, key, id).append(Action.NUMBER, bar + ".Value"));
             }
+            case COLOR -> {
+                commands.append(key.list, COLOR_ROW);
+                commands.set(input + ".PlaceholderText", section.placeholder(snapshot));
+                events.addEventBinding(
+                        CustomUIEventBindingType.Activating,
+                        element + " #Save",
+                        action(SAVE, key, id).append(Action.VALUE, input + ".Value"));
+                // Only read: setting the picker's value from the server disconnects the client.
+                events.addEventBinding(
+                        CustomUIEventBindingType.ValueChanged,
+                        element + " #Picker",
+                        action(PICK, key, id).append(Action.VALUE, element + " #Picker.Value"),
+                        false);
+            }
             case LIST -> {
                 commands.append(key.list, LIST_ROW);
                 commands.set(input + ".PlaceholderText", section.placeholder(snapshot));
@@ -510,6 +526,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private void handleSettingAction(Section key, SettingsSection section, String name, Action action) {
         if (SLIDE.equals(name)) {
             showSliderText(key, action);
+            return;
+        }
+        if (PICK.equals(name)) {
+            showPickedColor(key, action);
             return;
         }
         if (ADD_ITEM.equals(name) || REMOVE_ITEM.equals(name)) {
@@ -697,7 +717,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             UICommandBuilder commands) {
         String input = element + " #Input";
         switch (kind) {
-            case TEXT, CHOICE -> commands.set(input + ".Value", snapshot.value());
+            case TEXT, CHOICE, COLOR -> commands.set(input + ".Value", snapshot.value());
             case LIST -> commands.set(input + ".Value", "");
             case INTEGER, DECIMAL -> {
                 commands.set(input + ".Value", snapshot.value());
@@ -761,6 +781,34 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         UICommandBuilder update = new UICommandBuilder();
         update.set(key.status + ".Text", result.isSuccess() ? section.saved(result.value()) : tr.error(result.error()));
         sendUpdate(update, false);
+    }
+
+    /** A colour picked in the picker goes into the row's text field; Save stores it. */
+    private void showPickedColor(Section key, Action action) {
+        Integer index = SettingId.parse(action.id == null ? "" : action.id)
+                .map(id -> rowIndexes.get(key).get(id))
+                .orElse(null);
+        String hex = pickedHex(action.value);
+        if (index == null || hex == null) {
+            return;
+        }
+        UICommandBuilder update = new UICommandBuilder();
+        update.set(key.row(index) + " #Input.Value", hex);
+        update.set(key.status + ".Text", tr.t("controlcore.panel.color_picked", "color", hex));
+        sendUpdate(update, false);
+    }
+
+    /** @return {@code #rrggbb} from the picker's value ({@code #rrggbb}, {@code #rrggbbaa} or {@code rrggbb}) */
+    static String pickedHex(String value) {
+        if (value == null) {
+            return null;
+        }
+        String digits = value.strip();
+        digits = digits.startsWith("#") ? digits.substring(1) : digits;
+        if (!digits.matches("[0-9a-fA-F]{6}([0-9a-fA-F]{2})?")) {
+            return null;
+        }
+        return "#" + digits.substring(0, 6).toLowerCase(Locale.ROOT);
     }
 
     /** While the slider moves, the text field shows the value it would save. */
@@ -827,7 +875,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             commands.set(row + " #Badges.Text", mods.badges(entry));
             commands.set(row + " #Description.Text", mods.description(mod));
             commands.set(row + " #Details.Text", mods.details(mod));
-            mod.logo().ifPresent(logo -> commands.set(row + " #ModLogo.Background", "../../" + logo));
+            mod.logo().ifPresent(logo -> commands.set(row + " #ModLogo.Background", logo));
             boolean settingsHere = (entry.hasServerSettings() && tabs.contains(Tab.SETTINGS))
                     || (entry.hasPreferences() && tabs.contains(Tab.PLAYER));
             commands.set(row + " #Settings.Visible", settingsHere);

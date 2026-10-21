@@ -397,3 +397,4 @@ mods.category = Aba Mods
 commands.cc-config.desc = Abre as configurações de um mod
 commands.cc-config.arg.mod = Id do mod (Grupo:Nome), nome ou prefixo dos ids, por exemplo controlcore
 commands.cc-mods.desc = Lista os mods do servidor e se estão rodando
+panel.color_picked = Escolhida {color}. Clique em Salvar para usar.
