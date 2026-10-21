@@ -43,7 +43,8 @@ class LanguageFilesTest {
         collect(Path.of("src/main/java"), ".java", KEY_IN_CODE, used);
         collect(Path.of("src/main/resources/Common/UI/Custom/Pages/ControlCore"), ".ui", UI_KEY, used);
         // keys built at run time from a prefix are checked by their own tests
-        used.removeIf(key -> key.endsWith(".") || key.equals("controlcore.tabs"));
+        used.removeIf(
+                key -> key.endsWith(".") || key.equals("controlcore.tabs") || key.equals("controlcore.hud.rules"));
         assertThat(used).isNotEmpty();
         assertThat(english).containsAll(used);
     }

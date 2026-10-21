@@ -7,7 +7,7 @@ types, so the API survives Hytale updates.
 
 | Type | Purpose |
 |---|---|
-| `ControlCoreApi` | entry point: `get()`, `find()`, `apiVersion()`, `controlPanel()`, `events()`, `settings()`, `keymaps()` (1.3.0); setting permissions (1.4.0); translations (1.5.0); `server(modId, key, ...)` and mod names (2.0.0) |
+| `ControlCoreApi` | entry point: `get()`, `find()`, `apiVersion()`, `controlPanel()`, `events()`, `settings()`, `keymaps()` (1.3.0); setting permissions (1.4.0); translations (1.5.0); `server(modId, key, ...)`, mod names and `huds()` (2.0.0) |
 | `ControlPanelApi` | `isAvailable()`, `open(player, request)` |
 | `ControlCoreEvents` | `subscribe(eventType, listener)` returning a closable `Subscription` |
 | `SettingsApi` (1.1.0) | shared settings registry: `register(definition)`, `definitions()`, `snapshot(scope, player)`, `read` / `write` / `reset` by id, `onAnyChange(listener)` (1.2.0) |
@@ -227,6 +227,35 @@ interaction for right click, abilities 1, 2 and 4 and dodge, so those keys can b
 their own abilities. Turn it off if another mod changes the empty hand (`Server/Item/Unarmed/Interactions`).
 
 ControlCore registers `controlcore:open-preferences` (runs `/prefs`, default `CTRL + F`).
+
+## HUD (API 2.0.0)
+
+Hytale 0.7 shows any number of custom HUDs at once, so ControlCore does not wrap them (MultipleHUD-style mods are no
+longer needed). It manages **what each player sees**:
+
+- **The game's HUD parts** (hotbar, health, stamina, compass, chat, crosshair, kill feed, boss bar and 15 more) are
+  player preferences `controlcore:hud.<part>` under "ControlCore: HUD" in `/prefs`.
+- **Server rules** `controlcore:hud-rule.<part>` (Mod Settings): `Players choose` (default), `Hidden until a player
+  turns it on`, `Always hidden` or `Always shown`.
+- **Hide the whole HUD:** key action `controlcore:toggle-hud` (no default key; bind it in Keymaps), until pressed
+  again or the player leaves.
+- ControlCore only hides parts it was asked to hide and shows back only those, so parts the game turns on or off by
+  itself (for example per game mode) are left alone. A game mode change can show a hidden part again until the next
+  change or join.
+
+Mods register their own HUD; players then turn it on and off in `/prefs` (preference `<mod>:hud.<key>`, under
+"<mod name>: HUD"):
+
+```java
+api.huds().register(HudElement.of("minimap", "map")
+        .displayName(Text.key("minimap.hud.name", "Minimap"))
+        .onShow(player -> showMinimap(player))      // add your CustomUIHud
+        .onHide(player -> removeMinimap(player)));  // remove it
+```
+
+ControlCore calls `onShow` when the player joins (if visible), when they turn it on and after "hide the whole HUD"
+ends; `onHide` the other way round. Don't show the HUD yourself on join. `.hiddenByDefault()` makes it opt-in;
+`huds().isVisible(player, id)` tells you the current state.
 
 ## Using it from another mod
 

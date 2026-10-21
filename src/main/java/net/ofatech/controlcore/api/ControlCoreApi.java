@@ -50,4 +50,11 @@ public interface ControlCoreApi {
      * @since 1.3.0
      */
     KeymapsApi keymaps();
+
+    /**
+     * Players' HUD: the game's HUD parts and mods' HUDs players turn on and off.
+     *
+     * @since 2.0.0
+     */
+    HudApi huds();
 }

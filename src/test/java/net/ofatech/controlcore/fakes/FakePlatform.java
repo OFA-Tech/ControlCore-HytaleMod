@@ -42,6 +42,11 @@ public final class FakePlatform implements Platform {
     public final FakeSettingPermissionStore settingPermissions = new FakeSettingPermissionStore();
     /** Last value ControlCore asked the empty hand to report keys with; null until asked. */
     public volatile Boolean emptyHandKeys;
+    /** Per player: the HUD parts hidden now, after every update ControlCore sent. */
+    public final java.util.Map<
+                    net.ofatech.controlcore.domain.model.PlayerId,
+                    java.util.Set<net.ofatech.controlcore.domain.model.hud.HudPart>>
+            hiddenHud = new java.util.concurrent.ConcurrentHashMap<>();
     /** Permission nodes players do not have; everything else is granted. */
     public final java.util.Set<String> deniedNodes = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
@@ -76,6 +81,12 @@ public final class FakePlatform implements Platform {
         binder.bind(net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore.class, customKeyBinds);
         binder.bind(net.ofatech.controlcore.domain.ports.config.SettingPermissionStore.class, settingPermissions);
         binder.bind(net.ofatech.controlcore.domain.ports.game.EmptyHandInput.class, on -> emptyHandKeys = on);
+        binder.bind(net.ofatech.controlcore.domain.ports.game.HudDisplay.class, (player, hide, show) -> {
+            var hidden = hiddenHud.computeIfAbsent(
+                    player, key -> java.util.EnumSet.noneOf(net.ofatech.controlcore.domain.model.hud.HudPart.class));
+            hidden.removeAll(show);
+            hidden.addAll(hide);
+        });
         binder.bind(InputProbe.class, new InputProbe() {
             @Override
             public boolean toggle(net.ofatech.controlcore.domain.model.PlayerId player) {
