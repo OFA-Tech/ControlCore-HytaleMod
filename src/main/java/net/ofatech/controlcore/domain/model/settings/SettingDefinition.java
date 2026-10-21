@@ -31,6 +31,8 @@ import net.ofatech.controlcore.domain.result.Result;
  * @param modNameText the mod's name in headings; defaults to the mod id capitalised ({@code my-mod} is
  *     {@code My Mod}), mods change it with {@code SettingsApi.setModName} (since API 2.0.0)
  * @param optionsKey key prefix that translates a choice's options, see {@link #optionsKey(String)} (since API 1.5.0)
+ * @param colorSetting a colour setting shown in this text setting's row, see {@link #coloredBy(String)} (since
+ *     API 2.0.0)
  * @param <T> Java type of the value
  */
 public record SettingDefinition<T>(
@@ -43,7 +45,8 @@ public record SettingDefinition<T>(
         Text categoryText,
         Text modNameText,
         SettingPermission permission,
-        Optional<String> optionsKey) {
+        Optional<String> optionsKey,
+        Optional<SettingId> colorSetting) {
 
     public SettingDefinition {
         Guard.notNull(id, "id");
@@ -58,6 +61,7 @@ public record SettingDefinition<T>(
         optionsKey = optionsKey == null
                 ? Optional.empty()
                 : optionsKey.map(String::strip).filter(k -> !k.isEmpty());
+        colorSetting = colorSetting == null ? Optional.empty() : colorSetting;
         Result<T> valid = type.validate(defaultValue);
         if (valid.isFailure()) {
             throw new DomainException("Default of " + id + ": " + valid.error().description());
@@ -84,6 +88,7 @@ public record SettingDefinition<T>(
                 Text.of(category),
                 Text.of(defaultModName(id.namespace())),
                 permission,
+                Optional.empty(),
                 Optional.empty());
     }
 
@@ -147,7 +152,8 @@ public record SettingDefinition<T>(
                 categoryText,
                 modNameText,
                 permission,
-                optionsKey);
+                optionsKey,
+                colorSetting);
     }
 
     /** @return a copy with this description (shown as it is) */
@@ -158,7 +164,17 @@ public record SettingDefinition<T>(
     /** @since API 1.5.0 */
     public SettingDefinition<T> describedAs(Text text) {
         return new SettingDefinition<>(
-                id, type, defaultValue, scope, nameText, text, categoryText, modNameText, permission, optionsKey);
+                id,
+                type,
+                defaultValue,
+                scope,
+                nameText,
+                text,
+                categoryText,
+                modNameText,
+                permission,
+                optionsKey,
+                colorSetting);
     }
 
     /** @return a copy in this category (shown as it is) */
@@ -169,7 +185,17 @@ public record SettingDefinition<T>(
     /** @since API 1.5.0 */
     public SettingDefinition<T> inCategory(Text name) {
         return new SettingDefinition<>(
-                id, type, defaultValue, scope, nameText, descriptionText, name, modNameText, permission, optionsKey);
+                id,
+                type,
+                defaultValue,
+                scope,
+                nameText,
+                descriptionText,
+                name,
+                modNameText,
+                permission,
+                optionsKey,
+                colorSetting);
     }
 
     /**
@@ -189,13 +215,24 @@ public record SettingDefinition<T>(
                 categoryText,
                 modNameText,
                 permission,
-                Optional.ofNullable(prefix));
+                Optional.ofNullable(prefix),
+                colorSetting);
     }
 
     /** @return a copy with this default */
     public SettingDefinition<T> withDefault(T value) {
         return new SettingDefinition<>(
-                id, type, value, scope, nameText, descriptionText, categoryText, modNameText, permission, optionsKey);
+                id,
+                type,
+                value,
+                scope,
+                nameText,
+                descriptionText,
+                categoryText,
+                modNameText,
+                permission,
+                optionsKey,
+                colorSetting);
     }
 
     /**
@@ -229,7 +266,40 @@ public record SettingDefinition<T>(
     /** @since API 1.4.0 */
     public SettingDefinition<T> withPermission(SettingPermission rule) {
         return new SettingDefinition<>(
-                id, type, defaultValue, scope, nameText, descriptionText, categoryText, modNameText, rule, optionsKey);
+                id,
+                type,
+                defaultValue,
+                scope,
+                nameText,
+                descriptionText,
+                categoryText,
+                modNameText,
+                rule,
+                optionsKey,
+                colorSetting);
+    }
+
+    /**
+     * Shows a colour setting in this text setting's row: one line with a colour picker next to the text field, and
+     * the colour setting is not listed on its own. Use it for a message and the colour it is sent in.
+     *
+     * @param colorSettingId id of a {@link SettingType#color()} setting with the same scope, for example
+     *     {@code homes:welcome-color}
+     * @since API 2.0.0
+     */
+    public SettingDefinition<T> coloredBy(String colorSettingId) {
+        return new SettingDefinition<>(
+                id,
+                type,
+                defaultValue,
+                scope,
+                nameText,
+                descriptionText,
+                categoryText,
+                modNameText,
+                permission,
+                optionsKey,
+                Optional.of(SettingId.of(colorSettingId)));
     }
 
     /** @return the display name in English */
@@ -277,7 +347,17 @@ public record SettingDefinition<T>(
      */
     public SettingDefinition<T> withModName(Text name) {
         return new SettingDefinition<>(
-                id, type, defaultValue, scope, nameText, descriptionText, categoryText, name, permission, optionsKey);
+                id,
+                type,
+                defaultValue,
+                scope,
+                nameText,
+                descriptionText,
+                categoryText,
+                name,
+                permission,
+                optionsKey,
+                colorSetting);
     }
 
     /** @return {@code modId} as a name: {@code my-mod} and {@code my_mod} become {@code My Mod} */

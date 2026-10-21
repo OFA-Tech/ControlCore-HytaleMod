@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Added (Mods tab)
+- **Mods tab** for everyone (`/open-admin-config` and `/prefs`): every mod and asset pack with logo, version,
+  authors, description, website and badges (asset pack, off, failed, on/off after restart). Search plus a filter
+  (mods, running, turned off, with settings or keys, with assets, everything incl. Hytale's own, hidden by default).
+  **Settings** / **Keys** buttons jump to that mod's rows. Admins can turn mods on or off from the next start
+  (saved in `config.json` `Mods`; ControlCore and Hytale's own can't be turned off) and read a mod's JSON config
+  files (read-only). Pending mod changes join the restart reminder.
+- **Mod logos** compatible with Better Modlist and MAC: `Common/UI/Custom/<Group>_<Name>.png` in the mod's assets.
+- `/cc-config <mod>` opens the panel on one mod's settings; `/cc-mods` lists mods in chat/console.
+- Setting `controlcore:mods-hidden`: mods players don't see in the Mods tab.
+- Setting types `SettingType.color()` (hex field plus a colour picker that fills it, `#rrggbb`) and `SettingType.textList(maxItems, maxItemLength)` (items
+  with Add/Remove). New setting `controlcore:welcome-message-color`, shown in the welcome message's row. `SettingDefinition.coloredBy(id)` puts a colour setting in a text setting's row (one line, one Save and Default).
 ### Added
 - **Sliders:** whole-number and decimal settings with a range show a slider next to the text field (the server's
   config included). Dragging shows the value in the field; letting go saves it. Ranges wider than 1,000,000 keep

@@ -20,6 +20,7 @@ import net.ofatech.controlcore.domain.ports.game.PlayerInput;
 import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.game.Scheduler;
 import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
+import net.ofatech.controlcore.domain.ports.mods.ModCatalog;
 import net.ofatech.controlcore.domain.ports.mods.ModLookup;
 import net.ofatech.controlcore.domain.ports.platform.Platform;
 import net.ofatech.controlcore.domain.ports.platform.PortBinder;
@@ -41,6 +42,7 @@ import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleEmpty
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleInputProbe;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytalePlayerInput;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.log.HytaleLog;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.mods.HytaleModCatalog;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.mods.HytaleModLookup;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytaleHudDisplay;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytaleMessenger;
@@ -87,7 +89,9 @@ public final class HytalePlatform implements Platform {
                 CommandRegistrar.class,
                 new HytaleCommandRegistrar(plugin.getCommandRegistry(), plugin.getBasePermission(), log));
         binder.bind(ModLookup.class, new HytaleModLookup());
-        binder.bind(ServerConfiguration.class, new HytaleServerConfiguration(log));
+        HytaleServerConfiguration serverConfiguration = new HytaleServerConfiguration(log);
+        binder.bind(ServerConfiguration.class, serverConfiguration);
+        binder.bind(ModCatalog.class, new HytaleModCatalog(serverConfiguration, log));
         binder.bind(ControlPanelView.class, new HytaleControlPanelView(log));
         binder.bind(HudDisplay.class, new HytaleHudDisplay(log));
         binder.bind(InputProbe.class, new HytaleInputProbe(log));

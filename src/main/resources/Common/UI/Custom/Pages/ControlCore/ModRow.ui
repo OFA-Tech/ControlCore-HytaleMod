@@ -1,0 +1,96 @@
+$C = "../../Common.ui";
+
+// One mod in the Mods tab. Appended by ControlPanelPage, which fills the texts, shows the badges and buttons
+// that apply and sets #ModLogo.Background when the mod ships a logo.
+Group {
+  LayoutMode: Top;
+  Anchor: (Bottom: 8);
+  Background: $C.@InputBoxBackground;
+  Padding: (Full: 6);
+
+  Group {
+    LayoutMode: Left;
+
+    Group #ModLogo {
+      Anchor: (Width: 64, Height: 64, Right: 10);
+      Background: "../../ControlCore_ModIcon.png";
+    }
+
+    Group {
+      LayoutMode: Top;
+      FlexWeight: 1;
+
+      Group {
+        LayoutMode: Left;
+        Anchor: (Height: 22);
+
+        Label #Name {
+          Style: (...$C.@DefaultLabelStyle, RenderBold: true, FontSize: 16, TextColor: #e8c36a);
+          Anchor: (Right: 8);
+        }
+
+        Label #Version {
+          Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #c9ced8, VerticalAlignment: Center);
+          Anchor: (Right: 8);
+        }
+
+        Label #Badges {
+          Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #E8A93B, VerticalAlignment: Center);
+        }
+      }
+
+      Label #Description {
+        Style: (...$C.@DefaultLabelStyle, FontSize: 13, Wrap: true);
+      }
+
+      Label #Details {
+        Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #878e9c, Wrap: true);
+      }
+
+      Group {
+        LayoutMode: Left;
+        Anchor: (Height: 32, Top: 4);
+
+        $C.@SmallSecondaryTextButton #Settings {
+          @Text = %controlcore.ui.mods.settings;
+          Anchor: (Width: 110, Height: 28, Right: 6);
+        }
+
+        $C.@SmallSecondaryTextButton #Keys {
+          @Text = %controlcore.ui.mods.keys;
+          Anchor: (Width: 90, Height: 28, Right: 6);
+        }
+
+        $C.@SmallTertiaryTextButton #Config {
+          @Text = %controlcore.ui.mods.config;
+          Anchor: (Width: 130, Height: 28, Right: 6);
+        }
+
+        Group {
+          FlexWeight: 1;
+        }
+
+        Group #EnabledBox {
+          LayoutMode: Left;
+          Anchor: (Height: 28);
+
+          Label {
+            Text: %controlcore.ui.mods.enabled;
+            Style: (...$C.@DefaultLabelStyle, VerticalAlignment: Center);
+            Anchor: (Right: 6);
+          }
+
+          $C.@CheckBox #Enabled {
+            Anchor: (Width: 26, Height: 26);
+          }
+        }
+      }
+    }
+  }
+
+  Label #ConfigText {
+    Visible: false;
+    Anchor: (Top: 6);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #c9ced8, Wrap: true);
+  }
+}

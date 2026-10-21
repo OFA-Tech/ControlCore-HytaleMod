@@ -161,4 +161,21 @@ class SettingsSectionTest {
                 .isEqualTo("5");
         assertThat(slider.position("oops")).isEqualTo(0);
     }
+
+    @Test
+    void aMessageAndItsColourShareOneRow() {
+        registry.register(SettingDefinition.server("homes", "greeting", SettingType.text(64), "Hi")
+                .coloredBy("homes:greeting-color"));
+        registry.register(SettingDefinition.server("homes", "greeting-color", SettingType.color(), "#ffaa00"));
+        registry.register(SettingDefinition.server("homes", "other-color", SettingType.color(), "#ffffff"));
+
+        var rows = section(SettingScope.SERVER).entries().stream()
+                .filter(entry -> entry instanceof SettingsSection.Row)
+                .map(entry -> (SettingsSection.Row) entry)
+                .toList();
+
+        assertThat(rows).extracting(row -> row.id().toString()).containsExactly("homes:greeting", "homes:other-color");
+        assertThat(rows.get(0).color()).map(color -> color.id().toString()).contains("homes:greeting-color");
+        assertThat(rows.get(1).color()).isEmpty();
+    }
 }

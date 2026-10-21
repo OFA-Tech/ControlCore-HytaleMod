@@ -11,7 +11,7 @@ $C.@PageOverlay {
   LayoutMode: Middle;
 
   $C.@DecoratedContainer {
-    Anchor: (Width: 760);
+    Anchor: (Width: 1040);
 
     #Title {
       $C.@Title {
@@ -29,22 +29,27 @@ $C.@PageOverlay {
 
         $C.@SmallSecondaryTextButton #ServerTabButton {
           @Text = %controlcore.ui.tabs.serverConfigs;
-          Anchor: (Width: 160, Height: 30, Right: 6);
+          Anchor: (Width: 190, Height: 30, Right: 6);
         }
 
         $C.@SmallSecondaryTextButton #SettingsTabButton {
           @Text = %controlcore.ui.tabs.modSettings;
-          Anchor: (Width: 160, Height: 30, Right: 6);
+          Anchor: (Width: 190, Height: 30, Right: 6);
         }
 
         $C.@SmallSecondaryTextButton #PlayerTabButton {
           @Text = %controlcore.ui.tabs.playerPrefs;
-          Anchor: (Width: 160, Height: 30, Right: 6);
+          Anchor: (Width: 190, Height: 30, Right: 6);
         }
 
         $C.@SmallSecondaryTextButton #KeymapTabButton {
           @Text = %controlcore.ui.tabs.keymaps;
-          Anchor: (Width: 160, Height: 30, Right: 6);
+          Anchor: (Width: 190, Height: 30, Right: 6);
+        }
+
+        $C.@SmallSecondaryTextButton #ModsTabButton {
+          @Text = %controlcore.ui.tabs.mods;
+          Anchor: (Width: 190, Height: 30, Right: 6);
         }
       }
 
@@ -94,7 +99,7 @@ $C.@PageOverlay {
         Group #ServerList {
           LayoutMode: TopScrolling;
           ScrollbarStyle: $C.@DefaultScrollbarStyle;
-          Anchor: (Height: 298);
+          Anchor: (Height: 460);
           Padding: (Right: 10);
         }
       }
@@ -140,7 +145,7 @@ $C.@PageOverlay {
         Group #SettingsList {
           LayoutMode: TopScrolling;
           ScrollbarStyle: $C.@DefaultScrollbarStyle;
-          Anchor: (Height: 298);
+          Anchor: (Height: 460);
           Padding: (Right: 10);
         }
       }
@@ -186,7 +191,7 @@ $C.@PageOverlay {
         Group #PlayerList {
           LayoutMode: TopScrolling;
           ScrollbarStyle: $C.@DefaultScrollbarStyle;
-          Anchor: (Height: 298);
+          Anchor: (Height: 460);
           Padding: (Right: 10);
         }
       }
@@ -333,9 +338,51 @@ $C.@PageOverlay {
           Group #KeymapList {
             LayoutMode: TopScrolling;
             ScrollbarStyle: $C.@DefaultScrollbarStyle;
-            Anchor: (Height: 258);
+            Anchor: (Height: 420);
             Padding: (Right: 10);
           }
+        }
+      }
+
+      Group #ModsTab {
+        LayoutMode: Top;
+        Visible: false;
+
+        Label {
+          Text: %controlcore.ui.tabs.mods;
+          Style: @SectionTitleStyle;
+          Anchor: (Bottom: 4);
+        }
+
+        Label {
+          Text: %controlcore.ui.mods.intro;
+          Style: @NoteStyle;
+          Anchor: (Bottom: 8);
+        }
+
+        Group {
+          LayoutMode: Left;
+          Anchor: (Height: 34, Bottom: 8);
+
+          $C.@DropdownBox #ModsSearchFilter {
+            Anchor: (Width: 220, Right: 6);
+          }
+
+          $C.@TextField #ModsSearch {
+            FlexWeight: 1;
+          }
+        }
+
+        Label #ModsStatus {
+          Style: @StatusStyle;
+          Anchor: (Bottom: 8);
+        }
+
+        Group #ModsList {
+          LayoutMode: TopScrolling;
+          ScrollbarStyle: $C.@DefaultScrollbarStyle;
+          Anchor: (Height: 460);
+          Padding: (Right: 10);
         }
       }
 

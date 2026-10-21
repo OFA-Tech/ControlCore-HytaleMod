@@ -56,7 +56,7 @@ ControlCoreApi.find().ifPresent(api -> {
   The mod name is the mod id capitalised (`my-mod` and `my_mod` become `My Mod`) until you set one with
   `api.settings().setModName(modId, name)` (plain text or a `Text.key`); key actions use the same name.
   `inCategory` is only the group inside your mod.
-- **Types:** `SettingType.bool()`, `integer(min, max)`, `decimal(min, max)`, `text(maxLength)`,
+- **Types:** `SettingType.bool()`, `integer(min, max)`, `decimal(min, max)`, `text(maxLength)`, `color()` (`#rrggbb`, text field plus a colour picker), `textList(maxItems, maxItemLength)` (comma-separated, Add/Remove rows),
   `choice(options...)`. The default must be valid, or `SettingDefinition` throws.
 - **Scopes:** `SERVER` (one value, changed by admins) and `PLAYER` (each player's own preference; the
   default applies until they choose).
@@ -148,6 +148,25 @@ keys.go_home = Ir para casa
   `Error.notFound("Homes.Unknown", Text.key("homes.errors.unknown", "There is no home {name}.").with("name", name))`.
 - The server config keys' names and section headings are translated; Hytale's own descriptions stay in
   English.
+
+### A text and its colour on one line
+
+`.coloredBy("<mod>:<color-setting>")` on a text setting shows a `SettingType.color()` setting of the same scope in
+the text's row: colour picker, text field, one Save and one Default for both. The colour setting is then not listed
+on its own (it still has its own id, value and commands).
+
+```java
+api.settings().register(SettingDefinition.server("homes", "greeting-color", SettingType.color(), "#ffaa00"));
+api.settings().register(SettingDefinition.server("homes", "greeting", SettingType.text(128), "Welcome home!")
+        .coloredBy("homes:greeting-color"));
+```
+
+## Mods tab and logos
+
+Every mod appears in the panel's **Mods** tab. Ship a logo as `Common/UI/Custom/<Group>_<Name>.png` (the same
+path Better Modlist and MAC use; 96x96 shown at 64x64). The tab links a mod to its settings when their ids start
+with the mod's name (`homes:` for `Acme:Homes`) or the name set with `setModName`. Players open one mod's
+settings with `/cc-config <mod>`.
 
 ## Key actions
 

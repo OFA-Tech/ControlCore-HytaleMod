@@ -18,7 +18,9 @@ public sealed interface SettingType<T>
                 SettingType.IntegerType,
                 SettingType.DecimalType,
                 SettingType.TextType,
-                SettingType.ChoiceType {
+                SettingType.ChoiceType,
+                SettingType.ColorType,
+                SettingType.TextListType {
 
     /** Error code for a value that does not fit the type. */
     String INVALID_VALUE = "Settings.InvalidValue";
@@ -46,6 +48,25 @@ public sealed interface SettingType<T>
     /** @return one of the given options (matched case-insensitively, stored as written here) */
     static SettingType<String> choice(String... options) {
         return new ChoiceType(List.of(options));
+    }
+
+    /**
+     * @return a colour written {@code #rrggbb} (also accepts {@code rrggbb} and {@code #rgb}; stored lower case)
+     * @since API 2.0.0
+     */
+    static SettingType<String> color() {
+        return new ColorType();
+    }
+
+    /**
+     * @return a list of short texts, for example player names; written comma-separated ({@code a, b, c}), so items
+     *     cannot contain commas
+     * @param maxItems most items allowed
+     * @param maxItemLength longest item allowed
+     * @since API 2.0.0
+     */
+    static SettingType<List<String>> textList(int maxItems, int maxItemLength) {
+        return new TextListType(maxItems, maxItemLength);
     }
 
     /** @return the Java type of the values */
@@ -298,6 +319,122 @@ public sealed interface SettingType<T>
         @Override
         public Text describeText() {
             return Text.key("controlcore.types.choice", describe()).with("options", String.join(", ", options));
+        }
+    }
+
+    /**
+     * A colour, {@code #rrggbb}.
+     *
+     * @since API 2.0.0
+     */
+    record ColorType() implements SettingType<String> {
+
+        private static final java.util.regex.Pattern HEX =
+                java.util.regex.Pattern.compile("#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})");
+
+        @Override
+        public Class<String> valueType() {
+            return String.class;
+        }
+
+        @Override
+        public Result<String> parse(String text) {
+            String wanted = text == null ? "" : text.strip();
+            java.util.regex.Matcher match = HEX.matcher(wanted);
+            if (!match.matches()) {
+                return invalid(text, this);
+            }
+            String digits = match.group(1).toLowerCase(Locale.ROOT);
+            if (digits.length() == 3) {
+                StringBuilder full = new StringBuilder();
+                for (char digit : digits.toCharArray()) {
+                    full.append(digit).append(digit);
+                }
+                digits = full.toString();
+            }
+            return Result.success("#" + digits);
+        }
+
+        @Override
+        public Result<String> validate(String value) {
+            return value != null && value.matches("#[0-9a-f]{6}") ? Result.success(value) : invalid(value, this);
+        }
+
+        @Override
+        public String describe() {
+            return "colour (#rrggbb)";
+        }
+
+        @Override
+        public Text describeText() {
+            return Text.key("controlcore.types.color", describe());
+        }
+    }
+
+    /**
+     * A list of short texts.
+     *
+     * @param maxItems most items allowed
+     * @param maxItemLength longest item allowed
+     * @since API 2.0.0
+     */
+    record TextListType(int maxItems, int maxItemLength) implements SettingType<List<String>> {
+
+        /** Separates items when the list is written as text. */
+        public static final String SEPARATOR = ",";
+
+        public TextListType {
+            if (maxItems < 1 || maxItemLength < 1) {
+                throw new DomainException("maxItems and maxItemLength must be at least 1");
+            }
+        }
+
+        @Override
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        public Class<List<String>> valueType() {
+            return (Class) List.class;
+        }
+
+        @Override
+        public Result<List<String>> parse(String text) {
+            List<String> items = new java.util.ArrayList<>();
+            for (String part : (text == null ? "" : text).split(SEPARATOR)) {
+                String item = part.strip();
+                if (!item.isEmpty()) {
+                    items.add(item);
+                }
+            }
+            return validate(items);
+        }
+
+        @Override
+        public Result<List<String>> validate(List<String> value) {
+            if (value == null
+                    || value.size() > maxItems
+                    || value.stream()
+                            .anyMatch(item -> item == null
+                                    || item.isBlank()
+                                    || item.length() > maxItemLength
+                                    || item.contains(SEPARATOR)
+                                    || !item.equals(item.strip()))) {
+                return invalid(value == null ? "null" : String.join(SEPARATOR + " ", value), this);
+            }
+            return Result.success(List.copyOf(value));
+        }
+
+        @Override
+        public String format(List<String> value) {
+            return String.join(SEPARATOR + " ", value);
+        }
+
+        @Override
+        public String describe() {
+            return "list (up to " + maxItems + " items, separated by commas)";
+        }
+
+        @Override
+        public Text describeText() {
+            return Text.key("controlcore.types.text_list", describe()).with("max", maxItems);
         }
     }
 }

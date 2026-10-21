@@ -1,0 +1,17 @@
+$C = "../../Common.ui";
+
+// One item of a list setting. Appended by ControlPanelPage into a list row's #Items.
+Group {
+  LayoutMode: Left;
+  Anchor: (Height: 30, Bottom: 2);
+
+  Label #Text {
+    FlexWeight: 1;
+    Style: (...$C.@DefaultLabelStyle, VerticalAlignment: Center);
+  }
+
+  $C.@SmallTertiaryTextButton #Remove {
+    @Text = %controlcore.ui.remove;
+    Anchor: (Width: 90, Height: 28, Left: 6);
+  }
+}

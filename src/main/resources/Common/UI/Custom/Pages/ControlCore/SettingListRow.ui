@@ -1,0 +1,41 @@
+$C = "../../Common.ui";
+
+// One list setting: its items with Remove buttons, and a field to add one. Appended by ControlPanelPage.
+Group {
+  LayoutMode: Top;
+  Anchor: (Bottom: 10);
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Height: 38);
+
+    Label #Label {
+      Anchor: (Width: 240, Right: 10);
+      Style: (...$C.@DefaultLabelStyle, RenderBold: true, VerticalAlignment: Center, Wrap: true);
+    }
+
+    $C.@TextField #Input {
+      FlexWeight: 1;
+    }
+
+    $C.@SmallSecondaryTextButton #Add {
+      @Text = %controlcore.ui.add;
+      Anchor: (Width: 80, Height: 32, Left: 6);
+    }
+
+    $C.@SmallTertiaryTextButton #Reset {
+      @Text = %controlcore.ui.default;
+      Anchor: (Width: 90, Height: 32, Left: 6);
+    }
+  }
+
+  Group #Items {
+    LayoutMode: Top;
+    Anchor: (Left: 250, Top: 4);
+  }
+
+  Label #Description {
+    Anchor: (Top: 2);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, Wrap: true);
+  }
+}

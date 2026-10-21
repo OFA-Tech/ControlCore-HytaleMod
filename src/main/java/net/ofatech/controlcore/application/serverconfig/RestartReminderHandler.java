@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import net.ofatech.controlcore.application.component.ModEventHandler;
+import net.ofatech.controlcore.application.mods.ModsEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.event.PlayerJoined;
@@ -12,7 +13,7 @@ import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.game.Messenger;
 
-/** Tells admins who join which server config changes still wait for a restart. */
+/** Tells admins who join which server config and mod changes still wait for a restart. */
 @SuppressWarnings("rawtypes") // AutoService cannot name generic interfaces exactly
 @AutoService(ModEventHandler.class)
 public final class RestartReminderHandler implements ModEventHandler<PlayerJoined> {
@@ -21,13 +22,19 @@ public final class RestartReminderHandler implements ModEventHandler<PlayerJoine
     private final SettingPermissionPolicy permissions;
     private final Messenger messenger;
     private final Texts texts;
+    private final ModsEditor mods;
 
     public RestartReminderHandler(
-            ServerConfigEditor serverConfig, SettingPermissionPolicy permissions, Messenger messenger, Texts texts) {
+            ServerConfigEditor serverConfig,
+            SettingPermissionPolicy permissions,
+            Messenger messenger,
+            Texts texts,
+            ModsEditor mods) {
         this.serverConfig = serverConfig;
         this.permissions = permissions;
         this.messenger = messenger;
         this.texts = texts;
+        this.mods = mods;
     }
 
     @Override
@@ -37,8 +44,12 @@ public final class RestartReminderHandler implements ModEventHandler<PlayerJoine
 
     @Override
     public void handle(PlayerJoined event) {
-        List<Text> names = serverConfig.pendingRestart();
-        if (names.isEmpty() || !permissions.isAdmin(event.player().id())) {
+        if (!permissions.isAdmin(event.player().id())) {
+            return;
+        }
+        List<Text> names = new java.util.ArrayList<>(serverConfig.pendingRestart());
+        names.addAll(mods.pendingRestart());
+        if (names.isEmpty()) {
             return;
         }
         Translator tr = texts.forPlayer(Optional.of(event.player().id()));

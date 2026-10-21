@@ -60,6 +60,16 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private static final String TOGGLE_ROW = "Pages/ControlCore/SettingToggleRow.ui";
     private static final String INTEGER_ROW = "Pages/ControlCore/SettingIntegerRow.ui";
     private static final String DECIMAL_ROW = "Pages/ControlCore/SettingDecimalRow.ui";
+    private static final String COLOR_ROW = "Pages/ControlCore/SettingColorRow.ui";
+    private static final String TEXT_COLOR_ROW = "Pages/ControlCore/SettingTextColorRow.ui";
+    private static final String LIST_ROW = "Pages/ControlCore/SettingListRow.ui";
+    private static final String LIST_ITEM = "Pages/ControlCore/SettingListItem.ui";
+    private static final String MOD_ROW = "Pages/ControlCore/ModRow.ui";
+    private static final String MODS_SEARCH = "ModsSearch";
+    private static final String MOD_SETTINGS = "ModSettings";
+    private static final String MOD_KEYS = "ModKeys";
+    private static final String MOD_CONFIG = "ModConfig";
+    private static final String MOD_ENABLE = "ModEnable";
     private static final String CHOICE_ROW = "Pages/ControlCore/SettingChoiceRow.ui";
     private static final String INFO_ROW = "Pages/ControlCore/SettingInfoRow.ui";
     private static final String CUSTOM_BIND_ROW = "Pages/ControlCore/SettingCustomBindRow.ui";
@@ -75,6 +85,15 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     /** The slider was let go: save its value. */
     private static final String SLID = "Slid";
 
+    private static final String PICK = "Pick";
+    /** A text row with its colour: the picker only shows a hint until Save. */
+    private static final String PICK_INLINE = "PickInline";
+
+    private static final String SAVE_COLORED = "SaveColored";
+    private static final String RESET_COLORED = "ResetColored";
+    private static final String ADD_ITEM = "AddItem";
+    private static final String REMOVE_ITEM = "RemoveItem";
+
     private static final String ADD_BIND = "AddBind";
     private static final String EDIT_BIND = "EditBind";
     private static final String REMOVE_BIND = "RemoveBind";
@@ -87,7 +106,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         SERVER(ControlPanelTab.SERVER_CONFIGS, "#ServerTab", "#ServerTabButton"),
         SETTINGS(ControlPanelTab.MOD_SETTINGS, "#SettingsTab", "#SettingsTabButton"),
         PLAYER(ControlPanelTab.PLAYER_PREFS, "#PlayerTab", "#PlayerTabButton"),
-        KEYMAP(ControlPanelTab.KEYMAPS, "#KeymapTab", "#KeymapTabButton");
+        KEYMAP(ControlPanelTab.KEYMAPS, "#KeymapTab", "#KeymapTabButton"),
+        MODS(ControlPanelTab.MODS, "#ModsTab", "#ModsTabButton");
 
         private final ControlPanelTab tab;
         private final String group;
@@ -113,6 +133,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 case SERVER, SETTINGS -> request.includeServerSettings();
                 case PLAYER -> request.includePlayerPreferences();
                 case KEYMAP -> request.includeRegisteredActions();
+                case MODS -> true;
             };
         }
     }
@@ -146,6 +167,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private final Set<Tab> tabs = EnumSet.noneOf(Tab.class);
     private final Map<Section, SettingsSection> sections = new EnumMap<>(Section.class);
     private final Map<Section, Map<SettingId, Integer>> rowIndexes = new EnumMap<>(Section.class);
+    /** Colour settings shown inside a text row (same keys as {@link #shown}). */
+    private final Set<String> inlineColors = new java.util.HashSet<>();
     /** Value each row currently shows, to skip change notifications the panel caused itself (world thread). */
     private final Map<String, String> shown = new HashMap<>();
     /** Latest snapshot of each row (same keys as {@link #shown}), used to filter rows by the search. */
@@ -158,6 +181,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private final List<Subscription> subscriptions = new CopyOnWriteArrayList<>();
     private final Translator tr;
     private final Supplier<List<Text>> pendingRestart;
+    private final ModsSection mods;
+    /** Mods whose read-only config text is open in the Mods tab. */
+    private final Set<String> openConfigs = new java.util.HashSet<>();
+
     private Tab selected;
     /** Admin panel only: whether the Keymaps tab edits the server's keys (else the viewer's own). */
     private boolean editingServerKeys = true;
@@ -167,6 +194,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         this.log = log;
         this.tr = content.translator();
         this.pendingRestart = content.pendingRestart();
+        this.mods = new ModsSection(content.mods(), tr);
         this.customKeyBinds = content.customKeyBinds();
         ControlPanelRequest shownSections = request.isEmpty() ? ControlPanelRequest.PLAYER_PREFERENCES : request;
         this.canAddBinds = content.manageKeys() && shownSections.includeRegisteredActions();
@@ -226,6 +254,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                             tr.t("controlcore.panel.empty.server_keymaps"),
                             tr));
         }
+        content.focus().ifPresent(this::focusMod);
     }
 
     @Override
@@ -271,6 +300,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             events.addEventBinding(CustomUIEventBindingType.ValueChanged, match, search);
             applySearch(key, section, commands, false);
         });
+        buildMods(commands, events);
         for (Tab tab : Tab.values()) {
             commands.set(tab.button + ".Visible", tabs.contains(tab));
         }
@@ -347,6 +377,17 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             editBind(action.id);
         } else if (REMOVE_BIND.equals(name)) {
             removeBind(action.id);
+        } else if (MODS_SEARCH.equals(name)) {
+            mods.search(action.value, ModsSection.Filter.of(action.filter));
+            UICommandBuilder update = new UICommandBuilder();
+            applyModsSearch(update, true);
+            sendUpdate(update, false);
+        } else if (MOD_SETTINGS.equals(name) || MOD_KEYS.equals(name)) {
+            openModSettings(action.id, MOD_KEYS.equals(name));
+        } else if (MOD_CONFIG.equals(name)) {
+            toggleModConfig(action.id);
+        } else if (MOD_ENABLE.equals(name)) {
+            setModEnabled(action.id, Boolean.TRUE.equals(action.checked));
         } else if (name.startsWith(TAB_PREFIX)) {
             selectTab(name.substring(TAB_PREFIX.length()));
         } else {
@@ -357,6 +398,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private void buildSection(Section key, SettingsSection section, UICommandBuilder commands, UIEventBuilder events) {
         Map<SettingId, Integer> indexes = new HashMap<>();
         rowIndexes.put(key, indexes);
+        inlineColors.removeIf(shownKey -> shownKey.startsWith(key.name() + "|"));
         commands.set(key.status + ".Text", "");
         List<SettingsSection.Entry> entries = section.entries();
         built.put(key, entries);
@@ -371,6 +413,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                     indexes.put(row.id(), index);
                     shown.put(shownKey(key, row.id()), row.snapshot().value());
                     latest.put(shownKey(key, row.id()), row.snapshot());
+                    int rowIndex = index;
+                    row.color().ifPresent(color -> {
+                        indexes.put(color.id(), rowIndex);
+                        shown.put(shownKey(key, color.id()), color.value());
+                        latest.put(shownKey(key, color.id()), color);
+                        inlineColors.add(shownKey(key, color.id()));
+                    });
                     boolean customBind = canAddBinds
                             && key == Section.SERVER_KEYMAPS
                             && CUSTOM_NAMESPACE.equals(row.id().namespace());
@@ -393,6 +442,24 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         String id = snapshot.id().toString();
         switch (row.kind()) {
             case TEXT -> {
+                if (row.color().isPresent()) {
+                    String colorId = row.color().get().id().toString();
+                    commands.append(key.list, TEXT_COLOR_ROW);
+                    commands.set(input + ".PlaceholderText", section.placeholder(snapshot));
+                    events.addEventBinding(
+                            CustomUIEventBindingType.Activating,
+                            element + " #Save",
+                            action(SAVE_COLORED, key, id)
+                                    .append(Action.ITEM, colorId)
+                                    .append(Action.VALUE, input + ".Value")
+                                    .append(Action.COLOR, element + " #Picker.Color"));
+                    events.addEventBinding(
+                            CustomUIEventBindingType.ValueChanged,
+                            element + " #Picker",
+                            action(PICK_INLINE, key, id).append(Action.VALUE, element + " #Picker.Color"),
+                            false);
+                    break;
+                }
                 commands.append(key.list, customBind ? CUSTOM_BIND_ROW : TEXT_ROW);
                 if (customBind) {
                     events.addEventBinding(
@@ -428,6 +495,38 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                         bar,
                         action(SLID, key, id).append(Action.NUMBER, bar + ".Value"));
             }
+            case COLOR -> {
+                commands.append(key.list, COLOR_ROW);
+                commands.set(input + ".PlaceholderText", section.placeholder(snapshot));
+                events.addEventBinding(
+                        CustomUIEventBindingType.Activating,
+                        element + " #Save",
+                        action(SAVE, key, id).append(Action.VALUE, input + ".Value"));
+                // Only read: setting the picker's value from the server disconnects the client.
+                events.addEventBinding(
+                        CustomUIEventBindingType.ValueChanged,
+                        element + " #Picker",
+                        action(PICK, key, id).append(Action.VALUE, element + " #Picker.Color"),
+                        false);
+            }
+            case LIST -> {
+                commands.append(key.list, LIST_ROW);
+                commands.set(input + ".PlaceholderText", section.placeholder(snapshot));
+                events.addEventBinding(
+                        CustomUIEventBindingType.Activating,
+                        element + " #Add",
+                        action(ADD_ITEM, key, id).append(Action.VALUE, input + ".Value"));
+                List<String> items = SettingsSection.items(snapshot);
+                for (int item = 0; item < items.size(); item++) {
+                    commands.append(element + " #Items", LIST_ITEM);
+                    String itemElement = element + " #Items[" + item + "]";
+                    commands.set(itemElement + " #Text.Text", items.get(item));
+                    events.addEventBinding(
+                            CustomUIEventBindingType.Activating,
+                            itemElement + " #Remove",
+                            action(REMOVE_ITEM, key, id).append(Action.ITEM, Integer.toString(item)));
+                }
+            }
             case TOGGLE -> {
                 commands.append(key.list, TOGGLE_ROW);
                 events.addEventBinding(
@@ -453,7 +552,14 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         commands.set(element + " #Label.Text", section.name(snapshot));
         commands.set(element + " #Description.Text", section.description(snapshot));
         showValue(section, row.kind(), element, snapshot, commands);
-        if (row.kind() != SettingsSection.Kind.INFO) {
+        row.color().ifPresent(color -> showPicker(element, color, commands));
+        if (row.color().isPresent()) {
+            events.addEventBinding(
+                    CustomUIEventBindingType.Activating,
+                    element + " #Reset",
+                    action(RESET_COLORED, key, id)
+                            .append(Action.ITEM, row.color().get().id().toString()));
+        } else if (row.kind() != SettingsSection.Kind.INFO) {
             events.addEventBinding(CustomUIEventBindingType.Activating, element + " #Reset", action(RESET, key, id));
         }
     }
@@ -461,6 +567,27 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private void handleSettingAction(Section key, SettingsSection section, String name, Action action) {
         if (SLIDE.equals(name)) {
             showSliderText(key, action);
+            return;
+        }
+        if (PICK.equals(name)) {
+            showPickedColor(key, action);
+            return;
+        }
+        if (PICK_INLINE.equals(name)) {
+            String hex = pickedHex(action.value);
+            if (hex != null) {
+                UICommandBuilder update = new UICommandBuilder();
+                update.set(key.status + ".Text", tr.t("controlcore.panel.color_picked", "color", hex));
+                sendUpdate(update, false);
+            }
+            return;
+        }
+        if (SAVE_COLORED.equals(name) || RESET_COLORED.equals(name)) {
+            saveColored(key, section, RESET_COLORED.equals(name), action);
+            return;
+        }
+        if (ADD_ITEM.equals(name) || REMOVE_ITEM.equals(name)) {
+            changeList(key, section, name, action);
             return;
         }
         Result<SettingSnapshot> result = switch (name) {
@@ -486,7 +613,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                     update.set(key.status + ".Text", section.saved(snapshot));
                     Integer index = rowIndexes.get(key).get(snapshot.id());
                     if (writeBack && index != null) {
-                        showValue(section, SettingsSection.kindOf(snapshot), key.row(index), snapshot, update);
+                        showRowValue(key, section, index, snapshot, update);
                     }
                 })
                 .onFailure(error -> update.set(key.status + ".Text", tr.error(error)));
@@ -494,6 +621,65 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             showRestartNotice(update);
         }
         sendUpdate(update, false);
+    }
+
+    /** Saves (or resets) a text row and the colour shown in it. */
+    private void saveColored(Section key, SettingsSection section, boolean reset, Action action) {
+        Result<SettingSnapshot> text = reset ? section.reset(action.id) : section.save(action.id, action.value);
+        Result<SettingSnapshot> color = null;
+        if (text.isSuccess() && action.item != null) {
+            if (reset) {
+                color = section.reset(action.item);
+            } else {
+                String hex = pickedHex(action.color);
+                if (hex != null) {
+                    color = section.save(action.item, hex);
+                }
+            }
+        }
+        UICommandBuilder update = new UICommandBuilder();
+        if (text.isSuccess()) {
+            SettingSnapshot saved = text.value();
+            shown.put(shownKey(key, saved.id()), saved.value());
+            latest.put(shownKey(key, saved.id()), saved);
+            update.set(key.status + ".Text", section.saved(saved));
+            Integer index = rowIndexes.get(key).get(saved.id());
+            if (index != null) {
+                showValue(section, SettingsSection.Kind.TEXT, key.row(index), saved, update);
+            }
+        } else {
+            update.set(key.status + ".Text", tr.error(text.error()));
+        }
+        if (color != null && color.isSuccess()) {
+            SettingSnapshot saved = color.value();
+            shown.put(shownKey(key, saved.id()), saved.value());
+            latest.put(shownKey(key, saved.id()), saved);
+            Integer index = rowIndexes.get(key).get(saved.id());
+            if (index != null) {
+                showPicker(key.row(index), saved, update);
+            }
+        } else if (color != null) {
+            update.set(key.status + ".Text", tr.error(color.error()));
+        }
+        sendUpdate(update, false);
+    }
+
+    /** Shows a value in its row: a colour shown inside a text row only moves that row's picker. */
+    private void showRowValue(
+            Section key, SettingsSection section, int index, SettingSnapshot snapshot, UICommandBuilder update) {
+        if (inlineColors.contains(shownKey(key, snapshot.id()))) {
+            showPicker(key.row(index), snapshot, update);
+        } else {
+            showRowValue(key, section, index, snapshot, update);
+        }
+    }
+
+    /** Sets a row's colour picker (its markup property is Color; it has no Value). */
+    private static void showPicker(String element, SettingSnapshot color, UICommandBuilder commands) {
+        String hex = pickedHex(color.value());
+        if (hex != null) {
+            commands.set(element + " #Picker.Color", hex);
+        }
     }
 
     /** Lists the server config keys that wait for a restart, above the Server Configs list. */
@@ -604,9 +790,14 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 }
                 shown.put(shownKey(key, id), snapshot.value());
                 latest.put(shownKey(key, id), snapshot);
+                if (SettingsSection.kindOf(snapshot) == SettingsSection.Kind.LIST) {
+                    rebuild(); // the items and their buttons change
+                }
                 UICommandBuilder update = new UICommandBuilder();
-                showValue(section, SettingsSection.kindOf(snapshot), key.row(index), snapshot, update);
-                update.set(key.row(index) + " #Description.Text", section.description(snapshot));
+                showRowValue(key, section, index, snapshot, update);
+                if (!inlineColors.contains(shownKey(key, id))) {
+                    update.set(key.row(index) + " #Description.Text", section.description(snapshot));
+                }
                 update.set(key.status + ".Text", section.changedElsewhere(snapshot));
                 if (key == Section.SERVER_CONFIG) {
                     showRestartNotice(update);
@@ -642,6 +833,15 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         String input = element + " #Input";
         switch (kind) {
             case TEXT, CHOICE -> commands.set(input + ".Value", snapshot.value());
+            case COLOR -> {
+                commands.set(input + ".Value", snapshot.value());
+                // The picker's markup property is Color (it has no Value); it is gathered as "#rrggbb" text.
+                String hex = pickedHex(snapshot.value());
+                if (hex != null) {
+                    commands.set(element + " #Picker.Color", hex);
+                }
+            }
+            case LIST -> commands.set(input + ".Value", "");
             case INTEGER, DECIMAL -> {
                 commands.set(input + ".Value", snapshot.value());
                 SettingsSection.Slider slider = SettingsSection.Slider.of(snapshot);
@@ -678,6 +878,62 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 SettingsSection.Slider.of(snapshot).text(action.number, kind == SettingsSection.Kind.INTEGER));
     }
 
+    /** Adds or removes a list item, then rebuilds the page so the items and their buttons match. */
+    private void changeList(Section key, SettingsSection section, String name, Action action) {
+        SettingSnapshot snapshot = SettingId.parse(action.id == null ? "" : action.id)
+                .map(id -> latest.get(shownKey(key, id)))
+                .orElse(null);
+        if (snapshot == null) {
+            return;
+        }
+        Result<SettingSnapshot> result;
+        if (ADD_ITEM.equals(name)) {
+            result = section.addItem(snapshot, action.value);
+        } else {
+            int index;
+            try {
+                index = Integer.parseInt(action.item == null ? "" : action.item);
+            } catch (NumberFormatException e) {
+                return;
+            }
+            result = section.removeItem(snapshot, index);
+        }
+        if (result.isSuccess()) {
+            rebuild();
+        }
+        UICommandBuilder update = new UICommandBuilder();
+        update.set(key.status + ".Text", result.isSuccess() ? section.saved(result.value()) : tr.error(result.error()));
+        sendUpdate(update, false);
+    }
+
+    /** A colour picked in the picker goes into the row's text field; Save stores it. */
+    private void showPickedColor(Section key, Action action) {
+        Integer index = SettingId.parse(action.id == null ? "" : action.id)
+                .map(id -> rowIndexes.get(key).get(id))
+                .orElse(null);
+        String hex = pickedHex(action.value);
+        if (index == null || hex == null) {
+            return;
+        }
+        UICommandBuilder update = new UICommandBuilder();
+        update.set(key.row(index) + " #Input.Value", hex);
+        update.set(key.status + ".Text", tr.t("controlcore.panel.color_picked", "color", hex));
+        sendUpdate(update, false);
+    }
+
+    /** @return {@code #rrggbb} from the picker's colour ({@code #rrggbb}, {@code #rrggbbaa} or {@code rrggbb}) */
+    static String pickedHex(String value) {
+        if (value == null) {
+            return null;
+        }
+        String digits = value.strip();
+        digits = digits.startsWith("#") ? digits.substring(1) : digits;
+        if (!digits.matches("[0-9a-fA-F]{6}([0-9a-fA-F]{2})?")) {
+            return null;
+        }
+        return "#" + digits.substring(0, 6).toLowerCase(Locale.ROOT);
+    }
+
     /** While the slider moves, the text field shows the value it would save. */
     private void showSliderText(Section key, Action action) {
         Optional<String> value = sliderValue(key, action);
@@ -710,6 +966,170 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             }
         }
         return Optional.empty();
+    }
+
+    // --- Mods tab ----------------------------------------------------------------------------------------
+
+    private void buildMods(UICommandBuilder commands, UIEventBuilder events) {
+        List<net.ofatech.controlcore.domain.model.mods.ModsView.Entry> entries = mods.load();
+        commands.set(
+                "#ModsSearchFilter.Entries",
+                Arrays.stream(ModsSection.Filter.values())
+                        .map(option -> new DropdownEntryInfo(
+                                LocalizableString.fromString(tr.t(option.translationKey())), option.name()))
+                        .toList());
+        commands.set("#ModsSearchFilter.Value", mods.filter().name());
+        commands.set("#ModsSearch.Value", mods.query());
+        commands.set("#ModsSearch.PlaceholderText", tr.t("controlcore.panel.mods.search_hint"));
+        EventData search = new EventData()
+                .append(Action.KEY, MODS_SEARCH)
+                .append(Action.VALUE, "#ModsSearch.Value")
+                .append(Action.FILTER, "#ModsSearchFilter.Value");
+        events.addEventBinding(CustomUIEventBindingType.ValueChanged, "#ModsSearch", search);
+        events.addEventBinding(CustomUIEventBindingType.ValueChanged, "#ModsSearchFilter", search);
+        boolean admin = mods.view().canManage();
+        for (int index = 0; index < entries.size(); index++) {
+            var entry = entries.get(index);
+            var mod = entry.mod();
+            String row = "#ModsList[" + index + "]";
+            commands.append("#ModsList", MOD_ROW);
+            commands.set(row + " #Name.Text", mod.name());
+            commands.set(row + " #Version.Text", mods.version(mod));
+            commands.set(row + " #Badges.Text", mods.badges(entry));
+            commands.set(row + " #Description.Text", mods.description(mod));
+            commands.set(row + " #Details.Text", mods.details(mod));
+            mod.logo().ifPresent(logo -> commands.set(row + " #ModLogo.Background", logo));
+            boolean settingsHere = (entry.hasServerSettings() && tabs.contains(Tab.SETTINGS))
+                    || (entry.hasPreferences() && tabs.contains(Tab.PLAYER));
+            commands.set(row + " #Settings.Visible", settingsHere);
+            commands.set(row + " #Keys.Visible", entry.hasKeys() && tabs.contains(Tab.KEYMAP));
+            commands.set(row + " #Config.Visible", admin && mod.running() && !mod.core());
+            commands.set(row + " #EnabledBox.Visible", entry.manageable());
+            if (entry.manageable()) {
+                commands.set(row + " #Enabled.Value", mod.enabledAfterRestart());
+                events.addEventBinding(
+                        CustomUIEventBindingType.ValueChanged,
+                        row + " #Enabled",
+                        new EventData()
+                                .append(Action.KEY, MOD_ENABLE)
+                                .append(Action.ID, mod.id())
+                                .append(Action.CHECKED, row + " #Enabled.Value"));
+            }
+            if (openConfigs.contains(mod.id())) {
+                commands.set(row + " #ConfigText.Visible", true);
+                commands.set(row + " #ConfigText.Text", mods.configText(mod.id()));
+            }
+            events.addEventBinding(
+                    CustomUIEventBindingType.Activating,
+                    row + " #Settings",
+                    new EventData().append(Action.KEY, MOD_SETTINGS).append(Action.ID, mod.id()));
+            events.addEventBinding(
+                    CustomUIEventBindingType.Activating,
+                    row + " #Keys",
+                    new EventData().append(Action.KEY, MOD_KEYS).append(Action.ID, mod.id()));
+            events.addEventBinding(
+                    CustomUIEventBindingType.Activating,
+                    row + " #Config",
+                    new EventData().append(Action.KEY, MOD_CONFIG).append(Action.ID, mod.id()));
+        }
+        applyModsSearch(commands, false);
+    }
+
+    private void applyModsSearch(UICommandBuilder commands, boolean report) {
+        var entries = mods.entries();
+        for (int index = 0; index < entries.size(); index++) {
+            commands.set("#ModsList[" + index + "].Visible", mods.shown(entries.get(index)));
+        }
+        int shownCount = mods.shownCount();
+        if (shownCount == 0) {
+            commands.set("#ModsStatus.Text", tr.t("controlcore.panel.mods.none"));
+        } else if (report) {
+            commands.set("#ModsStatus.Text", tr.t("controlcore.panel.mods.shown", "shown", shownCount));
+        } else {
+            commands.set("#ModsStatus.Text", "");
+        }
+    }
+
+    /** Jumps to the mod's settings (or preferences) or keys, searched by its id. */
+    private void openModSettings(String modId, boolean keys) {
+        var entry = mods.find(modId).orElse(null);
+        if (entry == null || entry.namespace().isEmpty()) {
+            return;
+        }
+        Tab tab;
+        Section section;
+        if (keys) {
+            tab = Tab.KEYMAP;
+            section = editingServerKeys && canAddBinds ? Section.SERVER_KEYMAPS : Section.KEYMAPS;
+        } else if (entry.hasServerSettings() && tabs.contains(Tab.SETTINGS)) {
+            tab = Tab.SETTINGS;
+            section = Section.SETTINGS;
+        } else {
+            tab = Tab.PLAYER;
+            section = Section.PREFS;
+        }
+        if (!tabs.contains(tab) || !sections.containsKey(section)) {
+            return;
+        }
+        String text = "mod:" + entry.namespace().get();
+        searches.put(section, SettingSearch.parse(text, SettingSearch.Filter.ALL, SettingSearch.Match.CONTAINS));
+        selected = tab;
+        UICommandBuilder update = new UICommandBuilder();
+        update.set(section.search + ".Value", text);
+        update.set(section.search + "Filter.Value", SettingSearch.Filter.ALL.label());
+        update.set(section.search + "Match.Value", SettingSearch.Match.CONTAINS.label());
+        applySearch(section, sections.get(section), update, true);
+        showTab(update);
+        sendUpdate(update, false);
+    }
+
+    /** Opens on the settings (or preferences) of the mod whose settings ids start with {@code namespace}. */
+    private void focusMod(String namespace) {
+        String text = "mod:" + namespace;
+        SettingSearch search = SettingSearch.parse(text, SettingSearch.Filter.ALL, SettingSearch.Match.CONTAINS);
+        boolean serverSettings = sections.containsKey(Section.SETTINGS)
+                && !sections.get(Section.SETTINGS).entries().stream()
+                        .filter(entry -> entry instanceof SettingsSection.Row)
+                        .map(entry -> ((SettingsSection.Row) entry).snapshot())
+                        .filter(snapshot -> snapshot.id().namespace().equals(namespace))
+                        .toList()
+                        .isEmpty();
+        Section section = serverSettings ? Section.SETTINGS : Section.PREFS;
+        Tab tab = serverSettings ? Tab.SETTINGS : Tab.PLAYER;
+        if (sections.containsKey(section) && tabs.contains(tab)) {
+            searches.put(section, search);
+            selected = tab;
+        }
+    }
+
+    private void toggleModConfig(String modId) {
+        if (modId == null || !mods.view().canManage()) {
+            return;
+        }
+        if (!openConfigs.remove(modId)) {
+            openConfigs.add(modId);
+        }
+        rebuild();
+    }
+
+    private void setModEnabled(String modId, boolean enabled) {
+        var result = mods.view().setEnabled(modId, enabled);
+        if (result.isSuccess()) {
+            rebuild();
+        }
+        UICommandBuilder update = new UICommandBuilder();
+        update.set(
+                "#ModsStatus.Text",
+                result.isSuccess()
+                        ? tr.t(
+                                enabled
+                                        ? "controlcore.panel.mods.enabled_restart"
+                                        : "controlcore.panel.mods.disabled_restart",
+                                "name",
+                                result.value().mod().name())
+                        : tr.error(result.error()));
+        showRestartNotice(update);
+        sendUpdate(update, false);
     }
 
     private void selectTab(String tabName) {
@@ -809,6 +1229,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         static final String FILTER = "@Filter";
         static final String MATCH = "@Match";
         static final String NUMBER = "@Number";
+        static final String ITEM = "Item";
+        static final String COLOR = "@Color";
 
         static final BuilderCodec<Action> CODEC = BuilderCodec.builder(Action.class, Action::new)
                 .append(
@@ -832,6 +1254,16 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                         new KeyedCodec<>(CHECKED, Codec.BOOLEAN),
                         (action, value) -> action.checked = value,
                         action -> action.checked)
+                .add()
+                .append(
+                        new KeyedCodec<>(ITEM, Codec.STRING),
+                        (action, value) -> action.item = value,
+                        action -> action.item)
+                .add()
+                .append(
+                        new KeyedCodec<>(COLOR, Codec.STRING),
+                        (action, value) -> action.color = value,
+                        action -> action.color)
                 .add()
                 .append(
                         new KeyedCodec<>(NUMBER, Codec.FLOAT),
@@ -866,6 +1298,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         private String value;
         private Boolean checked;
         private Double number;
+        private String item;
+        private String color;
         private String bindName;
         private String bindKeys;
         private String filter;

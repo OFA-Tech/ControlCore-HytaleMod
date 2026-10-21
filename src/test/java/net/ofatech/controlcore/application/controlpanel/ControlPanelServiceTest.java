@@ -60,6 +60,15 @@ class ControlPanelServiceTest {
                 log,
                 new net.ofatech.controlcore.application.settings.ModNames());
         var server = new FakeServerConfiguration(SERVER);
+        var modNames = new net.ofatech.controlcore.application.settings.ModNames();
+        var keyRegistry = new KeymapRegistry(
+                new FakeKeyBindStore(),
+                new net.ofatech.controlcore.fakes.FakeCustomKeyBindStore(),
+                new FakePlayerData(),
+                (player, node) -> true,
+                log);
+        var policy = new SettingPermissionPolicy(
+                new net.ofatech.controlcore.fakes.FakeSettingPermissionStore(), (player, node) -> true, registry);
         return new ControlPanelService(
                 new ControlPanelSettings(registry, settings),
                 players,
@@ -68,20 +77,16 @@ class ControlPanelServiceTest {
                 capabilities,
                 registry,
                 new ServerConfigEditor(server, bus, bus, log),
-                new KeymapsEditor(
-                        new KeymapRegistry(
-                                new FakeKeyBindStore(),
-                                new net.ofatech.controlcore.fakes.FakeCustomKeyBindStore(),
-                                new FakePlayerData(),
-                                (player, node) -> true,
-                                log),
-                        net.ofatech.controlcore.fakes.TestTexts.of(registry, players),
-                        new net.ofatech.controlcore.application.settings.ModNames()),
-                new SettingPermissionPolicy(
-                        new net.ofatech.controlcore.fakes.FakeSettingPermissionStore(),
-                        (player, node) -> true,
-                        registry),
-                net.ofatech.controlcore.fakes.TestTexts.of(registry, players));
+                new KeymapsEditor(keyRegistry, net.ofatech.controlcore.fakes.TestTexts.of(registry, players), modNames),
+                policy,
+                net.ofatech.controlcore.fakes.TestTexts.of(registry, players),
+                new net.ofatech.controlcore.application.mods.ModsEditor(
+                        new net.ofatech.controlcore.fakes.FakeModCatalog(),
+                        registry,
+                        keyRegistry,
+                        modNames,
+                        policy,
+                        log));
     }
 
     @Test

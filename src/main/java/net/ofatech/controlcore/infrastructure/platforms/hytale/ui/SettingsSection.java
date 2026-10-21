@@ -33,6 +33,10 @@ final class SettingsSection {
         INTEGER,
         /** Slider, text field and Save button: a decimal number with a range. */
         DECIMAL,
+        /** Text field with a colour picker that fills it, and a Save button. */
+        COLOR,
+        /** Items with Remove buttons and a field to add one. */
+        LIST,
         /** Check box, saved when clicked. */
         TOGGLE,
         /** Dropdown, saved when an option is picked. */
@@ -47,8 +51,16 @@ final class SettingsSection {
     /** A category heading or an explanatory line. */
     record Heading(String text) implements Entry {}
 
-    /** An editable setting. */
-    record Row(Kind kind, SettingSnapshot snapshot) implements Entry {
+    /**
+     * An editable setting.
+     *
+     * @param color a colour setting shown in this (text) row, see {@code SettingDefinition.coloredBy}
+     */
+    record Row(Kind kind, SettingSnapshot snapshot, Optional<SettingSnapshot> color) implements Entry {
+
+        Row(Kind kind, SettingSnapshot snapshot) {
+            this(kind, snapshot, Optional.empty());
+        }
 
         SettingId id() {
             return snapshot.id();
@@ -155,15 +167,54 @@ final class SettingsSection {
             entries.add(new Heading(emptyText));
             return entries;
         }
+        java.util.Map<SettingId, SettingSnapshot> byId = new java.util.HashMap<>();
+        snapshots.forEach(snapshot -> byId.put(snapshot.id(), snapshot));
+        java.util.Set<SettingId> shownInline = new java.util.HashSet<>();
+        snapshots.forEach(snapshot -> inlineColor(snapshot, byId).ifPresent(color -> shownInline.add(color.id())));
         String category = null;
         for (SettingSnapshot snapshot : snapshots) {
+            if (shownInline.contains(snapshot.id())) {
+                continue;
+            }
             if (!snapshot.definition().heading().equals(category)) {
                 category = snapshot.definition().heading();
                 entries.add(new Heading(category(snapshot)));
             }
-            entries.add(new Row(kindOf(snapshot), snapshot));
+            entries.add(new Row(kindOf(snapshot), snapshot, inlineColor(snapshot, byId)));
         }
         return entries;
+    }
+
+    /** @return the editable colour setting shown in {@code snapshot}'s (editable text) row, if it has one */
+    private static Optional<SettingSnapshot> inlineColor(
+            SettingSnapshot snapshot, java.util.Map<SettingId, SettingSnapshot> byId) {
+        if (kindOf(snapshot) != Kind.TEXT) {
+            return Optional.empty();
+        }
+        return snapshot.definition().colorSetting().map(byId::get).filter(color -> kindOf(color) == Kind.COLOR);
+    }
+
+    /** @return the items of a list setting's value */
+    static List<String> items(SettingSnapshot snapshot) {
+        return snapshot.definition().type() instanceof SettingType.TextListType list
+                ? list.parse(snapshot.value()).orElse(List.of())
+                : List.of();
+    }
+
+    /** Adds {@code item} to a list setting. */
+    Result<SettingSnapshot> addItem(SettingSnapshot snapshot, String item) {
+        List<String> items = new java.util.ArrayList<>(items(snapshot));
+        items.add(item == null ? "" : item.strip());
+        return save(snapshot.id().toString(), String.join(SettingType.TextListType.SEPARATOR + " ", items));
+    }
+
+    /** Removes the item at {@code index} from a list setting. */
+    Result<SettingSnapshot> removeItem(SettingSnapshot snapshot, int index) {
+        List<String> items = new java.util.ArrayList<>(items(snapshot));
+        if (index >= 0 && index < items.size()) {
+            items.remove(index);
+        }
+        return save(snapshot.id().toString(), String.join(SettingType.TextListType.SEPARATOR + " ", items));
     }
 
     /** Saves text typed into a field or picked from a dropdown. */
@@ -212,6 +263,8 @@ final class SettingsSection {
         return switch (snapshot.definition().type()) {
             case SettingType.BooleanType _ -> Kind.TOGGLE;
             case SettingType.ChoiceType _ -> Kind.CHOICE;
+            case SettingType.ColorType _ -> Kind.COLOR;
+            case SettingType.TextListType _ -> Kind.LIST;
             case SettingType.IntegerType number when Slider.fits(number.min(), number.max()) -> Kind.INTEGER;
             case SettingType.DecimalType number when Slider.fits(number.min(), number.max()) -> Kind.DECIMAL;
             default -> Kind.TEXT;
