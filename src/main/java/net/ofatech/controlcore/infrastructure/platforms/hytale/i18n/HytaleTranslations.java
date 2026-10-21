@@ -5,7 +5,6 @@ import java.util.Optional;
 import net.ofatech.controlcore.domain.ports.system.Translations;
 import net.ofatech.controlcore.infrastructure.i18n.BundledTranslations;
 
-/** Every mod's language files as the game loaded them; ControlCore's own from the jar if the game has none. */
 public final class HytaleTranslations implements Translations {
 
     private final BundledTranslations bundled;

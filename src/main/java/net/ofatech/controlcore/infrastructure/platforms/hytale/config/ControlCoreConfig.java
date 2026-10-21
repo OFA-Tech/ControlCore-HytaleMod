@@ -5,7 +5,6 @@ import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
 import net.ofatech.controlcore.domain.model.ModSettings;
 
-/** Shape of {@code Settings.json} in the mod's data folder. Keys must start with a capital letter. */
 final class ControlCoreConfig {
 
     static final BuilderCodec<ControlCoreConfig> CODEC = BuilderCodec.builder(

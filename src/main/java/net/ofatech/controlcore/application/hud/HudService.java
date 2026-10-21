@@ -28,10 +28,6 @@ import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Result;
 
-/**
- * Decides what each player's HUD shows and applies it: the game's parts (player preference, overridden by the
- * server's rule) and mods' HUDs (player preference), all hidden while the player has hidden the whole HUD.
- */
 @AutoService(HudApi.class)
 public final class HudService implements HudApi {
 
@@ -161,13 +157,11 @@ public final class HudService implements HudApi {
         }
     }
 
-    /** Applies everything to {@code player}: on join and after changes. */
     public void apply(PlayerId player) {
         applyParts(player);
         applyElements(player);
     }
 
-    /** Applies a changed HUD preference or rule to the players it concerns. */
     void onSettingChanged(SettingChanged change) {
         SettingId id = change.id();
         if (NAMESPACE.equals(id.namespace()) && id.key().startsWith(RULE_PREFIX)) {
@@ -180,7 +174,6 @@ public final class HudService implements HudApi {
         }
     }
 
-    /** Forgets a player who left; their preferences stay saved. */
     void forget(PlayerId player) {
         hiddenAll.remove(player);
         hiddenByUs.remove(player);
@@ -223,7 +216,6 @@ public final class HudService implements HudApi {
         }
     }
 
-    /** @return players online now */
     List<PlayerId> online() {
         return players.online().stream().map(PlayerInfo::id).toList();
     }

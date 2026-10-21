@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
+import net.ofatech.controlcore.domain.model.keys.CustomKeyBind;
 import net.ofatech.controlcore.domain.model.keys.GameAction;
 import net.ofatech.controlcore.domain.model.keys.Key;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
@@ -22,6 +23,7 @@ import net.ofatech.controlcore.fakes.FakePlayerInput;
 import net.ofatech.controlcore.fakes.FakePlayers;
 import net.ofatech.controlcore.fakes.RecordingCommandRunner;
 import net.ofatech.controlcore.fakes.RecordingLog;
+import net.ofatech.controlcore.fakes.TestTexts;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -115,9 +117,7 @@ class KeyDispatcherTest {
 
         assertThat(input.press(caio, KeySignal.USE)).isFalse();
         assertThat(keymaps.keysFor(SettingId.of("homes:home"), caio)).hasToString("H");
-        assertThat(KeymapsText.problems(
-                        net.ofatech.controlcore.fakes.TestTexts.english(),
-                        keymaps.keysFor(SettingId.of("homes:home"), caio)))
+        assertThat(KeymapsText.problems(TestTexts.english(), keymaps.keysFor(SettingId.of("homes:home"), caio)))
                 .contains("not available");
     }
 
@@ -206,8 +206,7 @@ class KeyDispatcherTest {
 
         assertThat(commands()).containsExactly("say edited");
         assertThat(keymaps.findCustom("custom:announce").orElseThrow())
-                .isEqualTo(new net.ofatech.controlcore.domain.model.keys.CustomKeyBind(
-                        "announce", "CTRL + E", "say edited", false));
+                .isEqualTo(new CustomKeyBind("announce", "CTRL + E", "say edited", false));
         assertThat(KeyAction.normalizeCommand("  \"/home x\" ")).isEqualTo("home x");
         assertThat(KeyAction.normalizeCommand("say \"hi\"")).isEqualTo("say \"hi\"");
     }

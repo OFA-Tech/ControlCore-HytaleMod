@@ -12,7 +12,6 @@ import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
-/** In-memory config file with a few keys of every kind; remembers writes and can be told to reject them. */
 public final class FakeServerConfiguration implements ServerConfiguration {
 
     public final ServerSettings settings;

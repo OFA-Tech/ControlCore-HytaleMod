@@ -26,13 +26,6 @@ import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
-/**
- * The keys of the server's own configuration file, presented as server settings so the control panel edits them
- * like registered settings. Each key {@code A.BcD} becomes the setting {@code server:a.bc-d}; the list is read
- * from the server every time, so it always matches the file. "Default" writes the value of a fresh server.
- * Read-only keys are refused here as well as by the platform. Changes are published as
- * {@link ServerConfigChanged}.
- */
 public final class ServerConfigEditor implements SettingsEditor {
 
     static final String NAMESPACE = "server";
@@ -43,7 +36,6 @@ public final class ServerConfigEditor implements SettingsEditor {
     private final EventPublisher publisher;
     private final ControlCoreEvents events;
     private final Log log;
-    /** Restart-only keys changed since the server started, with the value they had then, by path. */
     private final Map<String, Pending> pending = new ConcurrentHashMap<>();
 
     private record Pending(String startValue, Text name) {}
@@ -55,7 +47,6 @@ public final class ServerConfigEditor implements SettingsEditor {
         this.log = log;
     }
 
-    /** @return the setting id of a configuration key, for example {@code server:connection-timeouts.play-timeout} */
     public static SettingId idOf(String path) {
         String key = path.replaceAll("([a-z0-9])([A-Z])", "$1-$2")
                 .replaceAll("([A-Z]+)([A-Z][a-z])", "$1-$2")
@@ -102,10 +93,6 @@ public final class ServerConfigEditor implements SettingsEditor {
                                 .with("name", entry.name())))));
     }
 
-    /**
-     * @return the names of the keys that were changed since the server started and only apply after a restart,
-     *     sorted by key; a key changed back to its value at start is left out
-     */
     public List<Text> pendingRestart() {
         return pending.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())
@@ -191,12 +178,10 @@ public final class ServerConfigEditor implements SettingsEditor {
     }
 
     private static <T> SettingDefinition<T> server(SettingId id, SettingType<T> type, T defaultValue) {
-        // The Server Configs tab only has the server's settings: headings are the config.json sections.
         return SettingDefinition.server(id.namespace(), id.key(), type, defaultValue)
                 .withModName(Text.of(""));
     }
 
-    /** Hytale's own description (English), with ControlCore's notes in the player's language. */
     private static Text describe(ConfigEntry entry) {
         String doc = entry.description().isBlank() ? "" : entry.description().strip();
         boolean restart = entry.access() == SettingAccess.APPLIES_AFTER_RESTART;

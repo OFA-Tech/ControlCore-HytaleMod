@@ -9,7 +9,6 @@ import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
 import net.ofatech.controlcore.domain.model.text.Text;
 
-/** Registers the key action that hides or shows the whole HUD and keeps HUDs in step with their settings. */
 @AutoService(FeatureModule.class)
 public final class HudModule implements FeatureModule {
 

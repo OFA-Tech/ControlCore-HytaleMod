@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import net.ofatech.controlcore.application.settings.ModNames;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.keys.Key;
@@ -17,6 +18,7 @@ import net.ofatech.controlcore.fakes.FakeCustomKeyBindStore;
 import net.ofatech.controlcore.fakes.FakeKeyBindStore;
 import net.ofatech.controlcore.fakes.FakePlayerData;
 import net.ofatech.controlcore.fakes.RecordingLog;
+import net.ofatech.controlcore.fakes.TestTexts;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,10 +32,7 @@ class KeymapsEditorTest {
             new FakePlayerData(),
             (player, node) -> true,
             new RecordingLog());
-    private final KeymapsEditor editor = new KeymapsEditor(
-            keymaps,
-            net.ofatech.controlcore.fakes.TestTexts.standalone(),
-            new net.ofatech.controlcore.application.settings.ModNames());
+    private final KeymapsEditor editor = new KeymapsEditor(keymaps, TestTexts.standalone(), new ModNames());
     private final PlayerId alice = PlayerId.of(UUID.randomUUID());
     private final PlayerId bob = PlayerId.of(UUID.randomUUID());
 

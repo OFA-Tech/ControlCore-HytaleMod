@@ -3,7 +3,9 @@ package net.ofatech.controlcore.domain.model.settings;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.List;
 import net.ofatech.controlcore.domain.guard.DomainException;
+import net.ofatech.controlcore.domain.model.text.Text;
 import org.junit.jupiter.api.Test;
 
 class SettingModelTest {
@@ -75,10 +77,7 @@ class SettingModelTest {
         assertThat(plain.category()).as("no category of its own").isEmpty();
         assertThat(plain.heading()).as("the mod id capitalised").isEqualTo("Home Teleports");
         assertThat(definition.inCategory("Limits").heading()).isEqualTo("Homes: Limits");
-        assertThat(definition
-                        .withModName(net.ofatech.controlcore.domain.model.text.Text.of(""))
-                        .heading())
-                .isEqualTo("Homes");
+        assertThat(definition.withModName(Text.of("")).heading()).isEqualTo("Homes");
         assertThatThrownBy(() -> SettingDefinition.server("homes", "max-homes", SettingType.integer(1, 50), 99))
                 .isInstanceOf(DomainException.class)
                 .hasMessageContaining("homes:max-homes");
@@ -96,11 +95,11 @@ class SettingModelTest {
 
         var list = SettingType.textList(3, 8);
         assertThat(list.parse(" Steve, alex ,, Notch").value()).containsExactly("Steve", "alex", "Notch");
-        assertThat(list.format(java.util.List.of("a", "b"))).isEqualTo("a, b");
+        assertThat(list.format(List.of("a", "b"))).isEqualTo("a, b");
         assertThat(list.parse("a, b, c, d").isFailure()).as("too many").isTrue();
         assertThat(list.parse("waytoolongname").isFailure()).isTrue();
         assertThat(list.parse("").value()).isEmpty();
-        var definition = SettingDefinition.server("homes", "allowed", list, java.util.List.of("Steve"));
+        var definition = SettingDefinition.server("homes", "allowed", list, List.of("Steve"));
         assertThat(definition.formattedDefault()).isEqualTo("Steve");
     }
 }

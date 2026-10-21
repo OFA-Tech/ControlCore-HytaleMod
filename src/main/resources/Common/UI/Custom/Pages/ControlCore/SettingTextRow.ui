@@ -1,6 +1,5 @@
 $C = "../../Common.ui";
 
-// One registered setting edited as text (integer, decimal, text). Appended by ControlPanelPage.
 Group {
   LayoutMode: Top;
   Anchor: (Bottom: 10);

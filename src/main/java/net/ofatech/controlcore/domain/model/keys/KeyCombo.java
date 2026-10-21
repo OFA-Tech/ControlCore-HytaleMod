@@ -1,11 +1,13 @@
 package net.ofatech.controlcore.domain.model.keys;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -45,11 +47,17 @@ public record KeyCombo(List<KeyInput> inputs) {
             Map.entry("MOUSE4", Key.MOUSE_4),
             Map.entry("MOUSE5", Key.MOUSE_5));
 
+    /**
+     * Creates a combination.
+     *
+     * @param inputs the parts, in the order written; copied
+     * @throws DomainException if {@code inputs} is null or empty, contains null, or repeats an input
+     */
     public KeyCombo {
         if (inputs == null || inputs.isEmpty()) {
             throw new DomainException("A key combination needs at least one key");
         }
-        if (inputs.stream().anyMatch(java.util.Objects::isNull)) {
+        if (inputs.stream().anyMatch(Objects::isNull)) {
             throw new DomainException("A key combination cannot contain null");
         }
         if (new LinkedHashSet<>(inputs).size() != inputs.size()) {
@@ -58,15 +66,24 @@ public record KeyCombo(List<KeyInput> inputs) {
         inputs = List.copyOf(inputs);
     }
 
-    /** @return the combination of {@code inputs} */
+    /**
+     * Creates a combination from its parts, for example {@code KeyCombo.of(Key.CTRL, Key.F)}.
+     *
+     * @param inputs the parts, in the order written
+     * @return the combination of {@code inputs}
+     * @throws DomainException if {@code inputs} is null or empty, contains null, or repeats an input
+     */
     public static KeyCombo of(KeyInput... inputs) {
-        return new KeyCombo(inputs == null ? null : java.util.Arrays.asList(inputs));
+        return new KeyCombo(inputs == null ? null : Arrays.asList(inputs));
     }
 
     /**
      * Parses text such as {@code ctrl+f}, {@code Alt + 3} or {@code crouch+interact}. Names are those of
-     * {@link Key} and {@link GameAction}, case-insensitive; digits stand for {@code NUM_0} to {@code NUM_9}.
+     * {@link Key} and {@link GameAction}, case-insensitive, with spaces or dashes allowed for underscores; digits
+     * stand for {@code NUM_0} to {@code NUM_9}. Common aliases such as {@code control}, {@code lshift}, {@code esc}
+     * and {@code lmb} are accepted too.
      *
+     * @param text the written combination, parts separated by {@code +}
      * @return the combination, or the error {@code Keys.InvalidCombo}
      */
     public static Result<KeyCombo> parse(String text) {
@@ -94,9 +111,12 @@ public record KeyCombo(List<KeyInput> inputs) {
     }
 
     /**
-     * Works out how the server notices this combination during play.
+     * Works out how the server notices this combination during play. At most one input may be a press (see
+     * {@link KeySignal#isPress()}); the others must be held states. {@link GameAction#MOVE} and
+     * {@link GameAction#STAND_STILL} cannot be combined.
      *
-     * @return the trigger, or the error {@code Keys.NotDetectable} naming the inputs the client never reports
+     * @return the trigger, or the error {@code Keys.NotDetectable} if an input is never reported by the client
+     *     (the message names it), more than one press is used, or moving and standing still are combined
      */
     public Result<KeyTrigger> trigger() {
         boolean alone = inputs.size() == 1;
@@ -136,7 +156,11 @@ public record KeyCombo(List<KeyInput> inputs) {
         return Result.success(new KeyTrigger(Optional.ofNullable(press), held));
     }
 
-    /** @return the combination as players write it, for example {@code CTRL + F} */
+    /**
+     * Returns the combination as players write it; {@link #parse(String)} reads this form back.
+     *
+     * @return the parts joined by {@code " + "}, for example {@code CTRL + F} or {@code WALK + 3}
+     */
     @Override
     public String toString() {
         return inputs.stream().map(KeyCombo::written).collect(Collectors.joining(" + "));

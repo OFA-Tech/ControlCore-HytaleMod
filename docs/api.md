@@ -26,7 +26,7 @@ events bus.
 ## Settings registry
 
 A mod registers its settings once and reads them through the returned handle. ControlCore stores the
-values, validates input, offers commands (and later the control panel) to change them and reports
+values, validates input, offers commands and the control panel to change them and reports
 changes.
 
 ```java

@@ -1,33 +1,48 @@
 package net.ofatech.controlcore.fakes;
 
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.ServerSettings;
+import net.ofatech.controlcore.domain.model.hud.HudPart;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
+import net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore;
+import net.ofatech.controlcore.domain.ports.config.KeyBindStore;
+import net.ofatech.controlcore.domain.ports.config.SettingPermissionStore;
 import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
+import net.ofatech.controlcore.domain.ports.game.CommandRunner;
+import net.ofatech.controlcore.domain.ports.game.EmptyHandInput;
+import net.ofatech.controlcore.domain.ports.game.HudDisplay;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
 import net.ofatech.controlcore.domain.ports.game.Messenger;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
 import net.ofatech.controlcore.domain.ports.game.PlayerData;
+import net.ofatech.controlcore.domain.ports.game.PlayerInput;
 import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.game.Scheduler;
 import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
+import net.ofatech.controlcore.domain.ports.mods.ModCatalog;
 import net.ofatech.controlcore.domain.ports.mods.ModLookup;
 import net.ofatech.controlcore.domain.ports.platform.Platform;
 import net.ofatech.controlcore.domain.ports.platform.PortBinder;
 import net.ofatech.controlcore.domain.ports.system.Clock;
 import net.ofatech.controlcore.domain.ports.system.Log;
+import net.ofatech.controlcore.domain.ports.system.Translations;
+import net.ofatech.controlcore.domain.result.Result;
+import net.ofatech.controlcore.infrastructure.i18n.BundledTranslations;
 
-/** In-memory host used instead of Hytale in tests. */
 public final class FakePlatform implements Platform {
 
     public final RecordingLog log = new RecordingLog();
     public final FakeClock clock = new FakeClock();
     public final FakeSettings settings = new FakeSettings();
     public final FakePlayers players = new FakePlayers();
-    public final net.ofatech.controlcore.infrastructure.i18n.BundledTranslations translations =
-            new net.ofatech.controlcore.infrastructure.i18n.BundledTranslations();
+    public final BundledTranslations translations = new BundledTranslations();
     public final FakeMessenger messenger = new FakeMessenger();
     public final FakePlayerData playerData = new FakePlayerData();
     public final FakeSettingStore settingStore = new FakeSettingStore();
@@ -40,17 +55,11 @@ public final class FakePlatform implements Platform {
     public final FakeKeyBindStore keyBinds = new FakeKeyBindStore();
     public final FakeCustomKeyBindStore customKeyBinds = new FakeCustomKeyBindStore();
     public final FakeSettingPermissionStore settingPermissions = new FakeSettingPermissionStore();
-    /** Last value ControlCore asked the empty hand to report keys with; null until asked. */
     public volatile Boolean emptyHandKeys;
 
     public final FakeModCatalog modCatalog = new FakeModCatalog();
-    /** Per player: the HUD parts hidden now, after every update ControlCore sent. */
-    public final java.util.Map<
-                    net.ofatech.controlcore.domain.model.PlayerId,
-                    java.util.Set<net.ofatech.controlcore.domain.model.hud.HudPart>>
-            hiddenHud = new java.util.concurrent.ConcurrentHashMap<>();
-    /** Permission nodes players do not have; everything else is granted. */
-    public final java.util.Set<String> deniedNodes = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    public final Map<PlayerId, Set<HudPart>> hiddenHud = new ConcurrentHashMap<>();
+    public final Set<String> deniedNodes = ConcurrentHashMap.newKeySet();
 
     public final FakeServerConfiguration serverConfig = new FakeServerConfiguration(
             new ServerSettings("Test Server", "Welcome", false, 10, 5, java.time.Duration.ofMinutes(10)));
@@ -67,7 +76,7 @@ public final class FakePlatform implements Platform {
         binder.bind(Clock.class, clock);
         binder.bind(SettingsProvider.class, settings);
         binder.bind(Players.class, players);
-        binder.bind(net.ofatech.controlcore.domain.ports.system.Translations.class, translations);
+        binder.bind(Translations.class, translations);
         binder.bind(Messenger.class, messenger);
         binder.bind(Permissions.class, (player, node) -> !deniedNodes.contains(node));
         binder.bind(PlayerData.class, playerData);
@@ -75,31 +84,29 @@ public final class FakePlatform implements Platform {
         binder.bind(Scheduler.class, scheduler);
         binder.bind(CommandRegistrar.class, commands);
         binder.bind(ModLookup.class, mods);
-        binder.bind(net.ofatech.controlcore.domain.ports.mods.ModCatalog.class, modCatalog);
+        binder.bind(ModCatalog.class, modCatalog);
         binder.bind(ServerConfiguration.class, serverConfig);
         binder.bind(ControlPanelView.class, controlPanel);
-        binder.bind(net.ofatech.controlcore.domain.ports.game.PlayerInput.class, input);
-        binder.bind(net.ofatech.controlcore.domain.ports.game.CommandRunner.class, commandRunner);
-        binder.bind(net.ofatech.controlcore.domain.ports.config.KeyBindStore.class, keyBinds);
-        binder.bind(net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore.class, customKeyBinds);
-        binder.bind(net.ofatech.controlcore.domain.ports.config.SettingPermissionStore.class, settingPermissions);
-        binder.bind(net.ofatech.controlcore.domain.ports.game.EmptyHandInput.class, on -> emptyHandKeys = on);
-        binder.bind(net.ofatech.controlcore.domain.ports.game.HudDisplay.class, (player, hide, show) -> {
-            var hidden = hiddenHud.computeIfAbsent(
-                    player, key -> java.util.EnumSet.noneOf(net.ofatech.controlcore.domain.model.hud.HudPart.class));
+        binder.bind(PlayerInput.class, input);
+        binder.bind(CommandRunner.class, commandRunner);
+        binder.bind(KeyBindStore.class, keyBinds);
+        binder.bind(CustomKeyBindStore.class, customKeyBinds);
+        binder.bind(SettingPermissionStore.class, settingPermissions);
+        binder.bind(EmptyHandInput.class, on -> emptyHandKeys = on);
+        binder.bind(HudDisplay.class, (player, hide, show) -> {
+            var hidden = hiddenHud.computeIfAbsent(player, key -> EnumSet.noneOf(HudPart.class));
             hidden.removeAll(show);
             hidden.addAll(hide);
         });
         binder.bind(InputProbe.class, new InputProbe() {
             @Override
-            public boolean toggle(net.ofatech.controlcore.domain.model.PlayerId player) {
+            public boolean toggle(PlayerId player) {
                 return false;
             }
 
             @Override
-            public net.ofatech.controlcore.domain.result.Result<Void> openKeyTest(
-                    net.ofatech.controlcore.domain.model.PlayerId player, String target) {
-                return net.ofatech.controlcore.domain.result.Result.success();
+            public Result<Void> openKeyTest(PlayerId player, String target) {
+                return Result.success();
             }
         });
     }

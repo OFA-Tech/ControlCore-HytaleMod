@@ -8,6 +8,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import java.util.EnumMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -15,7 +16,6 @@ import net.ofatech.controlcore.domain.model.hud.HudPart;
 import net.ofatech.controlcore.domain.ports.game.HudDisplay;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-/** {@link HudDisplay} through the player's {@code HudManager}, on the player's world thread. */
 public final class HytaleHudDisplay implements HudDisplay {
 
     private static final Map<HudPart, HudComponent> COMPONENTS = new EnumMap<>(HudPart.class);
@@ -68,7 +68,7 @@ public final class HytaleHudDisplay implements HudDisplay {
     private static String pascalCase(String constant) {
         StringBuilder name = new StringBuilder();
         for (String word : constant.split("_")) {
-            name.append(word.charAt(0)).append(word.substring(1).toLowerCase(java.util.Locale.ROOT));
+            name.append(word.charAt(0)).append(word.substring(1).toLowerCase(Locale.ROOT));
         }
         return name.toString();
     }

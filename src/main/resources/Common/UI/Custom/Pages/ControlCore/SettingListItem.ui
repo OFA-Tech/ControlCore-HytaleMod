@@ -1,6 +1,5 @@
 $C = "../../Common.ui";
 
-// One item of a list setting. Appended by ControlPanelPage into a list row's #Items.
 Group {
   LayoutMode: Left;
   Anchor: (Height: 30, Bottom: 2);

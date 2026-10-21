@@ -25,7 +25,6 @@ import net.ofatech.controlcore.domain.result.Result;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.mapping.Ids;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.mapping.Messages;
 
-/** A Hytale command built from a {@link CommandSpec}; parses arguments and runs the handler. */
 final class SpecCommand extends AbstractCommand {
 
     private static final CompletableFuture<Void> DONE = CompletableFuture.completedFuture(null);

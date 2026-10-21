@@ -17,17 +17,10 @@ import java.util.Set;
 import net.ofatech.controlcore.domain.ports.game.EmptyHandInput;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-/**
- * Adds ControlCore's do-nothing root interaction ({@value #REPORT}, shipped in the mod's assets) to the game's
- * unarmed interactions for the interactions they lack, and reloads them so clients get the change. Only keys
- * that do nothing there are added; existing interactions (left click, F, middle click, R) are left as they are.
- */
 public final class HytaleEmptyHandInput implements EmptyHandInput {
 
-    /** Root interaction that does nothing; the key still reaches the server. */
     static final String REPORT = "ControlCore_ReportKey";
 
-    /** Interactions added per unarmed set: the empty hand, a plain block and a plain item in hand. */
     private static final Map<String, Set<InteractionType>> ADDED = new LinkedHashMap<>();
 
     static {
@@ -42,7 +35,6 @@ public final class HytaleEmptyHandInput implements EmptyHandInput {
 
     private final String packKey;
     private final Log log;
-    /** The game's own interactions of each set, saved the first time it is changed. */
     private final Map<String, Map<InteractionType, String>> originals = new HashMap<>();
 
     public HytaleEmptyHandInput(String packKey, Log log) {
@@ -96,7 +88,6 @@ public final class HytaleEmptyHandInput implements EmptyHandInput {
         return copy;
     }
 
-    /** A copy of {@code source} with other interactions; the asset has no setters, so its fields are set directly. */
     private static UnarmedInteractions withInteractions(
             UnarmedInteractions source, Map<InteractionType, String> interactions) throws ReflectiveOperationException {
         UnarmedInteractions copy = new UnarmedInteractions();

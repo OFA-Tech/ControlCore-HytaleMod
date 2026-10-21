@@ -16,19 +16,12 @@ import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
-/**
- * A {@link SettingsEditor} as one viewer may use it: settings they may not see are left out (and reported as
- * unknown), settings they may only see are read-only, and changes need the right to change.
- */
 public final class PermittedSettingsEditor implements SettingsEditor {
 
     private final SettingsEditor settings;
     private final SettingPermissionPolicy policy;
     private final Optional<PlayerId> viewer;
 
-    /**
-     * @param viewer who uses the editor; empty for the console (may do everything)
-     */
     public PermittedSettingsEditor(SettingsEditor settings, SettingPermissionPolicy policy, Optional<PlayerId> viewer) {
         this.settings = settings;
         this.policy = policy;
@@ -68,7 +61,6 @@ public final class PermittedSettingsEditor implements SettingsEditor {
         return settings.onAnyChange(listener);
     }
 
-    /** @return whether the viewer may see at least one setting of {@code scope} */
     public boolean seesAny(SettingScope scope) {
         return !snapshot(scope, viewer).isEmpty();
     }

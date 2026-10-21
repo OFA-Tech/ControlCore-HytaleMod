@@ -87,7 +87,7 @@ settings registry). To get a new Hytale event, translate it in
 public final class ShopModule implements FeatureModule {
     @Override public boolean isEnabled(ModuleContext ctx) { return true; }
     @Override public void setup(ModuleContext ctx) { /* register dynamic commands, subscribe */ }
-    @Override public void start(ModuleContext ctx) { ctx.capabilities().find(ControlPanelView.class)... }
+    @Override public void start(ModuleContext ctx) { ctx.capabilities().find(MapMarkers.class)... }
     @Override public void shutdown() { }
 }
 ```

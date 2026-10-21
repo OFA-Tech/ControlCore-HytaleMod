@@ -11,10 +11,6 @@ import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.ports.game.CommandRunner;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-/**
- * Runs commands through Hytale's {@link CommandManager} as the player, so their permissions apply. Every run gets
- * its own virtual thread: key presses arrive on network threads, which must not wait for a command.
- */
 public final class HytaleCommandRunner implements CommandRunner, AutoCloseable {
 
     private final Log log;

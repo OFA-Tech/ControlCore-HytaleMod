@@ -4,8 +4,7 @@ import com.google.auto.service.AutoService;
 import net.ofatech.controlcore.application.component.ModEventHandler;
 import net.ofatech.controlcore.domain.event.PlayerLeft;
 
-/** Drops the held keys of players who leave. */
-@SuppressWarnings("rawtypes") // AutoService cannot name generic interfaces exactly
+@SuppressWarnings("rawtypes")
 @AutoService(ModEventHandler.class)
 public final class ForgetLeavingPlayer implements ModEventHandler<PlayerLeft> {
 

@@ -3,9 +3,11 @@ package net.ofatech.controlcore.infrastructure.platforms.hytale.ui;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.UUID;
 import net.ofatech.controlcore.application.event.DomainEventBus;
+import net.ofatech.controlcore.application.settings.ModNames;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -17,28 +19,19 @@ import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.fakes.FakePlayerData;
 import net.ofatech.controlcore.fakes.FakeSettingStore;
 import net.ofatech.controlcore.fakes.RecordingLog;
+import net.ofatech.controlcore.fakes.TestTexts;
 import org.junit.jupiter.api.Test;
 
 class SettingsSectionTest {
 
     private final RecordingLog log = new RecordingLog();
     private final DomainEventBus bus = new DomainEventBus(log);
-    private final SettingsRegistry registry = new SettingsRegistry(
-            new FakeSettingStore(),
-            new FakePlayerData(),
-            bus,
-            bus,
-            log,
-            new net.ofatech.controlcore.application.settings.ModNames());
+    private final SettingsRegistry registry =
+            new SettingsRegistry(new FakeSettingStore(), new FakePlayerData(), bus, bus, log, new ModNames());
     private final PlayerId viewer = PlayerId.of(UUID.randomUUID());
 
     private SettingsSection section(SettingScope scope) {
-        return new SettingsSection(
-                registry,
-                scope,
-                Optional.of(viewer),
-                "Nothing here.",
-                net.ofatech.controlcore.fakes.TestTexts.english());
+        return new SettingsSection(registry, scope, Optional.of(viewer), "Nothing here.", TestTexts.english());
     }
 
     @Test
@@ -144,7 +137,7 @@ class SettingsSectionTest {
         registry.register(SettingDefinition.server("homes", "ratio", SettingType.decimal(0, 2.5), 1.0));
         registry.register(SettingDefinition.server("homes", "huge", SettingType.integer(0, Integer.MAX_VALUE), 0));
         var snapshots = registry.snapshot(SettingScope.SERVER, Optional.empty());
-        var byId = new java.util.HashMap<String, SettingSnapshot>();
+        var byId = new HashMap<String, SettingSnapshot>();
         snapshots.forEach(snapshot -> byId.put(snapshot.id().toString(), snapshot));
 
         assertThat(SettingsSection.kindOf(byId.get("homes:max"))).isEqualTo(SettingsSection.Kind.INTEGER);

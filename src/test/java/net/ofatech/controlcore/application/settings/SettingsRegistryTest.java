@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import net.ofatech.controlcore.application.event.DomainEventBus;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -27,10 +28,9 @@ class SettingsRegistryTest {
     private final DomainEventBus bus = new DomainEventBus(log);
     private final FakeSettingStore store = new FakeSettingStore();
     private final FakePlayerData playerData = new FakePlayerData();
-    private final SettingsRegistry registry = new SettingsRegistry(
-            store, playerData, bus, bus, log, new net.ofatech.controlcore.application.settings.ModNames());
-    private final PlayerId alice = PlayerId.of(java.util.UUID.randomUUID());
-    private final PlayerId bob = PlayerId.of(java.util.UUID.randomUUID());
+    private final SettingsRegistry registry = new SettingsRegistry(store, playerData, bus, bus, log, new ModNames());
+    private final PlayerId alice = PlayerId.of(UUID.randomUUID());
+    private final PlayerId bob = PlayerId.of(UUID.randomUUID());
 
     private final SettingDefinition<Integer> maxHomes = SettingDefinition.server(
                     MAX_HOMES.namespace(), MAX_HOMES.key(), SettingType.integer(1, 50), 3)

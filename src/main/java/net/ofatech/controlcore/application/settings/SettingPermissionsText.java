@@ -4,12 +4,10 @@ import java.util.Optional;
 import net.ofatech.controlcore.domain.model.settings.SettingPermission;
 import net.ofatech.controlcore.domain.model.text.Translator;
 
-/** Text for setting permission commands. */
 final class SettingPermissionsText {
 
     private SettingPermissionsText() {}
 
-    /** @return for example {@code setting:homes:max-homes: see everyone, change homes.moderator} */
     static String rule(Translator tr, String target, SettingPermission rule) {
         return rule.isInherit()
                 ? tr.t("controlcore.permissions.rule_inherit", "target", target)

@@ -35,38 +35,50 @@ The long-term vision is a common configuration backbone where compatible mods ca
 
 ## Current state
 
-- `/open-admin-config` opens the admin control panel for admins (`<base permission>.admin` or `.settings`;
-  operators have both) and for players an admin or mod lets see some settings (they see only those). The built-in panel (native Hytale UI) has four tabs: **Server Configs** lists every
-  key of the server's `config.json`, read from Hytale's own config definition: keys the server uses while
-  running apply at once, others are saved and apply after a restart, and internal ones (password, storage,
-  mods) are shown read-only;
-  **Mod Settings** lists and edits every registered server setting; **Player Prefs** edits your own
-  preferences; **Keymaps** edits the server's default keys (admins) and your own key bindings. Every list has a search box
-  (for example `mod:controlcore`, `key:ctrl+f`, `is:changed`). Any player can open their own preferences and
-  key bindings with `/prefs`. Open panels update when a setting changes elsewhere. When a compatible
-  [HyUI](https://www.curseforge.com/hytale/mods/hyui) is installed, its HTML panel is used instead.
+**Control panel** (built-in, native Hytale UI). `/open-admin-config` opens it for admins
+(`<base permission>.admin` or `.settings`; operators have both) and for players an admin or mod lets see some
+settings (they see only those). `/prefs` opens it for any player, on their own tabs. Open panels update when
+a value changes elsewhere. Tabs:
+
+- **Server Configs**: every key of the server's `config.json`, read from Hytale's own config definition. Keys the
+  server uses while running apply at once, others are saved and apply after a restart (a reminder lists them),
+  internal ones (password, storage) are read-only.
+- **Mod Settings** and **Player Prefs**: every registered setting, with the editor its type needs: text field,
+  check box, dropdown, slider plus field for numbers with a range, colour picker, item list. A text setting can
+  show its colour in the same row.
+- **Keymaps**: the server's default keys (admins, with a form for their own command binds) and your own keys.
+- **Mods**: every mod and asset pack with its logo, version, authors and state; buttons jump to its settings and
+  keys. Admins turn mods on or off from the next start and read their config files.
+
+Every list has a search box with a field filter and equals / starts with / contains / ends with (for example
+`mod:controlcore`, `key:ctrl+f`, `is:changed`).
+
+**For server owners and players**
+
 - **Translations**: everything ControlCore shows follows each player's game language (English, Brazilian
-  Portuguese, Spanish), with English as fallback; mods can translate their own setting and key
-  names. See [docs/api.md](docs/api.md#translations-api-150).
-- **Settings registry**: mods register typed settings (server-wide or per-player preferences) through
-  `ControlCoreApi.settings()`; ControlCore validates and stores them and reports changes. Admins use
-  `/cc-settings`, `/cc-get`, `/cc-set`, `/cc-reset`; players use `/cc-prefs`, `/cc-pref`, `/cc-pref-reset`.
-  **Who may see and who may change** each setting, category or mod is set by mods and overridden by admins
-  with `/cc-perm` (`/cc-perms`, `/cc-perm-check <id>`). See [docs/api.md](docs/api.md#settings-registry).
-- **Key actions**: mods register a command or code with default keys through `ControlCoreApi.keymaps()`
-  (`KeyAction.of(modId, action).displayName(..).command(..).defaultKeys(Key.CTRL, Key.F)`); players
-  rebind them in Keymaps or with `/cc-keys`, `/cc-bind`, `/cc-bind-reset`; admins set server keys with
-  `/cc-bind-server`. Actions can run as the server (`.runAsServer()`, limited by permission), and admins
-  can create their own binds without a mod (`/cc-keybind-add`, `/cc-keybind-add-server`, or the admin
-  panel's Keymaps tab). Hytale only reports some keys to servers (Q, E, R, F, O, 1-9, mouse buttons, Alt tap,
-  with Ctrl/Alt/Shift/Space held); others are kept and marked not available. See
-  [docs/api.md](docs/api.md#key-actions).
-- ControlCore's own settings: `controlcore:control-panel-enabled`, `controlcore:welcome-message` (sent to
-  joining players, `{player}` is their name), and per-player `controlcore:show-welcome-message` and
-  `controlcore:panel-start-tab`.
-- `Settings.json` in the mod's data folder: `ControlPanelEnabled` (default `true`), the default of the
-  `controlcore:control-panel-enabled` setting. Changed values live in `SettingValues.json`.
-- Public API for other mods: `ControlCoreApi` (see [docs/api.md](docs/api.md)).
+  Portuguese, Spanish), with English as fallback. See [docs/api.md](docs/api.md#translations-api-150).
+- **Settings commands**: admins use `/cc-settings`, `/cc-get`, `/cc-set`, `/cc-reset`; players use `/cc-prefs`,
+  `/cc-pref`, `/cc-pref-reset`. `/cc-config <mod>` opens the panel on one mod's settings.
+- **Permissions per setting**: who may see and who may change each setting, category or mod is set by mods and
+  overridden by admins with `/cc-perm` (`/cc-perms`, `/cc-perm-check <id>`).
+- **Key binds**: players rebind key actions in Keymaps or with `/cc-keys`, `/cc-bind`, `/cc-bind-reset`; admins
+  set server keys with `/cc-bind-server` and create command binds without a mod (`/cc-keybind-add`,
+  `/cc-keybind-add-server`, `/cc-keybind-list`, `/cc-keybind-remove`). Hytale only reports some keys to servers
+  (Q, E, R, F, O, 1-9, mouse buttons, Alt tap, with Ctrl/Alt/Shift/Space held); with an empty hand ControlCore
+  also makes right click, abilities and dodge reach the server (`controlcore:empty-hand-keys`).
+- **HUD**: players hide or show parts of the game's HUD in `/prefs`, admins set rules per part, and a bindable
+  key hides the whole HUD.
+- **Mods**: `/cc-mods` lists the server's mods and whether they run.
+
+**For mod authors** (`ControlCoreApi`, see [docs/api.md](docs/api.md)): register typed settings (server-wide or
+per player) and their permissions, key actions (`KeyAction.of(modId, action)`), HUD elements and translated
+names. ControlCore stores them, shows them in the panel and reports changes.
+
+**ControlCore's own settings**: `controlcore:control-panel-enabled`, `controlcore:welcome-message` with
+`controlcore:welcome-message-color`, `controlcore:empty-hand-keys`, `controlcore:mods-hidden`, the HUD rules,
+and per player `controlcore:show-welcome-message`, `controlcore:panel-start-tab` and the HUD parts.
+`Settings.json` in the mod's data folder holds `ControlPanelEnabled` (default `true`), the default of
+`controlcore:control-panel-enabled`; changed values live in `SettingValues.json`.
 
 Built on Hytale server **0.7.2** (`>=0.7.2 <0.8.0`), Java 25, Gradle 9.8.1 and
 [`com.azuredoom.hytale-tools`](https://github.com/AzureDoom/Hytale-Gradle-Plugin).
@@ -75,9 +87,8 @@ Built on Hytale server **0.7.2** (`>=0.7.2 <0.8.0`), Java 25, Gradle 9.8.1 and
 
 Download `ControlCore-<version>.jar` from the
 [GitHub releases](https://github.com/OFA-Tech/ControlCore-HytaleMod/releases) (or CurseForge) and put it in the
-server's `mods/` folder. 0.9.x is a beta: back up `mods/OFATech_ControlCore/` before updating. HyUI (`Ellie:HyUI`) is optional. HyUI
-0.9.8 is not compatible with Hytale 0.7 (its pages crash the world on the first update), so ControlCore
-detects that and keeps using the built-in panel.
+server's `mods/` folder. 0.x is a beta: back up `mods/OFATech_ControlCore/` before updating. It needs no other
+mod.
 
 ## Development
 
@@ -106,14 +117,14 @@ src/main/java/net/ofatech/controlcore/
 ├── Main.java            entry point Hytale loads; only delegates to ModRuntime
 ├── api/                 what other mods use (interfaces)
 ├── domain/              models, Result/Error, events and ports (interfaces for everything external)
-├── application/         features (control panel), the runtime
+├── application/         features (settings, keys, control panel, HUD, mods), the runtime
 └── infrastructure/
     ├── system/          JDK implementations (clock)
-    ├── persistence/     storage (player data as JSON)
+    ├── persistence/     JSON files (settings, player data, key binds, permissions)
     └── platforms/
-        ├── hytale/      Hytale → our ports, incl. the built-in panel (ui/)
-        └── hyui/        HyUI → our ControlPanelView
-src/main/resources/Common/UI/Custom/Pages/   ControlCore/ControlPanel.ui (built-in), control-panel-hyui.html
+        └── hytale/      Hytale → our ports, incl. the control panel (ui/)
+src/main/resources/Common/UI/Custom/Pages/ControlCore/   ControlPanel.ui and its row documents
+src/main/resources/Server/Languages/<locale>/controlcore.lang   translations
 ```
 
 Your features never import Hytale or another mod; commands, event handlers, modules and tasks register
@@ -125,9 +136,9 @@ themselves with `@AutoService` and get their dependencies through their construc
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | Layers, rules, lifecycle, package map |
 | [docs/components.md](docs/components.md) | Writing commands, event handlers, modules, tasks; injection |
-| [docs/platforms.md](docs/platforms.md) | Translating Hytale features; HyUI and other mods |
+| [docs/platforms.md](docs/platforms.md) | Translating Hytale features; integrating other mods |
 | [docs/api.md](docs/api.md) | Using ControlCore from another mod; publishing |
-| [docs/development.md](docs/development.md) | Running, debugging, custom UI gotchas, current state and next steps |
+| [docs/development.md](docs/development.md) | Running, debugging, custom UI gotchas, known limits |
 
 ## Releasing
 

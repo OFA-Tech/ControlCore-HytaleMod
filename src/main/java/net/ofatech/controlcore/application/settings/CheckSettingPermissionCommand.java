@@ -17,7 +17,6 @@ import net.ofatech.controlcore.domain.ports.command.Reply;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
-/** {@code /cc-perm-check <id>}: who may see and change one setting, and which rule decides it. */
 @AutoService(ModCommand.class)
 public final class CheckSettingPermissionCommand implements ModCommand {
 

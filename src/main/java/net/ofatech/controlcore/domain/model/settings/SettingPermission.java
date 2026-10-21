@@ -24,40 +24,80 @@ public record SettingPermission(Optional<String> view, Optional<String> edit) {
     /** No rule of its own: the next rule decides. */
     public static final SettingPermission INHERIT = new SettingPermission(Optional.empty(), Optional.empty());
 
+    /**
+     * Creates a rule. Nodes are stripped of surrounding spaces; a blank node counts as empty, and any spelling of
+     * {@code everyone} becomes {@link #EVERYONE}.
+     *
+     * @param view who may see the setting; empty or {@code null} to inherit
+     * @param edit who may change it; empty or {@code null} to inherit
+     * @throws DomainException if a node contains spaces
+     */
     public SettingPermission {
         view = normalized(view);
         edit = normalized(edit);
     }
 
-    /** @param node who may see and change it */
+    /**
+     * Creates a rule where the same node decides who may see and who may change the setting.
+     *
+     * @param node a full permission node, for example {@code homes.moderator}, or {@link #EVERYONE}; not
+     *     {@code null}
+     * @return the rule
+     * @throws DomainException if the node contains spaces
+     */
     public static SettingPermission of(String node) {
         return new SettingPermission(Optional.of(node), Optional.of(node));
     }
 
     /**
+     * Creates a rule with separate nodes for seeing and changing the setting.
+     *
      * @param view who may see it, or {@code null} to inherit
      * @param edit who may change it, or {@code null} to inherit
+     * @return the rule
+     * @throws DomainException if a node contains spaces
      */
     public static SettingPermission of(String view, String edit) {
         return new SettingPermission(Optional.ofNullable(view), Optional.ofNullable(edit));
     }
 
-    /** @return a copy where who may see it is {@code node} */
+    /**
+     * Returns a copy with a different node for seeing the setting; who may change it stays the same.
+     *
+     * @param node who may see it, or {@code null} to inherit
+     * @return the new rule
+     * @throws DomainException if the node contains spaces
+     */
     public SettingPermission withView(String node) {
         return new SettingPermission(Optional.ofNullable(node), edit);
     }
 
-    /** @return a copy where who may change it is {@code node} */
+    /**
+     * Returns a copy with a different node for changing the setting; who may see it stays the same.
+     *
+     * @param node who may change it, or {@code null} to inherit
+     * @return the new rule
+     * @throws DomainException if the node contains spaces
+     */
     public SettingPermission withEdit(String node) {
         return new SettingPermission(view, Optional.ofNullable(node));
     }
 
-    /** @return whether neither side has a rule */
+    /**
+     * Tells whether this rule leaves both sides to the next rule, like {@link #INHERIT}.
+     *
+     * @return {@code true} if neither side has a node
+     */
     public boolean isInherit() {
         return view.isEmpty() && edit.isEmpty();
     }
 
-    /** @return the fields this rule leaves empty taken from {@code fallback} */
+    /**
+     * Fills the sides this rule leaves empty from another rule.
+     *
+     * @param fallback the rule that decides the empty sides
+     * @return a rule with this rule's nodes, and {@code fallback}'s nodes where this one has none
+     */
     public SettingPermission orElse(SettingPermission fallback) {
         return new SettingPermission(view.or(fallback::view), edit.or(fallback::edit));
     }

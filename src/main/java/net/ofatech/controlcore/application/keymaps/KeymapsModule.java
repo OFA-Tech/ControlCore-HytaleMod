@@ -8,7 +8,6 @@ import net.ofatech.controlcore.domain.model.keys.KeyAction;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.game.PlayerInput;
 
-/** Registers ControlCore's own key actions and connects player input to the {@link KeyDispatcher}. */
 @AutoService(FeatureModule.class)
 public final class KeymapsModule implements FeatureModule {
 

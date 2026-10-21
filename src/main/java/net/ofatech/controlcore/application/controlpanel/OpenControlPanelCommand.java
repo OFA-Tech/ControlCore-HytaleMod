@@ -30,7 +30,6 @@ public final class OpenControlPanelCommand implements ModCommand {
     @Override
     public Result<Reply> execute(CommandContext context) {
         PlayerInfo sender = context.sender().player().orElseThrow();
-        // Not a command permission: players an admin lets see some settings may open the panel too.
         if (!controlPanel.mayOpenAdminPanel(sender.id())) {
             return Result.failure(Error.forbidden(
                     "ControlPanel.Forbidden",

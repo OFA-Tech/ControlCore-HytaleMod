@@ -34,43 +34,58 @@ infrastructure  implementations of ports
 ```
 net/ofatech/controlcore/
 ├── Main.java                          plugin entry point (manifest "Main"), delegates to ModRuntime
-├── api/                               ControlCoreApi, ControlCoreApiProvider, ControlPanelApi, ControlCoreEvents,
-│                                      SettingsApi, Setting
+├── api/                               ControlCoreApi, ControlCoreApiProvider, ControlCoreEvents, ControlPanelApi,
+│                                      SettingsApi, Setting, KeymapsApi, HudApi
 ├── domain/
 │   ├── result/                        Result, Error, ErrorType
-│   ├── model/                         PlayerId, PlayerInfo, ModSettings, ControlPanelRequest
-│   │   └── settings/                  SettingId, SettingType, SettingScope, SettingDefinition, SettingSnapshot
-│   ├── event/                         DomainEvent, CancellableEvent, Subscription,
-│   │                                  PlayerJoined, PlayerLeft, SettingChanged
 │   ├── guard/                         Guard, DomainException
+│   ├── event/                         DomainEvent, Subscription, PlayerJoined, PlayerLeft, SettingChanged,
+│   │                                  ServerConfigChanged
+│   ├── model/                         PlayerId, PlayerInfo, ModSettings, ServerSettings, ControlPanelRequest,
+│   │   │                              ControlPanelTab, ControlPanelContent
+│   │   ├── settings/                  SettingId, SettingType, SettingScope, SettingDefinition, SettingSnapshot,
+│   │   │                              SettingPermission, SettingSearch, SettingsEditor, ...
+│   │   ├── serverconfig/              ConfigEntry, ConfigValueKind
+│   │   ├── keys/                      KeyAction, Key, GameAction, KeyCombo, KeySignal, CustomKeyBind, ...
+│   │   ├── hud/                       HudElement, HudPart
+│   │   ├── mods/                      ModInfo, ModsView
+│   │   └── text/                      Text, Translator
 │   └── ports/
 │       ├── platform/                  Platform, PortBinder, ModPlatform, CapabilityBinder, Capabilities
-│       ├── game/                      Players, Messenger, Permissions, Scheduler, PlayerData,
-│       │                              ServerConfiguration
+│       ├── game/                      Players, Messenger, Permissions, Scheduler, PlayerData, ServerConfiguration,
+│       │                              CommandRunner, PlayerInput, InputProbe, EmptyHandInput, HudDisplay
 │       ├── command/                   CommandSpec, ArgSpec, ArgType, CommandContext, CommandSender,
 │       │                              CommandHandler, CommandRegistrar, Reply
 │       ├── event/                     EventPublisher
-│       ├── mods/                      ModLookup
-│       ├── capability/                ControlPanelView (built-in, or offered by a UI mod)
-│       ├── config/                    SettingsProvider, SettingStore
-│       └── system/                    Clock, Log
+│       ├── mods/                      ModLookup, ModCatalog
+│       ├── capability/                ControlPanelView
+│       ├── config/                    SettingsProvider, SettingStore, KeyBindStore, CustomKeyBindStore,
+│       │                              SettingPermissionStore
+│       └── system/                    Clock, Log, Translations
 ├── application/
-│   ├── component/                     ModCommand, ModEventHandler, FeatureModule, ModTask,
-│   │                                  TaskSchedule, ModuleContext
+│   ├── component/                     ModCommand, ModEventHandler, FeatureModule, ModTask, TaskSchedule,
+│   │                                  ModuleContext
 │   ├── runtime/                       ModRuntime, ComponentIndex, Injector, CapabilityRegistry,
 │   │                                  ControlCoreApiService
 │   ├── event/                         DomainEventBus
-│   ├── controlpanel/                  ControlPanelService, OpenControlPanelCommand,
-│   │                                  ControlPanelModule, ControlPanelSettings
-│   ├── settings/                      SettingsRegistry (SettingsApi), /cc-* commands
+│   ├── text/                          Texts, CommandTexts
+│   ├── settings/                      SettingsRegistry (SettingsApi), SettingPermissionPolicy, ModNames,
+│   │                                  /cc-settings, /cc-get, /cc-set, /cc-perm, ... commands
+│   ├── serverconfig/                  ServerConfigEditor, RestartReminderHandler
+│   ├── keymaps/                       KeymapRegistry (KeymapsApi), KeyDispatcher, EmptyHandKeys, /cc-bind, ...
+│   ├── controlpanel/                  ControlPanelService, ControlPanelSettings, ControlPanelModule,
+│   │                                  /open-admin-config, /prefs, /cc-config
+│   ├── hud/                           HudService (HudApi), HudModule, join and leave handlers
+│   ├── mods/                          ModsEditor, /cc-mods
+│   ├── welcome/                       WelcomeSettings, WelcomeMessageHandler
 │   └── persistence/                   PlayerDataFlushTask
 └── infrastructure/
     ├── system/                        SystemClock
-    ├── persistence/                   JsonPlayerDataStore, JsonSettingStore
+    ├── i18n/                          BundledTranslations
+    ├── persistence/                   JsonFile and the Json*Store classes
     └── platforms/
-        ├── hytale/                    HytalePlatform + command/ config/ event/ log/ mapping/ mods/
-        │                              player/ server/ ui/ world/
-        └── hyui/                      HyUiPlatform, HyUiBridge, HyUiControlPanel
+        └── hytale/                    HytalePlatform + command/ config/ event/ i18n/ input/ log/ mapping/
+                                       mods/ player/ server/ ui/ world/
 ```
 
 Tests mirror this under `src/test/java/...`, plus `architecture/` (ArchUnit) and `fakes/` (in-memory

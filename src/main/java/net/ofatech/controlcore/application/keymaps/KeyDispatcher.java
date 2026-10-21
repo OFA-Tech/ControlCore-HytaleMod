@@ -18,11 +18,6 @@ import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.system.Clock;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-/**
- * Turns the signals players' clients send into key actions. A press fires the actions bound to it whose held keys
- * are all down; when several match, only those needing the most held keys fire (Ctrl+F wins over F). Combinations
- * without a press fire when their held keys all go down. Actions a player may not use (see\n * {@link KeymapRegistry#canUse}) are ignored for them. Commands and code run in the background.
- */
 public final class KeyDispatcher implements PlayerInput.Listener {
 
     static final Duration COOLDOWN = Duration.ofMillis(250);
@@ -85,13 +80,11 @@ public final class KeyDispatcher implements PlayerInput.Listener {
         }
     }
 
-    /** Forgets a player who left. */
     public void forget(PlayerId player) {
         held.remove(player);
         lastFired.keySet().removeIf(key -> key.startsWith(player + "|"));
     }
 
-    /** @return the number of held keys of the best combination of {@code action} that fires, or -1 */
     private int matchedHeld(KeyAction action, PlayerId player, KeySignal signal, Set<KeySignal> current) {
         int best = -1;
         for (KeyCombo combo : keymaps.keysFor(action.id(), player).combos()) {

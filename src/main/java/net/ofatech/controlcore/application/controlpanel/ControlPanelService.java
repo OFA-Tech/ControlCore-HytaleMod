@@ -1,6 +1,7 @@
 package net.ofatech.controlcore.application.controlpanel;
 
 import com.google.auto.service.AutoService;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import net.ofatech.controlcore.api.ControlPanelApi;
@@ -20,7 +21,6 @@ import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
-import net.ofatech.controlcore.domain.ports.platform.Capabilities;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -30,8 +30,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final ControlPanelSettings settings;
     private final Players players;
     private final ServerConfiguration server;
-    private final ControlPanelView platformView;
-    private final Capabilities capabilities;
+    private final ControlPanelView view;
     private final SettingsApi registry;
     private final ServerConfigEditor serverConfig;
     private final KeymapsEditor keymaps;
@@ -43,8 +42,7 @@ public final class ControlPanelService implements ControlPanelApi {
             ControlPanelSettings settings,
             Players players,
             ServerConfiguration server,
-            ControlPanelView platformView,
-            Capabilities capabilities,
+            ControlPanelView view,
             SettingsApi registry,
             ServerConfigEditor serverConfig,
             KeymapsEditor keymaps,
@@ -54,8 +52,7 @@ public final class ControlPanelService implements ControlPanelApi {
         this.settings = settings;
         this.players = players;
         this.server = server;
-        this.platformView = platformView;
-        this.capabilities = capabilities;
+        this.view = view;
         this.registry = registry;
         this.serverConfig = serverConfig;
         this.keymaps = keymaps;
@@ -64,10 +61,6 @@ public final class ControlPanelService implements ControlPanelApi {
         this.mods = mods;
     }
 
-    /**
-     * @return whether the player may open the admin panel: ControlCore admins, and players an admin or mod let
-     *     see at least one server setting or server config value
-     */
     public boolean mayOpenAdminPanel(PlayerId player) {
         return permissions.isAdmin(player)
                 || permitted(serverConfig, player).seesAny(SettingScope.SERVER)
@@ -83,21 +76,11 @@ public final class ControlPanelService implements ControlPanelApi {
         return settings.panelEnabled();
     }
 
-    /** Whether a UI mod (HyUI) renders the panel instead of the built-in Hytale UI. */
-    public boolean usesUiMod() {
-        return capabilities.find(ControlPanelView.class).isPresent();
-    }
-
     @Override
     public Result<Void> open(PlayerId player, ControlPanelRequest request) {
         return open(player, request, Optional.empty());
     }
 
-    /**
-     * Opens the panel on one mod's settings: the admin panel for players who may open it, else their preferences.
-     *
-     * @param mod the mod's id ({@code Group:Name}), name or the first part of its setting ids
-     */
     public Result<Void> openForMod(PlayerId player, String mod) {
         String wanted = mod == null ? "" : mod.strip();
         var entry = mods.viewedBy(Optional.of(player)).list().stream()
@@ -147,11 +130,6 @@ public final class ControlPanelService implements ControlPanelApi {
                     "ControlPanel.PlayerNotFound",
                     Text.key("controlcore.errors.controlpanel.player_offline", "That player is not online.")));
         }
-        // The HyUI page is the full admin layout, so narrower requests always use the built-in panel.
-        ControlPanelView view = capabilities
-                .find(ControlPanelView.class)
-                .filter(uiMod -> request.equals(ControlPanelRequest.ALL) && focus.isEmpty())
-                .orElse(platformView);
         return view.open(
                 player,
                 request,
@@ -165,7 +143,7 @@ public final class ControlPanelService implements ControlPanelApi {
                         permissions.isAdmin(player),
                         texts.forPlayer(Optional.of(player)),
                         () -> {
-                            List<Text> names = new java.util.ArrayList<>(serverConfig.pendingRestart());
+                            List<Text> names = new ArrayList<>(serverConfig.pendingRestart());
                             names.addAll(mods.pendingRestart());
                             return names;
                         },

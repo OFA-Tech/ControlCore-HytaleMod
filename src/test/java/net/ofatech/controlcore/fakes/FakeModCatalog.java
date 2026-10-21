@@ -3,6 +3,7 @@ package net.ofatech.controlcore.fakes;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import net.ofatech.controlcore.domain.model.mods.ModInfo;
 import net.ofatech.controlcore.domain.ports.mods.ModCatalog;
@@ -12,7 +13,7 @@ import net.ofatech.controlcore.domain.result.Result;
 public final class FakeModCatalog implements ModCatalog {
 
     public final List<ModInfo> mods = new CopyOnWriteArrayList<>();
-    public final Map<String, List<ConfigFile>> files = new java.util.concurrent.ConcurrentHashMap<>();
+    public final Map<String, List<ConfigFile>> files = new ConcurrentHashMap<>();
 
     public ModInfo add(String id, boolean core) {
         String[] parts = id.split(":", 2);

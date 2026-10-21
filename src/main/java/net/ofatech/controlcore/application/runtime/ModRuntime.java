@@ -33,10 +33,6 @@ import net.ofatech.controlcore.domain.ports.platform.ModPlatform;
 import net.ofatech.controlcore.domain.ports.platform.Platform;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-/**
- * Runs the mod: binds the host platform, builds and registers every discovered component, binds
- * other mods' platforms and publishes the API. Plain Java; driven by the plugin entry point.
- */
 public final class ModRuntime {
 
     private final Platform platform;
@@ -159,6 +155,10 @@ public final class ModRuntime {
 
     private <E extends DomainEvent> Subscription subscribeTyped(ModEventHandler<E> handler) {
         return bus.subscribe(handler.eventType(), handler::handle);
+    }
+
+    Capabilities capabilities() {
+        return capabilities;
     }
 
     private void bindModPlatform(Class<? extends ModPlatform> type, ModLookup mods) {

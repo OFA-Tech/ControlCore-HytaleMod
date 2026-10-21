@@ -6,7 +6,6 @@ public interface Messenger {
 
     void send(PlayerId player, String text);
 
-    /** Sends {@code text} in a colour ({@code #rrggbb}). */
     default void send(PlayerId player, String text, String color) {
         send(player, text);
     }

@@ -9,7 +9,6 @@ import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 
-/** The control panel's settings in the shared registry; defaults come from {@code Settings.json}. */
 public final class ControlPanelSettings {
 
     static final String ENABLED_ID = "controlcore:control-panel-enabled";

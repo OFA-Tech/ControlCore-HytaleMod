@@ -11,7 +11,6 @@ import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-/** Synchronous in-process event bus shared by our features and other mods. */
 public final class DomainEventBus implements ControlCoreEvents, EventPublisher {
 
     private final Log log;

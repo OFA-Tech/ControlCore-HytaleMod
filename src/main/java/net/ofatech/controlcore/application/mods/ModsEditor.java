@@ -25,12 +25,8 @@ import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
-/**
- * The Mods tab: every mod with its settings and keys, and (for admins) turning mods on and off from the next start.
- */
 public final class ModsEditor {
 
-    /** ControlCore itself; it cannot be turned off from its own panel. */
     static final String SELF = "OFATech:ControlCore";
 
     private final ModCatalog catalog;
@@ -65,13 +61,11 @@ public final class ModsEditor {
                 .value();
     }
 
-    /** @return the Mods tab for {@code viewer} (empty: the console, may do everything) */
     public ModsView viewedBy(Optional<PlayerId> viewer) {
         boolean admin = viewer.isEmpty() || permissions.isAdmin(viewer.get());
         return new View(admin);
     }
 
-    /** @return the names of mods that run differently after the next restart */
     public List<Text> pendingRestart() {
         List<Text> names = new ArrayList<>();
         for (ModInfo mod : safeMods()) {

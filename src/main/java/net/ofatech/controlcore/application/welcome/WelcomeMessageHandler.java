@@ -5,7 +5,7 @@ import net.ofatech.controlcore.application.component.ModEventHandler;
 import net.ofatech.controlcore.domain.event.PlayerJoined;
 import net.ofatech.controlcore.domain.ports.game.Messenger;
 
-@SuppressWarnings("rawtypes") // AutoService cannot name generic interfaces exactly
+@SuppressWarnings("rawtypes")
 @AutoService(ModEventHandler.class)
 public final class WelcomeMessageHandler implements ModEventHandler<PlayerJoined> {
 

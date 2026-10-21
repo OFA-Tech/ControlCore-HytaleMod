@@ -1,6 +1,7 @@
 package net.ofatech.controlcore.application.serverconfig;
 
 import com.google.auto.service.AutoService;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -13,8 +14,7 @@ import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.game.Messenger;
 
-/** Tells admins who join which server config and mod changes still wait for a restart. */
-@SuppressWarnings("rawtypes") // AutoService cannot name generic interfaces exactly
+@SuppressWarnings("rawtypes")
 @AutoService(ModEventHandler.class)
 public final class RestartReminderHandler implements ModEventHandler<PlayerJoined> {
 
@@ -47,7 +47,7 @@ public final class RestartReminderHandler implements ModEventHandler<PlayerJoine
         if (!permissions.isAdmin(event.player().id())) {
             return;
         }
-        List<Text> names = new java.util.ArrayList<>(serverConfig.pendingRestart());
+        List<Text> names = new ArrayList<>(serverConfig.pendingRestart());
         names.addAll(mods.pendingRestart());
         if (names.isEmpty()) {
             return;

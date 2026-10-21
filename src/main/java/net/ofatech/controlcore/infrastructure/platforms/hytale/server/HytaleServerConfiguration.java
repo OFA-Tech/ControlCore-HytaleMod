@@ -30,6 +30,7 @@ import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -55,16 +56,6 @@ import org.bson.BsonInt64;
 import org.bson.BsonString;
 import org.bson.BsonValue;
 
-/**
- * Reads and edits {@link HytaleServerConfig}, Hytale's {@code config.json}. The keys are found by walking the
- * config's codec, so new Hytale keys show up without code changes (read-only until {@link HytaleConfigAccess}
- * lists them). Effective values come from the config's getters where they exist, because keys missing from the
- * file fall back to built-in defaults inside the getters; defaults are read the same way from a fresh config.
- *
- * <p>A change is decoded into the live config object by the key's own codec field, so Hytale's validators run,
- * then the config is saved to {@code config.json} at once. A new max view radius is also pushed to online
- * players, like Hytale's {@code /maxviewradius}.
- */
 public final class HytaleServerConfiguration implements ServerConfiguration {
 
     private static final int CHUNK_SIZE = 32;
@@ -75,7 +66,6 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
     private static final String PASSWORD = "Password";
     private static final String MAX_VIEW_RADIUS = "MaxViewRadius";
 
-    /** Descriptions for keys Hytale does not document in its codec. */
     private static final Map<String, String> DESCRIPTIONS = Map.of(
             "ServerName",
             "Shown to players when they connect and in LAN discovery.",
@@ -92,7 +82,6 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
             "Version",
             "Format version of config.json.");
 
-    /** One key found in the config codec. */
     private record Key(List<String> segments, BuilderField<?, ?> field, Codec<?> codec, String section, int group) {
 
         String path() {
@@ -210,10 +199,6 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
                 entry(key, config, encode(config), new HytaleServerConfig(), encode(new HytaleServerConfig())));
     }
 
-    /**
-     * Saves {@code config} to {@code config.json}, after any save still running: Hytale writes config.json.tmp and
-     * moves it, so overlapping saves collide.
-     */
     public synchronized void save(HytaleServerConfig config) {
         config.markChanged();
         if (config.consumeHasChanged()) {
@@ -224,12 +209,10 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
         }
     }
 
-    // --- Keys ----------------------------------------------------------------------------------------------
-
     private static List<Key> keys() {
         List<Key> keys = new ArrayList<>();
         walk(HytaleServerConfig.CODEC, List.of(), keys);
-        Map<String, Key> unique = new java.util.LinkedHashMap<>();
+        Map<String, Key> unique = new LinkedHashMap<>();
         keys.forEach(key -> unique.putIfAbsent(key.path(), key));
         List<Key> sorted = new ArrayList<>(unique.values());
         sorted.sort(Comparator.comparingInt(Key::group));
@@ -237,7 +220,6 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
     }
 
     private static void walk(BuilderCodec<?> codec, List<String> parent, List<Key> keys) {
-        // Fields inherited from a parent codec (for example WorldMap's) come first, as in the file.
         if (codec.getParent() != null) {
             walk(codec.getParent(), parent, keys);
         }
@@ -285,8 +267,6 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
                 : HytaleConfigAccess.of(key.path());
     }
 
-    // --- Entries -------------------------------------------------------------------------------------------
-
     private static ConfigEntry entry(
             Key key,
             HytaleServerConfig config,
@@ -328,7 +308,6 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
                 key.path().equals(PASSWORD) ? SettingAccess.READ_ONLY : accessOf(key));
     }
 
-    /** The effective value: the getter where one exists (it applies built-in defaults), else the file. */
     private static Optional<String> valueOf(Key key, ConfigValueKind kind, Object root, BsonDocument encoded) {
         Object owner = owner(root, key.segments());
         if (owner != null) {
@@ -379,7 +358,6 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
         };
     }
 
-    /** A one-line description of a structured value, such as {@code Disk (bans.json)} or {@code 2: A, B}. */
     private static String summary(BsonValue bson) {
         if (bson == null || bson.isNull()) {
             return "(not set)";
@@ -453,7 +431,6 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
         }
     }
 
-    /** Reads a bound of Hytale's {@link RangeValidator}, which has no getters. */
     private static long bound(RangeValidator<?> validator, String name, long fallback) {
         try {
             Field field = RangeValidator.class.getDeclaredField(name);
@@ -463,8 +440,6 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
             return fallback;
         }
     }
-
-    // --- Writing -------------------------------------------------------------------------------------------
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static Result<BsonValue> toBson(Key key, String text) {
@@ -521,7 +496,6 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
         ((BuilderField) field).decode(document, owner, ExtraInfo.THREAD_LOCAL.get());
     }
 
-    /** @return the first validation failure in Hytale's exception text, or the message */
     private static String reason(RuntimeException e) {
         String message = Objects.requireNonNullElse(e.getMessage(), e.getClass().getSimpleName());
         return message.lines()
@@ -553,8 +527,6 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
         }
     }
 
-    // --- Navigation ----------------------------------------------------------------------------------------
-
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static BsonDocument encode(HytaleServerConfig config) {
         return ((Codec) HytaleServerConfig.CODEC)
@@ -573,7 +545,6 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
         return current;
     }
 
-    /** @return the object holding the last segment (the config itself or one of its sections), or null */
     private static Object owner(Object root, List<String> segments) {
         Object current = root;
         for (String segment : segments.subList(0, segments.size() - 1)) {
@@ -582,7 +553,6 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
         return current;
     }
 
-    /** Calls the getter Hytale uses for a key: {@code getX}, {@code isX}, {@code getXConfig}, or without "Timeout". */
     private static Optional<Object> getter(Object target, String key) {
         List<String> names =
                 List.of("get" + key, "is" + key, "get" + key + "Config", "get" + key.replaceAll("Timeout$", ""));
@@ -592,8 +562,7 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
                 if (method.getReturnType() != void.class) {
                     return Optional.ofNullable(method.invoke(target));
                 }
-            } catch (NoSuchMethodException e) {
-                // try the next name
+            } catch (NoSuchMethodException tryNextName) {
             } catch (ReflectiveOperationException | RuntimeException e) {
                 return Optional.empty();
             }
@@ -601,7 +570,6 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
         return Optional.empty();
     }
 
-    /** {@code MaxViewRadius} → {@code Max view radius}; acronyms such as {@code MOTD} stay as they are. */
     static String humanize(String key) {
         String[] words = key.replaceAll("([a-z0-9])([A-Z])", "$1 $2")
                 .replaceAll("([A-Z]+)([A-Z][a-z])", "$1 $2")

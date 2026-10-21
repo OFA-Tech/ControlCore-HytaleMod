@@ -53,7 +53,6 @@ import net.ofatech.controlcore.infrastructure.platforms.hytale.ui.HytaleControlP
 import net.ofatech.controlcore.infrastructure.platforms.hytale.world.HytaleScheduler;
 import net.ofatech.controlcore.infrastructure.system.SystemClock;
 
-/** Translates the Hytale server API into our ports. Built from the plugin instance. */
 public final class HytalePlatform implements Platform {
 
     private final JavaPlugin plugin;

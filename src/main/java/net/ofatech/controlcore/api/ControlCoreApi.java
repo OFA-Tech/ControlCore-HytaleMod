@@ -13,10 +13,12 @@ import java.util.Optional;
  */
 public interface ControlCoreApi {
 
-    /** Version of this API contract (semantic versioning). */
+    /** Version of this API contract (semantic versioning), for example {@code "2.0.0"}. */
     String VERSION = "2.0.0";
 
     /**
+     * Returns the running API; use it when ControlCore is a required dependency.
+     *
      * @return the running API
      * @throws IllegalStateException if the mod is not loaded or not set up yet
      */
@@ -24,37 +26,59 @@ public interface ControlCoreApi {
         return ControlCoreApiProvider.get();
     }
 
-    /** @return the running API, or empty if the mod is not loaded or not set up yet */
+    /**
+     * Returns the running API if there is one; use it when ControlCore is an optional dependency.
+     *
+     * @return the running API, or empty if the mod is not loaded or not set up yet
+     */
     static Optional<ControlCoreApi> find() {
         return ControlCoreApiProvider.find();
     }
 
+    /**
+     * Returns the API version of the running ControlCore, which may be newer than the one you compiled against.
+     *
+     * @return the running API's version, for example {@code "2.0.0"}
+     */
     default String apiVersion() {
         return VERSION;
     }
 
+    /**
+     * The control panel: open it for a player with chosen sections.
+     *
+     * @return the control panel API
+     */
     ControlPanelApi controlPanel();
 
+    /**
+     * ControlCore's events, for example {@link net.ofatech.controlcore.domain.event.SettingChanged}.
+     *
+     * @return the events API
+     */
     ControlCoreEvents events();
 
     /**
      * The shared settings registry.
      *
-     * @since 1.1.0
+     * @return the settings API
+     * @since API 1.1.0
      */
     SettingsApi settings();
 
     /**
      * Key actions: commands and code players run with keys, rebindable per player.
      *
-     * @since 1.3.0
+     * @return the key actions API
+     * @since API 1.3.0
      */
     KeymapsApi keymaps();
 
     /**
      * Players' HUD: the game's HUD parts and mods' HUDs players turn on and off.
      *
-     * @since 2.0.0
+     * @return the HUD API
+     * @since API 2.0.0
      */
     HudApi huds();
 }

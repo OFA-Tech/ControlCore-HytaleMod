@@ -33,7 +33,6 @@ import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.server.HytaleServerConfiguration;
 
-/** {@link ModCatalog} from Hytale's plugin manager, asset module and {@code config.json} ({@code Mods}). */
 public final class HytaleModCatalog implements ModCatalog {
 
     private static final int MAX_FILES = 5;
@@ -209,8 +208,7 @@ public final class HytaleModCatalog implements ModCatalog {
             if (own != null && own.getEnabled() != null) {
                 return own.getEnabled();
             }
-        } catch (RuntimeException ignored) {
-            // an id Hytale cannot parse: use the defaults
+        } catch (RuntimeException unparsableModId) {
         }
         return config.getDefaultModsEnabled() && !manifest.isDisabledByDefault();
     }

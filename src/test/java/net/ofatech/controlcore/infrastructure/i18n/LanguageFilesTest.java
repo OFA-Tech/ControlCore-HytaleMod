@@ -14,7 +14,6 @@ import java.util.stream.Stream;
 import net.ofatech.controlcore.application.text.Texts;
 import org.junit.jupiter.api.Test;
 
-/** ControlCore's language files: complete, consistent, and covering every key the code uses. */
 class LanguageFilesTest {
 
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{([A-Za-z0-9_]+)}");
@@ -42,7 +41,6 @@ class LanguageFilesTest {
         Set<String> used = new TreeSet<>();
         collect(Path.of("src/main/java"), ".java", KEY_IN_CODE, used);
         collect(Path.of("src/main/resources/Common/UI/Custom/Pages/ControlCore"), ".ui", UI_KEY, used);
-        // keys built at run time from a prefix are checked by their own tests
         used.removeIf(
                 key -> key.endsWith(".") || key.equals("controlcore.tabs") || key.equals("controlcore.hud.rules"));
         assertThat(used).isNotEmpty();
@@ -51,8 +49,6 @@ class LanguageFilesTest {
 
     @Test
     void layoutKeysUseOnlyCharactersTheClientParses() throws IOException {
-        // The client refuses a layout whose %key; has anything but letters, digits and dots ("Expected ;, found
-        // _") and then cannot join the server at all.
         Set<String> keys = new TreeSet<>();
         collect(
                 Path.of("src/main/resources/Common/UI/Custom/Pages/ControlCore"),

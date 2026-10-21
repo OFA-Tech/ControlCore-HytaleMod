@@ -4,8 +4,7 @@ import com.google.auto.service.AutoService;
 import net.ofatech.controlcore.application.component.ModEventHandler;
 import net.ofatech.controlcore.domain.event.PlayerJoined;
 
-/** Applies a joining player's HUD preferences and the server's HUD rules. */
-@SuppressWarnings("rawtypes") // AutoService cannot name generic interfaces exactly
+@SuppressWarnings("rawtypes")
 @AutoService(ModEventHandler.class)
 public final class ApplyHudOnJoin implements ModEventHandler<PlayerJoined> {
 

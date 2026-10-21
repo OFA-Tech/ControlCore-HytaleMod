@@ -11,7 +11,8 @@ import net.ofatech.controlcore.domain.result.Result;
 
 /**
  * Shared settings registry. Mods register typed settings here; ControlCore stores their values, lets admins
- * and players change them (commands, control panel) and reports changes.
+ * and players change them (commands, control panel) and reports changes. Get it with
+ * {@link ControlCoreApi#settings()}.
  *
  * <pre>{@code
  * Setting<Integer> maxHomes = api.settings()
@@ -29,14 +30,27 @@ public interface SettingsApi extends SettingsEditor {
      * Registers a setting. Registering the same id again with the same type and scope (for example after a
      * plugin reload) replaces the definition and keeps the stored values.
      *
-     * @return the handle, or {@code Settings.Conflict} if the id is registered with another type or scope
+     * @param <T> Java type of the setting's value
+     * @param definition the setting to register
+     * @return the handle to read and change the value, or {@code Settings.Conflict} if the id is registered with
+     *     another type or scope
+     * @throws NullPointerException if {@code definition} is {@code null}
      */
     <T> Result<Setting<T>> register(SettingDefinition<T> definition);
 
-    /** @return the definition registered under {@code id} */
+    /**
+     * Finds a registered setting's definition.
+     *
+     * @param id the setting's id, for example {@code homes:max-homes}
+     * @return the definition registered under {@code id}, or empty if there is none
+     */
     Optional<SettingDefinition<?>> definition(SettingId id);
 
-    /** @return every registered definition, sorted by id */
+    /**
+     * Lists every registered setting, server settings and player preferences.
+     *
+     * @return every registered definition, sorted by id
+     */
     List<SettingDefinition<?>> definitions();
 
     /**
@@ -46,17 +60,29 @@ public interface SettingsApi extends SettingsEditor {
      * @param modId the mod id, the first part of its setting and key ids
      * @param name the name, for example {@code Text.key("homes.mod_name", "Home Teleports")}; {@code null} goes back
      *     to the capitalised id
+     * @throws NullPointerException if {@code modId} is {@code null}
      * @since API 2.0.0
      */
     void setModName(String modId, Text name);
 
-    /** @see #setModName(String, Text) */
+    /**
+     * Sets the name a mod's settings and keys are shown under, in one language for everyone.
+     *
+     * @param modId the mod id, the first part of its setting and key ids
+     * @param name the name, for example {@code "Home Teleports"}; {@code null} goes back to the capitalised id
+     * @throws NullPointerException if {@code modId} is {@code null}
+     * @see #setModName(String, Text)
+     */
     default void setModName(String modId, String name) {
         setModName(modId, name == null ? null : Text.of(name));
     }
 
     /**
-     * @return the name {@code modId}'s settings and keys are shown under
+     * Returns the name a mod's settings and keys are shown under.
+     *
+     * @param modId the mod id
+     * @return the name {@code modId}'s settings and keys are shown under: the one set with
+     *     {@link #setModName(String, Text)}, else the capitalised id
      * @since API 2.0.0
      */
     Text modName(String modId);
@@ -67,12 +93,17 @@ public interface SettingsApi extends SettingsEditor {
      *
      * @param category the category, as given to {@link SettingDefinition#inCategory}; case does not matter
      * @param rule the rule; {@link SettingPermission#INHERIT} removes it
+     * @throws NullPointerException if {@code category} or {@code rule} is {@code null}
      * @since API 1.4.0
      */
     void setCategoryPermission(String category, SettingPermission rule);
 
     /**
-     * @return the rule a mod set for {@code category}, or {@link SettingPermission#INHERIT}
+     * Returns the rule a mod set for a category with {@link #setCategoryPermission(String, SettingPermission)}.
+     *
+     * @param category the category; case does not matter
+     * @return the rule a mod set for {@code category}, or {@link SettingPermission#INHERIT} if none (or
+     *     {@code category} is {@code null})
      * @since API 1.4.0
      */
     SettingPermission categoryPermission(String category);

@@ -19,6 +19,16 @@ public record SettingId(String namespace, String key) implements Comparable<Sett
     private static final Pattern NAMESPACE = Pattern.compile("[a-z0-9][a-z0-9_-]{0,63}");
     private static final Pattern KEY = Pattern.compile("[a-z0-9][a-z0-9_.-]{0,127}");
 
+    /**
+     * Creates an id from its two parts; use {@link #of(String)} or {@link #parse(String)} for {@code namespace:key}
+     * text.
+     *
+     * @param namespace owner of the setting, 1 to 64 characters: lower-case letters, digits, {@code -} and
+     *     {@code _}, starting with a letter or digit
+     * @param key name within the namespace, 1 to 128 characters: lower-case letters, digits, {@code -}, {@code _}
+     *     and {@code .}, starting with a letter or digit
+     * @throws DomainException if either part is {@code null} or does not match its format
+     */
     public SettingId {
         if (namespace == null || !NAMESPACE.matcher(namespace).matches()) {
             throw new DomainException("Invalid setting namespace: " + namespace);
@@ -29,10 +39,10 @@ public record SettingId(String namespace, String key) implements Comparable<Sett
     }
 
     /**
-     * Parses user input.
+     * Parses user input; surrounding spaces are ignored.
      *
-     * @param text {@code namespace:key}; upper case is accepted and folded to lower case
-     * @return the id, or the error {@code Settings.InvalidId}
+     * @param text {@code namespace:key}; upper case is accepted and folded to lower case; may be {@code null}
+     * @return the id, or the error {@code Settings.InvalidId} if the text is {@code null} or not a valid id
      */
     public static Result<SettingId> parse(String text) {
         if (text != null) {
@@ -55,9 +65,9 @@ public record SettingId(String namespace, String key) implements Comparable<Sett
     }
 
     /**
-     * Parses an id written in code.
+     * Parses an id written in code, like {@link #parse(String)} but throwing on invalid text.
      *
-     * @param text {@code namespace:key}
+     * @param text {@code namespace:key}, for example {@code homes:max-homes}
      * @return the id
      * @throws DomainException if the text is not a valid id
      */
@@ -69,11 +79,22 @@ public record SettingId(String namespace, String key) implements Comparable<Sett
         return parsed.value();
     }
 
+    /**
+     * Orders ids alphabetically by their {@code namespace:key} text.
+     *
+     * @param other the id to compare with
+     * @return a negative number, zero or a positive number as this id sorts before, equal to or after {@code other}
+     */
     @Override
     public int compareTo(SettingId other) {
         return toString().compareTo(other.toString());
     }
 
+    /**
+     * Returns the id as text, the form {@link #of(String)} and {@link #parse(String)} read back.
+     *
+     * @return {@code namespace:key}, for example {@code homes:max-homes}
+     */
     @Override
     public String toString() {
         return namespace + ":" + key;

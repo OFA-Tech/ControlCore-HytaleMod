@@ -4,28 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * A search typed into the control panel. Words are separated by spaces and must all match (case does not matter;
- * spaces inside values are ignored, so {@code ctrl+f} finds {@code CTRL + F}). A plain word matches the name, id,
- * mod id, category, value, default or description. A prefix limits a word to one field:
- *
- * <ul>
- *   <li>{@code name:} the display name
- *   <li>{@code id:} the full id, for example {@code controlcore:welcome-message}
- *   <li>{@code mod:} the mod id (the id's namespace)
- *   <li>{@code category:} or {@code cat:} the heading
- *   <li>{@code key:} or {@code value:} the current value (for key bindings: the keys)
- *   <li>{@code default:} the default value
- *   <li>{@code desc:} the description
- *   <li>{@code is:changed} only values that differ from their default; {@code is:default} the others
- * </ul>
- *
- * A word starting with {@code -} excludes matches, for example {@code -mod:server}. A {@link Filter} picked next to
- * the search box limits words without a prefix to one field, or shows only changed or unchanged values.
- */
 public final class SettingSearch {
 
-    /** What the dropdown next to the search box limits the search to. */
     public enum Filter {
         ALL("All", Field.ANY),
         NAME("Name", Field.NAME),
@@ -46,12 +26,10 @@ public final class SettingSearch {
             this.field = field;
         }
 
-        /** @return the text shown in the dropdown */
         public String label() {
             return label;
         }
 
-        /** @param label a dropdown label or name; unknown or {@code null} gives {@link #ALL} */
         public static Filter of(String label) {
             if (label != null) {
                 for (Filter filter : values()) {
@@ -65,7 +43,6 @@ public final class SettingSearch {
         }
     }
 
-    /** How each word is compared with a field, picked in the second dropdown next to the search box. */
     public enum Match {
         CONTAINS("Contains", Operator.CONTAINS, false),
         EQUALS("Equals", Operator.EQUALS, false),
@@ -86,12 +63,10 @@ public final class SettingSearch {
             this.negated = negated;
         }
 
-        /** @return the text shown in the dropdown */
         public String label() {
             return label;
         }
 
-        /** @param label a dropdown label or name; unknown or {@code null} gives {@link #CONTAINS} */
         public static Match of(String label) {
             if (label != null) {
                 for (Match match : values()) {
@@ -121,7 +96,6 @@ public final class SettingSearch {
         }
     }
 
-    /** A search that matches everything. */
     public static final SettingSearch ALL = new SettingSearch("", Filter.ALL, Match.CONTAINS, List.of());
 
     private final String text;
@@ -136,36 +110,24 @@ public final class SettingSearch {
         this.terms = terms;
     }
 
-    /** @param text what the player typed; {@code null} or blank matches everything */
     public static SettingSearch parse(String text) {
         return parse(text, Filter.ALL);
     }
 
-    /**
-     * @param text what the player typed; {@code null} or blank matches everything the filter lets through
-     * @param filter what the dropdown is set to
-     */
     public static SettingSearch parse(String text, Filter filter) {
         return parse(text, filter, Match.CONTAINS);
     }
 
-    /**
-     * @param text what the player typed; {@code null} or blank matches everything the filter lets through
-     * @param filter what the first dropdown is set to
-     * @param match how words are compared (the second dropdown); a {@code "Doesn't …"} match excludes rows where
-     *     the word matches, and a {@code -} in front of a word flips it again
-     */
     public static SettingSearch parse(String text, Filter filter, Match match) {
         String query = text == null ? "" : text.strip();
         List<Term> terms = new ArrayList<>();
         if (filter == Filter.CHANGED || filter == Filter.UNCHANGED) {
             terms.add(new Term(Field.IS, filter == Filter.CHANGED ? "changed" : "default", false, Operator.EQUALS));
         }
-        // Equals, starts with and ends with compare the whole text as one phrase; contains checks each word.
-        String[] words = query.isEmpty()
-                ? new String[0]
-                : match.operator == Operator.CONTAINS ? query.split("\\s+") : new String[] {query};
-        for (String word : words) {
+        boolean eachWordSeparately = match.operator == Operator.CONTAINS;
+        String[] phrases =
+                query.isEmpty() ? new String[0] : eachWordSeparately ? query.split("\\s+") : new String[] {query};
+        for (String word : phrases) {
             boolean negated = word.startsWith("-") && word.length() > 1;
             String body = (negated ? word.substring(1) : word).toLowerCase(Locale.ROOT);
             Field field = filter.field;
@@ -186,17 +148,14 @@ public final class SettingSearch {
                 : new SettingSearch(query, filter, match, List.copyOf(terms));
     }
 
-    /** @return what the player typed */
     public String text() {
         return text;
     }
 
-    /** @return what the first dropdown is set to */
     public Filter filter() {
         return filter;
     }
 
-    /** @return how words are compared (the second dropdown) */
     public Match match() {
         return match;
     }
@@ -205,10 +164,6 @@ public final class SettingSearch {
         return terms.isEmpty();
     }
 
-    /**
-     * @param snapshot the row
-     * @param description the description line the row shows
-     */
     public boolean matches(SettingSnapshot snapshot, String description) {
         return matches(
                 snapshot,
@@ -217,11 +172,6 @@ public final class SettingSearch {
                 description);
     }
 
-    /**
-     * @param name the row's name as shown (translated); the definition's own name matches too
-     * @param category the row's category as shown (translated); the definition's own category matches too
-     * @param description the description line the row shows
-     */
     public boolean matches(SettingSnapshot snapshot, String name, String category, String description) {
         for (Term term : terms) {
             if (term.matches(snapshot, name, category, description) == term.negated) {

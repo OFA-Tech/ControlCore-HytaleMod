@@ -16,7 +16,7 @@
         "Hytale:AssetModule": "*"
     },
     "OptionalDependencies": {
-        "Ellie:HyUI": "*"
+        
     },
     "DisabledByDefault": false,
     "Main": "net.ofatech.controlcore.Main",

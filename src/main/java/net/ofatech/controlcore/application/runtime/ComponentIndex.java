@@ -15,11 +15,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Reads the {@code META-INF/services} files that {@code @AutoService} writes at compile time and
- * returns the listed classes without instantiating them (the {@link Injector} builds them).
- * Entries that belong to other mods sharing the class path are ignored.
- */
 public final class ComponentIndex {
 
     private static final String PREFIX = "META-INF/services/";

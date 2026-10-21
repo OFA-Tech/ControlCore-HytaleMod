@@ -7,7 +7,6 @@ import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.text.Text;
 
-/** Settings of the join message. */
 public final class WelcomeSettings {
 
     static final String MESSAGE_ID = "controlcore:welcome-message";
@@ -43,12 +42,10 @@ public final class WelcomeSettings {
                 .value();
     }
 
-    /** @return the welcome message's colour, {@code #rrggbb} */
     public String color() {
         return color.get();
     }
 
-    /** @return the message for this player, with {@code {player}} filled in; empty if none or turned off */
     public String messageFor(PlayerId player, String name) {
         String text = message.get().strip();
         return text.isEmpty() || !show.get(player) ? "" : text.replace("{player}", name);

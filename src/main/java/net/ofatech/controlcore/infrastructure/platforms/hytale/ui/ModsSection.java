@@ -9,10 +9,8 @@ import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.mods.ModCatalog;
 
-/** The Mods tab's rows, texts and search, apart from the UI. */
 final class ModsSection {
 
-    /** What the Mods tab's dropdown shows. */
     enum Filter {
         MODS,
         ENABLED,
@@ -46,7 +44,6 @@ final class ModsSection {
         this.tr = tr;
     }
 
-    /** Reads the mods again; call before building the rows. */
     List<ModsView.Entry> load() {
         entries = view.list();
         return entries;
@@ -73,7 +70,6 @@ final class ModsSection {
         filter = newFilter;
     }
 
-    /** @return whether row {@code entry} is shown under the current search */
     boolean shown(ModsView.Entry entry) {
         ModInfo mod = entry.mod();
         boolean byFilter = switch (filter) {
@@ -108,7 +104,6 @@ final class ModsSection {
         return true;
     }
 
-    /** @return the number of rows shown under the current search */
     int shownCount() {
         return (int) entries.stream().filter(this::shown).count();
     }
@@ -158,7 +153,6 @@ final class ModsSection {
         return String.join(" · ", parts);
     }
 
-    /** @return the mod's config files as text, read-only */
     String configText(String modId) {
         List<ModCatalog.ConfigFile> files = view.configFiles(modId);
         if (files.isEmpty()) {

@@ -12,7 +12,6 @@ import net.ofatech.controlcore.domain.event.PlayerLeft;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.mapping.Ids;
 
-/** Listens to Hytale events and republishes them as our domain events. */
 public final class HytaleGameEvents {
 
     private final EventRegistry registry;
