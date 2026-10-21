@@ -47,7 +47,8 @@
   command are dropped.
 - The admin panel's Keymaps tab switches between **Server defaults** (the keys everyone gets; Default goes back
   to the mod's) and **My keys** (only yours; Default goes back to the server's). Open panels follow changes.
-- `/cc-input-probe` and `/cc-key-probe input` (admin): show what the client reports for each key.
+- `/cc-input-probe` and `/cc-key-probe input` (debug tools, `<base>.debug`; operators have it): show what the
+  client reports for each key.
 - **Server Configs** tab lists every key of the server's `config.json`, read from Hytale's config
   definition: live keys (name, MOTD, max players, max view radius, connection timeouts, require join
   permission) apply at once, restart keys (world defaults, rate limit, backup, update, world map) apply
