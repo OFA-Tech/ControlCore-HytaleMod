@@ -193,6 +193,8 @@ public final class HytalePlayerInput implements PlayerInput, PlayerPacketFilter 
             case Ability1 -> KeySignal.ABILITY_1;
             case Ability2 -> KeySignal.ABILITY_2;
             case Ability3 -> KeySignal.ABILITY_3;
+            case Ability4 -> KeySignal.ABILITY_4;
+            case Dodge -> KeySignal.DODGE;
             case Use -> KeySignal.USE;
             case Pick -> KeySignal.PICK;
             case GameModeSwap -> KeySignal.GAME_MODE_SWAP;

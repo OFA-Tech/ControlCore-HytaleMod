@@ -5,17 +5,21 @@ package net.ofatech.controlcore.domain.model.keys;
  * used. The server never sees raw keys; only these signals.
  */
 public enum KeySignal {
-    /** Ability 1 (Q by default); only sent if the held item has an ability 1. */
+    /** Ability 1 (Q by default); sent if the held item has an ability 1, or with ControlCore's empty-hand keys. */
     ABILITY_1(true),
-    /** Ability 2 (E by default); only sent if the held item has an ability 2. */
+    /** Ability 2 (E by default); sent if the held item has an ability 2, or with ControlCore's empty-hand keys. */
     ABILITY_2(true),
     /** Ability 3 (R by default). */
     ABILITY_3(true),
+    /** Ability 4; sent if the held item has one, or with ControlCore's empty-hand keys. */
+    ABILITY_4(true),
+    /** Dodge; sent if the held item has a dodge interaction, or with ControlCore's empty-hand keys. */
+    DODGE(true),
     /** Use / interact (F by default). */
     USE(true),
     /** Primary action (left mouse button). */
     PRIMARY(true),
-    /** Secondary action (right mouse button); only sent if the held item has one. */
+    /** Secondary action (right mouse button); sent if the held item has one, or with an empty hand (empty-hand keys). */
     SECONDARY(true),
     /** Pick block (middle mouse button). */
     PICK(true),

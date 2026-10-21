@@ -40,6 +40,8 @@ public final class FakePlatform implements Platform {
     public final FakeKeyBindStore keyBinds = new FakeKeyBindStore();
     public final FakeCustomKeyBindStore customKeyBinds = new FakeCustomKeyBindStore();
     public final FakeSettingPermissionStore settingPermissions = new FakeSettingPermissionStore();
+    /** Last value ControlCore asked the empty hand to report keys with; null until asked. */
+    public volatile Boolean emptyHandKeys;
     /** Permission nodes players do not have; everything else is granted. */
     public final java.util.Set<String> deniedNodes = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
@@ -73,6 +75,7 @@ public final class FakePlatform implements Platform {
         binder.bind(net.ofatech.controlcore.domain.ports.config.KeyBindStore.class, keyBinds);
         binder.bind(net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore.class, customKeyBinds);
         binder.bind(net.ofatech.controlcore.domain.ports.config.SettingPermissionStore.class, settingPermissions);
+        binder.bind(net.ofatech.controlcore.domain.ports.game.EmptyHandInput.class, on -> emptyHandKeys = on);
         binder.bind(InputProbe.class, new InputProbe() {
             @Override
             public boolean toggle(net.ofatech.controlcore.domain.model.PlayerId player) {
