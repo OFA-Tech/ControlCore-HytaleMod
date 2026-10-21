@@ -1,0 +1,1 @@
+ControlCore · [GitHub](https://github.com/OFA-Tech/ControlCore-HytaleMod) · [CurseForge](https://www.curseforge.com/hytale/mods/control-core) · MIT license · This wiki is generated from the repository's `wiki/` folder: edit it there, not here.

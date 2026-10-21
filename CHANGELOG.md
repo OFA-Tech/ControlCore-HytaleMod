@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+- [Wiki](https://github.com/OFA-Tech/ControlCore-HytaleMod/wiki) for server owners, players and mod authors, kept in
+  `wiki/` and published by `.github/workflows/wiki.yml`.
+
 ## 0.10.0 - 2026-10-21
 
 Beta. Requires Hytale server 0.7.2 (`>=0.7.2 <0.8.0`). The API for other mods is now **2.0.0**
