@@ -61,6 +61,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private static final String INTEGER_ROW = "Pages/ControlCore/SettingIntegerRow.ui";
     private static final String DECIMAL_ROW = "Pages/ControlCore/SettingDecimalRow.ui";
     private static final String COLOR_ROW = "Pages/ControlCore/SettingColorRow.ui";
+    private static final String TEXT_COLOR_ROW = "Pages/ControlCore/SettingTextColorRow.ui";
     private static final String LIST_ROW = "Pages/ControlCore/SettingListRow.ui";
     private static final String LIST_ITEM = "Pages/ControlCore/SettingListItem.ui";
     private static final String MOD_ROW = "Pages/ControlCore/ModRow.ui";
@@ -85,6 +86,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private static final String SLID = "Slid";
 
     private static final String PICK = "Pick";
+    /** A text row with its colour: the picker only shows a hint until Save. */
+    private static final String PICK_INLINE = "PickInline";
+
+    private static final String SAVE_COLORED = "SaveColored";
+    private static final String RESET_COLORED = "ResetColored";
     private static final String ADD_ITEM = "AddItem";
     private static final String REMOVE_ITEM = "RemoveItem";
 
@@ -161,6 +167,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private final Set<Tab> tabs = EnumSet.noneOf(Tab.class);
     private final Map<Section, SettingsSection> sections = new EnumMap<>(Section.class);
     private final Map<Section, Map<SettingId, Integer>> rowIndexes = new EnumMap<>(Section.class);
+    /** Colour settings shown inside a text row (same keys as {@link #shown}). */
+    private final Set<String> inlineColors = new java.util.HashSet<>();
     /** Value each row currently shows, to skip change notifications the panel caused itself (world thread). */
     private final Map<String, String> shown = new HashMap<>();
     /** Latest snapshot of each row (same keys as {@link #shown}), used to filter rows by the search. */
@@ -390,6 +398,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private void buildSection(Section key, SettingsSection section, UICommandBuilder commands, UIEventBuilder events) {
         Map<SettingId, Integer> indexes = new HashMap<>();
         rowIndexes.put(key, indexes);
+        inlineColors.removeIf(shownKey -> shownKey.startsWith(key.name() + "|"));
         commands.set(key.status + ".Text", "");
         List<SettingsSection.Entry> entries = section.entries();
         built.put(key, entries);
@@ -404,6 +413,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                     indexes.put(row.id(), index);
                     shown.put(shownKey(key, row.id()), row.snapshot().value());
                     latest.put(shownKey(key, row.id()), row.snapshot());
+                    int rowIndex = index;
+                    row.color().ifPresent(color -> {
+                        indexes.put(color.id(), rowIndex);
+                        shown.put(shownKey(key, color.id()), color.value());
+                        latest.put(shownKey(key, color.id()), color);
+                        inlineColors.add(shownKey(key, color.id()));
+                    });
                     boolean customBind = canAddBinds
                             && key == Section.SERVER_KEYMAPS
                             && CUSTOM_NAMESPACE.equals(row.id().namespace());
@@ -426,6 +442,24 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         String id = snapshot.id().toString();
         switch (row.kind()) {
             case TEXT -> {
+                if (row.color().isPresent()) {
+                    String colorId = row.color().get().id().toString();
+                    commands.append(key.list, TEXT_COLOR_ROW);
+                    commands.set(input + ".PlaceholderText", section.placeholder(snapshot));
+                    events.addEventBinding(
+                            CustomUIEventBindingType.Activating,
+                            element + " #Save",
+                            action(SAVE_COLORED, key, id)
+                                    .append(Action.ITEM, colorId)
+                                    .append(Action.VALUE, input + ".Value")
+                                    .append(Action.COLOR, element + " #Picker.Color"));
+                    events.addEventBinding(
+                            CustomUIEventBindingType.ValueChanged,
+                            element + " #Picker",
+                            action(PICK_INLINE, key, id).append(Action.VALUE, element + " #Picker.Color"),
+                            false);
+                    break;
+                }
                 commands.append(key.list, customBind ? CUSTOM_BIND_ROW : TEXT_ROW);
                 if (customBind) {
                     events.addEventBinding(
@@ -518,7 +552,14 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         commands.set(element + " #Label.Text", section.name(snapshot));
         commands.set(element + " #Description.Text", section.description(snapshot));
         showValue(section, row.kind(), element, snapshot, commands);
-        if (row.kind() != SettingsSection.Kind.INFO) {
+        row.color().ifPresent(color -> showPicker(element, color, commands));
+        if (row.color().isPresent()) {
+            events.addEventBinding(
+                    CustomUIEventBindingType.Activating,
+                    element + " #Reset",
+                    action(RESET_COLORED, key, id)
+                            .append(Action.ITEM, row.color().get().id().toString()));
+        } else if (row.kind() != SettingsSection.Kind.INFO) {
             events.addEventBinding(CustomUIEventBindingType.Activating, element + " #Reset", action(RESET, key, id));
         }
     }
@@ -530,6 +571,19 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         }
         if (PICK.equals(name)) {
             showPickedColor(key, action);
+            return;
+        }
+        if (PICK_INLINE.equals(name)) {
+            String hex = pickedHex(action.value);
+            if (hex != null) {
+                UICommandBuilder update = new UICommandBuilder();
+                update.set(key.status + ".Text", tr.t("controlcore.panel.color_picked", "color", hex));
+                sendUpdate(update, false);
+            }
+            return;
+        }
+        if (SAVE_COLORED.equals(name) || RESET_COLORED.equals(name)) {
+            saveColored(key, section, RESET_COLORED.equals(name), action);
             return;
         }
         if (ADD_ITEM.equals(name) || REMOVE_ITEM.equals(name)) {
@@ -559,7 +613,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                     update.set(key.status + ".Text", section.saved(snapshot));
                     Integer index = rowIndexes.get(key).get(snapshot.id());
                     if (writeBack && index != null) {
-                        showValue(section, SettingsSection.kindOf(snapshot), key.row(index), snapshot, update);
+                        showRowValue(key, section, index, snapshot, update);
                     }
                 })
                 .onFailure(error -> update.set(key.status + ".Text", tr.error(error)));
@@ -567,6 +621,65 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             showRestartNotice(update);
         }
         sendUpdate(update, false);
+    }
+
+    /** Saves (or resets) a text row and the colour shown in it. */
+    private void saveColored(Section key, SettingsSection section, boolean reset, Action action) {
+        Result<SettingSnapshot> text = reset ? section.reset(action.id) : section.save(action.id, action.value);
+        Result<SettingSnapshot> color = null;
+        if (text.isSuccess() && action.item != null) {
+            if (reset) {
+                color = section.reset(action.item);
+            } else {
+                String hex = pickedHex(action.color);
+                if (hex != null) {
+                    color = section.save(action.item, hex);
+                }
+            }
+        }
+        UICommandBuilder update = new UICommandBuilder();
+        if (text.isSuccess()) {
+            SettingSnapshot saved = text.value();
+            shown.put(shownKey(key, saved.id()), saved.value());
+            latest.put(shownKey(key, saved.id()), saved);
+            update.set(key.status + ".Text", section.saved(saved));
+            Integer index = rowIndexes.get(key).get(saved.id());
+            if (index != null) {
+                showValue(section, SettingsSection.Kind.TEXT, key.row(index), saved, update);
+            }
+        } else {
+            update.set(key.status + ".Text", tr.error(text.error()));
+        }
+        if (color != null && color.isSuccess()) {
+            SettingSnapshot saved = color.value();
+            shown.put(shownKey(key, saved.id()), saved.value());
+            latest.put(shownKey(key, saved.id()), saved);
+            Integer index = rowIndexes.get(key).get(saved.id());
+            if (index != null) {
+                showPicker(key.row(index), saved, update);
+            }
+        } else if (color != null) {
+            update.set(key.status + ".Text", tr.error(color.error()));
+        }
+        sendUpdate(update, false);
+    }
+
+    /** Shows a value in its row: a colour shown inside a text row only moves that row's picker. */
+    private void showRowValue(
+            Section key, SettingsSection section, int index, SettingSnapshot snapshot, UICommandBuilder update) {
+        if (inlineColors.contains(shownKey(key, snapshot.id()))) {
+            showPicker(key.row(index), snapshot, update);
+        } else {
+            showRowValue(key, section, index, snapshot, update);
+        }
+    }
+
+    /** Sets a row's colour picker (its markup property is Color; it has no Value). */
+    private static void showPicker(String element, SettingSnapshot color, UICommandBuilder commands) {
+        String hex = pickedHex(color.value());
+        if (hex != null) {
+            commands.set(element + " #Picker.Color", hex);
+        }
     }
 
     /** Lists the server config keys that wait for a restart, above the Server Configs list. */
@@ -681,8 +794,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                     rebuild(); // the items and their buttons change
                 }
                 UICommandBuilder update = new UICommandBuilder();
-                showValue(section, SettingsSection.kindOf(snapshot), key.row(index), snapshot, update);
-                update.set(key.row(index) + " #Description.Text", section.description(snapshot));
+                showRowValue(key, section, index, snapshot, update);
+                if (!inlineColors.contains(shownKey(key, id))) {
+                    update.set(key.row(index) + " #Description.Text", section.description(snapshot));
+                }
                 update.set(key.status + ".Text", section.changedElsewhere(snapshot));
                 if (key == Section.SERVER_CONFIG) {
                     showRestartNotice(update);
@@ -1115,6 +1230,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         static final String MATCH = "@Match";
         static final String NUMBER = "@Number";
         static final String ITEM = "Item";
+        static final String COLOR = "@Color";
 
         static final BuilderCodec<Action> CODEC = BuilderCodec.builder(Action.class, Action::new)
                 .append(
@@ -1143,6 +1259,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                         new KeyedCodec<>(ITEM, Codec.STRING),
                         (action, value) -> action.item = value,
                         action -> action.item)
+                .add()
+                .append(
+                        new KeyedCodec<>(COLOR, Codec.STRING),
+                        (action, value) -> action.color = value,
+                        action -> action.color)
                 .add()
                 .append(
                         new KeyedCodec<>(NUMBER, Codec.FLOAT),
@@ -1178,6 +1299,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         private Boolean checked;
         private Double number;
         private String item;
+        private String color;
         private String bindName;
         private String bindKeys;
         private String filter;

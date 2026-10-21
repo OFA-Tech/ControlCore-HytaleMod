@@ -149,6 +149,18 @@ keys.go_home = Ir para casa
 - The server config keys' names and section headings are translated; Hytale's own descriptions stay in
   English.
 
+### A text and its colour on one line
+
+`.coloredBy("<mod>:<color-setting>")` on a text setting shows a `SettingType.color()` setting of the same scope in
+the text's row: colour picker, text field, one Save and one Default for both. The colour setting is then not listed
+on its own (it still has its own id, value and commands).
+
+```java
+api.settings().register(SettingDefinition.server("homes", "greeting-color", SettingType.color(), "#ffaa00"));
+api.settings().register(SettingDefinition.server("homes", "greeting", SettingType.text(128), "Welcome home!")
+        .coloredBy("homes:greeting-color"));
+```
+
 ## Mods tab and logos
 
 Every mod appears in the panel's **Mods** tab. Ship a logo as `Common/UI/Custom/<Group>_<Name>.png` (the same

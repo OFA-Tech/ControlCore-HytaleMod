@@ -24,7 +24,8 @@ public final class WelcomeSettings {
                                 .describedAs(Text.key(
                                         "controlcore.settings.welcome_message.desc",
                                         "Sent to players when they join; {player} is replaced by their name. Empty"
-                                                + " sends nothing.")))
+                                                + " sends nothing."))
+                                .coloredBy("controlcore:welcome-message-color"))
                 .value();
         this.color = settings.register(SettingDefinition.server(
                                 "controlcore", "welcome-message-color", SettingType.color(), "#ffaa00")

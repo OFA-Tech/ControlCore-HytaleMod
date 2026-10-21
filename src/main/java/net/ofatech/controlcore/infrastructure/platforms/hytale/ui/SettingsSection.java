@@ -51,8 +51,16 @@ final class SettingsSection {
     /** A category heading or an explanatory line. */
     record Heading(String text) implements Entry {}
 
-    /** An editable setting. */
-    record Row(Kind kind, SettingSnapshot snapshot) implements Entry {
+    /**
+     * An editable setting.
+     *
+     * @param color a colour setting shown in this (text) row, see {@code SettingDefinition.coloredBy}
+     */
+    record Row(Kind kind, SettingSnapshot snapshot, Optional<SettingSnapshot> color) implements Entry {
+
+        Row(Kind kind, SettingSnapshot snapshot) {
+            this(kind, snapshot, Optional.empty());
+        }
 
         SettingId id() {
             return snapshot.id();
@@ -159,15 +167,31 @@ final class SettingsSection {
             entries.add(new Heading(emptyText));
             return entries;
         }
+        java.util.Map<SettingId, SettingSnapshot> byId = new java.util.HashMap<>();
+        snapshots.forEach(snapshot -> byId.put(snapshot.id(), snapshot));
+        java.util.Set<SettingId> shownInline = new java.util.HashSet<>();
+        snapshots.forEach(snapshot -> inlineColor(snapshot, byId).ifPresent(color -> shownInline.add(color.id())));
         String category = null;
         for (SettingSnapshot snapshot : snapshots) {
+            if (shownInline.contains(snapshot.id())) {
+                continue;
+            }
             if (!snapshot.definition().heading().equals(category)) {
                 category = snapshot.definition().heading();
                 entries.add(new Heading(category(snapshot)));
             }
-            entries.add(new Row(kindOf(snapshot), snapshot));
+            entries.add(new Row(kindOf(snapshot), snapshot, inlineColor(snapshot, byId)));
         }
         return entries;
+    }
+
+    /** @return the editable colour setting shown in {@code snapshot}'s (editable text) row, if it has one */
+    private static Optional<SettingSnapshot> inlineColor(
+            SettingSnapshot snapshot, java.util.Map<SettingId, SettingSnapshot> byId) {
+        if (kindOf(snapshot) != Kind.TEXT) {
+            return Optional.empty();
+        }
+        return snapshot.definition().colorSetting().map(byId::get).filter(color -> kindOf(color) == Kind.COLOR);
     }
 
     /** @return the items of a list setting's value */
