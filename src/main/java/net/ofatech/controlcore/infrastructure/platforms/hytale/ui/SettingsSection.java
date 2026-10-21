@@ -27,8 +27,12 @@ final class SettingsSection {
 
     /** How a setting is edited. */
     enum Kind {
-        /** Text field and Save button (integer, decimal, text). */
+        /** Text field and Save button (text, and numbers without a usable range). */
         TEXT,
+        /** Slider, text field and Save button: a whole number with a range. */
+        INTEGER,
+        /** Slider, text field and Save button: a decimal number with a range. */
+        DECIMAL,
         /** Check box, saved when clicked. */
         TOGGLE,
         /** Dropdown, saved when an option is picked. */
@@ -208,8 +212,72 @@ final class SettingsSection {
         return switch (snapshot.definition().type()) {
             case SettingType.BooleanType _ -> Kind.TOGGLE;
             case SettingType.ChoiceType _ -> Kind.CHOICE;
+            case SettingType.IntegerType number when Slider.fits(number.min(), number.max()) -> Kind.INTEGER;
+            case SettingType.DecimalType number when Slider.fits(number.min(), number.max()) -> Kind.DECIMAL;
             default -> Kind.TEXT;
         };
+    }
+
+    /**
+     * A number setting's slider: its range and step. The text field next to it takes any valid value; the
+     * slider covers the same range in steps.
+     */
+    record Slider(double min, double max, double step) {
+
+        /** Ranges wider than this get only a text field: a slider could not reach single values. */
+        static final double MAX_SPAN = 1_000_000;
+
+        static boolean fits(double min, double max) {
+            return Double.isFinite(min) && Double.isFinite(max) && max > min && max - min <= MAX_SPAN;
+        }
+
+        /** @return the slider of a {@link Kind#INTEGER} or {@link Kind#DECIMAL} row */
+        static Slider of(SettingSnapshot snapshot) {
+            return switch (snapshot.definition().type()) {
+                case SettingType.IntegerType number -> new Slider(number.min(), number.max(), 1);
+                case SettingType.DecimalType number ->
+                    new Slider(number.min(), number.max(), niceStep((number.max() - number.min()) / 100));
+                default -> throw new IllegalArgumentException("Not a number setting: " + snapshot.id());
+            };
+        }
+
+        /** @return {@code value} as the slider's value, kept inside the range */
+        double position(String value) {
+            try {
+                return Math.clamp(Double.parseDouble(value.strip()), min, max);
+            } catch (NumberFormatException e) {
+                return min;
+            }
+        }
+
+        /** @return the text a slider position saves: whole numbers for integers, else rounded to the step */
+        String text(double position, boolean whole) {
+            double value = Math.clamp(position, min, max);
+            if (whole) {
+                return Long.toString(Math.round(value));
+            }
+            double stepped = Math.round(value / step) * step;
+            return java.math.BigDecimal.valueOf(Math.clamp(stepped, min, max))
+                    .setScale(decimals(step), java.math.RoundingMode.HALF_UP)
+                    .stripTrailingZeros()
+                    .toPlainString();
+        }
+
+        /** @return 1, 2 or 5 times a power of ten, at least {@code raw} */
+        static double niceStep(double raw) {
+            if (!(raw > 0)) {
+                return 0.01;
+            }
+            double power = Math.pow(10, Math.floor(Math.log10(raw)));
+            double scaled = raw / power;
+            double nice = scaled <= 1 ? 1 : scaled <= 2 ? 2 : scaled <= 5 ? 5 : 10;
+            return nice * power;
+        }
+
+        private static int decimals(double step) {
+            return Math.max(
+                    0, java.math.BigDecimal.valueOf(step).stripTrailingZeros().scale());
+        }
     }
 
     /** @return the status line after a successful change */

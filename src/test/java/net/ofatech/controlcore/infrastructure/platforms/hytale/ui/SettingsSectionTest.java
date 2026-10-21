@@ -12,6 +12,7 @@ import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
+import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.fakes.FakePlayerData;
 import net.ofatech.controlcore.fakes.FakeSettingStore;
@@ -56,7 +57,8 @@ class SettingsSectionTest {
                     case SettingsSection.Heading heading -> "# " + heading.text();
                     case SettingsSection.Row row -> row.kind() + " " + row.id();
                 })
-                .containsExactly("# Chat", "CHOICE chat:mode", "# Homes: Limits", "TEXT homes:max", "TOGGLE homes:pvp");
+                .containsExactly(
+                        "# Chat", "CHOICE chat:mode", "# Homes: Limits", "INTEGER homes:max", "TOGGLE homes:pvp");
     }
 
     @Test
@@ -134,5 +136,29 @@ class SettingsSectionTest {
                         .value()
                         .value())
                 .isEqualTo("Global");
+    }
+
+    @Test
+    void numbersWithAUsableRangeGetASlider() {
+        registry.register(SettingDefinition.server("homes", "max", SettingType.integer(1, 9), 3));
+        registry.register(SettingDefinition.server("homes", "ratio", SettingType.decimal(0, 2.5), 1.0));
+        registry.register(SettingDefinition.server("homes", "huge", SettingType.integer(0, Integer.MAX_VALUE), 0));
+        var snapshots = registry.snapshot(SettingScope.SERVER, Optional.empty());
+        var byId = new java.util.HashMap<String, SettingSnapshot>();
+        snapshots.forEach(snapshot -> byId.put(snapshot.id().toString(), snapshot));
+
+        assertThat(SettingsSection.kindOf(byId.get("homes:max"))).isEqualTo(SettingsSection.Kind.INTEGER);
+        assertThat(SettingsSection.kindOf(byId.get("homes:ratio"))).isEqualTo(SettingsSection.Kind.DECIMAL);
+        assertThat(SettingsSection.kindOf(byId.get("homes:huge")))
+                .as("too wide")
+                .isEqualTo(SettingsSection.Kind.TEXT);
+
+        var slider = SettingsSection.Slider.of(byId.get("homes:ratio"));
+        assertThat(slider.step()).isEqualTo(0.05);
+        assertThat(slider.text(1.2312, false)).isEqualTo("1.25");
+        assertThat(slider.text(9, false)).as("kept in range").isEqualTo("2.5");
+        assertThat(SettingsSection.Slider.of(byId.get("homes:max")).text(4.6, true))
+                .isEqualTo("5");
+        assertThat(slider.position("oops")).isEqualTo(0);
     }
 }
