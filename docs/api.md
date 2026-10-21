@@ -213,6 +213,11 @@ api.keymaps().register(KeyAction.of("admintools", "announce")
 | `/cc-input-probe` | `<base>.debug` | debug tool: show in chat every key action your client sends (run again to stop) |
 | `/cc-key-probe input` | `<base>.debug` | debug tool: a test screen that shows the code of every key pressed while it is open |
 
+With an empty hand the client only reports keys the hand has an interaction for. The server setting
+`controlcore:empty-hand-keys` (on by default) gives the empty hand, plain blocks and plain items a do-nothing
+interaction for right click, abilities 1, 2 and 4 and dodge, so those keys can be bound too. Weapons and tools keep
+their own abilities. Turn it off if another mod changes the empty hand (`Server/Item/Unarmed/Interactions`).
+
 ControlCore registers `controlcore:open-preferences` (runs `/prefs`, default `CTRL + F`).
 
 ## Using it from another mod

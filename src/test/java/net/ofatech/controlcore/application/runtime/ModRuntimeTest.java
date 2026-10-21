@@ -349,7 +349,23 @@ class ModRuntimeTest {
         assertThat(platform.controlPanel.lastContent.startTab()).isEqualTo(ControlPanelTab.MOD_SETTINGS);
         assertThat(platform.controlPanel.lastContent.settings().snapshot(SettingScope.SERVER, Optional.empty()))
                 .extracting(snapshot -> snapshot.id().toString())
-                .containsExactly("controlcore:control-panel-enabled", "controlcore:welcome-message");
+                .containsExactly(
+                        "controlcore:control-panel-enabled",
+                        "controlcore:empty-hand-keys",
+                        "controlcore:welcome-message");
+    }
+
+    @Test
+    void emptyHandKeysAreAppliedAtStartAndWhenTheSettingChanges() {
+        runtime.setup();
+        runtime.start();
+        PlayerInfo admin = platform.players.join("Admin");
+
+        assertThat(platform.emptyHandKeys).as("on by default").isTrue();
+        platform.commands.run("cc-set", admin, Map.of("id", "controlcore:empty-hand-keys", "value", "false"));
+        assertThat(platform.emptyHandKeys).isFalse();
+        platform.commands.run("cc-set", admin, Map.of("id", "controlcore:empty-hand-keys", "value", "true"));
+        assertThat(platform.emptyHandKeys).as("and back on").isTrue();
     }
 
     @Test

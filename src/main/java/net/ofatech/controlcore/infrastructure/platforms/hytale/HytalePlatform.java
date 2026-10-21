@@ -10,6 +10,7 @@ import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
 import net.ofatech.controlcore.domain.ports.game.CommandRunner;
+import net.ofatech.controlcore.domain.ports.game.EmptyHandInput;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
 import net.ofatech.controlcore.domain.ports.game.Messenger;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
@@ -35,6 +36,7 @@ import net.ofatech.controlcore.infrastructure.platforms.hytale.config.HytaleSett
 import net.ofatech.controlcore.infrastructure.platforms.hytale.event.HytaleGameEvents;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.i18n.HytaleTranslations;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleCommandRunner;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleEmptyHandInput;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleInputProbe;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytalePlayerInput;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.log.HytaleLog;
@@ -87,6 +89,9 @@ public final class HytalePlatform implements Platform {
         binder.bind(ControlPanelView.class, new HytaleControlPanelView(log));
         binder.bind(InputProbe.class, new HytaleInputProbe(log));
         binder.bind(PlayerInput.class, new HytalePlayerInput(log));
+        binder.bind(
+                EmptyHandInput.class,
+                new HytaleEmptyHandInput(plugin.getIdentifier().toString(), log));
         binder.bind(CommandRunner.class, new HytaleCommandRunner(log));
         binder.bind(
                 KeyBindStore.class,

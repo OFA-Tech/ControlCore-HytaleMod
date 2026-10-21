@@ -13,6 +13,10 @@
 - `/open-admin-config` now requires the `<base permission>.admin` node.
 
 ### Added
+- **Empty-hand keys** (server setting `controlcore:empty-hand-keys`, on by default): right click, abilities 1, 2
+  and 4 and dodge now reach the server with an empty hand (or a plain block or item), so they can be bound;
+  they still do nothing unless bound. New game actions `ability_4` and `dodge`. Turning it off restores the
+  game's own empty-hand interactions at once.
 - **Restart reminder:** Server Configs lists the keys changed since the server started that only apply after a
   restart (a key changed back drops off), and admins get the same note in chat when they join.
 - **Translations** (API 1.5.0): the panel, command replies, errors and command help are shown in each

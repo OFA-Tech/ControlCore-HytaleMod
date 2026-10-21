@@ -12,6 +12,8 @@ public enum GameAction implements KeyInput {
     ABILITY_1("Ability 1", KeySignal.ABILITY_1),
     ABILITY_2("Ability 2", KeySignal.ABILITY_2),
     ABILITY_3("Ability 3", KeySignal.ABILITY_3),
+    ABILITY_4("Ability 4", KeySignal.ABILITY_4),
+    DODGE("Dodge", KeySignal.DODGE),
     INTERACT("Interact", KeySignal.USE),
     PICK_BLOCK("Pick block", KeySignal.PICK),
     HOTBAR_1("Hotbar 1", KeySignal.HOTBAR_1),
