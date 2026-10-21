@@ -2,11 +2,15 @@
 
 ## Unreleased
 
-### Removed
-- HyUI support (optional dependency `Ellie:HyUI`, its HTML panel and the old HTML layouts). HyUI was never
-  compatible with Hytale 0.7, and its panel lacked everything added since; the built-in panel is always used.
+## 0.10.0 - 2026-10-21
 
-### Added (Mods tab)
+Beta. Requires Hytale server 0.7.2 (`>=0.7.2 <0.8.0`). The API for other mods is now **2.0.0**
+(`ControlCoreApi.VERSION`): mods built against 0.9.0 must create settings with
+`SettingDefinition.server(modId, key, type, default)` / `player(modId, key, type, default)` instead of
+`server("modid:key", ...)`. Saved values, setting ids and commands are unchanged; nothing on a server needs
+migrating.
+
+### Added
 - **Mods tab** for everyone (`/open-admin-config` and `/prefs`): every mod and asset pack with logo, version,
   authors, description, website and badges (asset pack, off, failed, on/off after restart). Search plus a filter
   (mods, running, turned off, with settings or keys, with assets, everything incl. Hytale's own, hidden by default).
@@ -16,9 +20,9 @@
 - **Mod logos** compatible with Better Modlist and MAC: `Common/UI/Custom/<Group>_<Name>.png` in the mod's assets.
 - `/cc-config <mod>` opens the panel on one mod's settings; `/cc-mods` lists mods in chat/console.
 - Setting `controlcore:mods-hidden`: mods players don't see in the Mods tab.
-- Setting types `SettingType.color()` (hex field plus a colour picker that fills it, `#rrggbb`) and `SettingType.textList(maxItems, maxItemLength)` (items
-  with Add/Remove). New setting `controlcore:welcome-message-color`, shown in the welcome message's row. `SettingDefinition.coloredBy(id)` puts a colour setting in a text setting's row (one line, one Save and Default).
-### Added
+- Setting types `SettingType.color()` (colour picker plus hex field, `#rrggbb`) and
+  `SettingType.textList(maxItems, maxItemLength)` (items with Add/Remove). New setting `controlcore:welcome-message-color`, shown in the welcome message's row.
+  `SettingDefinition.coloredBy(id)` puts a colour setting in a text setting's row (one line, one Save and Default).
 - **Sliders:** whole-number and decimal settings with a range show a slider next to the text field (the server's
   config included). Dragging shows the value in the field; letting go saves it. Ranges wider than 1,000,000 keep
   only the field.
@@ -37,6 +41,16 @@
   has no category. The mod name is the mod id capitalised (`my-mod` -> `My Mod`) unless a mod sets one with
   `SettingsApi.setModName`; key actions use the same names. ControlCore's own settings are under "ControlCore",
   admins' own binds under "Custom binds". `inCategory` is now only the group inside the mod.
+
+### Removed
+- HyUI support (optional dependency `Ellie:HyUI`, its HTML panel and the old HTML layouts). HyUI was never
+  compatible with Hytale 0.7, and its panel lacked everything added since; the built-in panel is always used.
+
+### Fixed
+- Saving a text or number setting in the panel (or a change made elsewhere while the panel was open) no
+  longer loops until the server stops the page; this was never in a release.
+- Colour pickers read and set their `Color` property (setting `Value` disconnected the client).
+- Mod logos set from the server use paths relative to `Common/UI/Custom/`.
 
 ## 0.9.0 - 2026-10-20
 
