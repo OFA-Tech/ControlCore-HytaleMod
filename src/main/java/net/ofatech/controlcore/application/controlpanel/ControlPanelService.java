@@ -20,7 +20,6 @@ import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
-import net.ofatech.controlcore.domain.ports.platform.Capabilities;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -30,8 +29,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final ControlPanelSettings settings;
     private final Players players;
     private final ServerConfiguration server;
-    private final ControlPanelView platformView;
-    private final Capabilities capabilities;
+    private final ControlPanelView view;
     private final SettingsApi registry;
     private final ServerConfigEditor serverConfig;
     private final KeymapsEditor keymaps;
@@ -43,8 +41,7 @@ public final class ControlPanelService implements ControlPanelApi {
             ControlPanelSettings settings,
             Players players,
             ServerConfiguration server,
-            ControlPanelView platformView,
-            Capabilities capabilities,
+            ControlPanelView view,
             SettingsApi registry,
             ServerConfigEditor serverConfig,
             KeymapsEditor keymaps,
@@ -54,8 +51,7 @@ public final class ControlPanelService implements ControlPanelApi {
         this.settings = settings;
         this.players = players;
         this.server = server;
-        this.platformView = platformView;
-        this.capabilities = capabilities;
+        this.view = view;
         this.registry = registry;
         this.serverConfig = serverConfig;
         this.keymaps = keymaps;
@@ -81,11 +77,6 @@ public final class ControlPanelService implements ControlPanelApi {
     @Override
     public boolean isAvailable() {
         return settings.panelEnabled();
-    }
-
-    /** Whether a UI mod (HyUI) renders the panel instead of the built-in Hytale UI. */
-    public boolean usesUiMod() {
-        return capabilities.find(ControlPanelView.class).isPresent();
     }
 
     @Override
@@ -147,11 +138,6 @@ public final class ControlPanelService implements ControlPanelApi {
                     "ControlPanel.PlayerNotFound",
                     Text.key("controlcore.errors.controlpanel.player_offline", "That player is not online.")));
         }
-        // The HyUI page is the full admin layout, so narrower requests always use the built-in panel.
-        ControlPanelView view = capabilities
-                .find(ControlPanelView.class)
-                .filter(uiMod -> request.equals(ControlPanelRequest.ALL) && focus.isEmpty())
-                .orElse(platformView);
         return view.open(
                 player,
                 request,

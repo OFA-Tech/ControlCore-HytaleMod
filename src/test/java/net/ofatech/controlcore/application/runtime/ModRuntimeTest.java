@@ -53,19 +53,17 @@ class ModRuntimeTest {
     }
 
     @Test
-    void commandOpensThePanelWhenAUiModIsLoaded() {
+    void anInstalledModIntegrationOffersItsCapability() {
         platform.mods.loaded.add(TestModPlatforms.WORKING);
         runtime.setup();
         runtime.start();
         PlayerInfo admin = platform.players.join("Admin");
 
-        var result = platform.commands.run(COMMAND, admin, Map.of());
+        var greeter = runtime.capabilities().find(TestModPlatforms.Greeter.class);
 
-        assertThat(result.isSuccess()).isTrue();
-        assertThat(result.value().text()).isEmpty();
+        assertThat(greeter).isPresent();
+        assertThat(greeter.get().greet(admin.id()).isSuccess()).isTrue();
         assertThat(TestModPlatforms.OPENED).containsExactly(admin.id());
-        assertThat(platform.controlPanel.opened).isEmpty();
-        assertThat(platform.log.contains("Control panel is available (HyUI)")).isTrue();
     }
 
     @Test
@@ -79,7 +77,6 @@ class ModRuntimeTest {
         assertThat(result.isSuccess()).isTrue();
         assertThat(platform.controlPanel.opened)
                 .containsExactly(new RecordingControlPanelView.Opened(admin.id(), platform.serverConfig.settings));
-        assertThat(platform.log.contains("Ellie:HyUI is not installed")).isTrue();
         assertThat(platform.log.contains("Control panel is available (built-in Hytale UI)"))
                 .isTrue();
     }

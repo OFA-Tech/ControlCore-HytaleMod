@@ -161,6 +161,11 @@ public final class ModRuntime {
         return bus.subscribe(handler.eventType(), handler::handle);
     }
 
+    /** @return what installed mod integrations offer (for tests) */
+    Capabilities capabilities() {
+        return capabilities;
+    }
+
     private void bindModPlatform(Class<? extends ModPlatform> type, ModLookup mods) {
         ModPlatform descriptor;
         try {

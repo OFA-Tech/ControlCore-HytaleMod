@@ -59,12 +59,6 @@ dependencies {
     compileOnly("com.google.code.gson:gson:2.14.0")
     testImplementation("com.google.code.gson:gson:2.14.0")
 
-    // HyUI (Ellie:HyUI, CurseForge 1431415) can render the control panel instead of the built-in page. It is a
-    // separate plugin and an optional manifest dependency (see infrastructure/platforms/hyui), never bundled.
-    // HyUI 0.9.8 is not compatible with Hytale 0.7, so runServer does not load it. Once a compatible HyUI exists,
-    // bump the file id and switch compileOnly to vineImplementation (not vineMod: runServer loads our mod from
-    // the classpath, so HyUI's classes must be on that classpath too).
-    compileOnly("curse.maven:hyui-1431415:8363317")
 
     testImplementation(platform("org.junit:junit-bom:6.1.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")

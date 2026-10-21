@@ -7,7 +7,7 @@ import net.ofatech.controlcore.domain.result.Result;
 /** The ControlCore admin control panel. */
 public interface ControlPanelApi {
 
-    /** Whether the panel can be opened: enabled in the settings and a UI mod (HyUI) is available. */
+    /** Whether the admin panel can be opened: the setting {@code controlcore:control-panel-enabled} is on. */
     boolean isAvailable();
 
     /**
@@ -16,7 +16,7 @@ public interface ControlPanelApi {
      * any player and works even when the panel is disabled.
      *
      * @return success, or an error such as {@code ControlPanel.Disabled}, {@code ControlPanel.PlayerNotFound},
-     *     {@code ControlPanel.NothingToShow} or {@code ControlPanel.UiUnavailable}
+     *     or {@code ControlPanel.NothingToShow}
      */
     Result<Void> open(PlayerId player, ControlPanelRequest request);
 }

@@ -85,14 +85,6 @@ class ArchitectureTest {
             .resideInAPackage("com.hypixel..");
 
     @ArchTest
-    static final ArchRule hyUiOnlyInItsPlatform = noClasses()
-            .that()
-            .resideOutsideOfPackage(ROOT + ".infrastructure.platforms.hyui..")
-            .should()
-            .dependOnClassesThat()
-            .resideInAPackage("au.ellie..");
-
-    @ArchTest
     static final ArchRule nothingDependsOnPlatforms = noClasses()
             .that()
             .resideOutsideOfPackage(PLATFORMS)
@@ -108,7 +100,8 @@ class ArchitectureTest {
             .implement(ModPlatform.class)
             .should()
             .onlyDependOnClassesThat()
-            .resideInAnyPackage("java..", ROOT + "..", "com.google.auto.service..");
+            .resideInAnyPackage("java..", ROOT + "..", "com.google.auto.service..")
+            .allowEmptyShould(true); // no optional mod integrations at the moment
 
     @ArchTest
     static final ArchRule mainOnlyDelegates = classes()
