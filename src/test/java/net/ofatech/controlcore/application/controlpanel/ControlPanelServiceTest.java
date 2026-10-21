@@ -8,7 +8,9 @@ import java.util.UUID;
 import net.ofatech.controlcore.application.event.DomainEventBus;
 import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
+import net.ofatech.controlcore.application.mods.ModsEditor;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
+import net.ofatech.controlcore.application.settings.ModNames;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
@@ -19,14 +21,18 @@ import net.ofatech.controlcore.domain.model.ServerSettings;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.result.ErrorType;
+import net.ofatech.controlcore.fakes.FakeCustomKeyBindStore;
 import net.ofatech.controlcore.fakes.FakeKeyBindStore;
+import net.ofatech.controlcore.fakes.FakeModCatalog;
 import net.ofatech.controlcore.fakes.FakePlayerData;
 import net.ofatech.controlcore.fakes.FakePlayers;
 import net.ofatech.controlcore.fakes.FakeServerConfiguration;
+import net.ofatech.controlcore.fakes.FakeSettingPermissionStore;
 import net.ofatech.controlcore.fakes.FakeSettingStore;
 import net.ofatech.controlcore.fakes.FakeSettings;
 import net.ofatech.controlcore.fakes.RecordingControlPanelView;
 import net.ofatech.controlcore.fakes.RecordingLog;
+import net.ofatech.controlcore.fakes.TestTexts;
 import org.junit.jupiter.api.Test;
 
 class ControlPanelServiceTest {
@@ -43,23 +49,16 @@ class ControlPanelServiceTest {
     private ControlPanelService service() {
         RecordingLog log = new RecordingLog();
         DomainEventBus bus = new DomainEventBus(log);
-        registry = new SettingsRegistry(
-                new FakeSettingStore(),
-                new FakePlayerData(),
-                bus,
-                bus,
-                log,
-                new net.ofatech.controlcore.application.settings.ModNames());
+        registry = new SettingsRegistry(new FakeSettingStore(), new FakePlayerData(), bus, bus, log, new ModNames());
         var server = new FakeServerConfiguration(SERVER);
-        var modNames = new net.ofatech.controlcore.application.settings.ModNames();
+        var modNames = new ModNames();
         var keyRegistry = new KeymapRegistry(
                 new FakeKeyBindStore(),
-                new net.ofatech.controlcore.fakes.FakeCustomKeyBindStore(),
+                new FakeCustomKeyBindStore(),
                 new FakePlayerData(),
                 (player, node) -> true,
                 log);
-        var policy = new SettingPermissionPolicy(
-                new net.ofatech.controlcore.fakes.FakeSettingPermissionStore(), (player, node) -> true, registry);
+        var policy = new SettingPermissionPolicy(new FakeSettingPermissionStore(), (player, node) -> true, registry);
         return new ControlPanelService(
                 new ControlPanelSettings(registry, settings),
                 players,
@@ -67,16 +66,10 @@ class ControlPanelServiceTest {
                 builtIn,
                 registry,
                 new ServerConfigEditor(server, bus, bus, log),
-                new KeymapsEditor(keyRegistry, net.ofatech.controlcore.fakes.TestTexts.of(registry, players), modNames),
+                new KeymapsEditor(keyRegistry, TestTexts.of(registry, players), modNames),
                 policy,
-                net.ofatech.controlcore.fakes.TestTexts.of(registry, players),
-                new net.ofatech.controlcore.application.mods.ModsEditor(
-                        new net.ofatech.controlcore.fakes.FakeModCatalog(),
-                        registry,
-                        keyRegistry,
-                        modNames,
-                        policy,
-                        log));
+                TestTexts.of(registry, players),
+                new ModsEditor(new FakeModCatalog(), registry, keyRegistry, modNames, policy, log));
     }
 
     @Test

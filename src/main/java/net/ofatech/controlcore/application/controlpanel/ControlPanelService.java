@@ -1,6 +1,7 @@
 package net.ofatech.controlcore.application.controlpanel;
 
 import com.google.auto.service.AutoService;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import net.ofatech.controlcore.api.ControlPanelApi;
@@ -151,7 +152,7 @@ public final class ControlPanelService implements ControlPanelApi {
                         permissions.isAdmin(player),
                         texts.forPlayer(Optional.of(player)),
                         () -> {
-                            List<Text> names = new java.util.ArrayList<>(serverConfig.pendingRestart());
+                            List<Text> names = new ArrayList<>(serverConfig.pendingRestart());
                             names.addAll(mods.pendingRestart());
                             return names;
                         },

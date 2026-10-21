@@ -9,6 +9,7 @@ import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.model.keys.CustomKeyBind;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
 import net.ofatech.controlcore.domain.model.keys.KeyBinds;
@@ -103,7 +104,7 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
     }
 
     @Override
-    public Optional<net.ofatech.controlcore.domain.model.keys.CustomKeyBind> find(String name) {
+    public Optional<CustomKeyBind> find(String name) {
         return keymaps.findCustom(name);
     }
 

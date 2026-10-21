@@ -3,6 +3,7 @@ package net.ofatech.controlcore.application.keymaps;
 import com.google.auto.service.AutoService;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -281,7 +282,7 @@ public final class KeymapRegistry implements KeymapsApi {
     }
 
     private static Result<SettingId> customId(String name) {
-        String text = name == null ? "" : name.strip().toLowerCase(java.util.Locale.ROOT);
+        String text = name == null ? "" : name.strip().toLowerCase(Locale.ROOT);
         if (text.startsWith(CUSTOM + ":")) {
             text = text.substring(CUSTOM.length() + 1);
         }

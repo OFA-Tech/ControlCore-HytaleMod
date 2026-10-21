@@ -5,12 +5,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Map;
 import java.util.Optional;
 import net.ofatech.controlcore.application.event.DomainEventBus;
+import net.ofatech.controlcore.application.settings.ModNames;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.command.ArgType;
+import net.ofatech.controlcore.domain.ports.command.CommandContext;
 import net.ofatech.controlcore.domain.ports.command.CommandSender;
 import net.ofatech.controlcore.domain.ports.command.CommandSpec;
 import net.ofatech.controlcore.domain.ports.command.Reply;
@@ -28,13 +30,8 @@ class TextsTest {
 
     private final RecordingLog log = new RecordingLog();
     private final DomainEventBus bus = new DomainEventBus(log);
-    private final SettingsRegistry registry = new SettingsRegistry(
-            new FakeSettingStore(),
-            new FakePlayerData(),
-            bus,
-            bus,
-            log,
-            new net.ofatech.controlcore.application.settings.ModNames());
+    private final SettingsRegistry registry =
+            new SettingsRegistry(new FakeSettingStore(), new FakePlayerData(), bus, bus, log, new ModNames());
     private final FakePlayers players = new FakePlayers();
     private final BundledTranslations bundled = new BundledTranslations();
     /** ControlCore's files plus a mod that has only an English and a Spanish text. */
@@ -133,8 +130,7 @@ class TextsTest {
         assertThat(fromConsole.error().description()).isEqualTo("Only players can use this command.");
     }
 
-    private record FakeContext(CommandSender sender)
-            implements net.ofatech.controlcore.domain.ports.command.CommandContext {
+    private record FakeContext(CommandSender sender) implements CommandContext {
         @Override
         public Optional<Object> arg(String name) {
             return Optional.empty();

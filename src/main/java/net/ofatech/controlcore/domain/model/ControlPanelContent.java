@@ -1,6 +1,7 @@
 package net.ofatech.controlcore.domain.model;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import net.ofatech.controlcore.domain.guard.Guard;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
@@ -35,7 +36,7 @@ public record ControlPanelContent(
         Translator translator,
         Supplier<List<Text>> pendingRestart,
         ModsView mods,
-        java.util.Optional<String> focus) {
+        Optional<String> focus) {
 
     public ControlPanelContent {
         Guard.notNull(server, "server");

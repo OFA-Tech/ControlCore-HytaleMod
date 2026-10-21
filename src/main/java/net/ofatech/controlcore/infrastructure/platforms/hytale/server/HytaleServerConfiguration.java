@@ -30,6 +30,7 @@ import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -229,7 +230,7 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
     private static List<Key> keys() {
         List<Key> keys = new ArrayList<>();
         walk(HytaleServerConfig.CODEC, List.of(), keys);
-        Map<String, Key> unique = new java.util.LinkedHashMap<>();
+        Map<String, Key> unique = new LinkedHashMap<>();
         keys.forEach(key -> unique.putIfAbsent(key.path(), key));
         List<Key> sorted = new ArrayList<>(unique.values());
         sorted.sort(Comparator.comparingInt(Key::group));

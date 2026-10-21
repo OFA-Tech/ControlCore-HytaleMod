@@ -25,13 +25,8 @@ class SettingPermissionPolicyTest {
 
     private final RecordingLog log = new RecordingLog();
     private final DomainEventBus bus = new DomainEventBus(log);
-    private final SettingsRegistry registry = new SettingsRegistry(
-            new FakeSettingStore(),
-            new FakePlayerData(),
-            bus,
-            bus,
-            log,
-            new net.ofatech.controlcore.application.settings.ModNames());
+    private final SettingsRegistry registry =
+            new SettingsRegistry(new FakeSettingStore(), new FakePlayerData(), bus, bus, log, new ModNames());
     private final FakeSettingPermissionStore store = new FakeSettingPermissionStore();
     private final Set<String> granted = new HashSet<>();
     private final SettingPermissionPolicy policy =

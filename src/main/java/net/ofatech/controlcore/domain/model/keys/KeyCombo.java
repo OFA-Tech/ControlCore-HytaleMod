@@ -1,11 +1,13 @@
 package net.ofatech.controlcore.domain.model.keys;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -49,7 +51,7 @@ public record KeyCombo(List<KeyInput> inputs) {
         if (inputs == null || inputs.isEmpty()) {
             throw new DomainException("A key combination needs at least one key");
         }
-        if (inputs.stream().anyMatch(java.util.Objects::isNull)) {
+        if (inputs.stream().anyMatch(Objects::isNull)) {
             throw new DomainException("A key combination cannot contain null");
         }
         if (new LinkedHashSet<>(inputs).size() != inputs.size()) {
@@ -60,7 +62,7 @@ public record KeyCombo(List<KeyInput> inputs) {
 
     /** @return the combination of {@code inputs} */
     public static KeyCombo of(KeyInput... inputs) {
-        return new KeyCombo(inputs == null ? null : java.util.Arrays.asList(inputs));
+        return new KeyCombo(inputs == null ? null : Arrays.asList(inputs));
     }
 
     /**

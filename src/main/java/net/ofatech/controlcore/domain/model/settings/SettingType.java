@@ -1,8 +1,11 @@
 package net.ofatech.controlcore.domain.model.settings;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.ofatech.controlcore.domain.guard.DomainException;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.result.Error;
@@ -329,8 +332,7 @@ public sealed interface SettingType<T>
      */
     record ColorType() implements SettingType<String> {
 
-        private static final java.util.regex.Pattern HEX =
-                java.util.regex.Pattern.compile("#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})");
+        private static final Pattern HEX = Pattern.compile("#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})");
 
         @Override
         public Class<String> valueType() {
@@ -340,7 +342,7 @@ public sealed interface SettingType<T>
         @Override
         public Result<String> parse(String text) {
             String wanted = text == null ? "" : text.strip();
-            java.util.regex.Matcher match = HEX.matcher(wanted);
+            Matcher match = HEX.matcher(wanted);
             if (!match.matches()) {
                 return invalid(text, this);
             }
@@ -397,7 +399,7 @@ public sealed interface SettingType<T>
 
         @Override
         public Result<List<String>> parse(String text) {
-            List<String> items = new java.util.ArrayList<>();
+            List<String> items = new ArrayList<>();
             for (String part : (text == null ? "" : text).split(SEPARATOR)) {
                 String item = part.strip();
                 if (!item.isEmpty()) {

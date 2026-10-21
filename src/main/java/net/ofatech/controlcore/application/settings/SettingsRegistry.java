@@ -106,7 +106,7 @@ public final class SettingsRegistry implements SettingsApi {
     public void setCategoryPermission(String category, SettingPermission rule) {
         Objects.requireNonNull(category, "category");
         Objects.requireNonNull(rule, "rule");
-        String key = category.strip().toLowerCase(java.util.Locale.ROOT);
+        String key = category.strip().toLowerCase(Locale.ROOT);
         if (rule.isInherit()) {
             categoryPermissions.remove(key);
         } else {
@@ -119,7 +119,7 @@ public final class SettingsRegistry implements SettingsApi {
         return category == null
                 ? SettingPermission.INHERIT
                 : categoryPermissions.getOrDefault(
-                        category.strip().toLowerCase(java.util.Locale.ROOT), SettingPermission.INHERIT);
+                        category.strip().toLowerCase(Locale.ROOT), SettingPermission.INHERIT);
     }
 
     @Override

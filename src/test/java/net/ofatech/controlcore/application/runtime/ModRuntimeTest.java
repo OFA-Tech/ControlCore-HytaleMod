@@ -3,17 +3,27 @@ package net.ofatech.controlcore.application.runtime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import net.ofatech.controlcore.api.ControlCoreApi;
 import net.ofatech.controlcore.domain.event.PlayerJoined;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.ControlPanelTab;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
+import net.ofatech.controlcore.domain.model.hud.HudElement;
+import net.ofatech.controlcore.domain.model.hud.HudPart;
+import net.ofatech.controlcore.domain.model.keys.Key;
+import net.ofatech.controlcore.domain.model.keys.KeyAction;
+import net.ofatech.controlcore.domain.model.keys.KeySignal;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
+import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.fakes.FakePlatform;
+import net.ofatech.controlcore.fakes.RecordingCommandRunner;
 import net.ofatech.controlcore.fakes.RecordingControlPanelView;
 import net.ofatech.controlcore.fakes.TestModPlatforms;
 import org.junit.jupiter.api.AfterEach;
@@ -104,16 +114,16 @@ class ModRuntimeTest {
         PlayerInfo player = platform.players.join("Player");
         ControlCoreApi.get()
                 .keymaps()
-                .register(net.ofatech.controlcore.domain.model.keys.KeyAction.of("homes", "home")
+                .register(KeyAction.of("homes", "home")
                         .displayName("Go home")
                         .command("home")
-                        .defaultKeys(net.ofatech.controlcore.domain.model.keys.Key.R));
+                        .defaultKeys(Key.R));
 
-        platform.input.press(player.id(), net.ofatech.controlcore.domain.model.keys.KeySignal.ABILITY_3);
+        platform.input.press(player.id(), KeySignal.ABILITY_3);
         var bind = platform.commands.run("cc-bind", player, Map.of("id", "homes:home", "keys", "ctrl+f"));
         platform.clock.now = platform.clock.now.plusSeconds(1);
-        platform.input.hold(player.id(), net.ofatech.controlcore.domain.model.keys.KeySignal.CROUCHING);
-        platform.input.press(player.id(), net.ofatech.controlcore.domain.model.keys.KeySignal.USE);
+        platform.input.hold(player.id(), KeySignal.CROUCHING);
+        platform.input.press(player.id(), KeySignal.USE);
         var list = platform.commands.run("cc-keys", player, Map.of());
 
         assertThat(bind.isSuccess()).isTrue();
@@ -136,17 +146,16 @@ class ModRuntimeTest {
                 "cc-keybind-add-server",
                 admin,
                 Map.of("name", "announce", "keys", "ctrl+r", "command", "/say {player} pressed it"));
-        platform.input.hold(admin.id(), net.ofatech.controlcore.domain.model.keys.KeySignal.CROUCHING);
-        platform.input.press(admin.id(), net.ofatech.controlcore.domain.model.keys.KeySignal.ABILITY_3);
+        platform.input.hold(admin.id(), KeySignal.CROUCHING);
+        platform.input.press(admin.id(), KeySignal.ABILITY_3);
         platform.deniedNodes.add("keys.server");
         platform.clock.now = platform.clock.now.plusSeconds(1);
-        platform.input.press(admin.id(), net.ofatech.controlcore.domain.model.keys.KeySignal.ABILITY_3);
+        platform.input.press(admin.id(), KeySignal.ABILITY_3);
         var remove = platform.commands.run("cc-keybind-remove", admin, Map.of("name", "announce"));
 
         assertThat(add.value().text().orElseThrow()).contains("custom:announce", "as the server");
         assertThat(platform.commandRunner.runs)
-                .containsExactly(
-                        new net.ofatech.controlcore.fakes.RecordingCommandRunner.Run(null, "say Admin pressed it"));
+                .containsExactly(new RecordingCommandRunner.Run(null, "say Admin pressed it"));
         assertThat(remove.isSuccess()).isTrue();
         assertThat(platform.customKeyBinds.binds).isEmpty();
         assertThat(platform.commands.commands.get("cc-keybind-add").spec().permission())
@@ -184,7 +193,7 @@ class ModRuntimeTest {
         runtime.setup();
         runtime.start();
         PlayerInfo admin = platform.players.join("Admin");
-        var joined = new java.util.ArrayList<PlayerJoined>();
+        var joined = new ArrayList<PlayerJoined>();
         ControlCoreApi.get().events().subscribe(PlayerJoined.class, joined::add);
 
         platform.connectedPublisher.publish(new PlayerJoined(admin));
@@ -228,7 +237,7 @@ class ModRuntimeTest {
                 "cc-perm", admin, Map.of("target", welcome, "side", "edit", "node", "mods.welcome"));
         var viewRule = platform.commands.run(
                 "cc-perm", admin, Map.of("target", "controlcore:show-welcome-message", "side", "both", "node", "x"));
-        platform.deniedNodes.addAll(java.util.List.of("settings", "admin"));
+        platform.deniedNodes.addAll(List.of("settings", "admin"));
 
         var changed = platform.commands.run("cc-set", moderator, Map.of("id", welcome, "value", "Hi"));
         var hidden = platform.commands.run(
@@ -388,17 +397,16 @@ class ModRuntimeTest {
         runtime.start();
         PlayerInfo player = platform.players.join("Player");
         var hud = ControlCoreApi.get().huds();
-        var shown = new java.util.ArrayList<String>();
-        hud.register(net.ofatech.controlcore.domain.model.hud.HudElement.of("minimap", "map")
+        var shown = new ArrayList<String>();
+        hud.register(HudElement.of("minimap", "map")
                 .displayName("Minimap")
                 .onShow(id -> shown.add("show"))
                 .onHide(id -> shown.add("hide")));
         platform.connectedPublisher.publish(new PlayerJoined(player));
-        var compass = net.ofatech.controlcore.domain.model.hud.HudPart.COMPASS;
-        var chat = net.ofatech.controlcore.domain.model.hud.HudPart.CHAT;
+        var compass = HudPart.COMPASS;
+        var chat = HudPart.CHAT;
 
-        assertThat(platform.hiddenHud.getOrDefault(player.id(), java.util.Set.of()))
-                .isEmpty();
+        assertThat(platform.hiddenHud.getOrDefault(player.id(), Set.of())).isEmpty();
         assertThat(shown).containsExactly("show");
 
         platform.commands.run("cc-pref", player, Map.of("id", "controlcore:hud.compass", "value", "false"));
@@ -410,20 +418,15 @@ class ModRuntimeTest {
         assertThat(platform.hiddenHud.get(player.id())).containsExactly(chat);
 
         hud.setHidden(player.id(), true);
-        assertThat(platform.hiddenHud.get(player.id()))
-                .containsExactlyInAnyOrder(net.ofatech.controlcore.domain.model.hud.HudPart.values());
-        assertThat(hud.isVisible(
-                        player.id(), net.ofatech.controlcore.domain.model.settings.SettingId.of("minimap:map")))
-                .isFalse();
+        assertThat(platform.hiddenHud.get(player.id())).containsExactlyInAnyOrder(HudPart.values());
+        assertThat(hud.isVisible(player.id(), SettingId.of("minimap:map"))).isFalse();
         hud.setHidden(player.id(), false);
         assertThat(platform.hiddenHud.get(player.id())).containsExactly(chat);
         assertThat(shown).containsExactly("show", "hide", "show");
 
         platform.commands.run("cc-pref", player, Map.of("id", "minimap:hud.map", "value", "false"));
         assertThat(shown).containsExactly("show", "hide", "show", "hide");
-        assertThat(ControlCoreApi.get()
-                        .keymaps()
-                        .find(net.ofatech.controlcore.domain.model.settings.SettingId.of("controlcore:toggle-hud")))
+        assertThat(ControlCoreApi.get().keymaps().find(SettingId.of("controlcore:toggle-hud")))
                 .isPresent();
     }
 
@@ -436,8 +439,7 @@ class ModRuntimeTest {
         runtime.start();
         ControlCoreApi.get()
                 .settings()
-                .register(net.ofatech.controlcore.domain.model.settings.SettingDefinition.server(
-                        "homes", "max", net.ofatech.controlcore.domain.model.settings.SettingType.integer(1, 9), 3));
+                .register(SettingDefinition.server("homes", "max", SettingType.integer(1, 9), 3));
         PlayerInfo admin = platform.players.join("Admin");
         PlayerInfo player = platform.players.join("Player");
 
@@ -472,7 +474,7 @@ class ModRuntimeTest {
         assertThat(mods.setEnabled("Hytale:Weather", false).error().code()).isEqualTo("Mods.Forbidden");
 
         platform.commands.run("cc-set", admin, Map.of("id", "controlcore:mods-hidden", "value", "Acme:Homes"));
-        platform.deniedNodes.addAll(java.util.List.of("settings", "admin"));
+        platform.deniedNodes.addAll(List.of("settings", "admin"));
         platform.commands.run("prefs", player, Map.of());
         var playersView = platform.controlPanel.lastContent.mods();
         assertThat(playersView.canManage()).isFalse();

@@ -1,8 +1,12 @@
 package net.ofatech.controlcore.infrastructure.platforms.hytale.ui;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
@@ -167,9 +171,9 @@ final class SettingsSection {
             entries.add(new Heading(emptyText));
             return entries;
         }
-        java.util.Map<SettingId, SettingSnapshot> byId = new java.util.HashMap<>();
+        Map<SettingId, SettingSnapshot> byId = new HashMap<>();
         snapshots.forEach(snapshot -> byId.put(snapshot.id(), snapshot));
-        java.util.Set<SettingId> shownInline = new java.util.HashSet<>();
+        Set<SettingId> shownInline = new HashSet<>();
         snapshots.forEach(snapshot -> inlineColor(snapshot, byId).ifPresent(color -> shownInline.add(color.id())));
         String category = null;
         for (SettingSnapshot snapshot : snapshots) {
@@ -187,7 +191,7 @@ final class SettingsSection {
 
     /** @return the editable colour setting shown in {@code snapshot}'s (editable text) row, if it has one */
     private static Optional<SettingSnapshot> inlineColor(
-            SettingSnapshot snapshot, java.util.Map<SettingId, SettingSnapshot> byId) {
+            SettingSnapshot snapshot, Map<SettingId, SettingSnapshot> byId) {
         if (kindOf(snapshot) != Kind.TEXT) {
             return Optional.empty();
         }
@@ -203,14 +207,14 @@ final class SettingsSection {
 
     /** Adds {@code item} to a list setting. */
     Result<SettingSnapshot> addItem(SettingSnapshot snapshot, String item) {
-        List<String> items = new java.util.ArrayList<>(items(snapshot));
+        List<String> items = new ArrayList<>(items(snapshot));
         items.add(item == null ? "" : item.strip());
         return save(snapshot.id().toString(), String.join(SettingType.TextListType.SEPARATOR + " ", items));
     }
 
     /** Removes the item at {@code index} from a list setting. */
     Result<SettingSnapshot> removeItem(SettingSnapshot snapshot, int index) {
-        List<String> items = new java.util.ArrayList<>(items(snapshot));
+        List<String> items = new ArrayList<>(items(snapshot));
         if (index >= 0 && index < items.size()) {
             items.remove(index);
         }

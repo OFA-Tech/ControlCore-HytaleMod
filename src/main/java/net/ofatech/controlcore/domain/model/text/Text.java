@@ -1,6 +1,7 @@
 package net.ofatech.controlcore.domain.model.text;
 
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import net.ofatech.controlcore.domain.guard.Guard;
@@ -66,7 +67,7 @@ public record Text(Optional<String> key, String fallback, Map<String, String> pa
     /** @return a key part for {@code text}: {@code Server Configs} becomes {@code server_configs} */
     public static String slug(String text) {
         return text.strip()
-                .toLowerCase(java.util.Locale.ROOT)
+                .toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9]+", "_")
                 .replaceAll("^_|_$", "");
     }

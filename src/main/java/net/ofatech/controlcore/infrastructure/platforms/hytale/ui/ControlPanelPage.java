@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -36,6 +37,7 @@ import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.ControlPanelTab;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
+import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSearch;
@@ -168,7 +170,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private final Map<Section, SettingsSection> sections = new EnumMap<>(Section.class);
     private final Map<Section, Map<SettingId, Integer>> rowIndexes = new EnumMap<>(Section.class);
     /** Colour settings shown inside a text row (same keys as {@link #shown}). */
-    private final Set<String> inlineColors = new java.util.HashSet<>();
+    private final Set<String> inlineColors = new HashSet<>();
     /** Value each row currently shows, to skip change notifications the panel caused itself (world thread). */
     private final Map<String, String> shown = new HashMap<>();
     /** Latest snapshot of each row (same keys as {@link #shown}), used to filter rows by the search. */
@@ -183,7 +185,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private final Supplier<List<Text>> pendingRestart;
     private final ModsSection mods;
     /** Mods whose read-only config text is open in the Mods tab. */
-    private final Set<String> openConfigs = new java.util.HashSet<>();
+    private final Set<String> openConfigs = new HashSet<>();
 
     private Tab selected;
     /** Admin panel only: whether the Keymaps tab edits the server's keys (else the viewer's own). */
@@ -502,7 +504,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                         CustomUIEventBindingType.Activating,
                         element + " #Save",
                         action(SAVE, key, id).append(Action.VALUE, input + ".Value"));
-                // Only read: setting the picker's value from the server disconnects the client.
+                // The picker has no Value property; its colour is read and set as Color ("#rrggbb").
                 events.addEventBinding(
                         CustomUIEventBindingType.ValueChanged,
                         element + " #Picker",
@@ -971,7 +973,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     // --- Mods tab ----------------------------------------------------------------------------------------
 
     private void buildMods(UICommandBuilder commands, UIEventBuilder events) {
-        List<net.ofatech.controlcore.domain.model.mods.ModsView.Entry> entries = mods.load();
+        List<ModsView.Entry> entries = mods.load();
         commands.set(
                 "#ModsSearchFilter.Entries",
                 Arrays.stream(ModsSection.Filter.values())

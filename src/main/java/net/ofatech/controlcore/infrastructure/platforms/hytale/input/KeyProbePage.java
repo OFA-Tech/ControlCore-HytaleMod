@@ -16,6 +16,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Locale;
 import javax.annotation.Nonnull;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
@@ -59,7 +60,7 @@ final class KeyProbePage extends InteractiveCustomUIPage<KeyProbePage.Event> {
         commands.append(LAYOUT);
         commands.set(
                 "#Status.Text",
-                "KeyDown bound to " + target.name().toLowerCase(java.util.Locale.ROOT)
+                "KeyDown bound to " + target.name().toLowerCase(Locale.ROOT)
                         + ". Press keys without clicking anything first.");
         events.addEventBinding(CustomUIEventBindingType.KeyDown, target.selector, EventData.of(Event.SOURCE, "key"));
         events.addEventBinding(

@@ -11,6 +11,7 @@ import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import net.ofatech.controlcore.domain.model.settings.SettingPermission;
@@ -87,7 +88,7 @@ public final class JsonSettingPermissionStore implements SettingPermissionStore 
                 try {
                     SettingPermission rule = SettingPermission.of(entry.view, entry.edit);
                     if (!rule.isInherit()) {
-                        rules.put(target.strip().toLowerCase(java.util.Locale.ROOT), rule);
+                        rules.put(target.strip().toLowerCase(Locale.ROOT), rule);
                     }
                 } catch (RuntimeException e) {
                     log.warn("Ignoring the setting permission '" + target + "' in " + file + ": " + e.getMessage());
