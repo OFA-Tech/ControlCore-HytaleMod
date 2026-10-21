@@ -25,8 +25,13 @@ class SettingPermissionPolicyTest {
 
     private final RecordingLog log = new RecordingLog();
     private final DomainEventBus bus = new DomainEventBus(log);
-    private final SettingsRegistry registry =
-            new SettingsRegistry(new FakeSettingStore(), new FakePlayerData(), bus, bus, log);
+    private final SettingsRegistry registry = new SettingsRegistry(
+            new FakeSettingStore(),
+            new FakePlayerData(),
+            bus,
+            bus,
+            log,
+            new net.ofatech.controlcore.application.settings.ModNames());
     private final FakeSettingPermissionStore store = new FakeSettingPermissionStore();
     private final Set<String> granted = new HashSet<>();
     private final SettingPermissionPolicy policy =
@@ -34,12 +39,12 @@ class SettingPermissionPolicyTest {
     private final Optional<PlayerId> player = Optional.of(PlayerId.of(UUID.randomUUID()));
 
     private final SettingDefinition<Integer> maxHomes = SettingDefinition.server(
-                    "homes:max-homes", SettingType.integer(1, 50), 3)
+                    "homes", "max-homes", SettingType.integer(1, 50), 3)
             .inCategory("Homes");
 
     @Test
     void serverSettingsAreForAdminsAndPreferencesForEveryoneByDefault() {
-        SettingDefinition<Boolean> pref = SettingDefinition.player("homes:show", SettingType.bool(), true);
+        SettingDefinition<Boolean> pref = SettingDefinition.player("homes", "show", SettingType.bool(), true);
 
         assertThat(policy.rights(player, maxHomes)).isEqualTo(SettingRights.NONE);
         assertThat(policy.rights(player, pref)).isEqualTo(SettingRights.EDIT);
@@ -76,7 +81,7 @@ class SettingPermissionPolicyTest {
     @Test
     void theEditorHidesSettingsAndMakesViewOnlyOnesReadOnly() {
         registry.register(maxHomes.viewPermission(SettingPermission.EVERYONE));
-        registry.register(SettingDefinition.server("homes:secret", SettingType.bool(), false));
+        registry.register(SettingDefinition.server("homes", "secret", SettingType.bool(), false));
         var editor = policy.editor(registry, player);
 
         var rows = editor.snapshot(SettingScope.SERVER, Optional.empty());

@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Changed
+- **Breaking (API 2.0.0):** settings are created like key actions, from a mod id and a key:
+  `SettingDefinition.server("homes", "max-homes", type, default)` (id `homes:max-homes`). The single
+  `server("homes:max-homes", ...)` form is removed.
+- Headings in the panel and `/cc-settings` are `<mod name>: <category>`, or just the mod name when a setting
+  has no category. The mod name is the mod id capitalised (`my-mod` -> `My Mod`) unless a mod sets one with
+  `SettingsApi.setModName`; key actions use the same names. ControlCore's own settings are under "ControlCore",
+  admins' own binds under "Custom binds". `inCategory` is now only the group inside the mod.
+
 ## 0.9.0 - 2026-10-20
 
 First public release (beta). Requires Hytale server 0.7.2 (`>=0.7.2 <0.8.0`); the API for other mods is

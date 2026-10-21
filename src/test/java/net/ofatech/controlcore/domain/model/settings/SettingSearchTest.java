@@ -7,14 +7,14 @@ import org.junit.jupiter.api.Test;
 class SettingSearchTest {
 
     private final SettingSnapshot welcome = new SettingSnapshot(
-            SettingDefinition.server("controlcore:welcome-message", SettingType.text(256), "")
+            SettingDefinition.server("controlcore", "welcome-message", SettingType.text(256), "")
                     .named("Welcome message")
                     .inCategory("ControlCore"),
             "Hello {player}!",
             true,
             SettingAccess.EDITABLE);
     private final SettingSnapshot home = new SettingSnapshot(
-            SettingDefinition.player("homes:go-home", SettingType.text(200), "F")
+            SettingDefinition.player("homes", "go-home", SettingType.text(200), "F")
                     .named("Go home")
                     .inCategory("homes"),
             "CTRL + F",

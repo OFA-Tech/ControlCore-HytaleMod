@@ -213,7 +213,7 @@ public final class SettingSearch {
         return matches(
                 snapshot,
                 snapshot.definition().displayName(),
-                snapshot.definition().category(),
+                snapshot.definition().heading(),
                 description);
     }
 
@@ -268,8 +268,8 @@ public final class SettingSearch {
             return switch (field) {
                 case NAME -> has(definition.displayName()) || has(name);
                 case ID -> has(definition.id().toString());
-                case MOD -> has(definition.id().namespace());
-                case CATEGORY -> has(definition.category()) || has(category);
+                case MOD -> has(definition.id().namespace()) || has(definition.modName());
+                case CATEGORY -> has(definition.heading()) || has(category);
                 case VALUE -> has(snapshot.value());
                 case DEFAULT -> has(definition.formattedDefault());
                 case DESCRIPTION -> has(description);
@@ -283,7 +283,7 @@ public final class SettingSearch {
                     has(definition.displayName())
                             || has(name)
                             || has(definition.id().toString())
-                            || has(definition.category())
+                            || has(definition.heading())
                             || has(category)
                             || has(snapshot.value())
                             || has(definition.formattedDefault())

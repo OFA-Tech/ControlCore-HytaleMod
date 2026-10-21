@@ -7,7 +7,7 @@ types, so the API survives Hytale updates.
 
 | Type | Purpose |
 |---|---|
-| `ControlCoreApi` | entry point: `get()`, `find()`, `apiVersion()`, `controlPanel()`, `events()`, `settings()`, `keymaps()` (1.3.0); setting permissions (1.4.0); translations (1.5.0) |
+| `ControlCoreApi` | entry point: `get()`, `find()`, `apiVersion()`, `controlPanel()`, `events()`, `settings()`, `keymaps()` (1.3.0); setting permissions (1.4.0); translations (1.5.0); `server(modId, key, ...)` and mod names (2.0.0) |
 | `ControlPanelApi` | `isAvailable()`, `open(player, request)` |
 | `ControlCoreEvents` | `subscribe(eventType, listener)` returning a closable `Subscription` |
 | `SettingsApi` (1.1.0) | shared settings registry: `register(definition)`, `definitions()`, `snapshot(scope, player)`, `read` / `write` / `reset` by id, `onAnyChange(listener)` (1.2.0) |
@@ -32,14 +32,15 @@ changes.
 ```java
 ControlCoreApi.find().ifPresent(api -> {
     Setting<Integer> maxHomes = api.settings()
-            .register(SettingDefinition.server("homes:max-homes", SettingType.integer(1, 50), 3)
+            .register(SettingDefinition.server("homes", "max-homes", SettingType.integer(1, 50), 3)
                     .named("Max homes")
                     .describedAs("How many homes each player may set")
-                    .inCategory("Homes"))
+                    .inCategory("Limits"))                 // heading: "Homes: Limits"
             .value();
     Setting<Boolean> showHints = api.settings()
-            .register(SettingDefinition.player("homes:show-hints", SettingType.bool(), true))
-            .value();
+            .register(SettingDefinition.player("homes", "show-hints", SettingType.bool(), true))
+            .value();                                      // heading: "Homes"
+    api.settings().setModName("homes", "Home Teleports");  // optional: headings become "Home Teleports: ..."
 
     int limit = maxHomes.get();                 // server value or default
     boolean hints = showHints.get(playerId);    // this player's value or default
@@ -47,8 +48,14 @@ ControlCoreApi.find().ifPresent(api -> {
 });
 ```
 
-- **Ids** are `namespace:key`, lower case (`[a-z0-9_-]` / `[a-z0-9_.-]`). Use your mod's name as the
-  namespace.
+- **Ids:** `server(modId, key, ...)` / `player(modId, key, ...)` make the id `modId:key`, like key actions
+  (`KeyAction.of(modId, action)`). Both lower case: mod id `[a-z0-9_-]`, key `[a-z0-9_.-]`. The id is used in
+  saved values, commands (`/cc-get homes:max-homes`) and search (`mod:homes`). (API 2.0.0; the single
+  `"homes:max-homes"` form was removed.)
+- **Headings:** settings are listed under `<mod name>: <category>`, or just `<mod name>` without a category.
+  The mod name is the mod id capitalised (`my-mod` and `my_mod` become `My Mod`) until you set one with
+  `api.settings().setModName(modId, name)` (plain text or a `Text.key`); key actions use the same name.
+  `inCategory` is only the group inside your mod.
 - **Types:** `SettingType.bool()`, `integer(min, max)`, `decimal(min, max)`, `text(maxLength)`,
   `choice(options...)`. The default must be valid, or `SettingDefinition` throws.
 - **Scopes:** `SERVER` (one value, changed by admins) and `PLAYER` (each player's own preference; the
@@ -65,7 +72,7 @@ ControlCoreApi.find().ifPresent(api -> {
 ### Who may see and change a setting (API 1.4.0)
 
 ```java
-SettingDefinition.server("homes:max-homes", SettingType.integer(1, 50), 3)
+SettingDefinition.server("homes", "max-homes", SettingType.integer(1, 50), 3)
         .viewPermission(SettingPermission.EVERYONE)   // everyone sees it read-only
         .editPermission("homes.moderator");           // moderators may change it
 api.settings().setCategoryPermission("Homes", SettingPermission.of("homes.staff")); // a whole category
@@ -115,11 +122,12 @@ Mods can have their setting and key texts translated too. Pass a `Text.key(key, 
 of a plain string and ship the keys in your own language files:
 
 ```java
-SettingDefinition.server("homes:max-homes", SettingType.integer(1, 50), 3)
+api.settings().setModName("homes", Text.key("homes.mod_name", "Home Teleports"));
+SettingDefinition.server("homes", "max-homes", SettingType.integer(1, 50), 3)
         .named(Text.key("homes.settings.max_homes", "Max homes"))
         .describedAs(Text.key("homes.settings.max_homes.desc", "How many homes each player may set"))
-        .inCategory(Text.key("homes.settings.category", "Homes"));
-SettingDefinition.player("homes:sort", SettingType.choice("Name", "Distance"), "Name")
+        .inCategory(Text.key("homes.settings.limits", "Limits"));
+SettingDefinition.player("homes", "sort", SettingType.choice("Name", "Distance"), "Name")
         .optionsKey("homes.sort");                      // option "Distance" -> homes.sort.distance
 KeyAction.of("homes", "go-home").displayName(Text.key("homes.keys.go_home", "Go home"));
 ```

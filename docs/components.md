@@ -119,7 +119,7 @@ public final class ControlPanelSettings {
 
     public ControlPanelSettings(SettingsApi settings, SettingsProvider defaults) {
         this.enabled = settings.register(SettingDefinition.server(
-                        "controlcore:control-panel-enabled", SettingType.bool(),
+                        "controlcore", "control-panel-enabled", SettingType.bool(),
                         defaults.current().controlPanelEnabled())
                 .named("Control panel enabled")).value();
     }

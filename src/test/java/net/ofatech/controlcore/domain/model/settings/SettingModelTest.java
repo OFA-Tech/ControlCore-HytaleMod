@@ -63,17 +63,23 @@ class SettingModelTest {
 
     @Test
     void definitionsCheckTheirDefault() {
-        var definition = SettingDefinition.server("homes:max-homes", SettingType.integer(1, 50), 3)
+        var definition = SettingDefinition.server("homes", "max-homes", SettingType.integer(1, 50), 3)
                 .named("Max homes")
                 .describedAs("How many homes")
                 .inCategory("Homes");
 
         assertThat(definition.scope()).isEqualTo(SettingScope.SERVER);
         assertThat(definition.formattedDefault()).isEqualTo("3");
-        assertThat(SettingDefinition.player("homes:show", SettingType.bool(), true)
-                        .category())
-                .isEqualTo("homes");
-        assertThatThrownBy(() -> SettingDefinition.server("homes:max-homes", SettingType.integer(1, 50), 99))
+        var plain = SettingDefinition.player("home_teleports", "show", SettingType.bool(), true);
+        assertThat(plain.id().toString()).isEqualTo("home_teleports:show");
+        assertThat(plain.category()).as("no category of its own").isEmpty();
+        assertThat(plain.heading()).as("the mod id capitalised").isEqualTo("Home Teleports");
+        assertThat(definition.inCategory("Limits").heading()).isEqualTo("Homes: Limits");
+        assertThat(definition
+                        .withModName(net.ofatech.controlcore.domain.model.text.Text.of(""))
+                        .heading())
+                .isEqualTo("Homes");
+        assertThatThrownBy(() -> SettingDefinition.server("homes", "max-homes", SettingType.integer(1, 50), 99))
                 .isInstanceOf(DomainException.class)
                 .hasMessageContaining("homes:max-homes");
     }

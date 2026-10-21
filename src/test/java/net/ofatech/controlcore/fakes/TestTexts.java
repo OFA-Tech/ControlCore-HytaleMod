@@ -23,7 +23,15 @@ public final class TestTexts {
     public static Texts standalone() {
         RecordingLog log = new RecordingLog();
         DomainEventBus bus = new DomainEventBus(log);
-        return of(new SettingsRegistry(new FakeSettingStore(), new FakePlayerData(), bus, bus, log), new FakePlayers());
+        return of(
+                new SettingsRegistry(
+                        new FakeSettingStore(),
+                        new FakePlayerData(),
+                        bus,
+                        bus,
+                        log,
+                        new net.ofatech.controlcore.application.settings.ModNames()),
+                new FakePlayers());
     }
 
     /** @return text in English */

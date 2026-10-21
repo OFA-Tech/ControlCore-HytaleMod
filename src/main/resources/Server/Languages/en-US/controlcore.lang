@@ -112,6 +112,7 @@ types.text = text (up to {max} characters)
 # ---- Key actions ----
 keys.actions.open_preferences.desc = Opens your preferences and key bindings.
 keys.actions.open_preferences.name = Open my preferences
+keys.custom_mod = Custom binds
 keys.changed_server = The server's keys for {name} are now {keys}.
 keys.changed_yours = Your keys for {name} are now {keys}.
 keys.created = Key bind {id} ({keys}): {runs}.
