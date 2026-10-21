@@ -43,7 +43,6 @@ change. Maven: `net.ofatech:controlcore` on GitHub Packages. See the
 ### Notes
 - Beta: back up `mods/OFATech_ControlCore/` before updating.
 - Hytale servers only see actions, not raw keys, so keys like H or Caps Lock cannot be bound.
-- Optional: HyUI (its 0.9.8 is not compatible with Hytale 0.7, so the built-in panel is used).
 
 ## Screenshots to add
 1. Server Configs tab with the search and a restart reminder.

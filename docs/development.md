@@ -51,7 +51,8 @@ Things to know:
 
 ## Custom UI (the built-in control panel)
 
-- Code: `infrastructure/platforms/hytale/ui/` (`HytaleControlPanelView`, `ControlPanelPage`), layout:
+- Code: `infrastructure/platforms/hytale/ui/` (`HytaleControlPanelView`, `ControlPanelPage` and its helpers,
+  see [platforms.md](platforms.md#the-control-panel)), layout:
   `src/main/resources/Common/UI/Custom/Pages/ControlCore/ControlPanel.ui`, loaded as
   `Pages/ControlCore/ControlPanel.ui`.
 - `build()` appends the layout, fills values with `commands.set("#Id.Text", ...)` and binds events
@@ -68,9 +69,8 @@ Things to know:
 - **Lists built at runtime:** `commands.append("#List", "Pages/ControlCore/SettingTextRow.ui")` appends a
   whole document as a child of `#List` (a `Group` with `LayoutMode: TopScrolling` scrolls). The n-th
   appended child is `#List[n]`, and its descendants are `#List[n] #Input` (space = descendant). The
-  settings tabs do this, one row document per setting (`Setting{Text,Toggle,Choice}Row.ui`, headings
-  `SettingCategory.ui`); the plain-Java `SettingsSection` decides the rows and actions, `ControlPanelPage`
-  draws them. Vanilla does the same in `PluginListPage` and `PointInspectorPage`.
+  settings tabs do this, one row document per setting (`Setting*Row.ui`, headings `SettingCategory.ui`); the
+  plain-Java `SettingsSection` decides the rows and actions, `SettingRows` draws them. Vanilla does the same in `PluginListPage` and `PointInspectorPage`.
 - **Reading inputs:** bind with `EventData` that mixes constants and `@` keys, e.g.
   `Action=Save, Id=<id>, @Value=#List[2] #Input.Value`. The codec type must match the element:
   `TextField`/`DropdownBox` → `Codec.STRING`, `CheckBox` → `Codec.BOOLEAN`, `NumberField` → `Codec.DOUBLE`
@@ -81,57 +81,23 @@ Things to know:
   `new DropdownEntryInfo(LocalizableString.fromString(label), value)`, then `#X.Value`. Text fields take
   `#X.PlaceholderText`.
 
-## HyUI
+- **Colour pickers** (`ColorPickerDropdownBox`) have no `Value`: read and set their `Color` (`#rrggbb`).
+  Setting or gathering `#Picker.Value` disconnects the client.
+- **Images set from the server** (`#X.Background`) are paths relative to `Common/UI/Custom/`, unlike paths
+  inside `.ui` files, which are relative to that file.
+- **Translation keys in `.ui` files** (`%key;`) may only contain letters, digits and dots; an underscore makes
+  the client fail to load and the player cannot join.
 
-HyUI 0.9.8 (latest as of 2026-10) is not compatible with Hytale 0.7: it calls
-`PageManager.updateCustomPage`, renamed to `updateLegacyCustomPage` in 0.7, and the
-`NoSuchMethodError` crashes the world on the first page update. `HyUiBridge` refuses to bind in that
-case and the built-in panel is used. HyUI is only `compileOnly` for now; see
-[platforms.md](platforms.md) for how to bring it back once a compatible version exists.
-
-## Current state and next steps
-
-Done (merged in PR #1): template structure, `/open-admin-config` with the
-`<base>.admin` permission, built-in panel with three tabs, `ControlCoreApi` for other mods.
-
-Done: settings registry (`ControlCoreApi.settings()`, `/cc-*` commands, `SettingValues.json`), verified
-on the dev server from the console (list/get/set/reset, invalid input, persistence across a restart).
-
-Done: **Mod Settings** and **Player Prefs** tabs list and edit the registered settings (text fields with
-Save, check boxes and dropdowns save immediately, Default resets); ControlCore's own settings: panel
-switch, welcome message, show-welcome and panel start tab.
-
-Done: `/prefs` opens the panel on the Player Prefs tab only, for any player (the page builds only the
-sections in the `ControlPanelRequest` and ignores events for the others). Open panels follow setting
-changes made elsewhere (`SettingsEditor.onAnyChange`): the page updates on the player's world thread and
-skips values it already shows, so its own saves don't echo.
-
-Done: **Server Configs** tab lists every key of `config.json`. `HytaleServerConfiguration` walks
-`HytaleServerConfig.CODEC` (its `BuilderCodec` entries, nested sections, inherited parent fields, docs
-and `RangeValidator` bounds), so keys added by future Hytale versions appear without code changes.
-Effective values come from the config's getters (keys missing from the file fall back to built-in
-defaults inside the getters); defaults are read the same way from `new HytaleServerConfig()`. A change
-is decoded into the live config object by the key's own codec field, so Hytale's validators run, and
-the config is saved at once (saves are chained; overlapping saves collide on `config.json.tmp`).
-`HytaleConfigAccess` decides what is editable: live keys (name, MOTD, max players, max view radius,
-connection timeouts, require join permission), restart keys (`Defaults.World/GameMode/HardcoreMode`,
-rate limit, backup, update, world map, display tmp tags) and everything else read-only, including keys
-it does not know. Structured values (storage providers, modules, mods, log levels) are one-line
-summaries. `ServerConfigEditor` turns each key into a `server:*` setting (`ConnectionTimeouts.PlayTimeout`
--> `server:connection-timeouts.play-timeout`) with a `SettingAccess`; read-only rows use
-`SettingInfoRow.ui`. "Default" writes the value of a fresh server.
-
-Open:
+## Known limits
 
 - Settings registered while a panel is open appear after reopening it.
-- **Search:** each list has a search field (`#…Search`, `ValueChanged`); `SettingSearch` (domain) parses it and
-  `ControlPanelPage.applySearch` hides rows that do not match, plus headings with no shown row.
-- **Server Configs tab:** the password and structured keys are read-only (edit them in
-  `config.json`). Changes made with Hytale's own `/maxplayers` or `/maxviewradius` are not pushed to open
-  panels (Hytale has no event for them); they show after reopening. Keys without a default (backup
-  directory, update patchline) cannot be reset from the panel.
-- **Keymaps tab:** preview only; the Rebind and Server Default buttons are disabled. Needs a design for
-  how key bindings are captured and applied.
-- `control-panel-hyui.html` is kept for when HyUI supports 0.7; it is a separate layout from
-  `ControlPanel.ui`.
-- Merge `restructure-template` into `main` once happy.
+- **Server Configs:** the password and structured keys are read-only (edit them in `config.json` while the
+  server is stopped). Changes made with Hytale's own `/maxplayers` or `/maxviewradius` are not pushed to open
+  panels (Hytale has no event for them); they show after reopening. Keys without a default (backup directory,
+  update patchline) cannot be reset from the panel.
+- **Keys:** servers only receive game actions, not raw key presses, so keys like H, Tab or Caps Lock cannot be
+  bound (they are kept and marked not available).
+- **HUD:** parts the game switches by itself (for example on a game mode change) may come back until the
+  player rejoins.
+- **Mods tab:** turning a mod on or off applies after a restart; mod config files are shown read-only.
+- **Permissions:** not yet tested in game with a non-admin account.

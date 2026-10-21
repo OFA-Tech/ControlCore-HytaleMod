@@ -4,9 +4,11 @@
 
 ```
 platforms/
-├── hytale/           required host: Hytale → our ports
-└── hyui/             optional mod: HyUI → our ControlPanelView
+└── hytale/           required host: Hytale → our ports
 ```
+
+Other mods get their own folder next to it when ControlCore integrates with them (see below); there are none
+at the moment.
 
 A platform contains translations only, never feature logic.
 
@@ -26,12 +28,14 @@ A platform contains translations only, never feature logic.
 | `Log` | `log/HytaleLog` | `HytaleLogger` |
 | `ServerConfiguration` | `server/HytaleServerConfiguration` | `HytaleServer.getConfig()`, `HytaleServerConfig.save` |
 | `ControlPanelView` | `ui/HytaleControlPanelView`, `ControlPanelPage` | `InteractiveCustomUIPage`, `PageManager`, `.ui` layout |
-| `PlayerData` | `infrastructure/persistence/JsonPlayerDataStore` | none; `players.json` in the plugin data folder |
-| `SettingStore` | `infrastructure/persistence/JsonSettingStore` | none; `SettingValues.json` in the plugin data folder |
+| `ModCatalog` | `mods/HytaleModCatalog` | `PluginManager`, `AssetModule`, `HytaleServerConfig.getModConfig` |
+| `HudDisplay` | `player/HytaleHudDisplay` | `HudManager` |
+| `EmptyHandInput` | `input/HytaleEmptyHandInput` | `UnarmedInteractions` asset store |
+| `PlayerData`, `SettingStore`, key bind and permission stores | `infrastructure/persistence/Json*Store` | none; JSON files in the plugin data folder |
 | `Clock` | `infrastructure/system/SystemClock` | none |
 
-The last three are not Hytale code, but `HytalePlatform.bind` creates them because it knows the data
-folder.
+The stores and the clock are not Hytale code, but `HytalePlatform.bind` creates them because it knows the
+data folder.
 
 ### Updating Hytale
 
@@ -54,8 +58,10 @@ implement it in `platforms/hytale/`, and bind it in `HytalePlatform.bind`.
 
 ## Integrating another mod
 
-Ports for other mods are named after the capability, never after the mod: `ControlPanelView`.
-A feature asks `Capabilities.find(ControlPanelView.class)` and does not care which mod provides it.
+Ports for other mods are named after the capability, never after the mod (for example `MapMarkers`, not
+`BetterMapApi`). A feature asks `Capabilities.find(MapMarkers.class)` and does not care which mod provides it.
+The mechanism is in place (`ModPlatform`, `CapabilityBinder`, `Capabilities`) and tested with a test-only
+integration; ControlCore has no optional mod integration at the moment.
 
 ### Steps
 
@@ -85,7 +91,7 @@ A feature asks `Capabilities.find(ControlPanelView.class)` and does not care whi
    AzureDoom, Modtale and Modifold repositories.
 4. **Manifest.** Add the mod to `manifest_opt_dependencies` (`Group:Name=*`) so it loads before us,
    then run `./gradlew updatePluginManifest`.
-5. **Rule.** Add an ArchUnit rule like `hyUiOnlyInItsPlatform` for the mod's package.
+5. **Rule.** Add an ArchUnit rule so only `platforms/<mod>/` may use the mod's packages.
 
 ### How it stays safe
 
@@ -96,42 +102,20 @@ A feature asks `Capabilities.find(ControlPanelView.class)` and does not care whi
 - Capabilities are only bound in `start()`, after other mods finished their `setup()`.
 
 
-### The control panel: built-in UI and HyUI
+### The control panel
 
-`ControlPanelView` has two implementations, and `ControlPanelService` picks one per call:
+`platforms/hytale/ui/HytaleControlPanelView` (bound by `HytalePlatform`) opens `ControlPanelPage`, an
+`InteractiveCustomUIPage` with the layout `src/main/resources/Common/UI/Custom/Pages/ControlCore/ControlPanel.ui`
+(Hytale's `.ui` syntax, styles from `Common.ui`). The page owns the tabs, the searches and live updates; it is
+helped by:
 
-1. **HyUI capability**, if `HyUiPlatform` bound it (preferred).
-2. **Built-in**, `platforms/hytale/ui/HytaleControlPanelView`, always bound by `HytalePlatform`. It
-   opens `ControlPanelPage`, an `InteractiveCustomUIPage` with the layout
-   `src/main/resources/Common/UI/Custom/Pages/ControlCore/ControlPanel.ui` (Hytale's `.ui` syntax,
-   styles from `Common.ui`). Values come from the `ServerConfiguration` port
-   (`HytaleServerConfiguration` reads and writes `HytaleServer.get().getConfig()` and saves it with
-   `HytaleServerConfig.save`). Each settings tab (Server Configs, Mod Settings, Player Prefs) is a
-   scrolling list filled at runtime with one row document per setting (`Setting*Row.ui`). Tabs are text buttons:
-   each click is an event binding handled in `handleDataEvent`, which sends an update toggling the
-   `#...Tab.Visible` groups and disabling the selected tab's button. (Hytale's `TabNavigation`
-   element only supports icon tabs.)
+- `SettingsSection` (plain Java): which rows a list shows and what each action does;
+- `SettingRows`: the row document each kind of setting appends (`Setting*Row.ui`), its events and how a value
+  is shown;
+- `ModsTab` (with `ModsSection`): the Mods tab;
+- `KeyBindForm`: the admins' Add bind form and the Edit / Remove buttons of their binds;
+- `PanelSection` (where each list is drawn) and `PanelAction` (the data the client sends).
 
-[HyUI](https://www.curseforge.com/hytale/mods/hyui) (`Ellie:HyUI`) renders HTML pages as Hytale UI. It
-is a separate plugin, so it is never bundled into ControlCore's jar.
-
-- `HyUiPlatform`: descriptor for `Ellie:HyUI`.
-- `HyUiBridge`: touches a HyUI class, then checks that the server still has
-  `PageManager.updateCustomPage(CustomPage)`. HyUI 0.9.x calls it whenever a page changes (tab click,
-  live value); Hytale 0.7 renamed it to `updateLegacyCustomPage`, and the resulting
-  `NoSuchMethodError` on the world thread crashes the world. If it is missing, binding fails, is rolled
-  back and logged, and the built-in panel is used.
-- `HyUiControlPanel` (inbound): opens `Common/UI/Custom/Pages/control-panel-hyui.html` with
-  `PageBuilder` on the player's world thread.
-
-HyUI is only `compileOnly` for now, so `runServer` does not load it. To test it in the dev server,
-use `vineImplementation`, not `vineMod`: `runServer` loads ControlCore from the classpath, so HyUI's
-classes must be on that classpath as well or ControlCore cannot see them. hytale-tools stages it both
-in `run/mods` and on the shared runtime classpath, and still does not bundle it. On a real server
-both jars sit in `mods/` and see each other.
-
-HyUI 0.9.8 (latest as of 2026-10) declares `ServerVersion >=0.5.0-pre.9 <0.6.0`. On 0.7.2 it loads
-with a warning but fails the check above, so the built-in panel is used. When HyUI publishes a
-0.7-compatible build, bump the CurseMaven file id in `build.gradle.kts`; the check passes and HyUI
-takes over without code changes. Note that `control-panel-hyui.html` and `ControlPanel.ui` are separate
-layouts; keep them in sync if both are used.
+Tabs are text buttons: each click is an event binding handled in `handleDataEvent`, which sends an update
+toggling the `#...Tab.Visible` groups and disabling the selected tab's button. (Hytale's `TabNavigation`
+element only supports icon tabs.)

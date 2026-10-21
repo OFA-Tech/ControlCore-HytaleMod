@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Removed
+- HyUI support (optional dependency `Ellie:HyUI`, its HTML panel and the old HTML layouts). HyUI was never
+  compatible with Hytale 0.7, and its panel lacked everything added since; the built-in panel is always used.
+
 ### Added (Mods tab)
 - **Mods tab** for everyone (`/open-admin-config` and `/prefs`): every mod and asset pack with logo, version,
   authors, description, website and badges (asset pack, off, failed, on/off after restart). Search plus a filter
