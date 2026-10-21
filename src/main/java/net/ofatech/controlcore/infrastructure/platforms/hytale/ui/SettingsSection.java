@@ -33,8 +33,6 @@ final class SettingsSection {
         INTEGER,
         /** Slider, text field and Save button: a decimal number with a range. */
         DECIMAL,
-        /** Colour picker with a hex field. */
-        COLOR,
         /** Items with Remove buttons and a field to add one. */
         LIST,
         /** Check box, saved when clicked. */
@@ -239,7 +237,7 @@ final class SettingsSection {
         return switch (snapshot.definition().type()) {
             case SettingType.BooleanType _ -> Kind.TOGGLE;
             case SettingType.ChoiceType _ -> Kind.CHOICE;
-            case SettingType.ColorType _ -> Kind.COLOR;
+            case SettingType.ColorType _ -> Kind.TEXT;
             case SettingType.TextListType _ -> Kind.LIST;
             case SettingType.IntegerType number when Slider.fits(number.min(), number.max()) -> Kind.INTEGER;
             case SettingType.DecimalType number when Slider.fits(number.min(), number.max()) -> Kind.DECIMAL;

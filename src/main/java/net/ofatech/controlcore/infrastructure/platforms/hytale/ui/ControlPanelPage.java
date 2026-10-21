@@ -60,7 +60,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private static final String TOGGLE_ROW = "Pages/ControlCore/SettingToggleRow.ui";
     private static final String INTEGER_ROW = "Pages/ControlCore/SettingIntegerRow.ui";
     private static final String DECIMAL_ROW = "Pages/ControlCore/SettingDecimalRow.ui";
-    private static final String COLOR_ROW = "Pages/ControlCore/SettingColorRow.ui";
     private static final String LIST_ROW = "Pages/ControlCore/SettingListRow.ui";
     private static final String LIST_ITEM = "Pages/ControlCore/SettingListItem.ui";
     private static final String MOD_ROW = "Pages/ControlCore/ModRow.ui";
@@ -460,13 +459,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                         bar,
                         action(SLID, key, id).append(Action.NUMBER, bar + ".Value"));
             }
-            case COLOR -> {
-                commands.append(key.list, COLOR_ROW);
-                events.addEventBinding(
-                        CustomUIEventBindingType.ValueChanged,
-                        input,
-                        action(CHOOSE, key, id).append(Action.VALUE, input + ".Value"));
-            }
             case LIST -> {
                 commands.append(key.list, LIST_ROW);
                 commands.set(input + ".PlaceholderText", section.placeholder(snapshot));
@@ -705,7 +697,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             UICommandBuilder commands) {
         String input = element + " #Input";
         switch (kind) {
-            case TEXT, CHOICE, COLOR -> commands.set(input + ".Value", snapshot.value());
+            case TEXT, CHOICE -> commands.set(input + ".Value", snapshot.value());
             case LIST -> commands.set(input + ".Value", "");
             case INTEGER, DECIMAL -> {
                 commands.set(input + ".Value", snapshot.value());

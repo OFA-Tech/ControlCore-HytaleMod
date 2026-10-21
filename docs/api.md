@@ -56,7 +56,7 @@ ControlCoreApi.find().ifPresent(api -> {
   The mod name is the mod id capitalised (`my-mod` and `my_mod` become `My Mod`) until you set one with
   `api.settings().setModName(modId, name)` (plain text or a `Text.key`); key actions use the same name.
   `inCategory` is only the group inside your mod.
-- **Types:** `SettingType.bool()`, `integer(min, max)`, `decimal(min, max)`, `text(maxLength)`, `color()` (`#rrggbb`, colour picker), `textList(maxItems, maxItemLength)` (comma-separated, Add/Remove rows),
+- **Types:** `SettingType.bool()`, `integer(min, max)`, `decimal(min, max)`, `text(maxLength)`, `color()` (`#rrggbb`, text field), `textList(maxItems, maxItemLength)` (comma-separated, Add/Remove rows),
   `choice(options...)`. The default must be valid, or `SettingDefinition` throws.
 - **Scopes:** `SERVER` (one value, changed by admins) and `PLAYER` (each player's own preference; the
   default applies until they choose).

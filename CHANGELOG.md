@@ -12,7 +12,7 @@
 - **Mod logos** compatible with Better Modlist and MAC: `Common/UI/Custom/<Group>_<Name>.png` in the mod's assets.
 - `/cc-config <mod>` opens the panel on one mod's settings; `/cc-mods` lists mods in chat/console.
 - Setting `controlcore:mods-hidden`: mods players don't see in the Mods tab.
-- Setting types `SettingType.color()` (colour picker) and `SettingType.textList(maxItems, maxItemLength)` (items
+- Setting types `SettingType.color()` (hex field, `#rrggbb`) and `SettingType.textList(maxItems, maxItemLength)` (items
   with Add/Remove). New setting `controlcore:welcome-message-color`.
 ### Added
 - **Sliders:** whole-number and decimal settings with a range show a slider next to the text field (the server's
