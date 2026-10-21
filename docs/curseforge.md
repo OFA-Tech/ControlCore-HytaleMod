@@ -9,7 +9,7 @@ Text to paste when creating the CurseForge project and uploading a file. Upload 
   and Spanish.
 - **Category:** Server Utility (also: Admin Tools, Library / API)
 - **Game version:** Hytale 0.7.2
-- **Release type:** Beta for 0.9.x
+- **Release type:** Beta for 0.x
 - **License:** MIT
 - **Source:** https://github.com/OFA-Tech/ControlCore-HytaleMod
 

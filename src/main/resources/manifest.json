@@ -1,7 +1,7 @@
 {
     "Group": "OFATech",
     "Name": "ControlCore",
-    "Version": "0.9.0",
+    "Version": "0.10.0",
     "Description": "ControlCore, a Hytale mod built to handle server-side configuration.",
     "Authors": [
         {
