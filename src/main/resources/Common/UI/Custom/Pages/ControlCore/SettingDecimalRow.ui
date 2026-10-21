@@ -1,0 +1,47 @@
+$C = "../../Common.ui";
+
+// One decimal setting with a range: slider and text field. Appended by ControlPanelPage, which sets
+// the slider's Min, Max, Step and Value.
+Group {
+  LayoutMode: Top;
+  Anchor: (Bottom: 10);
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Height: 38);
+
+    Label #Label {
+      Anchor: (Width: 190, Right: 10);
+      Style: (...$C.@DefaultLabelStyle, RenderBold: true, VerticalAlignment: Center, Wrap: true);
+    }
+
+    Group {
+      FlexWeight: 1;
+      LayoutMode: Middle;
+      Anchor: (Height: 38, Right: 10);
+
+      $C.@FloatSlider #Slider {
+        @Anchor = (Height: 5);
+      }
+    }
+
+    $C.@TextField #Input {
+      Anchor: (Width: 110);
+    }
+
+    $C.@SmallSecondaryTextButton #Save {
+      @Text = %controlcore.ui.save;
+      Anchor: (Width: 80, Height: 32, Left: 6);
+    }
+
+    $C.@SmallTertiaryTextButton #Reset {
+      @Text = %controlcore.ui.default;
+      Anchor: (Width: 90, Height: 32, Left: 6);
+    }
+  }
+
+  Label #Description {
+    Anchor: (Top: 2);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, Wrap: true);
+  }
+}

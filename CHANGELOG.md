@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Added
+- **Sliders:** whole-number and decimal settings with a range show a slider next to the text field (the server's
+  config included). Dragging shows the value in the field; letting go saves it. Ranges wider than 1,000,000 keep
+  only the field.
+- **HUD preferences:** players turn the game's HUD parts on and off in `/prefs` (`controlcore:hud.<part>`); admins
+  set a rule per part (`controlcore:hud-rule.<part>`: players choose, hidden until turned on, always hidden, always
+  shown).
+- **Hide the whole HUD** with the key action `controlcore:toggle-hud` (bind it in Keymaps).
+- **HUD API** (`ControlCoreApi.huds()`, `HudElement`): mods register their HUD and get `onShow` / `onHide`;
+  ControlCore stores each player's choice and applies it on join.
+
 ### Changed
 - **Breaking (API 2.0.0):** settings are created like key actions, from a mod id and a key:
   `SettingDefinition.server("homes", "max-homes", type, default)` (id `homes:max-homes`). The single

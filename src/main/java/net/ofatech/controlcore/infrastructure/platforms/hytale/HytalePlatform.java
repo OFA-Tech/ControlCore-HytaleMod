@@ -11,6 +11,7 @@ import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
 import net.ofatech.controlcore.domain.ports.game.CommandRunner;
 import net.ofatech.controlcore.domain.ports.game.EmptyHandInput;
+import net.ofatech.controlcore.domain.ports.game.HudDisplay;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
 import net.ofatech.controlcore.domain.ports.game.Messenger;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
@@ -41,6 +42,7 @@ import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleInput
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytalePlayerInput;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.log.HytaleLog;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.mods.HytaleModLookup;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytaleHudDisplay;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytaleMessenger;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytalePermissions;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytalePlayers;
@@ -87,6 +89,7 @@ public final class HytalePlatform implements Platform {
         binder.bind(ModLookup.class, new HytaleModLookup());
         binder.bind(ServerConfiguration.class, new HytaleServerConfiguration(log));
         binder.bind(ControlPanelView.class, new HytaleControlPanelView(log));
+        binder.bind(HudDisplay.class, new HytaleHudDisplay(log));
         binder.bind(InputProbe.class, new HytaleInputProbe(log));
         binder.bind(PlayerInput.class, new HytalePlayerInput(log));
         binder.bind(

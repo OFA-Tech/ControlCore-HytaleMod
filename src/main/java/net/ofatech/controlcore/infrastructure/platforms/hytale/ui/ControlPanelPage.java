@@ -58,6 +58,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private static final String HEADING = "Pages/ControlCore/SettingCategory.ui";
     private static final String TEXT_ROW = "Pages/ControlCore/SettingTextRow.ui";
     private static final String TOGGLE_ROW = "Pages/ControlCore/SettingToggleRow.ui";
+    private static final String INTEGER_ROW = "Pages/ControlCore/SettingIntegerRow.ui";
+    private static final String DECIMAL_ROW = "Pages/ControlCore/SettingDecimalRow.ui";
     private static final String CHOICE_ROW = "Pages/ControlCore/SettingChoiceRow.ui";
     private static final String INFO_ROW = "Pages/ControlCore/SettingInfoRow.ui";
     private static final String CUSTOM_BIND_ROW = "Pages/ControlCore/SettingCustomBindRow.ui";
@@ -68,6 +70,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private static final String CHECK = "Check";
     private static final String CHOOSE = "Choose";
     private static final String RESET = "Reset";
+    /** The slider moved: show its value in the text field (nothing is saved yet). */
+    private static final String SLIDE = "Slide";
+    /** The slider was let go: save its value. */
+    private static final String SLID = "Slid";
+
     private static final String ADD_BIND = "AddBind";
     private static final String EDIT_BIND = "EditBind";
     private static final String REMOVE_BIND = "RemoveBind";
@@ -399,6 +406,28 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                         element + " #Save",
                         action(SAVE, key, id).append(Action.VALUE, input + ".Value"));
             }
+            case INTEGER, DECIMAL -> {
+                commands.append(key.list, row.kind() == SettingsSection.Kind.INTEGER ? INTEGER_ROW : DECIMAL_ROW);
+                SettingsSection.Slider slider = SettingsSection.Slider.of(snapshot);
+                String bar = element + " #Slider";
+                setSliderNumber(commands, bar + ".Min", row.kind(), slider.min());
+                setSliderNumber(commands, bar + ".Max", row.kind(), slider.max());
+                setSliderNumber(commands, bar + ".Step", row.kind(), slider.step());
+                commands.set(input + ".PlaceholderText", section.placeholder(snapshot));
+                events.addEventBinding(
+                        CustomUIEventBindingType.Activating,
+                        element + " #Save",
+                        action(SAVE, key, id).append(Action.VALUE, input + ".Value"));
+                events.addEventBinding(
+                        CustomUIEventBindingType.ValueChanged,
+                        bar,
+                        action(SLIDE, key, id).append(Action.NUMBER, bar + ".Value"),
+                        false);
+                events.addEventBinding(
+                        CustomUIEventBindingType.MouseButtonReleased,
+                        bar,
+                        action(SLID, key, id).append(Action.NUMBER, bar + ".Value"));
+            }
             case TOGGLE -> {
                 commands.append(key.list, TOGGLE_ROW);
                 events.addEventBinding(
@@ -430,8 +459,16 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     }
 
     private void handleSettingAction(Section key, SettingsSection section, String name, Action action) {
+        if (SLIDE.equals(name)) {
+            showSliderText(key, action);
+            return;
+        }
         Result<SettingSnapshot> result = switch (name) {
             case SAVE, CHOOSE -> section.save(action.id, action.value);
+            case SLID ->
+                sliderValue(key, action)
+                        .map(value -> section.save(action.id, value))
+                        .orElse(null);
             case CHECK -> section.check(action.id, action.checked);
             case RESET -> section.reset(action.id);
             default -> null;
@@ -441,7 +478,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         }
         // Check boxes and dropdowns already show what the player picked. Setting their value again could fire
         // ValueChanged once more, so only text fields (normalised input) and resets are written back.
-        boolean writeBack = SAVE.equals(name) || RESET.equals(name);
+        boolean writeBack = SAVE.equals(name) || RESET.equals(name) || SLID.equals(name);
         UICommandBuilder update = new UICommandBuilder();
         result.onSuccess(snapshot -> {
                     shown.put(shownKey(key, snapshot.id()), snapshot.value());
@@ -605,9 +642,54 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         String input = element + " #Input";
         switch (kind) {
             case TEXT, CHOICE -> commands.set(input + ".Value", snapshot.value());
+            case INTEGER, DECIMAL -> {
+                commands.set(input + ".Value", snapshot.value());
+                SettingsSection.Slider slider = SettingsSection.Slider.of(snapshot);
+                setSliderNumber(commands, element + " #Slider.Value", kind, slider.position(snapshot.value()));
+            }
             case TOGGLE -> commands.set(input + ".Value", Boolean.parseBoolean(snapshot.value()));
             case INFO -> commands.set(element + " #Value.Text", section.shownValue(snapshot));
         }
+    }
+
+    /** Sliders take int values; float sliders take float values. */
+    private static void setSliderNumber(
+            UICommandBuilder commands, String property, SettingsSection.Kind kind, double value) {
+        if (kind == SettingsSection.Kind.INTEGER) {
+            commands.set(property, (int) Math.round(value));
+        } else {
+            commands.set(property, (float) value);
+        }
+    }
+
+    /** @return the text the slider's position stands for, if the row is a number row */
+    private Optional<String> sliderValue(Section key, Action action) {
+        SettingSnapshot snapshot = SettingId.parse(action.id == null ? "" : action.id)
+                .map(id -> latest.get(shownKey(key, id)))
+                .orElse(null);
+        if (snapshot == null || action.number == null) {
+            return Optional.empty();
+        }
+        SettingsSection.Kind kind = SettingsSection.kindOf(snapshot);
+        if (kind != SettingsSection.Kind.INTEGER && kind != SettingsSection.Kind.DECIMAL) {
+            return Optional.empty();
+        }
+        return Optional.of(
+                SettingsSection.Slider.of(snapshot).text(action.number, kind == SettingsSection.Kind.INTEGER));
+    }
+
+    /** While the slider moves, the text field shows the value it would save. */
+    private void showSliderText(Section key, Action action) {
+        Optional<String> value = sliderValue(key, action);
+        Integer index = SettingId.parse(action.id == null ? "" : action.id)
+                .map(id -> rowIndexes.get(key).get(id))
+                .orElse(null);
+        if (value.isEmpty() || index == null) {
+            return;
+        }
+        UICommandBuilder update = new UICommandBuilder();
+        update.set(key.row(index) + " #Input.Value", value.get());
+        sendUpdate(update, false);
     }
 
     private static String shownKey(Section key, SettingId id) {
@@ -726,6 +808,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         static final String KEYS = "@BindKeys";
         static final String FILTER = "@Filter";
         static final String MATCH = "@Match";
+        static final String NUMBER = "@Number";
 
         static final BuilderCodec<Action> CODEC = BuilderCodec.builder(Action.class, Action::new)
                 .append(
@@ -749,6 +832,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                         new KeyedCodec<>(CHECKED, Codec.BOOLEAN),
                         (action, value) -> action.checked = value,
                         action -> action.checked)
+                .add()
+                .append(
+                        new KeyedCodec<>(NUMBER, Codec.FLOAT),
+                        (action, value) -> action.number = value == null ? null : value.doubleValue(),
+                        action -> action.number == null ? null : action.number.floatValue())
                 .add()
                 .append(
                         new KeyedCodec<>(NAME, Codec.STRING),
@@ -777,6 +865,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         private String id;
         private String value;
         private Boolean checked;
+        private Double number;
         private String bindName;
         private String bindKeys;
         private String filter;
