@@ -717,7 +717,15 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             UICommandBuilder commands) {
         String input = element + " #Input";
         switch (kind) {
-            case TEXT, CHOICE, COLOR -> commands.set(input + ".Value", snapshot.value());
+            case TEXT, CHOICE -> commands.set(input + ".Value", snapshot.value());
+            case COLOR -> {
+                commands.set(input + ".Value", snapshot.value());
+                // The picker's markup property is Color (it has no Value); it is gathered as "#rrggbb" text.
+                String hex = pickedHex(snapshot.value());
+                if (hex != null) {
+                    commands.set(element + " #Picker.Color", hex);
+                }
+            }
             case LIST -> commands.set(input + ".Value", "");
             case INTEGER, DECIMAL -> {
                 commands.set(input + ".Value", snapshot.value());
