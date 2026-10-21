@@ -2,7 +2,9 @@ package net.ofatech.controlcore.domain.model.settings;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import net.ofatech.controlcore.domain.guard.DomainException;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -69,9 +71,23 @@ public sealed interface SettingType<T>
     /** @return a short description for players, for example {@code "integer 1..100"} */
     String describe();
 
+    /**
+     * @return {@link #describe()} in the player's language
+     * @since API 1.5.0
+     */
+    default Text describeText() {
+        return Text.of(describe());
+    }
+
     private static <T> Result<T> invalid(String text, SettingType<?> type) {
-        return Result.failure(
-                Error.validation(INVALID_VALUE, "'" + text + "' is not a valid " + type.describe() + "."));
+        Text described = type.describeText();
+        String english = "'" + text + "' is not a valid " + type.describe() + ".";
+        Text message = described
+                .key()
+                .map(key -> key.replace("controlcore.types.", "controlcore.errors.invalid_value."))
+                .map(key -> new Text(Optional.of(key), english, described.params()).with("value", text))
+                .orElse(Text.of(english));
+        return Result.failure(Error.validation(INVALID_VALUE, message));
     }
 
     /** {@code true} or {@code false}. */
@@ -99,6 +115,11 @@ public sealed interface SettingType<T>
         @Override
         public String describe() {
             return "boolean (true/false)";
+        }
+
+        @Override
+        public Text describeText() {
+            return Text.key("controlcore.types.boolean", describe());
         }
     }
 
@@ -141,6 +162,11 @@ public sealed interface SettingType<T>
         public String describe() {
             return "integer " + min + ".." + max;
         }
+
+        @Override
+        public Text describeText() {
+            return Text.key("controlcore.types.integer", describe()).with("min", min, "max", max);
+        }
     }
 
     /**
@@ -182,6 +208,11 @@ public sealed interface SettingType<T>
         public String describe() {
             return "decimal " + min + ".." + max;
         }
+
+        @Override
+        public Text describeText() {
+            return Text.key("controlcore.types.decimal", describe()).with("min", min, "max", max);
+        }
     }
 
     /**
@@ -217,6 +248,11 @@ public sealed interface SettingType<T>
         @Override
         public String describe() {
             return "text (up to " + maxLength + " characters)";
+        }
+
+        @Override
+        public Text describeText() {
+            return Text.key("controlcore.types.text", describe()).with("max", maxLength);
         }
     }
 
@@ -257,6 +293,11 @@ public sealed interface SettingType<T>
         @Override
         public String describe() {
             return "one of " + String.join(", ", options);
+        }
+
+        @Override
+        public Text describeText() {
+            return Text.key("controlcore.types.choice", describe()).with("options", String.join(", ", options));
         }
     }
 }

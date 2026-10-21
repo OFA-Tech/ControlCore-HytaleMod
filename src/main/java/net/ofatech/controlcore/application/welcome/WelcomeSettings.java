@@ -5,6 +5,7 @@ import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
+import net.ofatech.controlcore.domain.model.text.Text;
 
 /** Settings of the join message. */
 public final class WelcomeSettings {
@@ -17,15 +18,19 @@ public final class WelcomeSettings {
 
     public WelcomeSettings(SettingsApi settings) {
         this.message = settings.register(SettingDefinition.server(MESSAGE_ID, SettingType.text(256), "")
-                        .named("Welcome message")
-                        .describedAs("Sent to players when they join; {player} is replaced by their name. Empty"
-                                + " sends nothing.")
-                        .inCategory("ControlCore"))
+                        .named(Text.key("controlcore.settings.welcome_message.name", "Welcome message"))
+                        .describedAs(Text.key(
+                                "controlcore.settings.welcome_message.desc",
+                                "Sent to players when they join; {player} is replaced by their name. Empty"
+                                        + " sends nothing."))
+                        .inCategory(Text.key("controlcore.settings.category", "ControlCore")))
                 .value();
         this.show = settings.register(SettingDefinition.player(SHOW_ID, SettingType.bool(), true)
-                        .named("Show welcome message")
-                        .describedAs("Whether you get the server's welcome message when you join.")
-                        .inCategory("ControlCore"))
+                        .named(Text.key("controlcore.settings.show_welcome_message.name", "Show welcome message"))
+                        .describedAs(Text.key(
+                                "controlcore.settings.show_welcome_message.desc",
+                                "Whether you get the server's welcome message when you join."))
+                        .inCategory(Text.key("controlcore.settings.category", "ControlCore")))
                 .value();
     }
 

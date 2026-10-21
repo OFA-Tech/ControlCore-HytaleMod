@@ -9,6 +9,7 @@ import net.ofatech.controlcore.application.event.DomainEventBus;
 import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
+import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.ModSettings;
@@ -61,12 +62,19 @@ class ControlPanelServiceTest {
                 capabilities,
                 registry,
                 new ServerConfigEditor(server, bus, bus, log),
-                new KeymapsEditor(new KeymapRegistry(
-                        new FakeKeyBindStore(),
-                        new net.ofatech.controlcore.fakes.FakeCustomKeyBindStore(),
-                        new FakePlayerData(),
+                new KeymapsEditor(
+                        new KeymapRegistry(
+                                new FakeKeyBindStore(),
+                                new net.ofatech.controlcore.fakes.FakeCustomKeyBindStore(),
+                                new FakePlayerData(),
+                                (player, node) -> true,
+                                log),
+                        net.ofatech.controlcore.fakes.TestTexts.of(registry, players)),
+                new SettingPermissionPolicy(
+                        new net.ofatech.controlcore.fakes.FakeSettingPermissionStore(),
                         (player, node) -> true,
-                        log)));
+                        registry),
+                net.ofatech.controlcore.fakes.TestTexts.of(registry, players));
     }
 
     @Test
@@ -88,7 +96,10 @@ class ControlPanelServiceTest {
 
         assertThat(result.isSuccess()).isTrue();
         assertThat(builtIn.opened).containsExactly(new RecordingControlPanelView.Opened(admin.id(), SERVER));
-        assertThat(builtIn.lastContent.settings()).isSameAs(registry);
+        assertThat(builtIn.lastContent.settings().snapshot(SettingScope.SERVER, Optional.empty()))
+                .as("an admin sees every server setting")
+                .isEqualTo(registry.snapshot(SettingScope.SERVER, Optional.empty()));
+        assertThat(builtIn.lastContent.manageKeys()).isTrue();
         assertThat(builtIn.lastContent.serverConfig().snapshot(SettingScope.SERVER, Optional.empty()))
                 .extracting(snapshot -> snapshot.id().toString())
                 .contains("server:server-name", "server:connection-timeouts.play-timeout", "server:ban-storage");

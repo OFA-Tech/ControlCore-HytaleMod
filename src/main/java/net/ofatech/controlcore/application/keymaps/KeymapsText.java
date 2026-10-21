@@ -5,60 +5,92 @@ import java.util.List;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
 import net.ofatech.controlcore.domain.model.keys.KeyBinds;
 import net.ofatech.controlcore.domain.model.keys.KeyCombo;
+import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.result.Result;
 
-/** Texts shared by the keymap commands and the Keymaps tab. */
+/** Texts shared by the keymap commands and the Keymaps tab, in the reader's language. */
 public final class KeymapsText {
 
     private KeymapsText() {}
 
     /** @return why some of the combinations cannot fire, or an empty string if they all can */
-    public static String problems(KeyBinds binds) {
+    public static String problems(Translator tr, KeyBinds binds) {
         List<String> problems = new ArrayList<>();
         for (KeyCombo combo : binds.combos()) {
             Result<?> trigger = combo.trigger();
             if (trigger.isFailure()) {
-                problems.add(combo + " is not available: " + trigger.error().description());
+                problems.add(
+                        tr.t("controlcore.keys.not_available", "combo", combo, "reason", tr.error(trigger.error())));
             }
         }
         return String.join(" ", problems);
     }
 
     /** @return what the action does, for example {@code Runs /prefs} */
-    public static String runs(KeyAction action) {
-        String code = action.onPress().isPresent() ? "runs " + action.modId() + " code" : "";
-        String command = action.command()
-                .map(text -> "Runs /" + text + (action.runsAsServer() ? " as the server" : ""))
-                .orElse("");
-        if (command.isEmpty()) {
-            return "R" + code.substring(1);
+    public static String runs(Translator tr, KeyAction action) {
+        if (action.command().isEmpty()) {
+            return tr.t("controlcore.keys.runs_code", "mod", action.modId());
         }
-        return code.isEmpty() ? command : command + " and " + code;
+        String key = action.runsAsServer() ? "controlcore.keys.runs_server" : "controlcore.keys.runs";
+        if (action.onPress().isPresent()) {
+            key += "_and_code";
+        }
+        return tr.t(key, "command", action.command().get(), "mod", action.modId());
     }
 
-    /** @return one line of {@code /cc-keys} */
-    public static String line(KeyAction action, KeyBinds binds, String source) {
-        String problems = problems(binds);
-        return action.displayName() + ": " + binds + " (" + source + ") · " + action.id()
+    /**
+     * @param source where the keys come from: {@code yours}, {@code server} or {@code default}
+     * @return one line of {@code /cc-keys}
+     */
+    public static String line(Translator tr, KeyAction action, KeyBinds binds, String source) {
+        String problems = problems(tr, binds);
+        return tr.t(
+                        "controlcore.keys.line",
+                        "name",
+                        tr.translate(action.nameText()),
+                        "keys",
+                        binds,
+                        "source",
+                        tr.t("controlcore.keys.source." + source),
+                        "id",
+                        action.id())
                 + (problems.isEmpty() ? "" : "\n  " + problems);
     }
 
     /** @return the reply after an admin created a key bind */
-    public static String created(KeyAction action) {
-        String problems = problems(action.defaultKeys());
-        String runs = runs(action);
-        return "Key bind " + action.id() + " (" + action.defaultKeys() + ") "
-                + Character.toLowerCase(runs.charAt(0)) + runs.substring(1) + "."
+    public static String created(Translator tr, KeyAction action) {
+        String problems = problems(tr, action.defaultKeys());
+        return tr.t(
+                        "controlcore.keys.created",
+                        "id",
+                        action.id(),
+                        "keys",
+                        action.defaultKeys(),
+                        "runs",
+                        runs(tr, action))
                 + (action.runsAsServer()
-                        ? " Only players with " + KeymapRegistry.SERVER_KEYS_NODE + " can use it."
+                        ? " " + tr.t("controlcore.keys.server_only", "node", KeymapRegistry.SERVER_KEYS_NODE)
                         : "")
                 + (problems.isEmpty() ? "" : " " + problems);
     }
 
-    /** @return the reply after a change */
-    public static String changed(KeyAction action, KeyBinds binds, String whose) {
-        String problems = problems(binds);
-        return whose + " keys for " + action.displayName() + " are now " + binds + "."
+    /**
+     * @param server whether the server's keys changed (otherwise the player's own)
+     * @return the reply after a change
+     */
+    public static String changed(Translator tr, KeyAction action, KeyBinds binds, boolean server) {
+        String problems = problems(tr, binds);
+        return tr.t(
+                        server ? "controlcore.keys.changed_server" : "controlcore.keys.changed_yours",
+                        "name",
+                        tr.translate(action.nameText()),
+                        "keys",
+                        binds)
                 + (problems.isEmpty() ? "" : " " + problems);
+    }
+
+    /** @return the reply after an admin removed a key bind */
+    public static String removed(Translator tr, KeyAction action) {
+        return tr.t("controlcore.keys.removed", "id", action.id());
     }
 }

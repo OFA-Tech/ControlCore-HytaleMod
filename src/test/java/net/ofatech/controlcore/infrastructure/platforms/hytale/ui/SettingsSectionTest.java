@@ -27,7 +27,12 @@ class SettingsSectionTest {
     private final PlayerId viewer = PlayerId.of(UUID.randomUUID());
 
     private SettingsSection section(SettingScope scope) {
-        return new SettingsSection(registry, scope, Optional.of(viewer), "Nothing here.");
+        return new SettingsSection(
+                registry,
+                scope,
+                Optional.of(viewer),
+                "Nothing here.",
+                net.ofatech.controlcore.fakes.TestTexts.english());
     }
 
     @Test
@@ -87,10 +92,10 @@ class SettingsSectionTest {
 
         assertThat(saved.value().value()).isEqualTo("7");
         assertThat(max.get()).isEqualTo(7);
-        assertThat(SettingsSection.saved(saved.value())).isEqualTo("Saved: Max homes = 7");
+        assertThat(section.saved(saved.value())).isEqualTo("Saved: Max homes = 7");
         assertThat(invalid.error().description()).contains("integer 1..9");
         assertThat(unknown.error().code()).isEqualTo("Settings.InvalidId");
-        assertThat(SettingsSection.describe(saved.value()))
+        assertThat(section.description(saved.value()))
                 .isEqualTo("Homes per player (integer 1..9, default 3 · homes:max)");
     }
 

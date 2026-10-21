@@ -18,8 +18,10 @@ import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
+import net.ofatech.controlcore.domain.model.settings.SettingPermission;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
 import net.ofatech.controlcore.domain.ports.game.PlayerData;
@@ -47,6 +49,7 @@ public final class SettingsRegistry implements SettingsApi {
     private final Log log;
     private final Map<SettingId, SettingDefinition<?>> definitions = new ConcurrentHashMap<>();
     private final Set<String> reportedInvalid = ConcurrentHashMap.newKeySet();
+    private final Map<String, SettingPermission> categoryPermissions = new ConcurrentHashMap<>();
 
     public SettingsRegistry(
             SettingStore store, PlayerData playerData, EventPublisher publisher, ControlCoreEvents events, Log log) {
@@ -66,7 +69,8 @@ public final class SettingsRegistry implements SettingsApi {
                     || existing.type().valueType() != definition.type().valueType()) {
                 return Result.failure(Error.conflict(
                         "Settings.Conflict",
-                        definition.id() + " is already registered as a " + describe(existing) + "."));
+                        Text.key("controlcore.errors.settings.conflict", "{id} is already registered as a {existing}.")
+                                .with("id", definition.id(), "existing", describe(existing))));
             }
             definitions.put(definition.id(), definition);
             log.debug("Setting " + definition.id() + " re-registered");
@@ -74,6 +78,26 @@ public final class SettingsRegistry implements SettingsApi {
             log.debug("Setting " + definition.id() + " registered");
         }
         return Result.success(new Handle<>(definition.id(), definition.type().valueType()));
+    }
+
+    @Override
+    public void setCategoryPermission(String category, SettingPermission rule) {
+        Objects.requireNonNull(category, "category");
+        Objects.requireNonNull(rule, "rule");
+        String key = category.strip().toLowerCase(java.util.Locale.ROOT);
+        if (rule.isInherit()) {
+            categoryPermissions.remove(key);
+        } else {
+            categoryPermissions.put(key, rule);
+        }
+    }
+
+    @Override
+    public SettingPermission categoryPermission(String category) {
+        return category == null
+                ? SettingPermission.INHERIT
+                : categoryPermissions.getOrDefault(
+                        category.strip().toLowerCase(java.util.Locale.ROOT), SettingPermission.INHERIT);
     }
 
     @Override
@@ -133,7 +157,10 @@ public final class SettingsRegistry implements SettingsApi {
         SettingDefinition<?> definition = definitions.get(id);
         return definition != null
                 ? Result.success(definition)
-                : Result.failure(Error.notFound("Settings.UnknownSetting", "There is no setting " + id + "."));
+                : Result.failure(Error.notFound(
+                        "Settings.UnknownSetting",
+                        Text.key("controlcore.errors.settings.unknown_setting", "There is no setting {id}.")
+                                .with("id", id)));
     }
 
     private <T> Result<SettingSnapshot> writeText(
@@ -175,11 +202,19 @@ public final class SettingsRegistry implements SettingsApi {
     private static Result<Void> checkScope(SettingDefinition<?> definition, Optional<PlayerId> player) {
         if (definition.scope() == SettingScope.SERVER && player.isPresent()) {
             return Result.failure(Error.validation(
-                    "Settings.WrongScope", definition.id() + " is a server setting, not a player preference."));
+                    "Settings.WrongScope",
+                    Text.key(
+                                    "controlcore.errors.settings.server_not_preference",
+                                    "{id} is a server setting, not a player preference.")
+                            .with("id", definition.id())));
         }
         if (definition.scope() == SettingScope.PLAYER && player.isEmpty()) {
             return Result.failure(Error.validation(
-                    "Settings.WrongScope", definition.id() + " is a player preference; each player sets their own."));
+                    "Settings.WrongScope",
+                    Text.key(
+                                    "controlcore.errors.settings.preference_not_server",
+                                    "{id} is a player preference; each player sets their own.")
+                            .with("id", definition.id())));
         }
         return Result.success();
     }

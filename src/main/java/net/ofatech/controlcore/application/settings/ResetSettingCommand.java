@@ -3,7 +3,11 @@ package net.ofatech.controlcore.application.settings;
 import com.google.auto.service.AutoService;
 import java.util.Optional;
 import net.ofatech.controlcore.application.component.ModCommand;
+import net.ofatech.controlcore.application.text.Texts;
+import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
+import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
+import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.command.ArgType;
 import net.ofatech.controlcore.domain.ports.command.CommandContext;
 import net.ofatech.controlcore.domain.ports.command.CommandSpec;
@@ -15,10 +19,14 @@ import net.ofatech.controlcore.domain.result.Result;
 public final class ResetSettingCommand implements ModCommand {
 
     private final SettingsRegistry settings;
+    private final SettingPermissionPolicy permissions;
+    private final Texts texts;
     private final Log log;
 
-    public ResetSettingCommand(SettingsRegistry settings, Log log) {
+    public ResetSettingCommand(SettingsRegistry settings, SettingPermissionPolicy permissions, Texts texts, Log log) {
         this.settings = settings;
+        this.permissions = permissions;
+        this.texts = texts;
         this.log = log;
     }
 
@@ -26,15 +34,23 @@ public final class ResetSettingCommand implements ModCommand {
     public CommandSpec spec() {
         return CommandSpec.named("cc-reset")
                 .description("Return a ControlCore server setting to its default")
-                .arg("id", ArgType.STRING, "Setting id, namespace:key")
-                .permission(SettingsPermissions.ADMIN);
+                .arg("id", ArgType.STRING, "Setting id, namespace:key");
     }
 
     @Override
     public Result<Reply> execute(CommandContext context) {
         return SettingId.parse(context.string("id"))
-                .flatMap(id -> settings.reset(id, Optional.empty()))
-                .onSuccess(snapshot -> log.info(context.sender().name() + " reset " + SettingsText.line(snapshot)))
-                .map(snapshot -> Reply.of(SettingsText.changed(snapshot)));
+                .flatMap(id -> permitted(context).reset(id, Optional.empty()))
+                .onSuccess(snapshot ->
+                        log.info(context.sender().name() + " reset " + SettingsText.line(texts.forServer(), snapshot)))
+                .map(snapshot -> Reply.of(SettingsText.changed(tr(context), snapshot)));
+    }
+
+    private SettingsEditor permitted(CommandContext context) {
+        return permissions.editor(settings, context.sender().player().map(PlayerInfo::id));
+    }
+
+    private Translator tr(CommandContext context) {
+        return texts.forSender(context.sender());
     }
 }

@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 import net.ofatech.controlcore.application.component.ModCommand;
 import net.ofatech.controlcore.application.settings.SettingsPermissions;
+import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBind;
+import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.command.CommandContext;
 import net.ofatech.controlcore.domain.ports.command.CommandSpec;
 import net.ofatech.controlcore.domain.ports.command.Reply;
@@ -17,9 +19,11 @@ import net.ofatech.controlcore.domain.result.Result;
 public final class ListKeyBindsCommand implements ModCommand {
 
     private final CustomKeyBindStore binds;
+    private final Texts texts;
 
-    public ListKeyBindsCommand(CustomKeyBindStore binds) {
+    public ListKeyBindsCommand(CustomKeyBindStore binds, Texts texts) {
         this.binds = binds;
+        this.texts = texts;
     }
 
     @Override
@@ -33,14 +37,28 @@ public final class ListKeyBindsCommand implements ModCommand {
     public Result<Reply> execute(CommandContext context) {
         List<CustomKeyBind> all = binds.all();
         if (all.isEmpty()) {
-            return Result.success(Reply.of("No custom key binds yet. Create one with /cc-keybind-add."));
+            return Result.success(Reply.of(tr(context).t("controlcore.keys.custom.none")));
         }
         List<String> lines = new ArrayList<>();
-        lines.add("Custom key binds (edit by adding the same name again, delete with /cc-keybind-remove):");
+        lines.add(tr(context).t("controlcore.keys.custom.title"));
         for (CustomKeyBind bind : all) {
-            lines.add("- custom:" + bind.name() + ": " + bind.keys() + " runs /" + bind.command()
-                    + (bind.runAsServer() ? " as the server" : ""));
+            lines.add("- "
+                    + tr(context)
+                            .t(
+                                    bind.runAsServer()
+                                            ? "controlcore.keys.custom.line_server"
+                                            : "controlcore.keys.custom.line",
+                                    "name",
+                                    bind.name(),
+                                    "keys",
+                                    bind.keys(),
+                                    "command",
+                                    bind.command()));
         }
         return Result.success(Reply.of(String.join("\n", lines)));
+    }
+
+    private Translator tr(CommandContext context) {
+        return texts.forSender(context.sender());
     }
 }

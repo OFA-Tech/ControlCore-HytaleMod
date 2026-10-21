@@ -26,6 +26,8 @@ public final class FakePlatform implements Platform {
     public final FakeClock clock = new FakeClock();
     public final FakeSettings settings = new FakeSettings();
     public final FakePlayers players = new FakePlayers();
+    public final net.ofatech.controlcore.infrastructure.i18n.BundledTranslations translations =
+            new net.ofatech.controlcore.infrastructure.i18n.BundledTranslations();
     public final FakeMessenger messenger = new FakeMessenger();
     public final FakePlayerData playerData = new FakePlayerData();
     public final FakeSettingStore settingStore = new FakeSettingStore();
@@ -37,6 +39,7 @@ public final class FakePlatform implements Platform {
     public final RecordingCommandRunner commandRunner = new RecordingCommandRunner();
     public final FakeKeyBindStore keyBinds = new FakeKeyBindStore();
     public final FakeCustomKeyBindStore customKeyBinds = new FakeCustomKeyBindStore();
+    public final FakeSettingPermissionStore settingPermissions = new FakeSettingPermissionStore();
     /** Permission nodes players do not have; everything else is granted. */
     public final java.util.Set<String> deniedNodes = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
@@ -55,6 +58,7 @@ public final class FakePlatform implements Platform {
         binder.bind(Clock.class, clock);
         binder.bind(SettingsProvider.class, settings);
         binder.bind(Players.class, players);
+        binder.bind(net.ofatech.controlcore.domain.ports.system.Translations.class, translations);
         binder.bind(Messenger.class, messenger);
         binder.bind(Permissions.class, (player, node) -> !deniedNodes.contains(node));
         binder.bind(PlayerData.class, playerData);
@@ -68,6 +72,7 @@ public final class FakePlatform implements Platform {
         binder.bind(net.ofatech.controlcore.domain.ports.game.CommandRunner.class, commandRunner);
         binder.bind(net.ofatech.controlcore.domain.ports.config.KeyBindStore.class, keyBinds);
         binder.bind(net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore.class, customKeyBinds);
+        binder.bind(net.ofatech.controlcore.domain.ports.config.SettingPermissionStore.class, settingPermissions);
         binder.bind(InputProbe.class, new InputProbe() {
             @Override
             public boolean toggle(net.ofatech.controlcore.domain.model.PlayerId player) {

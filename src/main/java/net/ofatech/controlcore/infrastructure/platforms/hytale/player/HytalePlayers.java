@@ -23,6 +23,13 @@ public final class HytalePlayers implements Players {
     }
 
     @Override
+    public Optional<String> language(PlayerId id) {
+        return Optional.ofNullable(Universe.get().getPlayer(id.value()))
+                .map(player -> player.getLanguage())
+                .filter(language -> !language.isBlank());
+    }
+
+    @Override
     public Collection<PlayerInfo> online() {
         return Universe.get().getPlayers().stream().map(Ids::player).toList();
     }

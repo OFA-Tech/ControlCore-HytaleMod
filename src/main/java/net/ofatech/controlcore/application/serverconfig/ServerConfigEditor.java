@@ -17,6 +17,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
 import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
 import net.ofatech.controlcore.domain.ports.system.Log;
@@ -89,7 +90,10 @@ public final class ServerConfigEditor implements SettingsEditor {
                 .map(value -> apply(entry, value))
                 .orElseGet(() -> Result.failure(Error.validation(
                         "ServerConfig.NoDefault",
-                        entry.name() + " has no default value; type a value or remove the key from config.json."))));
+                        Text.key(
+                                        "controlcore.errors.serverconfig.no_default",
+                                        "{name} has no default value; type a value or remove the key from config.json.")
+                                .with("name", entry.name())))));
     }
 
     @Override
@@ -102,7 +106,10 @@ public final class ServerConfigEditor implements SettingsEditor {
 
     private Result<SettingSnapshot> apply(ConfigEntry entry, String value) {
         if (entry.access() == SettingAccess.READ_ONLY) {
-            return Result.failure(Error.forbidden("ServerConfig.ReadOnly", entry.name() + " cannot be changed here."));
+            return Result.failure(Error.forbidden(
+                    "ServerConfig.ReadOnly",
+                    Text.key("controlcore.errors.serverconfig.read_only", "{name} cannot be changed here.")
+                            .with("name", entry.name())));
         }
         return server.write(entry.path(), value).map(after -> {
             if (!after.value().equals(entry.value())) {
@@ -121,7 +128,10 @@ public final class ServerConfigEditor implements SettingsEditor {
                 return Result.success(entry);
             }
         }
-        return Result.failure(Error.notFound("Settings.UnknownSetting", "There is no server config key " + id + "."));
+        return Result.failure(Error.notFound(
+                "Settings.UnknownSetting",
+                Text.key("controlcore.errors.settings.unknown_config_key", "There is no server config key {id}.")
+                        .with("id", id)));
     }
 
     static SettingSnapshot snapshotOf(ConfigEntry entry) {
@@ -148,22 +158,29 @@ public final class ServerConfigEditor implements SettingsEditor {
             case INTEGER, SECONDS ->
                 server(id, SettingType.integer(entry.min(), entry.max()), clamp(fallback, entry.min(), entry.max()));
         };
-        return definition.named(entry.name()).describedAs(describe(entry)).inCategory(entry.section());
+        return definition
+                .named(Text.key("controlcore.config.key." + id.key(), entry.name()))
+                .describedAs(describe(entry))
+                .inCategory(Text.key("controlcore.config.section." + Text.slug(entry.section()), entry.section()));
     }
 
     private static <T> SettingDefinition<T> server(SettingId id, SettingType<T> type, T defaultValue) {
         return SettingDefinition.server(id.toString(), type, defaultValue);
     }
 
-    private static String describe(ConfigEntry entry) {
-        String text = entry.description().isBlank() ? "" : entry.description().strip();
-        if (entry.access() == SettingAccess.APPLIES_AFTER_RESTART) {
-            text = (text.isEmpty() ? "" : text + " ") + "Applies after a restart.";
+    /** Hytale's own description (English), with ControlCore's notes in the player's language. */
+    private static Text describe(ConfigEntry entry) {
+        String doc = entry.description().isBlank() ? "" : entry.description().strip();
+        boolean restart = entry.access() == SettingAccess.APPLIES_AFTER_RESTART;
+        boolean noDefault = entry.defaultValue().isEmpty() && entry.access() != SettingAccess.READ_ONLY;
+        if (!restart && !noDefault) {
+            return Text.of(doc);
         }
-        if (entry.defaultValue().isEmpty() && entry.access() != SettingAccess.READ_ONLY) {
-            text = (text.isEmpty() ? "" : text + " ") + "No default value.";
-        }
-        return text;
+        String fallback =
+                (doc + (restart ? " Applies after a restart." : "") + (noDefault ? " No default value." : "")).strip();
+        String key = "controlcore.config.desc." + (restart ? "restart" : "") + (restart && noDefault ? "_" : "")
+                + (noDefault ? "no_default" : "");
+        return Text.key(key, fallback).with("doc", doc);
     }
 
     private static int clamp(String text, int min, int max) {
@@ -179,6 +196,11 @@ public final class ServerConfigEditor implements SettingsEditor {
     }
 
     private static Error wrongScope(SettingId id) {
-        return Error.validation("Settings.WrongScope", id + " is part of the server config, not a player preference.");
+        return Error.validation(
+                "Settings.WrongScope",
+                Text.key(
+                                "controlcore.errors.settings.config_not_preference",
+                                "{id} is part of the server config, not a player preference.")
+                        .with("id", id));
     }
 }

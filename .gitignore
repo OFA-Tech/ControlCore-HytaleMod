@@ -2,6 +2,8 @@
 .gradle/
 build/
 .kotlin/
+.playwright-cli/
+.cortexkit/
 
 ### Hytale dev server (runServer) ###
 run/
@@ -38,3 +40,5 @@ out/
 ### OS ###
 .DS_Store
 Thumbs.db
+src/main/resources/SettingPermissions.json
+src/main/resources/SettingPermissions.json.tmp

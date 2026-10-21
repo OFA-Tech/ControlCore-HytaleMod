@@ -13,6 +13,16 @@
 - `/open-admin-config` now requires the `<base permission>.admin` node.
 
 ### Added
+- **Translations** (API 1.5.0): the panel, command replies, errors and command help are shown in each
+  player's game language: English, Brazilian Portuguese and Spanish. Missing texts fall back to English. Mods translate their own setting and key texts with
+  `Text.key(key, fallback)` and their own `Server/Languages/<language>/<file>.lang` files.
+- **Permissions per setting** (API 1.4.0): mods set who may see and who may change a setting
+  (`.viewPermission`, `.editPermission`, `.permission`) or a whole category (`setCategoryPermission`);
+  admins override them per setting, category or mod with `/cc-perm` (saved in `SettingPermissions.json`)
+  and list them with `/cc-perms` and check one setting with `/cc-perm-check <id>`. Players who may only see a setting get it read-only; hidden ones are
+  left out of the panel and commands. Applies to the server config too (`mod:server`).
+- `/open-admin-config`, `/cc-settings`, `/cc-get`, `/cc-set` and `/cc-reset` no longer need a command
+  permission: they show and change only what the player may (admins still see everything).
 - **Search** in every control panel list (Server Configs, Mod Settings, Player Prefs, both Keymaps views):
   words match the name, id, mod id, category, value, default or description (all must match; `ctrl+f`
   finds `CTRL + F`). Prefixes `name:`, `id:`, `mod:`, `cat:`, `key:`/`value:`, `default:`, `desc:`,

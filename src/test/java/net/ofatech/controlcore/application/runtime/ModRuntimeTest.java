@@ -44,7 +44,9 @@ class ModRuntimeTest {
 
         assertThat(platform.commands.commands).containsKey(COMMAND);
         var spec = platform.commands.commands.get(COMMAND).spec();
-        assertThat(spec.permission()).contains("admin");
+        assertThat(spec.permission())
+                .as("checked per setting when the command runs")
+                .isEmpty();
         assertThat(spec.playerOnly()).isTrue();
         assertThat(platform.connectedPublisher).isNotNull();
         assertThat(platform.log.contains("Set up on Fake")).isTrue();
@@ -201,11 +203,58 @@ class ModRuntimeTest {
 
         assertThat(platform.commands.commands)
                 .containsKeys("cc-settings", "cc-get", "cc-set", "cc-reset", "cc-prefs", "cc-pref", "cc-pref-reset");
-        assertThat(platform.commands.commands.get("cc-set").spec().permission()).contains("settings");
+        assertThat(platform.commands.commands.get("cc-set").spec().permission())
+                .as("checked per setting")
+                .isEmpty();
+        assertThat(platform.commands.commands.get("cc-perm").spec().permission())
+                .contains("settings");
         assertThat(platform.commands.commands.get("cc-pref").spec().permission())
                 .isEmpty();
         assertThat(platform.commands.commands.get("cc-pref").spec().playerOnly())
                 .isTrue();
+    }
+
+    @Test
+    void adminsLetOtherPlayersSeeOrChangeSingleSettings() {
+        runtime.setup();
+        runtime.start();
+        PlayerInfo admin = platform.players.join("Admin");
+        PlayerInfo moderator = platform.players.join("Moderator");
+        String welcome = "controlcore:welcome-message";
+
+        var rule = platform.commands.run(
+                "cc-perm", admin, Map.of("target", welcome, "side", "edit", "node", "mods.welcome"));
+        var viewRule = platform.commands.run(
+                "cc-perm", admin, Map.of("target", "controlcore:show-welcome-message", "side", "both", "node", "x"));
+        platform.deniedNodes.addAll(java.util.List.of("settings", "admin"));
+
+        var changed = platform.commands.run("cc-set", moderator, Map.of("id", welcome, "value", "Hi"));
+        var hidden = platform.commands.run(
+                "cc-set", moderator, Map.of("id", "controlcore:control-panel-enabled", "value", "off"));
+        var opened = platform.commands.run(COMMAND, moderator, Map.of());
+        var listed = platform.commands.run("cc-settings", moderator, Map.of());
+
+        assertThat(rule.value().text().orElseThrow())
+                .contains("setting:" + welcome + ": see (inherits), change mods.welcome");
+        assertThat(viewRule.isSuccess()).isTrue();
+        assertThat(changed.value().text().orElseThrow()).contains(welcome + " is now Hi.");
+        assertThat(hidden.error().code()).isEqualTo("Settings.UnknownSetting");
+        assertThat(opened.isSuccess()).isTrue();
+        assertThat(listed.value().text().orElseThrow())
+                .contains("controlcore:welcome-message = Hi")
+                .doesNotContain("controlcore:control-panel-enabled");
+
+        platform.commands.run("cc-perm", admin, Map.of("target", welcome, "side", "edit", "node", "default"));
+        platform.commands.run("cc-perm", admin, Map.of("target", welcome, "side", "view", "node", "everyone"));
+        var readOnly = platform.commands.run("cc-set", moderator, Map.of("id", welcome, "value", "Bye"));
+        var read = platform.commands.run("cc-get", moderator, Map.of("id", welcome));
+
+        assertThat(readOnly.error().code()).isEqualTo("Settings.Forbidden");
+        assertThat(read.isSuccess()).isTrue();
+
+        platform.commands.run("cc-perm", admin, Map.of("target", welcome, "side", "view", "node", "default"));
+        assertThat(platform.commands.run(COMMAND, moderator, Map.of()).error().code())
+                .isEqualTo("ControlPanel.Forbidden");
     }
 
     @Test

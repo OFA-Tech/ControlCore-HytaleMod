@@ -9,6 +9,7 @@ import net.ofatech.controlcore.domain.guard.DomainException;
 import net.ofatech.controlcore.domain.guard.Guard;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
+import net.ofatech.controlcore.domain.model.text.Text;
 
 /**
  * Something a player can run with keys, registered by a mod or created by an admin. Players and admins can rebind
@@ -16,14 +17,14 @@ import net.ofatech.controlcore.domain.model.settings.SettingId;
  *
  * <pre>{@code
  * KeyAction.of("homes", "go-home")
- *         .displayName("Go home")
+ *         .displayName(Text.key("homes.keys.go_home", "Go home"))
  *         .command("home {player}")
  *         .defaultKeys(Key.CTRL, Key.NUM_3);
  * }</pre>
  *
  * @param id unique id, {@code modId:action}
- * @param displayName shown in the Keymaps tab and {@code /cc-keys}
- * @param description one sentence explaining the action; may be empty
+ * @param nameText shown in the Keymaps tab and {@code /cc-keys}
+ * @param descriptionText one sentence explaining the action; may be empty
  * @param command chat command, without or with {@code /}; {@code {player}} and {@code {uuid}} are filled in with
  *     the player who pressed the keys
  * @param onPress code the mod runs when the keys are pressed; called on a virtual thread, so move world work to
@@ -38,8 +39,8 @@ import net.ofatech.controlcore.domain.model.settings.SettingId;
  */
 public record KeyAction(
         SettingId id,
-        String displayName,
-        String description,
+        Text nameText,
+        Text descriptionText,
         Optional<String> command,
         Optional<Consumer<PlayerId>> onPress,
         KeyBinds defaultKeys,
@@ -49,8 +50,9 @@ public record KeyAction(
 
     public KeyAction {
         Guard.notNull(id, "id");
-        Guard.notBlank(displayName, "displayName");
-        Guard.notNull(description, "description");
+        Guard.notNull(nameText, "nameText");
+        Guard.notBlank(nameText.fallbackText(), "displayName");
+        Guard.notNull(descriptionText, "descriptionText");
         Guard.notNull(command, "command");
         Guard.notNull(onPress, "onPress");
         Guard.notNull(defaultKeys, "defaultKeys");
@@ -75,17 +77,51 @@ public record KeyAction(
         SettingId id = new SettingId(
                 modId.strip().toLowerCase(Locale.ROOT), action.strip().toLowerCase(Locale.ROOT));
         return new KeyAction(
-                id, id.key(), "", Optional.empty(), Optional.empty(), KeyBinds.UNBOUND, true, false, Optional.empty());
+                id,
+                Text.of(id.key()),
+                Text.of(""),
+                Optional.empty(),
+                Optional.empty(),
+                KeyBinds.UNBOUND,
+                true,
+                false,
+                Optional.empty());
     }
 
     public KeyAction displayName(String name) {
+        return displayName(Text.of(name));
+    }
+
+    /**
+     * @param name shown to players in their language
+     * @since API 1.5.0
+     */
+    public KeyAction displayName(Text name) {
         return new KeyAction(
-                id, name, description, command, onPress, defaultKeys, blocksGameAction, runsAsServer, permission);
+                id, name, descriptionText, command, onPress, defaultKeys, blocksGameAction, runsAsServer, permission);
     }
 
     public KeyAction describedAs(String text) {
+        return describedAs(Text.of(text));
+    }
+
+    /**
+     * @param text one sentence explaining the action, in the player's language
+     * @since API 1.5.0
+     */
+    public KeyAction describedAs(Text text) {
         return new KeyAction(
-                id, displayName, text, command, onPress, defaultKeys, blocksGameAction, runsAsServer, permission);
+                id, nameText, text, command, onPress, defaultKeys, blocksGameAction, runsAsServer, permission);
+    }
+
+    /** @return the display name in English */
+    public String displayName() {
+        return nameText.fallbackText();
+    }
+
+    /** @return the description in English */
+    public String description() {
+        return descriptionText.fallbackText();
     }
 
     /** @param text the chat command to run, for example {@code "home {player}"} */
@@ -93,8 +129,8 @@ public record KeyAction(
         Guard.notNull(text, "command");
         return new KeyAction(
                 id,
-                displayName,
-                description,
+                nameText,
+                descriptionText,
                 Optional.of(text),
                 onPress,
                 defaultKeys,
@@ -108,8 +144,8 @@ public record KeyAction(
         Guard.notNull(action, "onPress");
         return new KeyAction(
                 id,
-                displayName,
-                description,
+                nameText,
+                descriptionText,
                 command,
                 Optional.of(action),
                 defaultKeys,
@@ -145,7 +181,7 @@ public record KeyAction(
     /** Lets the game also do what the pressed key normally does (by default it is cancelled). */
     public KeyAction keepGameAction() {
         return new KeyAction(
-                id, displayName, description, command, onPress, defaultKeys, false, runsAsServer, permission);
+                id, nameText, descriptionText, command, onPress, defaultKeys, false, runsAsServer, permission);
     }
 
     /**
@@ -155,7 +191,7 @@ public record KeyAction(
      */
     public KeyAction runAsServer() {
         return new KeyAction(
-                id, displayName, description, command, onPress, defaultKeys, blocksGameAction, true, permission);
+                id, nameText, descriptionText, command, onPress, defaultKeys, blocksGameAction, true, permission);
     }
 
     /** @param node full permission node a player needs to see and use this action */
@@ -163,8 +199,8 @@ public record KeyAction(
         Guard.notBlank(node, "permission");
         return new KeyAction(
                 id,
-                displayName,
-                description,
+                nameText,
+                descriptionText,
                 command,
                 onPress,
                 defaultKeys,
@@ -201,6 +237,6 @@ public record KeyAction(
 
     private KeyAction withDefaults(KeyBinds binds) {
         return new KeyAction(
-                id, displayName, description, command, onPress, binds, blocksGameAction, runsAsServer, permission);
+                id, nameText, descriptionText, command, onPress, binds, blocksGameAction, runsAsServer, permission);
     }
 }

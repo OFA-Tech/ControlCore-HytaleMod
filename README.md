@@ -35,8 +35,8 @@ The long-term vision is a common configuration backbone where compatible mods ca
 
 ## Current state
 
-- `/open-admin-config` opens the admin control panel. It needs the `<base permission>.admin` node;
-  operators have it. The built-in panel (native Hytale UI) has four tabs: **Server Configs** lists every
+- `/open-admin-config` opens the admin control panel for admins (`<base permission>.admin` or `.settings`;
+  operators have both) and for players an admin or mod lets see some settings (they see only those). The built-in panel (native Hytale UI) has four tabs: **Server Configs** lists every
   key of the server's `config.json`, read from Hytale's own config definition: keys the server uses while
   running apply at once, others are saved and apply after a restart, and internal ones (password, storage,
   mods) are shown read-only;
@@ -45,10 +45,14 @@ The long-term vision is a common configuration backbone where compatible mods ca
   (for example `mod:controlcore`, `key:ctrl+f`, `is:changed`). Any player can open their own preferences and
   key bindings with `/prefs`. Open panels update when a setting changes elsewhere. When a compatible
   [HyUI](https://www.curseforge.com/hytale/mods/hyui) is installed, its HTML panel is used instead.
+- **Translations**: everything ControlCore shows follows each player's game language (English, Brazilian
+  Portuguese, Spanish), with English as fallback; mods can translate their own setting and key
+  names. See [docs/api.md](docs/api.md#translations-api-150).
 - **Settings registry**: mods register typed settings (server-wide or per-player preferences) through
   `ControlCoreApi.settings()`; ControlCore validates and stores them and reports changes. Admins use
-  `/cc-settings`, `/cc-get`, `/cc-set`, `/cc-reset` (`<base permission>.settings`); players use `/cc-prefs`,
-  `/cc-pref`, `/cc-pref-reset`. See [docs/api.md](docs/api.md#settings-registry).
+  `/cc-settings`, `/cc-get`, `/cc-set`, `/cc-reset`; players use `/cc-prefs`, `/cc-pref`, `/cc-pref-reset`.
+  **Who may see and who may change** each setting, category or mod is set by mods and overridden by admins
+  with `/cc-perm` (`/cc-perms`, `/cc-perm-check <id>`). See [docs/api.md](docs/api.md#settings-registry).
 - **Key actions**: mods register a command or code with default keys through `ControlCoreApi.keymaps()`
   (`KeyAction.of(modId, action).displayName(..).command(..).defaultKeys(Key.CTRL, Key.F)`); players
   rebind them in Keymaps or with `/cc-keys`, `/cc-bind`, `/cc-bind-reset`; admins set server keys with

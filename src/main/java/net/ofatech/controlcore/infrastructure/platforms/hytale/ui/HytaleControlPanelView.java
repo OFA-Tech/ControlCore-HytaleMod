@@ -10,6 +10,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import net.ofatech.controlcore.domain.model.ControlPanelContent;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Error;
@@ -29,7 +30,9 @@ public final class HytaleControlPanelView implements ControlPanelView {
         PlayerRef playerRef = Universe.get().getPlayer(player.value());
         Ref<EntityStore> entity = playerRef != null ? playerRef.getReference() : null;
         if (entity == null || !entity.isValid()) {
-            return Result.failure(Error.notFound("ControlPanel.PlayerNotFound", "That player is not in a world."));
+            return Result.failure(Error.notFound(
+                    "ControlPanel.PlayerNotFound",
+                    Text.key("controlcore.errors.controlpanel.player_not_in_world", "That player is not in a world.")));
         }
         Store<EntityStore> store = entity.getStore();
         World world = store.getExternalData().getWorld();

@@ -3,6 +3,7 @@ package net.ofatech.controlcore.domain.model.settings;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import net.ofatech.controlcore.domain.guard.DomainException;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -47,8 +48,10 @@ public record SettingId(String namespace, String key) implements Comparable<Sett
         }
         return Result.failure(Error.validation(
                 "Settings.InvalidId",
-                "'" + text + "' is not a setting id. Use namespace:key, for example "
-                        + "controlcore:control-panel-enabled."));
+                Text.key(
+                                "controlcore.errors.settings.invalid_id",
+                                "'{text}' is not a setting id. Use namespace:key, for example controlcore:control-panel-enabled.")
+                        .with("text", text)));
     }
 
     /**

@@ -30,7 +30,8 @@ class KeymapsEditorTest {
             new FakePlayerData(),
             (player, node) -> true,
             new RecordingLog());
-    private final KeymapsEditor editor = new KeymapsEditor(keymaps);
+    private final KeymapsEditor editor =
+            new KeymapsEditor(keymaps, net.ofatech.controlcore.fakes.TestTexts.standalone());
     private final PlayerId alice = PlayerId.of(UUID.randomUUID());
     private final PlayerId bob = PlayerId.of(UUID.randomUUID());
 

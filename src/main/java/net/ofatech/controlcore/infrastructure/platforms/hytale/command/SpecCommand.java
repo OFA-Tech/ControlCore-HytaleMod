@@ -54,10 +54,6 @@ final class SpecCommand extends AbstractCommand {
     @Override
     protected CompletableFuture<Void> execute(@Nonnull CommandContext context) {
         Optional<PlayerInfo> player = senderPlayer(context);
-        if (spec.playerOnly() && player.isEmpty()) {
-            context.sendMessage(Messages.error("Only players can use this command."));
-            return DONE;
-        }
         Result<Reply> result;
         try {
             result = handler.handle(new TranslatedContext(senderOf(context, player), values(context)));

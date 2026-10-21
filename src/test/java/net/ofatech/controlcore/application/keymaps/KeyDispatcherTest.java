@@ -115,7 +115,9 @@ class KeyDispatcherTest {
 
         assertThat(input.press(caio, KeySignal.USE)).isFalse();
         assertThat(keymaps.keysFor(SettingId.of("homes:home"), caio)).hasToString("H");
-        assertThat(KeymapsText.problems(keymaps.keysFor(SettingId.of("homes:home"), caio)))
+        assertThat(KeymapsText.problems(
+                        net.ofatech.controlcore.fakes.TestTexts.english(),
+                        keymaps.keysFor(SettingId.of("homes:home"), caio)))
                 .contains("not available");
     }
 

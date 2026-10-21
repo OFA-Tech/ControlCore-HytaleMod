@@ -15,7 +15,7 @@ $C.@PageOverlay {
 
     #Title {
       $C.@Title {
-        @Text = "ControlCore";
+        @Text = %controlcore.ui.title;
       }
     }
 
@@ -28,22 +28,22 @@ $C.@PageOverlay {
         Anchor: (Height: 32, Bottom: 14);
 
         $C.@SmallSecondaryTextButton #ServerTabButton {
-          @Text = "Server Configs";
+          @Text = %controlcore.ui.tabs.serverConfigs;
           Anchor: (Width: 160, Height: 30, Right: 6);
         }
 
         $C.@SmallSecondaryTextButton #SettingsTabButton {
-          @Text = "Mod Settings";
+          @Text = %controlcore.ui.tabs.modSettings;
           Anchor: (Width: 160, Height: 30, Right: 6);
         }
 
         $C.@SmallSecondaryTextButton #PlayerTabButton {
-          @Text = "Player Prefs";
+          @Text = %controlcore.ui.tabs.playerPrefs;
           Anchor: (Width: 160, Height: 30, Right: 6);
         }
 
         $C.@SmallSecondaryTextButton #KeymapTabButton {
-          @Text = "Keymaps";
+          @Text = %controlcore.ui.tabs.keymaps;
           Anchor: (Width: 160, Height: 30, Right: 6);
         }
       }
@@ -52,13 +52,13 @@ $C.@PageOverlay {
         LayoutMode: Top;
 
         Label {
-          Text: "Main Server Configuration";
+          Text: %controlcore.ui.server.title;
           Style: @SectionTitleStyle;
           Anchor: (Bottom: 4);
         }
 
         Label {
-          Text: "Every key of the server's config.json. Changes are saved straight away; some only apply after a restart, and read-only keys are edited in the file.";
+          Text: %controlcore.ui.server.intro;
           Style: @NoteStyle;
           Anchor: (Bottom: 8);
         }
@@ -98,13 +98,13 @@ $C.@PageOverlay {
         Visible: false;
 
         Label {
-          Text: "Mod Settings";
+          Text: %controlcore.ui.tabs.modSettings;
           Style: @SectionTitleStyle;
           Anchor: (Bottom: 4);
         }
 
         Label {
-          Text: "Server settings registered by ControlCore and other mods. Changes apply immediately.";
+          Text: %controlcore.ui.settings.intro;
           Style: @NoteStyle;
           Anchor: (Bottom: 8);
         }
@@ -144,13 +144,13 @@ $C.@PageOverlay {
         Visible: false;
 
         Label {
-          Text: "Player Preferences";
+          Text: %controlcore.ui.prefs.title;
           Style: @SectionTitleStyle;
           Anchor: (Bottom: 4);
         }
 
         Label {
-          Text: "Your own preferences, registered by ControlCore and other mods. Players can also use /cc-prefs.";
+          Text: %controlcore.ui.prefs.intro;
           Style: @NoteStyle;
           Anchor: (Bottom: 8);
         }
@@ -190,7 +190,7 @@ $C.@PageOverlay {
         Visible: false;
 
         Label {
-          Text: "Keymaps";
+          Text: %controlcore.ui.tabs.keymaps;
           Style: @SectionTitleStyle;
           Anchor: (Bottom: 4);
         }
@@ -201,12 +201,12 @@ $C.@PageOverlay {
           Anchor: (Height: 34, Bottom: 8);
 
           $C.@SmallSecondaryTextButton #KeymapModeServer {
-            @Text = "Server defaults";
+            @Text = %controlcore.ui.keymaps.modeServer;
             Anchor: (Width: 170, Height: 32, Right: 6);
           }
 
           $C.@SmallSecondaryTextButton #KeymapModeMine {
-            @Text = "My keys";
+            @Text = %controlcore.ui.keymaps.modeMine;
             Anchor: (Width: 120, Height: 32);
           }
         }
@@ -216,7 +216,7 @@ $C.@PageOverlay {
           Visible: false;
 
           Label {
-            Text: "Server defaults: the keys every player gets until they choose their own. Default goes back to the mod's keys. Write keys joined with +, for example ctrl+f; separate alternatives with |; none unbinds. The form adds a bind of your own; saving an existing name replaces it.";
+            Text: %controlcore.ui.keymaps.serverIntro;
             Style: @NoteStyle;
             Anchor: (Bottom: 8);
           }
@@ -251,13 +251,13 @@ $C.@PageOverlay {
               }
 
               Label {
-                Text: "Run as the server (only players with the keys.server permission, such as operators, can use it)";
+                Text: %controlcore.ui.bind.asServer;
                 FlexWeight: 1;
                 Style: @NoteStyle;
               }
 
               $C.@SmallSecondaryTextButton #NewBindAdd {
-                @Text = "Save bind";
+                @Text = %controlcore.ui.bind.save;
                 Anchor: (Width: 110, Height: 32, Left: 6);
               }
             }
@@ -297,7 +297,7 @@ $C.@PageOverlay {
           LayoutMode: Top;
 
           Label {
-            Text: "Your own key bindings; they only change for you. Default goes back to the server's keys. Write keys joined with +, for example ctrl+f or alt+3; separate alternatives with |; none unbinds. You can also use /cc-keys and /cc-bind.";
+            Text: %controlcore.ui.keymaps.mineIntro;
             Style: @NoteStyle;
             Anchor: (Bottom: 8);
           }
@@ -339,7 +339,7 @@ $C.@PageOverlay {
       }
 
       $C.@TextButton #CloseButton {
-        Text: "Close";
+        Text: %controlcore.ui.close;
       }
     }
   }
