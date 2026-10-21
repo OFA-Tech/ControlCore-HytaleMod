@@ -11,15 +11,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-/**
- * Minimal constructor injection.
- *
- * <ul>
- *   <li>Bound instances (ports from the platform) are returned as is.
- *   <li>An unbound interface resolves to its single {@code @AutoService} provider.
- *   <li>A concrete class of this mod is created once through its only public constructor.
- * </ul>
- */
 public final class Injector {
 
     private final ComponentIndex index;

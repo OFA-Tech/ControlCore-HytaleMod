@@ -43,12 +43,6 @@ import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Result;
 
-/**
- * The control panel as a native Hytale custom page ({@code Common/UI/Custom/Pages/ControlCore/ControlPanel.ui}).
- * Tabs are text buttons that show one {@code #...Tab} group and disable their own button. The settings tabs
- * append one row document per registered setting ({@link SettingRows}); appended rows are addressed as
- * {@code #List[index] #Child}. The Mods tab is {@link ModsTab}, the admin's bind form {@link KeyBindForm}.
- */
 final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
     static final String LAYOUT = "Pages/ControlCore/ControlPanel.ui";
@@ -102,24 +96,17 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private final Set<Tab> tabs = EnumSet.noneOf(Tab.class);
     private final Map<PanelSection, SettingsSection> sections = new EnumMap<>(PanelSection.class);
     private final Map<PanelSection, Map<SettingId, Integer>> rowIndexes = new EnumMap<>(PanelSection.class);
-    /** Colour settings shown inside a text row (same keys as {@link #shown}). */
     private final Set<String> inlineColors = new HashSet<>();
-    /** Value each row currently shows, to skip change notifications the panel caused itself (world thread). */
     private final Map<String, String> shown = new HashMap<>();
-    /** Latest snapshot of each row (same keys as {@link #shown}), used to filter rows by the search. */
     private final Map<String, SettingSnapshot> latest = new HashMap<>();
-    /** Rows and headings of each section in display order, as built. */
     private final Map<PanelSection, List<SettingsSection.Entry>> built = new EnumMap<>(PanelSection.class);
-    /** The search typed into each section; kept when the page is rebuilt. */
     private final Map<PanelSection, SettingSearch> searches = new EnumMap<>(PanelSection.class);
 
     private final List<Subscription> subscriptions = new CopyOnWriteArrayList<>();
     private final ModsTab modsTab;
-    /** The admin's bind form; empty for players and in {@code /prefs}. */
     private final Optional<KeyBindForm> bindForm;
 
     private Tab selected;
-    /** Admin panel only: whether the Keymaps tab edits the server's keys (else the viewer's own). */
     private boolean editingServerKeys = true;
 
     ControlPanelPage(PlayerRef player, ControlPanelRequest request, ControlPanelContent content, Log log) {
@@ -191,8 +178,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
         content.focus().ifPresent(this::focusMod);
     }
-
-    // --- Building -------------------------------------------------------------------------------------------
 
     @Override
     public void build(
@@ -305,8 +290,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 LocalizableString.fromString(tr.t(keyPrefix + option.toLowerCase(Locale.ROOT))), value);
     }
 
-    // --- Events ---------------------------------------------------------------------------------------------
-
     @Override
     public void onDismiss(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store) {
         stopListening();
@@ -385,16 +368,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         if (result == null) {
             return;
         }
-        // Check boxes and dropdowns already show what the player picked. Setting their value again could fire
-        // ValueChanged once more, so only text fields (normalised input) and resets are written back.
-        boolean writeBack =
-                SettingRows.SAVE.equals(name) || SettingRows.RESET.equals(name) || SettingRows.SLID.equals(name);
+        boolean controlAlreadyShowsValue = SettingRows.CHECK.equals(name) || SettingRows.CHOOSE.equals(name);
         UICommandBuilder update = new UICommandBuilder();
         result.onSuccess(snapshot -> {
                     remember(key, snapshot);
                     update.set(key.status + ".Text", section.saved(snapshot));
                     Integer index = rowIndexes.get(key).get(snapshot.id());
-                    if (writeBack && index != null) {
+                    if (!controlAlreadyShowsValue && index != null) {
                         showRowValue(key, section, index, snapshot, update);
                     }
                 })
@@ -405,7 +385,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         sendUpdate(update, false);
     }
 
-    /** Saves (or resets) a text row and the colour shown in it. */
     private void saveColored(PanelSection key, SettingsSection section, boolean reset, PanelAction action) {
         Result<SettingSnapshot> text = reset ? section.reset(action.id) : section.save(action.id, action.value);
         Result<SettingSnapshot> color = null;
@@ -444,7 +423,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         sendUpdate(update, false);
     }
 
-    /** Adds or removes a list item, then rebuilds the page so the items and their buttons match. */
     private void changeList(PanelSection key, SettingsSection section, String name, PanelAction action) {
         SettingSnapshot snapshot = latestOf(key, action.id);
         if (snapshot == null) {
@@ -470,10 +448,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         sendUpdate(update, false);
     }
 
-    /**
-     * A picked colour: in a colour row it goes into the row's text field; in a text row with a colour it waits for
-     * Save. Either way the status line says how to keep it.
-     */
     private void showPickedColor(PanelSection key, PanelAction action, boolean fillField) {
         String hex = SettingRows.pickedHex(action.value);
         Integer index = indexOf(key, action.id);
@@ -488,7 +462,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         sendUpdate(update, false);
     }
 
-    /** While the slider moves, the text field shows the value it would save. */
     private void showSliderText(PanelSection key, PanelAction action) {
         Optional<String> value = sliderValue(key, action);
         Integer index = indexOf(key, action.id);
@@ -500,7 +473,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         sendUpdate(update, false);
     }
 
-    /** @return the text the slider's position stands for, if the row is a number row */
     private Optional<String> sliderValue(PanelSection key, PanelAction action) {
         SettingSnapshot snapshot = latestOf(key, action.id);
         if (snapshot == null || action.number == null) {
@@ -514,9 +486,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 SettingsSection.Slider.of(snapshot).text(action.number, kind == SettingsSection.Kind.INTEGER));
     }
 
-    // --- Changes made elsewhere -----------------------------------------------------------------------------
-
-    /** Called on the thread that changed the setting; the panel is updated on the player's world thread. */
     private void onSettingChanged(PanelSection key, SettingsSection section, SettingChanged change) {
         if (!section.concerns(change)) {
             return;
@@ -547,7 +516,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 }
                 remember(key, snapshot);
                 if (SettingsSection.kindOf(snapshot) == SettingsSection.Kind.LIST) {
-                    rebuild(); // the items and their buttons change
+                    rebuild();
                 }
                 UICommandBuilder update = new UICommandBuilder();
                 showRowValue(key, section, index, snapshot, update);
@@ -580,9 +549,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
     }
 
-    // --- Showing values, tabs and searches ------------------------------------------------------------------
-
-    /** Shows a value in its row: a colour shown inside a text row only moves that row's picker. */
     private void showRowValue(
             PanelSection key, SettingsSection section, int index, SettingSnapshot snapshot, UICommandBuilder update) {
         if (inlineColors.contains(shownKey(key, snapshot.id()))) {
@@ -592,7 +558,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
     }
 
-    /** Lists the server config keys and mods that wait for a restart, above the Server Configs list. */
     private void showRestartNotice(UICommandBuilder commands) {
         if (!sections.containsKey(PanelSection.SERVER_CONFIG)) {
             return;
@@ -638,11 +603,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         commands.set("#KeymapModeMine.Disabled", admin && !server);
     }
 
-    /**
-     * Shows only the rows matching the section's search, and the headings of categories with a shown row.
-     *
-     * @param report whether to say in the status line how many rows match
-     */
     private void applySearch(PanelSection key, SettingsSection section, UICommandBuilder commands, boolean report) {
         List<SettingsSection.Entry> entries = built.getOrDefault(key, List.of());
         SettingSearch search = searches.getOrDefault(key, SettingSearch.ALL);
@@ -691,9 +651,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
     }
 
-    // --- Jumping to a mod's settings ------------------------------------------------------------------------
-
-    /** Opens on the settings (or preferences) of the mod whose settings ids start with {@code namespace}. */
     private void focusMod(String namespace) {
         boolean serverSettings = sections.containsKey(PanelSection.SETTINGS)
                 && sections.get(PanelSection.SETTINGS).entries().stream()
@@ -707,7 +664,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
     }
 
-    /** Switches to a mod's settings (or preferences) or keys, searched by its id. */
     private void showSettingsOf(ModsView.Entry entry, boolean keys) {
         Tab tab;
         PanelSection section;
@@ -742,8 +698,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         return SettingSearch.parse("mod:" + namespace, SettingSearch.Filter.ALL, SettingSearch.Match.CONTAINS);
     }
 
-    // --- Helpers --------------------------------------------------------------------------------------------
-
     private void remember(PanelSection key, SettingSnapshot snapshot) {
         shown.put(shownKey(key, snapshot.id()), snapshot.value());
         latest.put(shownKey(key, snapshot.id()), snapshot);
@@ -774,7 +728,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         return Optional.empty();
     }
 
-    /** What the Mods tab and the bind form may do on this page. */
     private final class Hooks implements ModsTab.Host, KeyBindForm.Host {
 
         @Override

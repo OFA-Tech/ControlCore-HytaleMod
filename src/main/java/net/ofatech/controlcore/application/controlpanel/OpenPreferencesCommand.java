@@ -9,7 +9,6 @@ import net.ofatech.controlcore.domain.ports.command.CommandSpec;
 import net.ofatech.controlcore.domain.ports.command.Reply;
 import net.ofatech.controlcore.domain.result.Result;
 
-/** Opens the panel on the sender's own preferences; any player may use it. */
 @AutoService(ModCommand.class)
 public final class OpenPreferencesCommand implements ModCommand {
 

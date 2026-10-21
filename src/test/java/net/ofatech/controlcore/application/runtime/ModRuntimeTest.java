@@ -12,8 +12,6 @@ import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.fakes.TestModPlatforms;
 import org.junit.jupiter.api.Test;
 
-/** Builds every discovered component against fake ports: the "does it all resolve" test, plus the
- * runtime's own duties (mod integrations, the API's lifetime, tasks). */
 class ModRuntimeTest extends RuntimeTestBase {
 
     @Test

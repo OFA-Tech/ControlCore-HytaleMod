@@ -11,7 +11,6 @@ import net.ofatech.controlcore.domain.model.keys.KeySignal;
 import net.ofatech.controlcore.fakes.RecordingCommandRunner;
 import org.junit.jupiter.api.Test;
 
-/** Key actions and admins' key binds, wired as on a server. */
 class KeysRuntimeTest extends RuntimeTestBase {
 
     @Test

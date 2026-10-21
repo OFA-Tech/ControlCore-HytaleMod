@@ -14,7 +14,6 @@ import net.ofatech.controlcore.domain.model.mods.ModInfo;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.text.Translator;
 
-/** The control panel's Mods tab: one row per mod, its search, and the row buttons. */
 final class ModsTab {
 
     private static final String SEARCH = "ModsSearch";
@@ -26,23 +25,19 @@ final class ModsTab {
     private static final String LIST = "#ModsList";
     private static final String STATUS = "#ModsStatus.Text";
 
-    /** What the tab needs from the page. */
     interface Host {
         void rebuild();
 
         void send(UICommandBuilder update);
 
-        /** Switches to the mod's settings (or preferences) or keys, searched by the mod's id. */
         void showSettingsOf(ModsView.Entry entry, boolean keys);
 
-        /** Adds the restart reminder (pending mod changes are part of it) to {@code update}. */
         void showRestartNotice(UICommandBuilder update);
     }
 
     private final ModsSection mods;
     private final Translator tr;
     private final Host host;
-    /** Mods whose read-only config text is open. */
     private final Set<String> openConfigs = new HashSet<>();
 
     ModsTab(ModsView view, Translator tr, Host host) {
@@ -51,11 +46,6 @@ final class ModsTab {
         this.host = host;
     }
 
-    /**
-     * @param settingsTab whether the viewer has the Mod Settings tab
-     * @param prefsTab whether the viewer has the Player Prefs tab
-     * @param keysTab whether the viewer has the Keymaps tab
-     */
     void build(
             UICommandBuilder commands, UIEventBuilder events, boolean settingsTab, boolean prefsTab, boolean keysTab) {
         List<ModsView.Entry> entries = mods.load();
@@ -110,7 +100,6 @@ final class ModsTab {
         applySearch(commands, false);
     }
 
-    /** @return whether {@code action} was one of the tab's */
     boolean handle(PanelAction action) {
         switch (action.name()) {
             case SEARCH -> {

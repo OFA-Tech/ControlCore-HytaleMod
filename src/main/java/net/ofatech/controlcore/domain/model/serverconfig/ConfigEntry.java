@@ -6,21 +6,6 @@ import net.ofatech.controlcore.domain.guard.DomainException;
 import net.ofatech.controlcore.domain.guard.Guard;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 
-/**
- * One key of the host server's own configuration file, as the control panel shows it.
- *
- * @param path key path in the file, for example {@code ConnectionTimeouts.PlayTimeout}
- * @param section heading the key is listed under, for example {@code Connection timeouts}
- * @param name display name, for example {@code Play timeout}
- * @param description what the key does; may be empty
- * @param kind how the value is written as text
- * @param options allowed values of a {@link ConfigValueKind#CHOICE}; empty otherwise
- * @param min smallest allowed value of an {@link ConfigValueKind#INTEGER} or {@link ConfigValueKind#SECONDS}
- * @param max largest allowed value of an {@link ConfigValueKind#INTEGER} or {@link ConfigValueKind#SECONDS}
- * @param value effective value as text; empty when unset
- * @param defaultValue the value of a fresh server, if it has one
- * @param access whether the key can be changed and when a change applies
- */
 public record ConfigEntry(
         String path,
         String section,

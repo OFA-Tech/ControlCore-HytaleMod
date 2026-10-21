@@ -11,7 +11,6 @@ import net.ofatech.controlcore.domain.ports.command.Reply;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Result;
 
-/** {@code /cc-perm <target> <view|edit|both> <node|everyone|default>}: who may see or change settings. */
 @AutoService(ModCommand.class)
 public final class SetSettingPermissionCommand implements ModCommand {
 

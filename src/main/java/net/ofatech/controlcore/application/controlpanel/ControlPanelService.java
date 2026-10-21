@@ -61,10 +61,6 @@ public final class ControlPanelService implements ControlPanelApi {
         this.mods = mods;
     }
 
-    /**
-     * @return whether the player may open the admin panel: ControlCore admins, and players an admin or mod let
-     *     see at least one server setting or server config value
-     */
     public boolean mayOpenAdminPanel(PlayerId player) {
         return permissions.isAdmin(player)
                 || permitted(serverConfig, player).seesAny(SettingScope.SERVER)
@@ -85,11 +81,6 @@ public final class ControlPanelService implements ControlPanelApi {
         return open(player, request, Optional.empty());
     }
 
-    /**
-     * Opens the panel on one mod's settings: the admin panel for players who may open it, else their preferences.
-     *
-     * @param mod the mod's id ({@code Group:Name}), name or the first part of its setting ids
-     */
     public Result<Void> openForMod(PlayerId player, String mod) {
         String wanted = mod == null ? "" : mod.strip();
         var entry = mods.viewedBy(Optional.of(player)).list().stream()

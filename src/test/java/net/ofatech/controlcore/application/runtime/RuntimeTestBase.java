@@ -5,7 +5,6 @@ import net.ofatech.controlcore.fakes.TestModPlatforms;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
-/** A {@link ModRuntime} over fake ports, shut down after each test. */
 abstract class RuntimeTestBase {
 
     static final String COMMAND = "open-admin-config";

@@ -31,11 +31,6 @@ import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
-/**
- * Watches inbound packets of players who turned the probe on and describes the ones that come from key presses:
- * interaction chains (abilities, use, hotbar swaps), mouse buttons, window keys and movement-state changes. Other
- * packets are named once per second at most. Runs on network threads; it only reads packets.
- */
 public final class HytaleInputProbe implements InputProbe, PlayerPacketWatcher {
 
     private static final long REPEAT_MILLIS = 1_000;
@@ -163,7 +158,6 @@ public final class HytaleInputProbe implements InputProbe, PlayerPacketWatcher {
         return text.toString();
     }
 
-    /** The movement flags that come from keys, for example {@code walking crouching}. */
     private static String states(MovementStates states) {
         if (states == null) {
             return "";

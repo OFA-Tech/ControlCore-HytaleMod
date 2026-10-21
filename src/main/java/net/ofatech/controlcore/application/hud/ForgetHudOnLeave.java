@@ -4,8 +4,7 @@ import com.google.auto.service.AutoService;
 import net.ofatech.controlcore.application.component.ModEventHandler;
 import net.ofatech.controlcore.domain.event.PlayerLeft;
 
-/** Forgets the HUD state of players who leave (their preferences stay saved). */
-@SuppressWarnings("rawtypes") // AutoService cannot name generic interfaces exactly
+@SuppressWarnings("rawtypes")
 @AutoService(ModEventHandler.class)
 public final class ForgetHudOnLeave implements ModEventHandler<PlayerLeft> {
 

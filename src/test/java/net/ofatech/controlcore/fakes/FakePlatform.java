@@ -36,7 +36,6 @@ import net.ofatech.controlcore.domain.ports.system.Translations;
 import net.ofatech.controlcore.domain.result.Result;
 import net.ofatech.controlcore.infrastructure.i18n.BundledTranslations;
 
-/** In-memory host used instead of Hytale in tests. */
 public final class FakePlatform implements Platform {
 
     public final RecordingLog log = new RecordingLog();
@@ -56,13 +55,10 @@ public final class FakePlatform implements Platform {
     public final FakeKeyBindStore keyBinds = new FakeKeyBindStore();
     public final FakeCustomKeyBindStore customKeyBinds = new FakeCustomKeyBindStore();
     public final FakeSettingPermissionStore settingPermissions = new FakeSettingPermissionStore();
-    /** Last value ControlCore asked the empty hand to report keys with; null until asked. */
     public volatile Boolean emptyHandKeys;
 
     public final FakeModCatalog modCatalog = new FakeModCatalog();
-    /** Per player: the HUD parts hidden now, after every update ControlCore sent. */
     public final Map<PlayerId, Set<HudPart>> hiddenHud = new ConcurrentHashMap<>();
-    /** Permission nodes players do not have; everything else is granted. */
     public final Set<String> deniedNodes = ConcurrentHashMap.newKeySet();
 
     public final FakeServerConfiguration serverConfig = new FakeServerConfiguration(

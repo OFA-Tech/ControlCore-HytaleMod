@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 import net.ofatech.controlcore.domain.ports.game.Scheduler;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-/** Schedules on the server's shared executor and registers each task so Hytale cancels it on unload. */
 public final class HytaleScheduler implements Scheduler {
 
     private final TaskRegistry tasks;

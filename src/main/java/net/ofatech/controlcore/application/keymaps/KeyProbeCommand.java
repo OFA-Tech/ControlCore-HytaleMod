@@ -10,7 +10,6 @@ import net.ofatech.controlcore.domain.ports.command.Reply;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
 import net.ofatech.controlcore.domain.result.Result;
 
-/** Opens the key test screen: shows what the client reports for each key while a ControlCore screen is open. */
 @AutoService(ModCommand.class)
 public final class KeyProbeCommand implements ModCommand {
 

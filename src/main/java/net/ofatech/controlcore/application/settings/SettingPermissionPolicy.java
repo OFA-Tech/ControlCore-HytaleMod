@@ -19,21 +19,6 @@ import net.ofatech.controlcore.domain.ports.game.Permissions;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
-/**
- * Decides who may see and change each setting. For each side (see, change) the first rule that has one wins:
- *
- * <ol>
- *   <li>an admin's rule for the setting ({@code setting:<id>}),
- *   <li>an admin's rule for its category ({@code category:<name>}),
- *   <li>an admin's rule for its mod ({@code mod:<mod id>}),
- *   <li>the mod's rule on the setting ({@link SettingDefinition#permission()}),
- *   <li>the mod's rule for the category ({@link SettingsApi#setCategoryPermission}),
- *   <li>ControlCore's default: server settings need the {@code settings} permission, preferences are everyone's.
- * </ol>
- *
- * Changing implies seeing. Players with ControlCore's {@code settings} or {@code admin} permission, and the
- * console, may always see and change everything.
- */
 public final class SettingPermissionPolicy {
 
     public static final String SETTING = "setting:";
@@ -50,10 +35,8 @@ public final class SettingPermissionPolicy {
         this.settings = settings;
     }
 
-    /** One side of a resolved rule: the node ({@code empty} = ControlCore's default) and where it came from. */
     public record Rule(Optional<String> node, Text source) {
 
-        /** @return the rule as players read it */
         public String describe(Translator tr, SettingScope scope) {
             String who = node.map(value ->
                             value.equals(SettingPermission.EVERYONE) ? tr.t("controlcore.permissions.everyone") : value)
@@ -65,18 +48,12 @@ public final class SettingPermissionPolicy {
         }
     }
 
-    /** Both sides of the rule that applies to a setting. */
     public record Resolved(Rule view, Rule edit) {}
 
-    /** @return the rule that applies to {@code definition}, side by side */
     public Resolved resolve(SettingDefinition<?> definition) {
         return new Resolved(resolve(definition, SettingPermission::view), resolve(definition, SettingPermission::edit));
     }
 
-    /**
-     * @param viewer the player, or empty for the console
-     * @return what {@code viewer} may do with the setting
-     */
     public SettingRights rights(Optional<PlayerId> viewer, SettingDefinition<?> definition) {
         if (viewer.isEmpty() || isAdmin(viewer.get())) {
             return SettingRights.EDIT;
@@ -88,32 +65,18 @@ public final class SettingPermissionPolicy {
         return passes(viewer.get(), rule.view(), definition.scope()) ? SettingRights.VIEW : SettingRights.NONE;
     }
 
-    /**
-     * @param viewer who uses the editor; empty for the console
-     * @return {@code settings} as {@code viewer} may use it
-     */
     public PermittedSettingsEditor editor(SettingsEditor settings, Optional<PlayerId> viewer) {
         return new PermittedSettingsEditor(settings, this, viewer);
     }
 
-    /** @return whether the player may see and change every setting */
     public boolean isAdmin(PlayerId player) {
         return permissions.hasOwn(player, SettingsPermissions.ADMIN) || permissions.hasOwn(player, "admin");
     }
 
-    /** @return admins' rules, by target */
     public Map<String, SettingPermission> rules() {
         return store.all();
     }
 
-    /**
-     * Sets one side of an admin's rule.
-     *
-     * @param target {@code setting:<id>} (or just the id), {@code category:<name>} or {@code mod:<mod id>}
-     * @param side {@code view}, {@code edit} or {@code both}
-     * @param node a permission node, {@code everyone}, or {@code default} to remove the rule for that side
-     * @return the target's rule now
-     */
     public Result<SettingPermission> setRule(String target, String side, String node) {
         Result<String> key = target(target);
         if (key.isFailure()) {
@@ -152,7 +115,6 @@ public final class SettingPermissionPolicy {
         }
     }
 
-    /** @return the target as stored: lower case with its prefix ({@code homes:max-homes} -> {@code setting:...}) */
     public static Result<String> target(String target) {
         String text = target == null ? "" : target.strip().toLowerCase(Locale.ROOT);
         for (String prefix : new String[] {SETTING, CATEGORY, MOD}) {

@@ -14,8 +14,7 @@ import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.game.Messenger;
 
-/** Tells admins who join which server config and mod changes still wait for a restart. */
-@SuppressWarnings("rawtypes") // AutoService cannot name generic interfaces exactly
+@SuppressWarnings("rawtypes")
 @AutoService(ModEventHandler.class)
 public final class RestartReminderHandler implements ModEventHandler<PlayerJoined> {
 

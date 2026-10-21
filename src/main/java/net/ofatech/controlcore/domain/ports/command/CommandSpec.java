@@ -5,11 +5,6 @@ import java.util.List;
 import java.util.Optional;
 import net.ofatech.controlcore.domain.guard.Guard;
 
-/**
- * Host-independent description of a chat command.
- *
- * @param permission permission node relative to the mod's base permission; empty means everyone
- */
 public record CommandSpec(
         String name,
         String description,

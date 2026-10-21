@@ -10,10 +10,6 @@ import net.ofatech.controlcore.domain.model.keys.CustomKeyBind;
 import net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-/**
- * {@link CustomKeyBindStore} in one JSON object:
- * {@code "warp-spawn": {"keys": "CTRL + F", "command": "warp spawn", "runAsServer": false}}.
- */
 public final class JsonCustomKeyBindStore implements CustomKeyBindStore {
 
     private static final Type FILE_TYPE = new TypeToken<Map<String, Entry>>() {}.getType();
@@ -66,7 +62,6 @@ public final class JsonCustomKeyBindStore implements CustomKeyBindStore {
                 }));
     }
 
-    /** One bind as stored. */
     private static final class Entry {
         private String keys;
         private String command;

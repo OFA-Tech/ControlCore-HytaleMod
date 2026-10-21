@@ -1,7 +1,5 @@
 $C = "../../Common.ui";
 
-// One colour setting: colour picker, hex field (a picked colour fills it), Save and Default. The server reads and
-// sets the picker through its Color property (it has no Value). Appended by ControlPanelPage.
 Group {
   LayoutMode: Top;
   Anchor: (Bottom: 10);

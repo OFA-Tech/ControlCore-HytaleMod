@@ -21,7 +21,6 @@ import net.ofatech.controlcore.application.component.ModEventHandler;
 import net.ofatech.controlcore.application.component.ModTask;
 import net.ofatech.controlcore.domain.ports.platform.ModPlatform;
 
-/** The layer rules from docs/architecture.md. They are the only guard, so keep them green. */
 @AnalyzeClasses(packages = "net.ofatech.controlcore", importOptions = ImportOption.DoNotIncludeTests.class)
 class ArchitectureTest {
 
@@ -101,7 +100,7 @@ class ArchitectureTest {
             .should()
             .onlyDependOnClassesThat()
             .resideInAnyPackage("java..", ROOT + "..", "com.google.auto.service..")
-            .allowEmptyShould(true); // no optional mod integrations at the moment
+            .allowEmptyShould(true);
 
     @ArchTest
     static final ArchRule mainOnlyDelegates = classes()

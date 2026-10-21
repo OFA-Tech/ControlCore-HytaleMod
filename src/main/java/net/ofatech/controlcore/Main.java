@@ -6,7 +6,6 @@ import javax.annotation.Nonnull;
 import net.ofatech.controlcore.application.runtime.ModRuntime;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.HytalePlatform;
 
-/** Plugin entry point loaded by Hytale ({@code Main} in manifest.json). Only delegates. */
 public final class Main extends JavaPlugin {
 
     private final ModRuntime runtime;

@@ -16,7 +16,6 @@ import net.ofatech.controlcore.domain.ports.command.CommandSpec;
 import net.ofatech.controlcore.domain.ports.command.Reply;
 import net.ofatech.controlcore.domain.result.Result;
 
-/** {@code /cc-mods}: the server's mods (not Hytale's own) with their state, for admins and the console. */
 @AutoService(ModCommand.class)
 public final class ListModsCommand implements ModCommand {
 

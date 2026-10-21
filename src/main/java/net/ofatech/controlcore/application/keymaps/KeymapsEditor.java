@@ -24,12 +24,6 @@ import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
-/**
- * Shows key bindings as text settings, so the control panel lists and edits them like settings: one row per key
- * action, the value is the bindings ({@code CTRL + F | MOUSE_MIDDLE}). {@link SettingScope#PLAYER} rows are a
- * player's own keys (default: the server's); {@link SettingScope#SERVER} rows are the server's keys for everyone
- * (default: the mod's). Callers check that only admins edit the server's.
- */
 public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor {
 
     static final int MAX_LENGTH = 200;
@@ -50,7 +44,6 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
         this.modNames = modNames;
     }
 
-    /** @return this editor with descriptions and replies in {@code viewer}'s language */
     public KeymapsEditor viewedBy(PlayerId viewer) {
         return new KeymapsEditor(keymaps, texts, texts.forPlayer(Optional.of(viewer)), modNames);
     }

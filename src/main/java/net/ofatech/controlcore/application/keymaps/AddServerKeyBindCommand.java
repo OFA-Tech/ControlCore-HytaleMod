@@ -11,10 +11,6 @@ import net.ofatech.controlcore.domain.ports.command.CommandSpec;
 import net.ofatech.controlcore.domain.ports.command.Reply;
 import net.ofatech.controlcore.domain.result.Result;
 
-/**
- * {@code /cc-keybind-add-server <name> <keys> <command>}: an admin's own key action, run as the server. Only
- * players with {@code <base>.keys.server} (operators) can use it.
- */
 @AutoService(ModCommand.class)
 public final class AddServerKeyBindCommand implements ModCommand {
 

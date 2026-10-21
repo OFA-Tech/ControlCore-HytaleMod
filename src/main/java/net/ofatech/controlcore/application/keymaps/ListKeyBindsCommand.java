@@ -14,7 +14,6 @@ import net.ofatech.controlcore.domain.ports.command.Reply;
 import net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore;
 import net.ofatech.controlcore.domain.result.Result;
 
-/** {@code /cc-keybind-list}: the key binds admins created, with their commands. */
 @AutoService(ModCommand.class)
 public final class ListKeyBindsCommand implements ModCommand {
 

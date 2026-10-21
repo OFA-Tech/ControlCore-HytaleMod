@@ -25,12 +25,6 @@ import net.ofatech.controlcore.domain.model.keys.KeySignal;
 import net.ofatech.controlcore.domain.ports.game.PlayerInput;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-/**
- * Reads key signals from inbound packets: interaction chains (abilities, use, mouse buttons, hotbar, game mode
- * switch), movement states (held Ctrl, Alt, Shift, Space; a short Alt tap) and the {@code gm a}/{@code gm c} chat
- * command clients send for O without the game mode permission. Cancels a chain's game action when the listener
- * asks to, the way Hytale's packet filters are meant to be used. Runs on network threads.
- */
 public final class HytalePlayerInput implements PlayerInput, PlayerPacketFilter {
 
     private static final long TAP_MILLIS = 500;
@@ -89,7 +83,6 @@ public final class HytalePlayerInput implements PlayerInput, PlayerPacketFilter 
         }
     }
 
-    /** @return whether to drop the whole packet */
     private boolean chains(PlayerRef player, Listener current, SyncInteractionChains chains) {
         SyncInteractionChain[] updates = chains.updates;
         if (updates == null || updates.length == 0) {
@@ -163,7 +156,6 @@ public final class HytalePlayerInput implements PlayerInput, PlayerPacketFilter 
         }
     }
 
-    /** Tracks the walk key: a tap is a short hold without moving and without pressing anything else. */
     private static boolean walkTap(State state, MovementStates movement) {
         long now = System.currentTimeMillis();
         if (movement.walking) {
@@ -219,7 +211,6 @@ public final class HytalePlayerInput implements PlayerInput, PlayerPacketFilter 
         return states.computeIfAbsent(player, ignored -> new State());
     }
 
-    /** Per player; only touched by that player's network thread. */
     private static final class State {
         private final Set<Integer> cancelled = ConcurrentHashMap.newKeySet();
         private Set<KeySignal> held = Set.of();

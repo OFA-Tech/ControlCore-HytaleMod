@@ -10,11 +10,6 @@ import net.ofatech.controlcore.domain.model.settings.SettingPermission;
 import net.ofatech.controlcore.domain.ports.config.SettingPermissionStore;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-/**
- * {@link SettingPermissionStore} in one JSON object:
- * {@code "setting:homes:max-homes": {"view": "everyone", "edit": "homes.moderator"}}. Server owners may edit
- * the file while the server is stopped.
- */
 public final class JsonSettingPermissionStore implements SettingPermissionStore {
 
     private static final Type FILE_TYPE = new TypeToken<Map<String, Entry>>() {}.getType();
@@ -71,7 +66,6 @@ public final class JsonSettingPermissionStore implements SettingPermissionStore 
                 }));
     }
 
-    /** One rule as stored; a missing side inherits. */
     private static final class Entry {
         private String view;
         private String edit;

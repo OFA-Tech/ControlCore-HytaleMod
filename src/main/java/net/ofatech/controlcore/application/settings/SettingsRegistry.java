@@ -29,10 +29,6 @@ import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
-/**
- * The shared settings registry: definitions in memory, server values in the {@link SettingStore}, player values
- * in {@link PlayerData} under {@code setting:<id>}. Changes are published as {@link SettingChanged}.
- */
 @AutoService(SettingsApi.class)
 public final class SettingsRegistry implements SettingsApi {
 
@@ -285,7 +281,6 @@ public final class SettingsRegistry implements SettingsApi {
                 + definition.type().describe();
     }
 
-    /** Handle given to the registering mod; always reads the current definition. */
     private final class Handle<T> implements Setting<T> {
 
         private final SettingId id;
@@ -297,7 +292,7 @@ public final class SettingsRegistry implements SettingsApi {
         }
 
         @Override
-        @SuppressWarnings("unchecked") // register() only replaces a definition with one of the same value type
+        @SuppressWarnings("unchecked")
         public SettingDefinition<T> definition() {
             SettingDefinition<?> current = definitions.get(id);
             if (current == null || current.type().valueType() != valueType) {

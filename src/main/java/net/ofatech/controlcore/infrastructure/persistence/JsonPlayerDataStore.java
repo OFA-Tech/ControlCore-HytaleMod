@@ -13,7 +13,6 @@ import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.ports.game.PlayerData;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-/** {@link PlayerData} kept in memory and written to one JSON file on {@link #flush()}. */
 public final class JsonPlayerDataStore implements PlayerData {
 
     private static final Type FILE_TYPE = new TypeToken<Map<UUID, Map<String, String>>>() {}.getType();

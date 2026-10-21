@@ -6,7 +6,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.text.Text;
 
-/** The names mods are shown under in headings of settings and keys, by mod id. */
 public final class ModNames {
 
     private final Map<String, Text> names = new ConcurrentHashMap<>();
@@ -16,13 +15,11 @@ public final class ModNames {
         names.put("custom", Text.key("controlcore.keys.custom_mod", "Custom binds"));
     }
 
-    /** @return the name {@code modId} is shown under: the one set, else the id capitalised */
     public Text of(String modId) {
         Text name = names.get(key(modId));
         return name != null ? name : Text.of(SettingDefinition.defaultModName(modId));
     }
 
-    /** @param name the name to show; {@code null} goes back to the id capitalised */
     public void set(String modId, Text name) {
         if (name == null || name.fallbackText().isBlank()) {
             names.remove(key(modId));

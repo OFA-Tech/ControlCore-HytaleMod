@@ -9,7 +9,6 @@ import net.ofatech.controlcore.domain.ports.command.CommandSpec;
 import net.ofatech.controlcore.domain.ports.command.Reply;
 import net.ofatech.controlcore.domain.result.Result;
 
-/** {@code /cc-config <mod>}: opens the panel on one mod's settings (admins) or preferences (players). */
 @AutoService(ModCommand.class)
 public final class OpenModConfigCommand implements ModCommand {
 

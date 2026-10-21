@@ -8,7 +8,6 @@ import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.result.Result;
 
-/** The admin's "Add bind" form above the server's keys, and the Edit and Remove buttons of their own binds. */
 final class KeyBindForm {
 
     static final String ADD = "AddBind";
@@ -17,7 +16,6 @@ final class KeyBindForm {
 
     private static final String STATUS = PanelSection.SERVER_KEYMAPS.status + ".Text";
 
-    /** What the form needs from the page. */
     interface Host {
         void rebuild();
 
@@ -49,7 +47,6 @@ final class KeyBindForm {
                         .append(PanelAction.CHECKED, "#NewBindAsServer.Value"));
     }
 
-    /** @return whether {@code action} was one of the form's */
     boolean handle(PanelAction action) {
         switch (action.name()) {
             case ADD -> add(action);
@@ -62,7 +59,6 @@ final class KeyBindForm {
         return true;
     }
 
-    /** Copies a bind into the form; saving it replaces the bind. */
     private void edit(String id) {
         if (id == null) {
             return;

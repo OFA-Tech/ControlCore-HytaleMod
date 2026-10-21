@@ -11,7 +11,6 @@ import net.ofatech.controlcore.domain.ports.command.CommandSpec;
 import net.ofatech.controlcore.domain.ports.command.Reply;
 import net.ofatech.controlcore.domain.result.Result;
 
-/** {@code /cc-keybind-add <name> <keys> <command>}: an admin's own key action, run as the player. */
 @AutoService(ModCommand.class)
 public final class AddKeyBindCommand implements ModCommand {
 

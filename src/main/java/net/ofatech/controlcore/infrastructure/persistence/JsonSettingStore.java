@@ -11,7 +11,6 @@ import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-/** {@link SettingStore} kept in memory and written to one JSON object ({@code "namespace:key": "value"}). */
 public final class JsonSettingStore implements SettingStore {
 
     private static final Type FILE_TYPE = new TypeToken<Map<String, String>>() {}.getType();

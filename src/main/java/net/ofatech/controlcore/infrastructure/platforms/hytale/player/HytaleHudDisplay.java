@@ -16,7 +16,6 @@ import net.ofatech.controlcore.domain.model.hud.HudPart;
 import net.ofatech.controlcore.domain.ports.game.HudDisplay;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-/** {@link HudDisplay} through the player's {@code HudManager}, on the player's world thread. */
 public final class HytaleHudDisplay implements HudDisplay {
 
     private static final Map<HudPart, HudComponent> COMPONENTS = new EnumMap<>(HudPart.class);

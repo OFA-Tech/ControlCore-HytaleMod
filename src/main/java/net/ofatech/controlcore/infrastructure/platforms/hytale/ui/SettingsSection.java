@@ -23,43 +23,23 @@ import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
-/**
- * One list of settings in the control panel (server settings, or the viewer's preferences), without any Hytale
- * types: which rows to show and what each action does. {@link ControlPanelPage} draws it.
- */
 final class SettingsSection {
 
-    /** How a setting is edited. */
     enum Kind {
-        /** Text field and Save button (text, and numbers without a usable range). */
         TEXT,
-        /** Slider, text field and Save button: a whole number with a range. */
         INTEGER,
-        /** Slider, text field and Save button: a decimal number with a range. */
         DECIMAL,
-        /** Text field with a colour picker that fills it, and a Save button. */
         COLOR,
-        /** Items with Remove buttons and a field to add one. */
         LIST,
-        /** Check box, saved when clicked. */
         TOGGLE,
-        /** Dropdown, saved when an option is picked. */
         CHOICE,
-        /** Value shown as text; not editable. */
         INFO
     }
 
-    /** One element of the list, in display order. */
     sealed interface Entry permits Heading, Row {}
 
-    /** A category heading or an explanatory line. */
     record Heading(String text) implements Entry {}
 
-    /**
-     * An editable setting.
-     *
-     * @param color a colour setting shown in this (text) row, see {@code SettingDefinition.coloredBy}
-     */
     record Row(Kind kind, SettingSnapshot snapshot, Optional<SettingSnapshot> color) implements Entry {
 
         Row(Kind kind, SettingSnapshot snapshot) {
@@ -78,7 +58,6 @@ final class SettingsSection {
     private final boolean keys;
     private final Translator tr;
 
-    /** @param emptyText shown when there is nothing to list, already in the viewer's language */
     SettingsSection(
             SettingsEditor settings, SettingScope scope, Optional<PlayerId> player, String emptyText, Translator tr) {
         this(settings, scope, player, emptyText, false, tr);
@@ -99,38 +78,29 @@ final class SettingsSection {
         this.tr = tr;
     }
 
-    /**
-     * A section of key bindings: the rows are key actions, the values key combinations. {@code PLAYER}: the viewer's
-     * own keys; {@code SERVER}: the server's keys for everyone.
-     */
     static SettingsSection keymaps(
             SettingsEditor keymaps, SettingScope scope, Optional<PlayerId> player, String emptyText, Translator tr) {
         return new SettingsSection(keymaps, scope, player, emptyText, true, tr);
     }
 
-    /** @return the hint shown in an empty text field */
     String placeholder(SettingSnapshot snapshot) {
         return keys
                 ? tr.t("controlcore.panel.keys_hint")
                 : tr.translate(snapshot.definition().type().describeText());
     }
 
-    /** @return the row's name in the viewer's language */
     String name(SettingSnapshot snapshot) {
         return tr.translate(snapshot.definition().nameText());
     }
 
-    /** @return the row's category in the viewer's language */
     String category(SettingSnapshot snapshot) {
         return snapshot.definition().heading(tr);
     }
 
-    /** @return a choice's option in the viewer's language */
     String option(SettingSnapshot snapshot, String option) {
         return tr.translate(snapshot.definition().optionText(option));
     }
 
-    /** @return the description line under a row */
     String description(SettingSnapshot snapshot) {
         SettingDefinition<?> definition = snapshot.definition();
         String text = tr.translate(definition.descriptionText()).strip();
@@ -163,7 +133,6 @@ final class SettingsSection {
         return scope;
     }
 
-    /** @return headings and rows, grouped by category */
     List<Entry> entries() {
         List<SettingSnapshot> snapshots = settings.snapshot(scope, player);
         List<Entry> entries = new ArrayList<>();
@@ -189,7 +158,6 @@ final class SettingsSection {
         return entries;
     }
 
-    /** @return the editable colour setting shown in {@code snapshot}'s (editable text) row, if it has one */
     private static Optional<SettingSnapshot> inlineColor(
             SettingSnapshot snapshot, Map<SettingId, SettingSnapshot> byId) {
         if (kindOf(snapshot) != Kind.TEXT) {
@@ -198,21 +166,18 @@ final class SettingsSection {
         return snapshot.definition().colorSetting().map(byId::get).filter(color -> kindOf(color) == Kind.COLOR);
     }
 
-    /** @return the items of a list setting's value */
     static List<String> items(SettingSnapshot snapshot) {
         return snapshot.definition().type() instanceof SettingType.TextListType list
                 ? list.parse(snapshot.value()).orElse(List.of())
                 : List.of();
     }
 
-    /** Adds {@code item} to a list setting. */
     Result<SettingSnapshot> addItem(SettingSnapshot snapshot, String item) {
         List<String> items = new ArrayList<>(items(snapshot));
         items.add(item == null ? "" : item.strip());
         return save(snapshot.id().toString(), String.join(SettingType.TextListType.SEPARATOR + " ", items));
     }
 
-    /** Removes the item at {@code index} from a list setting. */
     Result<SettingSnapshot> removeItem(SettingSnapshot snapshot, int index) {
         List<String> items = new ArrayList<>(items(snapshot));
         if (index >= 0 && index < items.size()) {
@@ -221,12 +186,10 @@ final class SettingsSection {
         return save(snapshot.id().toString(), String.join(SettingType.TextListType.SEPARATOR + " ", items));
     }
 
-    /** Saves text typed into a field or picked from a dropdown. */
     Result<SettingSnapshot> save(String idText, String value) {
         return id(idText).flatMap(id -> settings.write(id, player, value == null ? "" : value));
     }
 
-    /** Saves the state of a check box. */
     Result<SettingSnapshot> check(String idText, Boolean checked) {
         if (checked == null) {
             return Result.failure(Error.validation(
@@ -236,25 +199,23 @@ final class SettingsSection {
         return save(idText, checked.toString());
     }
 
-    /** Returns a setting to its default. */
     Result<SettingSnapshot> reset(String idText) {
         return id(idText).flatMap(id -> settings.reset(id, player));
     }
 
-    /** @return the setting's current value as this section shows it */
     Result<SettingSnapshot> current(SettingId id) {
         return settings.read(id, player);
     }
 
-    /** Listens to changes of the settings this section edits (and others; filter with {@link #concerns}). */
     Subscription listen(Consumer<? super SettingChanged> listener) {
         return settings.onAnyChange(listener);
     }
 
-    /** @return whether a change affects a row of this section (for preferences: the viewer's own) */
     boolean concerns(SettingChanged change) {
-        if (keys && scope == SettingScope.PLAYER && change.scope() == SettingScope.SERVER) {
-            return true; // the server's keys apply to players who did not choose their own
+        boolean serverKeysAreThePlayersDefaults =
+                keys && scope == SettingScope.PLAYER && change.scope() == SettingScope.SERVER;
+        if (serverKeysAreThePlayersDefaults) {
+            return true;
         }
         return change.scope() == scope
                 && (scope == SettingScope.SERVER || change.player().equals(player));
@@ -275,20 +236,14 @@ final class SettingsSection {
         };
     }
 
-    /**
-     * A number setting's slider: its range and step. The text field next to it takes any valid value; the
-     * slider covers the same range in steps.
-     */
     record Slider(double min, double max, double step) {
 
-        /** Ranges wider than this get only a text field: a slider could not reach single values. */
         static final double MAX_SPAN = 1_000_000;
 
         static boolean fits(double min, double max) {
             return Double.isFinite(min) && Double.isFinite(max) && max > min && max - min <= MAX_SPAN;
         }
 
-        /** @return the slider of a {@link Kind#INTEGER} or {@link Kind#DECIMAL} row */
         static Slider of(SettingSnapshot snapshot) {
             return switch (snapshot.definition().type()) {
                 case SettingType.IntegerType number -> new Slider(number.min(), number.max(), 1);
@@ -298,7 +253,6 @@ final class SettingsSection {
             };
         }
 
-        /** @return {@code value} as the slider's value, kept inside the range */
         double position(String value) {
             try {
                 return Math.clamp(Double.parseDouble(value.strip()), min, max);
@@ -307,7 +261,6 @@ final class SettingsSection {
             }
         }
 
-        /** @return the text a slider position saves: whole numbers for integers, else rounded to the step */
         String text(double position, boolean whole) {
             double value = Math.clamp(position, min, max);
             if (whole) {
@@ -320,7 +273,6 @@ final class SettingsSection {
                     .toPlainString();
         }
 
-        /** @return 1, 2 or 5 times a power of ten, at least {@code raw} */
         static double niceStep(double raw) {
             if (!(raw > 0)) {
                 return 0.01;
@@ -337,7 +289,6 @@ final class SettingsSection {
         }
     }
 
-    /** @return the status line after a successful change */
     String saved(SettingSnapshot snapshot) {
         String key = snapshot.overridden() ? "controlcore.panel.saved" : "controlcore.panel.saved_default";
         if (snapshot.access() == SettingAccess.APPLIES_AFTER_RESTART) {
@@ -346,12 +297,10 @@ final class SettingsSection {
         return tr.t(key, "name", name(snapshot), "value", shown(snapshot.value(), snapshot));
     }
 
-    /** @return the value shown in a read-only row */
     String shownValue(SettingSnapshot snapshot) {
         return shown(snapshot.value(), snapshot);
     }
 
-    /** @return the status line after a change made outside this panel */
     String changedElsewhere(SettingSnapshot snapshot) {
         return tr.t(
                 snapshot.overridden()
@@ -363,7 +312,6 @@ final class SettingsSection {
                 shown(snapshot.value(), snapshot));
     }
 
-    /** @return {@code error} in the viewer's language */
     String error(Error error) {
         return tr.error(error);
     }

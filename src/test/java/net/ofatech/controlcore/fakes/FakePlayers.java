@@ -13,7 +13,6 @@ import net.ofatech.controlcore.domain.ports.game.Players;
 public final class FakePlayers implements Players {
 
     private final Map<PlayerId, PlayerInfo> online = new ConcurrentHashMap<>();
-    /** Each player's game language; players not listed have none. */
     public final Map<PlayerId, String> languages = new ConcurrentHashMap<>();
 
     @Override

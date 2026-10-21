@@ -34,7 +34,6 @@ class TextsTest {
             new SettingsRegistry(new FakeSettingStore(), new FakePlayerData(), bus, bus, log, new ModNames());
     private final FakePlayers players = new FakePlayers();
     private final BundledTranslations bundled = new BundledTranslations();
-    /** ControlCore's files plus a mod that has only an English and a Spanish text. */
     private final Translations translations = (language, key) -> key.startsWith("homes.")
             ? Optional.ofNullable(Map.of(
                             "en-US", Map.of("homes.title", "Homes of {player}"),

@@ -15,7 +15,6 @@ import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.fakes.RecordingControlPanelView;
 import org.junit.jupiter.api.Test;
 
-/** The control panel and its commands, wired as on a server. */
 class ControlPanelRuntimeTest extends RuntimeTestBase {
 
     @Test

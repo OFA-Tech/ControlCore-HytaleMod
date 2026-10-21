@@ -5,7 +5,6 @@ import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.keys.KeySignal;
 import net.ofatech.controlcore.domain.ports.game.PlayerInput;
 
-/** {@link PlayerInput} driven by the test. */
 public final class FakePlayerInput implements PlayerInput {
 
     public volatile Listener listener;
@@ -20,7 +19,6 @@ public final class FakePlayerInput implements PlayerInput {
         listener = null;
     }
 
-    /** @return whether the game action would be cancelled */
     public boolean press(PlayerId player, KeySignal signal) {
         return listener != null && listener.pressed(player, signal);
     }

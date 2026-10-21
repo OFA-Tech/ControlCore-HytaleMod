@@ -13,7 +13,6 @@ import net.ofatech.controlcore.domain.model.hud.HudPart;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import org.junit.jupiter.api.Test;
 
-/** HUD preferences, rules and the hide-all key, wired as on a server. */
 class HudRuntimeTest extends RuntimeTestBase {
 
     @Test

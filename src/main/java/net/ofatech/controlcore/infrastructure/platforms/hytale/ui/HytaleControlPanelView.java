@@ -16,7 +16,6 @@ import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
-/** Built-in {@link ControlPanelView}: opens {@link ControlPanelPage} through Hytale's page manager. */
 public final class HytaleControlPanelView implements ControlPanelView {
 
     private final Log log;

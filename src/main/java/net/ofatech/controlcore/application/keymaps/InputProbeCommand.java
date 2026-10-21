@@ -9,14 +9,9 @@ import net.ofatech.controlcore.domain.ports.command.Reply;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
 import net.ofatech.controlcore.domain.result.Result;
 
-/** Turns the input probe on or off for the sender: every key action their client sends is shown in chat. */
 @AutoService(ModCommand.class)
 public final class InputProbeCommand implements ModCommand {
 
-    /**
-     * Debug tools need their own node ({@code <base>.debug}): operators have it; grant it to anyone else who
-     * debugs input.
-     */
     static final String PERMISSION = "debug";
 
     private final InputProbe probe;

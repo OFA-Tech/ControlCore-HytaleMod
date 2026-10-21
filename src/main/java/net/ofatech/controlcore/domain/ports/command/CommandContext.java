@@ -3,12 +3,10 @@ package net.ofatech.controlcore.domain.ports.command;
 import java.util.Optional;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 
-/** One invocation of a command: the sender and the parsed arguments. */
 public interface CommandContext {
 
     CommandSender sender();
 
-    /** Value of an argument, already converted to {@link ArgType#valueType()}; empty if not given. */
     Optional<Object> arg(String name);
 
     default <T> T required(String name, Class<T> type) {

@@ -4,12 +4,8 @@ import com.hypixel.hytale.codec.Codec;
 import com.hypixel.hytale.codec.KeyedCodec;
 import com.hypixel.hytale.codec.builder.BuilderCodec;
 
-/** Data the client sends when a bound element of the control panel is used. */
 final class PanelAction {
 
-    // Plain keys: the value is sent as is. A key starting with '@' makes the client read the value from a UI
-    // property instead (for example "@Value" -> "#SettingsList[2] #Input.Value"); a constant under an '@'
-    // key disconnects the client.
     static final String KEY = "Action";
     static final String SECTION = "Section";
     static final String ID = "Id";
@@ -90,7 +86,6 @@ final class PanelAction {
     String filter;
     String match;
 
-    /** @return the action's name; empty when the client sent none */
     String name() {
         return name != null ? name : "";
     }

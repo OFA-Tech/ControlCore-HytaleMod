@@ -6,7 +6,6 @@ import net.ofatech.controlcore.domain.model.ModSettings;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-/** Reads {@code Settings.json} through Hytale's codec config and writes missing defaults back. */
 public final class HytaleSettingsProvider implements SettingsProvider {
 
     private final ModSettings settings;

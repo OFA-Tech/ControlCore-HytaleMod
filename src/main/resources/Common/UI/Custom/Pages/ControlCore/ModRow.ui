@@ -1,7 +1,5 @@
 $C = "../../Common.ui";
 
-// One mod in the Mods tab. Appended by ControlPanelPage, which fills the texts, shows the badges and buttons
-// that apply and sets #ModLogo.Background when the mod ships a logo.
 Group {
   LayoutMode: Top;
   Anchor: (Bottom: 8);

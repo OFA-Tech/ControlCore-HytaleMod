@@ -13,7 +13,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-/** One JSON file of a store: read once at start, replaced as a whole (through a temporary file) on save. */
 final class JsonFile {
 
     private static final Gson GSON =
@@ -23,7 +22,6 @@ final class JsonFile {
     private final Log log;
     private final String contents;
 
-    /** @param contents what the file holds, for log messages, for example {@code "settings"} */
     JsonFile(Path file, Log log, String contents) {
         this.file = file;
         this.log = log;
@@ -34,7 +32,6 @@ final class JsonFile {
         return file;
     }
 
-    /** @return the file's contents, or empty when it does not exist or cannot be read (logged) */
     <T> Optional<T> read(Type type) {
         if (!Files.exists(file)) {
             return Optional.empty();
@@ -47,7 +44,6 @@ final class JsonFile {
         }
     }
 
-    /** @return whether {@code value} was written (failures are logged) */
     boolean write(Object value, Type type) {
         try {
             Files.createDirectories(file.toAbsolutePath().getParent());

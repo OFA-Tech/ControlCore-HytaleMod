@@ -13,7 +13,6 @@ public interface Players {
 
     Collection<PlayerInfo> online();
 
-    /** @return the language the player's game is set to, such as {@code pt-BR}; read it each time, it can change */
     default Optional<String> language(PlayerId id) {
         return Optional.empty();
     }

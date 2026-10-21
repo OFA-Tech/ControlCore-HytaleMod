@@ -1,7 +1,5 @@
 $C = "../../Common.ui";
 
-// A text setting and the colour it is shown in, on one line: colour picker, text field, Save (both) and Default
-// (both). Appended by ControlPanelPage for settings that use SettingDefinition.coloredBy.
 Group {
   LayoutMode: Top;
   Anchor: (Bottom: 10);

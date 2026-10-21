@@ -11,7 +11,6 @@ import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import org.junit.jupiter.api.Test;
 
-/** Settings, preferences and their permissions, wired as on a server. */
 class SettingsRuntimeTest extends RuntimeTestBase {
 
     @Test

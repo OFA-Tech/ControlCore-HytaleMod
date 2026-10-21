@@ -1,6 +1,5 @@
 $C = "../../Common.ui";
 
-// A key bind an admin created: its keys as text, plus Edit (fills the form above) and Remove. Appended by ControlPanelPage.
 Group {
   LayoutMode: Top;
   Anchor: (Bottom: 10);

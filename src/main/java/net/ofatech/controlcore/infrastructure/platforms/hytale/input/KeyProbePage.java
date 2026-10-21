@@ -20,18 +20,12 @@ import java.util.Locale;
 import javax.annotation.Nonnull;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-/**
- * Test screen for the key system: binds the client's {@code KeyDown} event to one target and shows the raw data
- * the client sends for each key, to learn whether a ControlCore screen can see every key on the keyboard.
- */
 final class KeyProbePage extends InteractiveCustomUIPage<KeyProbePage.Event> {
 
     static final String LAYOUT = "Pages/ControlCore/KeyProbe.ui";
     private static final int SHOWN = 8;
 
-    /** Where the {@code KeyDown} binding is attached. */
     enum Target {
-        /** The text field, focused as soon as the screen opens. Binding KeyDown to a group crashes the client. */
         INPUT("#KeyInput");
 
         final String selector;
@@ -88,7 +82,6 @@ final class KeyProbePage extends InteractiveCustomUIPage<KeyProbePage.Event> {
         sendUpdate(commands, false);
     }
 
-    /** Decoded form of the event data; only used as the page's codec, the raw text is what gets shown. */
     static final class Event {
 
         static final String SOURCE = "Source";

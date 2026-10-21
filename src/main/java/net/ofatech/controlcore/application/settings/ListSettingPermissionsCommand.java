@@ -13,7 +13,6 @@ import net.ofatech.controlcore.domain.ports.command.CommandSpec;
 import net.ofatech.controlcore.domain.ports.command.Reply;
 import net.ofatech.controlcore.domain.result.Result;
 
-/** {@code /cc-perms}: admins' setting permission rules. */
 @AutoService(ModCommand.class)
 public final class ListSettingPermissionsCommand implements ModCommand {
 

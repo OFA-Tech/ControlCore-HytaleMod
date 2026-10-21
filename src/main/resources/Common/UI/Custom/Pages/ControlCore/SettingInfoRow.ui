@@ -1,6 +1,5 @@
 $C = "../../Common.ui";
 
-// One read-only value (a locked server config key). Appended by ControlPanelPage.
 Group {
   LayoutMode: Top;
   Anchor: (Bottom: 10);

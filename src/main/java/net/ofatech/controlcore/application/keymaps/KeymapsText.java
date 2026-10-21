@@ -8,12 +8,10 @@ import net.ofatech.controlcore.domain.model.keys.KeyCombo;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.result.Result;
 
-/** Texts shared by the keymap commands and the Keymaps tab, in the reader's language. */
 public final class KeymapsText {
 
     private KeymapsText() {}
 
-    /** @return why some of the combinations cannot fire, or an empty string if they all can */
     public static String problems(Translator tr, KeyBinds binds) {
         List<String> problems = new ArrayList<>();
         for (KeyCombo combo : binds.combos()) {
@@ -26,7 +24,6 @@ public final class KeymapsText {
         return String.join(" ", problems);
     }
 
-    /** @return what the action does, for example {@code Runs /prefs} */
     public static String runs(Translator tr, KeyAction action) {
         if (action.command().isEmpty()) {
             return tr.t("controlcore.keys.runs_code", "mod", action.modId());
@@ -38,10 +35,6 @@ public final class KeymapsText {
         return tr.t(key, "command", action.command().get(), "mod", action.modId());
     }
 
-    /**
-     * @param source where the keys come from: {@code yours}, {@code server} or {@code default}
-     * @return one line of {@code /cc-keys}
-     */
     public static String line(Translator tr, KeyAction action, KeyBinds binds, String source) {
         String problems = problems(tr, binds);
         return tr.t(
@@ -57,7 +50,6 @@ public final class KeymapsText {
                 + (problems.isEmpty() ? "" : "\n  " + problems);
     }
 
-    /** @return the reply after an admin created a key bind */
     public static String created(Translator tr, KeyAction action) {
         String problems = problems(tr, action.defaultKeys());
         return tr.t(
@@ -74,10 +66,6 @@ public final class KeymapsText {
                 + (problems.isEmpty() ? "" : " " + problems);
     }
 
-    /**
-     * @param server whether the server's keys changed (otherwise the player's own)
-     * @return the reply after a change
-     */
     public static String changed(Translator tr, KeyAction action, KeyBinds binds, boolean server) {
         String problems = problems(tr, binds);
         return tr.t(
@@ -89,7 +77,6 @@ public final class KeymapsText {
                 + (problems.isEmpty() ? "" : " " + problems);
     }
 
-    /** @return the reply after an admin removed a key bind */
     public static String removed(Translator tr, KeyAction action) {
         return tr.t("controlcore.keys.removed", "id", action.id());
     }

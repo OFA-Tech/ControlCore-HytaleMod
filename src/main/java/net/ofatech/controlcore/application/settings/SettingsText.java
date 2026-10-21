@@ -7,15 +7,10 @@ import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.text.Translator;
 
-/** Chat text for the settings commands, in the reader's language. */
 public final class SettingsText {
 
     private SettingsText() {}
 
-    /**
-     * @param title the list's title, already translated
-     * @param emptyText shown when there is nothing to list, already translated
-     */
     static String list(Translator tr, String title, List<SettingSnapshot> snapshots, String emptyText) {
         if (snapshots.isEmpty()) {
             return emptyText;
@@ -33,7 +28,6 @@ public final class SettingsText {
         return text.toString();
     }
 
-    /** @return for example {@code controlcore:welcome-message = Hi (default)} */
     public static String line(Translator tr, SettingSnapshot snapshot) {
         return tr.t(
                 snapshot.overridden() ? "controlcore.settings.line" : "controlcore.settings.line_default",
@@ -80,7 +74,6 @@ public final class SettingsText {
         return text.toString();
     }
 
-    /** @return for example {@code controlcore:welcome-message is now Hi.} */
     public static String changed(Translator tr, SettingSnapshot snapshot) {
         return tr.t(
                 snapshot.overridden() ? "controlcore.settings.changed" : "controlcore.settings.changed_default",
@@ -90,7 +83,6 @@ public final class SettingsText {
                 value(tr, snapshot.definition(), snapshot.value()));
     }
 
-    /** @return {@code value} as players read it: {@code (empty)}, or a choice's option in their language */
     public static String value(Translator tr, SettingDefinition<?> definition, String value) {
         if (value.isEmpty()) {
             return tr.t("controlcore.settings.empty");

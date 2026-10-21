@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import net.ofatech.controlcore.domain.ports.game.Scheduler;
 
-/** Records scheduled work; tests run it with {@link #runAll()}. */
 public final class FakeScheduler implements Scheduler {
 
     public static final class Entry {

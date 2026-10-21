@@ -11,13 +11,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import net.ofatech.controlcore.domain.ports.system.Translations;
 
-/**
- * ControlCore's own language files ({@code Server/Languages/<language>/controlcore.lang}) read straight from
- * the jar, so its text works even where the game's translation module has nothing (tests, early start-up).
- */
 public final class BundledTranslations implements Translations {
 
-    /** The file name; keys in it are read as {@code controlcore.<key>}. */
     public static final String FILE = "controlcore";
 
     private final ClassLoader loader;
@@ -36,7 +31,6 @@ public final class BundledTranslations implements Translations {
         return Optional.ofNullable(messages(language).get(key));
     }
 
-    /** @return every key and text of {@code language}, with the {@code controlcore.} prefix */
     public Map<String, String> messages(String language) {
         return languages.computeIfAbsent(language, this::load);
     }
@@ -50,12 +44,6 @@ public final class BundledTranslations implements Translations {
         }
     }
 
-    /**
-     * Reads a {@code .lang} file: {@code key = text} lines; blank lines and lines starting with {@code #} are
-     * skipped.
-     *
-     * @param prefix put in front of every key
-     */
     public static Map<String, String> parse(InputStream in, String prefix) throws IOException {
         Map<String, String> messages = new LinkedHashMap<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))) {

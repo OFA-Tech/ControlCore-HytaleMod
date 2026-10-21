@@ -27,19 +27,11 @@ import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
-/**
- * Registered key actions and their bindings. A player's own bindings (in {@link PlayerData}) win over the server's
- * (in {@link KeyBindStore}), which win over the action's defaults. Bindings are stored as text, so they survive the
- * action being unregistered and keys the server cannot detect yet. Admins' own actions ({@code custom:*}) are kept
- * in {@link CustomKeyBindStore}.
- */
 @AutoService(KeymapsApi.class)
 public final class KeymapRegistry implements KeymapsApi {
 
     static final String PLAYER_KEY_PREFIX = "keybind:";
-    /** Namespace of the actions admins create. */
     public static final String CUSTOM = "custom";
-    /** ControlCore node (relative to its base permission) needed for server-run actions without their own node. */
     public static final String SERVER_KEYS_NODE = "keys.server";
 
     private final KeyBindStore serverBinds;
@@ -95,15 +87,10 @@ public final class KeymapRegistry implements KeymapsApi {
                 .toList();
     }
 
-    /** @return the actions {@code player} may see and use, sorted by id */
     public List<KeyAction> actionsFor(PlayerId player) {
         return actions().stream().filter(action -> canUse(action, player)).toList();
     }
 
-    /**
-     * @return whether {@code player} may see and use {@code action}: they need its permission if it has one, and
-     *     ControlCore's {@code keys.server} node for a server-run action without one
-     */
     public boolean canUse(KeyAction action, PlayerId player) {
         if (action.permission().isPresent()) {
             return permissions.has(player, action.permission().get());
@@ -121,17 +108,14 @@ public final class KeymapRegistry implements KeymapsApi {
         return serverBinds.get(id).flatMap(text -> parsed(id, text)).orElseGet(() -> defaults(id));
     }
 
-    /** @return whether an admin changed the server's keys of {@code id} (instead of using the mod's defaults) */
     public boolean hasServerKeys(SettingId id) {
         return serverBinds.get(id).flatMap(text -> parsed(id, text)).isPresent();
     }
 
-    /** @return the action's own default keys (the mod's, or the admin's for {@code custom:*}) */
     public KeyBinds modKeys(SettingId id) {
         return defaults(id);
     }
 
-    /** @return the bindings the player chose themselves, if any */
     public Optional<KeyBinds> ownKeys(SettingId id, PlayerId player) {
         return playerData.get(player, PLAYER_KEY_PREFIX + id).flatMap(text -> parsed(id, text));
     }
@@ -181,7 +165,6 @@ public final class KeymapRegistry implements KeymapsApi {
         });
     }
 
-    /** Registers the actions admins created earlier; call once at startup. */
     public void loadCustom() {
         for (CustomKeyBind bind : customBinds.all()) {
             customAction(bind.name(), bind.keys(), bind.command(), bind.runAsServer())
@@ -191,15 +174,6 @@ public final class KeymapRegistry implements KeymapsApi {
         }
     }
 
-    /**
-     * Creates or replaces an admin's own key action {@code custom:<name>}.
-     *
-     * @param name lower case letters, digits, {@code -}, {@code _} and {@code .}; {@code custom:} may be included
-     * @param keys default keys, for example {@code ctrl+f}
-     * @param command the command, with or without {@code /}
-     * @param runAsServer whether the command runs as the server console
-     * @return the action, or {@code Keys.InvalidName}, {@code Keys.InvalidCombo} or {@code Keys.NothingToRun}
-     */
     public Result<KeyAction> addCustom(String name, String keys, String command, boolean runAsServer) {
         return customAction(name, keys, command, runAsServer)
                 .flatMap(action -> put(action).map(registered -> {
@@ -212,11 +186,6 @@ public final class KeymapRegistry implements KeymapsApi {
                 }));
     }
 
-    /**
-     * Removes an admin's own key action and the server's bindings for it.
-     *
-     * @return the removed action, or {@code Keys.UnknownAction}
-     */
     public Result<KeyAction> removeCustom(String name) {
         return customId(name).flatMap(this::known).map(action -> {
             actions.remove(action.id());
@@ -227,7 +196,6 @@ public final class KeymapRegistry implements KeymapsApi {
         });
     }
 
-    /** @return the saved admin bind with that name ({@code custom:} optional) */
     public Optional<CustomKeyBind> findCustom(String name) {
         Result<SettingId> parsed = customId(name);
         return Optional.of(parsed)
@@ -238,10 +206,6 @@ public final class KeymapRegistry implements KeymapsApi {
                         .findFirst());
     }
 
-    /**
-     * Listens to changes of bindings: a player's own are reported as player-scoped {@link SettingChanged} events,
-     * the server's as server-scoped ones.
-     */
     public Subscription onChange(Consumer<? super SettingChanged> listener) {
         listeners.add(listener);
         return () -> listeners.remove(listener);

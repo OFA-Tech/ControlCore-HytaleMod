@@ -10,24 +10,15 @@ import java.util.List;
 import java.util.Locale;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 
-/**
- * The rows of the control panel's setting lists: which row document each kind of setting appends, the events its
- * controls send, and how a value is shown in it.
- */
 final class SettingRows {
 
-    // Events sent by the rows; the page dispatches them by these names.
     static final String SAVE = "Save";
     static final String CHECK = "Check";
     static final String CHOOSE = "Choose";
     static final String RESET = "Reset";
-    /** The slider moved: show its value in the text field (nothing is saved yet). */
     static final String SLIDE = "Slide";
-    /** The slider was let go: save its value. */
     static final String SLID = "Slid";
-    /** A colour was picked in a colour row: it goes into the row's text field. */
     static final String PICK = "Pick";
-    /** A colour was picked in a text row with a colour: only a hint until Save. */
     static final String PICK_INLINE = "PickInline";
 
     static final String SAVE_COLORED = "SaveColored";
@@ -55,11 +46,6 @@ final class SettingRows {
         commands.set(element + ".Text", text);
     }
 
-    /**
-     * Appends a setting's row and binds its controls.
-     *
-     * @param customBind an admin's own key bind: the row also gets Edit and Remove buttons
-     */
     static void build(
             PanelSection key,
             SettingsSection section,
@@ -128,7 +114,6 @@ final class SettingRows {
                 commands.append(key.list, COLOR_ROW);
                 commands.set(input + ".PlaceholderText", section.placeholder(snapshot));
                 bindSave(key, element, id, events);
-                // The picker has no Value property; its colour is read and set as Color ("#rrggbb").
                 events.addEventBinding(
                         CustomUIEventBindingType.ValueChanged,
                         element + " #Picker",
@@ -190,7 +175,6 @@ final class SettingRows {
         }
     }
 
-    /** Shows {@code snapshot}'s value in the controls of a row of {@code kind}. */
     static void showValue(
             SettingsSection section,
             SettingsSection.Kind kind,
@@ -215,7 +199,6 @@ final class SettingRows {
         }
     }
 
-    /** Sets a row's colour picker (its markup property is Color; it has no Value). */
     static void showPicker(String element, SettingSnapshot color, UICommandBuilder commands) {
         String hex = pickedHex(color.value());
         if (hex != null) {
@@ -223,7 +206,6 @@ final class SettingRows {
         }
     }
 
-    /** @return {@code #rrggbb} from the picker's colour ({@code #rrggbb}, {@code #rrggbbaa} or {@code rrggbb}) */
     static String pickedHex(String value) {
         if (value == null) {
             return null;
@@ -250,7 +232,6 @@ final class SettingRows {
                 event(SAVE, key, id).append(PanelAction.VALUE, element + " #Input.Value"));
     }
 
-    /** Sliders take int values; float sliders take float values. */
     private static void setSliderNumber(
             UICommandBuilder commands, String property, SettingsSection.Kind kind, double value) {
         if (kind == SettingsSection.Kind.INTEGER) {

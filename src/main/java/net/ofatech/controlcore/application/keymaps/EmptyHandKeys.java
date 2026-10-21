@@ -10,10 +10,6 @@ import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.game.EmptyHandInput;
 
-/**
- * The server setting {@value #ID}: whether keys that do nothing with an empty hand (right click, abilities 1, 2 and
- * 4, dodge) still reach the server, so they can be bound. Applied when the server starts and when it changes.
- */
 @AutoService(FeatureModule.class)
 public final class EmptyHandKeys implements FeatureModule {
 

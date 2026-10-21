@@ -1,6 +1,5 @@
 $C = "../../Common.ui";
 
-// One registered boolean setting, saved as soon as the box is clicked. Appended by ControlPanelPage.
 Group {
   LayoutMode: Top;
   Anchor: (Bottom: 10);

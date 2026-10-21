@@ -8,16 +8,13 @@ import net.ofatech.controlcore.domain.ports.platform.CapabilityBinder;
 import net.ofatech.controlcore.domain.ports.platform.ModPlatform;
 import net.ofatech.controlcore.domain.result.Result;
 
-/** Mod platforms that exist only in tests, discovered through the test component index. */
 public final class TestModPlatforms {
 
     public static final String WORKING = "Test:Greeter";
     public static final String BROKEN = "Test:Broken";
 
-    /** Players the working test integration greeted. */
     public static final List<PlayerId> OPENED = new CopyOnWriteArrayList<>();
 
-    /** A capability that only the working test integration offers. */
     public interface Greeter {
         Result<Void> greet(PlayerId player);
     }
