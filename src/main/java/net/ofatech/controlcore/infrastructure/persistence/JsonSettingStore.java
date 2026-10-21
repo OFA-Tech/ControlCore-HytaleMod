@@ -1,16 +1,8 @@
 package net.ofatech.controlcore.infrastructure.persistence;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
 import java.lang.reflect.Type;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
@@ -24,15 +16,13 @@ public final class JsonSettingStore implements SettingStore {
 
     private static final Type FILE_TYPE = new TypeToken<Map<String, String>>() {}.getType();
 
-    private final Path file;
+    private final JsonFile file;
     private final Log log;
-    private final Gson gson =
-            new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private final Map<SettingId, String> values = new ConcurrentHashMap<>();
     private volatile boolean dirty;
 
     public JsonSettingStore(Path file, Log log) {
-        this.file = file;
+        this.file = new JsonFile(file, log, "settings");
         this.log = log;
         load();
     }
@@ -68,37 +58,20 @@ public final class JsonSettingStore implements SettingStore {
         dirty = false;
         Map<String, String> snapshot = new TreeMap<>();
         values.forEach((id, value) -> snapshot.put(id.toString(), value));
-        try {
-            Files.createDirectories(file.toAbsolutePath().getParent());
-            Path temporary = file.resolveSibling(file.getFileName() + ".tmp");
-            try (Writer writer = Files.newBufferedWriter(temporary)) {
-                gson.toJson(snapshot, FILE_TYPE, writer);
-            }
-            Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (IOException e) {
+        if (!file.write(snapshot, FILE_TYPE)) {
             dirty = true;
-            log.error("Could not save settings to " + file, e);
         }
     }
 
     private void load() {
-        if (!Files.exists(file)) {
-            return;
-        }
-        try (Reader reader = Files.newBufferedReader(file)) {
-            Map<String, String> stored = gson.fromJson(reader, FILE_TYPE);
-            if (stored == null) {
-                return;
-            }
-            stored.forEach((key, value) -> SettingId.parse(key)
-                    .onSuccess(id -> {
-                        if (value != null) {
-                            values.put(id, value);
-                        }
-                    })
-                    .onFailure(error -> log.warn("Ignoring '" + key + "' in " + file + ": " + error.description())));
-        } catch (IOException | JsonParseException e) {
-            log.error("Could not read settings from " + file + "; starting empty", e);
-        }
+        file.<Map<String, String>>read(FILE_TYPE)
+                .ifPresent(stored -> stored.forEach((key, value) -> SettingId.parse(key)
+                        .onSuccess(id -> {
+                            if (value != null) {
+                                values.put(id, value);
+                            }
+                        })
+                        .onFailure(error ->
+                                log.warn("Ignoring '" + key + "' in " + file.path() + ": " + error.description()))));
     }
 }

@@ -1,16 +1,8 @@
 package net.ofatech.controlcore.infrastructure.persistence;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
-import java.io.IOException;
-import java.io.Reader;
-import java.io.Writer;
 import java.lang.reflect.Type;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -26,14 +18,12 @@ public final class JsonCustomKeyBindStore implements CustomKeyBindStore {
 
     private static final Type FILE_TYPE = new TypeToken<Map<String, Entry>>() {}.getType();
 
-    private final Path file;
+    private final JsonFile file;
     private final Log log;
-    private final Gson gson =
-            new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
     private final Map<String, CustomKeyBind> binds = new TreeMap<>();
 
     public JsonCustomKeyBindStore(Path file, Log log) {
-        this.file = file;
+        this.file = new JsonFile(file, log, "custom key binds");
         this.log = log;
         load();
     }
@@ -59,40 +49,21 @@ public final class JsonCustomKeyBindStore implements CustomKeyBindStore {
     private void save() {
         Map<String, Entry> snapshot = new TreeMap<>();
         binds.forEach((name, bind) -> snapshot.put(name, new Entry(bind.keys(), bind.command(), bind.runAsServer())));
-        try {
-            Files.createDirectories(file.toAbsolutePath().getParent());
-            Path temporary = file.resolveSibling(file.getFileName() + ".tmp");
-            try (Writer writer = Files.newBufferedWriter(temporary)) {
-                gson.toJson(snapshot, FILE_TYPE, writer);
-            }
-            Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (IOException e) {
-            log.error("Could not save custom key binds to " + file, e);
-        }
+        file.write(snapshot, FILE_TYPE);
     }
 
     private void load() {
-        if (!Files.exists(file)) {
-            return;
-        }
-        try (Reader reader = Files.newBufferedReader(file)) {
-            Map<String, Entry> stored = gson.fromJson(reader, FILE_TYPE);
-            if (stored == null) {
-                return;
-            }
-            stored.forEach((name, entry) -> {
-                if (entry == null || entry.command == null || entry.command.isBlank() || name.isBlank()) {
-                    log.warn("Ignoring custom key bind '" + name + "' in " + file + ": it has no command");
-                    return;
-                }
-                binds.put(
-                        name,
-                        new CustomKeyBind(
-                                name, entry.keys == null ? "none" : entry.keys, entry.command, entry.runAsServer));
-            });
-        } catch (IOException | JsonParseException e) {
-            log.error("Could not read custom key binds from " + file + "; starting empty", e);
-        }
+        file.<Map<String, Entry>>read(FILE_TYPE)
+                .ifPresent(stored -> stored.forEach((name, entry) -> {
+                    if (entry == null || entry.command == null || entry.command.isBlank() || name.isBlank()) {
+                        log.warn("Ignoring custom key bind '" + name + "' in " + file.path() + ": it has no command");
+                        return;
+                    }
+                    binds.put(
+                            name,
+                            new CustomKeyBind(
+                                    name, entry.keys == null ? "none" : entry.keys, entry.command, entry.runAsServer));
+                }));
     }
 
     /** One bind as stored. */
