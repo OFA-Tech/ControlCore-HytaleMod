@@ -472,7 +472,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 events.addEventBinding(
                         CustomUIEventBindingType.ValueChanged,
                         element + " #Picker",
-                        action(PICK, key, id).append(Action.VALUE, element + " #Picker.Value"),
+                        action(PICK, key, id).append(Action.VALUE, element + " #Picker.Color"),
                         false);
             }
             case LIST -> {
@@ -798,7 +798,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         sendUpdate(update, false);
     }
 
-    /** @return {@code #rrggbb} from the picker's value ({@code #rrggbb}, {@code #rrggbbaa} or {@code rrggbb}) */
+    /** @return {@code #rrggbb} from the picker's colour ({@code #rrggbb}, {@code #rrggbbaa} or {@code rrggbb}) */
     static String pickedHex(String value) {
         if (value == null) {
             return null;
