@@ -353,7 +353,8 @@ class ModRuntimeTest {
                 .containsExactly(
                         "controlcore:control-panel-enabled",
                         "controlcore:empty-hand-keys",
-                        "controlcore:welcome-message");
+                        "controlcore:welcome-message",
+                        "controlcore:welcome-message-color");
     }
 
     @Test

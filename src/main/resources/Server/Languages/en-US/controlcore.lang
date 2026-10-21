@@ -350,3 +350,10 @@ hud.parts.input_bindings = Key hints
 hud.parts.utility_slot_selector = Utility slot selector
 hud.parts.block_variant_selector = Block variant selector
 hud.parts.builder_tools_legend = Builder tools legend
+
+# ---- More setting types ----
+ui.add = Add
+types.color = colour (#rrggbb)
+types.text_list = list (up to {max} items, separated by commas)
+settings.welcome_message_color.name = Welcome message colour
+settings.welcome_message_color.desc = The colour of the welcome message.

@@ -26,7 +26,7 @@ public final class WelcomeMessageHandler implements ModEventHandler<PlayerJoined
     public void handle(PlayerJoined event) {
         String text = settings.messageFor(event.player().id(), event.player().name());
         if (!text.isEmpty()) {
-            messenger.send(event.player().id(), text);
+            messenger.send(event.player().id(), text, settings.color());
         }
     }
 }

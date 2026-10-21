@@ -17,6 +17,14 @@ public final class HytaleMessenger implements Messenger {
     }
 
     @Override
+    public void send(PlayerId player, String text, String color) {
+        PlayerRef ref = Universe.get().getPlayer(player.value());
+        if (ref != null) {
+            ref.sendMessage(com.hypixel.hytale.server.core.Message.raw(text).color(color));
+        }
+    }
+
+    @Override
     public void broadcast(String text) {
         Universe.get().sendMessage(Messages.text(text));
     }

@@ -350,3 +350,10 @@ hud.parts.input_bindings = Dicas de teclas
 hud.parts.utility_slot_selector = Seletor de espaço utilitário
 hud.parts.block_variant_selector = Seletor de variante de bloco
 hud.parts.builder_tools_legend = Legenda das ferramentas de construção
+
+# ---- More setting types ----
+ui.add = Adicionar
+types.color = cor (#rrggbb)
+types.text_list = lista (até {max} itens, separados por vírgulas)
+settings.welcome_message_color.name = Cor da mensagem de boas-vindas
+settings.welcome_message_color.desc = A cor da mensagem de boas-vindas.

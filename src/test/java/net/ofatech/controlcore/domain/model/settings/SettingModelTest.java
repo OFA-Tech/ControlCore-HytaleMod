@@ -83,4 +83,24 @@ class SettingModelTest {
                 .isInstanceOf(DomainException.class)
                 .hasMessageContaining("homes:max-homes");
     }
+
+    @Test
+    void coloursAndTextListsParseAndFormat() {
+        var color = SettingType.color();
+        assertThat(color.parse("#A1B2C3").value()).isEqualTo("#a1b2c3");
+        assertThat(color.parse("fa0").value()).isEqualTo("#ffaa00");
+        assertThat(color.parse("red").isFailure()).isTrue();
+        assertThat(color.validate("#FFFFFF").isFailure())
+                .as("stored lower case")
+                .isTrue();
+
+        var list = SettingType.textList(3, 8);
+        assertThat(list.parse(" Steve, alex ,, Notch").value()).containsExactly("Steve", "alex", "Notch");
+        assertThat(list.format(java.util.List.of("a", "b"))).isEqualTo("a, b");
+        assertThat(list.parse("a, b, c, d").isFailure()).as("too many").isTrue();
+        assertThat(list.parse("waytoolongname").isFailure()).isTrue();
+        assertThat(list.parse("").value()).isEmpty();
+        var definition = SettingDefinition.server("homes", "allowed", list, java.util.List.of("Steve"));
+        assertThat(definition.formattedDefault()).isEqualTo("Steve");
+    }
 }

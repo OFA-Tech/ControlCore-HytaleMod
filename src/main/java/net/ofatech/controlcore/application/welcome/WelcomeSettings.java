@@ -15,6 +15,7 @@ public final class WelcomeSettings {
 
     private final Setting<String> message;
     private final Setting<Boolean> show;
+    private final Setting<String> color;
 
     public WelcomeSettings(SettingsApi settings) {
         this.message = settings.register(
@@ -25,6 +26,13 @@ public final class WelcomeSettings {
                                         "Sent to players when they join; {player} is replaced by their name. Empty"
                                                 + " sends nothing.")))
                 .value();
+        this.color = settings.register(SettingDefinition.server(
+                                "controlcore", "welcome-message-color", SettingType.color(), "#ffaa00")
+                        .named(Text.key("controlcore.settings.welcome_message_color.name", "Welcome message colour"))
+                        .describedAs(Text.key(
+                                "controlcore.settings.welcome_message_color.desc",
+                                "The colour of the welcome message.")))
+                .value();
         this.show = settings.register(SettingDefinition.player(
                                 "controlcore", "show-welcome-message", SettingType.bool(), true)
                         .named(Text.key("controlcore.settings.show_welcome_message.name", "Show welcome message"))
@@ -32,6 +40,11 @@ public final class WelcomeSettings {
                                 "controlcore.settings.show_welcome_message.desc",
                                 "Whether you get the server's welcome message when you join.")))
                 .value();
+    }
+
+    /** @return the welcome message's colour, {@code #rrggbb} */
+    public String color() {
+        return color.get();
     }
 
     /** @return the message for this player, with {@code {player}} filled in; empty if none or turned off */

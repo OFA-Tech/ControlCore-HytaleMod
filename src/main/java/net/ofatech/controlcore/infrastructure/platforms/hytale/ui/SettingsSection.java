@@ -33,6 +33,10 @@ final class SettingsSection {
         INTEGER,
         /** Slider, text field and Save button: a decimal number with a range. */
         DECIMAL,
+        /** Colour picker with a hex field. */
+        COLOR,
+        /** Items with Remove buttons and a field to add one. */
+        LIST,
         /** Check box, saved when clicked. */
         TOGGLE,
         /** Dropdown, saved when an option is picked. */
@@ -166,6 +170,29 @@ final class SettingsSection {
         return entries;
     }
 
+    /** @return the items of a list setting's value */
+    static List<String> items(SettingSnapshot snapshot) {
+        return snapshot.definition().type() instanceof SettingType.TextListType list
+                ? list.parse(snapshot.value()).orElse(List.of())
+                : List.of();
+    }
+
+    /** Adds {@code item} to a list setting. */
+    Result<SettingSnapshot> addItem(SettingSnapshot snapshot, String item) {
+        List<String> items = new java.util.ArrayList<>(items(snapshot));
+        items.add(item == null ? "" : item.strip());
+        return save(snapshot.id().toString(), String.join(SettingType.TextListType.SEPARATOR + " ", items));
+    }
+
+    /** Removes the item at {@code index} from a list setting. */
+    Result<SettingSnapshot> removeItem(SettingSnapshot snapshot, int index) {
+        List<String> items = new java.util.ArrayList<>(items(snapshot));
+        if (index >= 0 && index < items.size()) {
+            items.remove(index);
+        }
+        return save(snapshot.id().toString(), String.join(SettingType.TextListType.SEPARATOR + " ", items));
+    }
+
     /** Saves text typed into a field or picked from a dropdown. */
     Result<SettingSnapshot> save(String idText, String value) {
         return id(idText).flatMap(id -> settings.write(id, player, value == null ? "" : value));
@@ -212,6 +239,8 @@ final class SettingsSection {
         return switch (snapshot.definition().type()) {
             case SettingType.BooleanType _ -> Kind.TOGGLE;
             case SettingType.ChoiceType _ -> Kind.CHOICE;
+            case SettingType.ColorType _ -> Kind.COLOR;
+            case SettingType.TextListType _ -> Kind.LIST;
             case SettingType.IntegerType number when Slider.fits(number.min(), number.max()) -> Kind.INTEGER;
             case SettingType.DecimalType number when Slider.fits(number.min(), number.max()) -> Kind.DECIMAL;
             default -> Kind.TEXT;

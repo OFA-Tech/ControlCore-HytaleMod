@@ -60,6 +60,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private static final String TOGGLE_ROW = "Pages/ControlCore/SettingToggleRow.ui";
     private static final String INTEGER_ROW = "Pages/ControlCore/SettingIntegerRow.ui";
     private static final String DECIMAL_ROW = "Pages/ControlCore/SettingDecimalRow.ui";
+    private static final String COLOR_ROW = "Pages/ControlCore/SettingColorRow.ui";
+    private static final String LIST_ROW = "Pages/ControlCore/SettingListRow.ui";
+    private static final String LIST_ITEM = "Pages/ControlCore/SettingListItem.ui";
     private static final String CHOICE_ROW = "Pages/ControlCore/SettingChoiceRow.ui";
     private static final String INFO_ROW = "Pages/ControlCore/SettingInfoRow.ui";
     private static final String CUSTOM_BIND_ROW = "Pages/ControlCore/SettingCustomBindRow.ui";
@@ -74,6 +77,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private static final String SLIDE = "Slide";
     /** The slider was let go: save its value. */
     private static final String SLID = "Slid";
+
+    private static final String ADD_ITEM = "AddItem";
+    private static final String REMOVE_ITEM = "RemoveItem";
 
     private static final String ADD_BIND = "AddBind";
     private static final String EDIT_BIND = "EditBind";
@@ -428,6 +434,31 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                         bar,
                         action(SLID, key, id).append(Action.NUMBER, bar + ".Value"));
             }
+            case COLOR -> {
+                commands.append(key.list, COLOR_ROW);
+                events.addEventBinding(
+                        CustomUIEventBindingType.ValueChanged,
+                        input,
+                        action(CHOOSE, key, id).append(Action.VALUE, input + ".Value"));
+            }
+            case LIST -> {
+                commands.append(key.list, LIST_ROW);
+                commands.set(input + ".PlaceholderText", section.placeholder(snapshot));
+                events.addEventBinding(
+                        CustomUIEventBindingType.Activating,
+                        element + " #Add",
+                        action(ADD_ITEM, key, id).append(Action.VALUE, input + ".Value"));
+                List<String> items = SettingsSection.items(snapshot);
+                for (int item = 0; item < items.size(); item++) {
+                    commands.append(element + " #Items", LIST_ITEM);
+                    String itemElement = element + " #Items[" + item + "]";
+                    commands.set(itemElement + " #Text.Text", items.get(item));
+                    events.addEventBinding(
+                            CustomUIEventBindingType.Activating,
+                            itemElement + " #Remove",
+                            action(REMOVE_ITEM, key, id).append(Action.ITEM, Integer.toString(item)));
+                }
+            }
             case TOGGLE -> {
                 commands.append(key.list, TOGGLE_ROW);
                 events.addEventBinding(
@@ -461,6 +492,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private void handleSettingAction(Section key, SettingsSection section, String name, Action action) {
         if (SLIDE.equals(name)) {
             showSliderText(key, action);
+            return;
+        }
+        if (ADD_ITEM.equals(name) || REMOVE_ITEM.equals(name)) {
+            changeList(key, section, name, action);
             return;
         }
         Result<SettingSnapshot> result = switch (name) {
@@ -604,6 +639,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 }
                 shown.put(shownKey(key, id), snapshot.value());
                 latest.put(shownKey(key, id), snapshot);
+                if (SettingsSection.kindOf(snapshot) == SettingsSection.Kind.LIST) {
+                    rebuild(); // the items and their buttons change
+                }
                 UICommandBuilder update = new UICommandBuilder();
                 showValue(section, SettingsSection.kindOf(snapshot), key.row(index), snapshot, update);
                 update.set(key.row(index) + " #Description.Text", section.description(snapshot));
@@ -641,7 +679,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             UICommandBuilder commands) {
         String input = element + " #Input";
         switch (kind) {
-            case TEXT, CHOICE -> commands.set(input + ".Value", snapshot.value());
+            case TEXT, CHOICE, COLOR -> commands.set(input + ".Value", snapshot.value());
+            case LIST -> commands.set(input + ".Value", "");
             case INTEGER, DECIMAL -> {
                 commands.set(input + ".Value", snapshot.value());
                 SettingsSection.Slider slider = SettingsSection.Slider.of(snapshot);
@@ -676,6 +715,34 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         }
         return Optional.of(
                 SettingsSection.Slider.of(snapshot).text(action.number, kind == SettingsSection.Kind.INTEGER));
+    }
+
+    /** Adds or removes a list item, then rebuilds the page so the items and their buttons match. */
+    private void changeList(Section key, SettingsSection section, String name, Action action) {
+        SettingSnapshot snapshot = SettingId.parse(action.id == null ? "" : action.id)
+                .map(id -> latest.get(shownKey(key, id)))
+                .orElse(null);
+        if (snapshot == null) {
+            return;
+        }
+        Result<SettingSnapshot> result;
+        if (ADD_ITEM.equals(name)) {
+            result = section.addItem(snapshot, action.value);
+        } else {
+            int index;
+            try {
+                index = Integer.parseInt(action.item == null ? "" : action.item);
+            } catch (NumberFormatException e) {
+                return;
+            }
+            result = section.removeItem(snapshot, index);
+        }
+        if (result.isSuccess()) {
+            rebuild();
+        }
+        UICommandBuilder update = new UICommandBuilder();
+        update.set(key.status + ".Text", result.isSuccess() ? section.saved(result.value()) : tr.error(result.error()));
+        sendUpdate(update, false);
     }
 
     /** While the slider moves, the text field shows the value it would save. */
@@ -809,6 +876,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         static final String FILTER = "@Filter";
         static final String MATCH = "@Match";
         static final String NUMBER = "@Number";
+        static final String ITEM = "Item";
 
         static final BuilderCodec<Action> CODEC = BuilderCodec.builder(Action.class, Action::new)
                 .append(
@@ -832,6 +900,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                         new KeyedCodec<>(CHECKED, Codec.BOOLEAN),
                         (action, value) -> action.checked = value,
                         action -> action.checked)
+                .add()
+                .append(
+                        new KeyedCodec<>(ITEM, Codec.STRING),
+                        (action, value) -> action.item = value,
+                        action -> action.item)
                 .add()
                 .append(
                         new KeyedCodec<>(NUMBER, Codec.FLOAT),
@@ -866,6 +939,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         private String value;
         private Boolean checked;
         private Double number;
+        private String item;
         private String bindName;
         private String bindKeys;
         private String filter;
