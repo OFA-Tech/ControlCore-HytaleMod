@@ -222,9 +222,10 @@ ControlCore registers `controlcore:open-preferences` (runs `/prefs`, default `CT
 
 ## Using it from another mod
 
-1. **Dependency.** Until ControlCore is published, run `./gradlew publishToMavenLocal` here and add
-   `mavenLocal()` to the other mod's repositories. Once releases are published to GitHub Packages
-   (needs a token with `read:packages`):
+1. **Dependency.** Releases are published to GitHub Packages. GitHub asks for a login even for public
+   packages: use a personal access token with `read:packages` (as `gpr.user`/`gpr.key` in
+   `~/.gradle/gradle.properties`, or the environment variables below). For unreleased changes, run
+   `./gradlew publishToMavenLocal` here and add `mavenLocal()` instead.
 
    ```kotlin
    repositories {
@@ -237,11 +238,11 @@ ControlCore registers `controlcore:open-preferences` (runs `/prefs`, default `CT
        }
    }
    dependencies {
-       compileOnly("net.ofatech:controlcore:0.1.0")
-       vineImplementation("net.ofatech:controlcore:0.1.0") // run it in your dev server (not vineMod: see docs/platforms.md)
+       compileOnly("net.ofatech:controlcore:0.9.0")
+       vineImplementation("net.ofatech:controlcore:0.9.0") // run it in your dev server (not vineMod: see docs/platforms.md)
    }
    ```
-2. **Manifest.** Use `manifest_dependencies = OFATech:ControlCore=>=0.1.0`, or
+2. **Manifest.** Use `manifest_dependencies = OFATech:ControlCore=>=0.9.0`, or
    `manifest_opt_dependencies` if your mod should work without it.
 3. **Code.**
 
@@ -268,8 +269,9 @@ ControlCore registers `controlcore:open-preferences` (runs `/prefs`, default `CT
 
 ## Publishing
 
-`maven-publish` publishes `net.ofatech:controlcore` (the plugin jar plus sources and javadoc). The
+`maven-publish` publishes `net.ofatech:controlcore` (the plugin jar plus sources and javadoc, with no
+transitive dependencies: everything ControlCore uses is provided by the server). The
 artifact id is `mod_id` in lower case, the repository is `github_repository` in `gradle.properties`.
 
-`.github/workflows/release.yml.disabled` is turned off for now. Once renamed to `release.yml` and uncommented, a `vX.Y.Z` tag runs
-`./gradlew publish` to GitHub Packages and attaches the jars to a GitHub Release.
+Pushing a tag `vX.Y.Z` that matches `version` runs `.github/workflows/release.yml`: `./gradlew publish` to
+GitHub Packages and a GitHub release with the jar (see README, Releasing).
