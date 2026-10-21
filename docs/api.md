@@ -1,5 +1,7 @@
 # Public API
 
+Step-by-step guides with examples are in the [wiki](https://github.com/OFA-Tech/ControlCore-HytaleMod/wiki/Mod-Author-Quick-Start); this page is the compact reference.
+
 Other mods use ControlCore through the interfaces in `net.ofatech.controlcore.api`. The services
 implement them directly; there are no copies or adapters. Signatures use plain Java and `domain`
 types (`Result`, `Error`, `PlayerId`, `PlayerInfo`, `ControlPanelRequest`, events), never Hytale

@@ -1,0 +1,77 @@
+# Commands
+
+Permission nodes start with ControlCore's base permission, **`ofatech.controlcore`**. Operators have every node.
+"Who may see it" and "who may change it" follow the [permission rules](Permissions).
+
+Admin commands also work from the server console; commands about your own preferences, keys or panel need a player.
+
+## Panel
+
+| Command | Who | Does |
+|---|---|---|
+| `/open-admin-config` | admins, and anyone allowed to see at least one server setting | open the control panel |
+| `/prefs` | any player | open your preferences, key binds, HUD and the Mods tab (works even when the admin panel is off) |
+| `/cc-config <mod>` | any player | open the panel on one mod's settings; `<mod>` is its id (`Group:Name`), name or setting prefix, e.g. `controlcore` |
+
+## Settings
+
+| Command | Who | Does |
+|---|---|---|
+| `/cc-settings` | anyone | list server settings you may see, with their values (`(default)` if unchanged) |
+| `/cc-get <id>` | who may see it | name, description, value, default, type and scope of one setting |
+| `/cc-set <id> <value>` | who may change it | change a server setting; the value may contain spaces |
+| `/cc-reset <id>` | who may change it | put a server setting back to its default |
+| `/cc-prefs` | any player | list your preferences |
+| `/cc-pref <id> <value>` | any player | change one of your preferences |
+| `/cc-pref-reset <id>` | any player | put a preference back to its default |
+
+Ids look like `mod:key`, for example `controlcore:welcome-message`. Server config keys are `server:…`, for example
+`server:motd` or `server:connection-timeouts.play-timeout`.
+
+```
+/cc-set controlcore:welcome-message Welcome, {player}!
+/cc-set controlcore:welcome-message-color #55ff55
+/cc-set controlcore:mods-hidden SomeMod, OtherMod
+/cc-pref controlcore:panel-start-tab Mod Settings
+```
+
+## Permissions
+
+| Command | Who | Does |
+|---|---|---|
+| `/cc-perm <target> <view\|edit\|both> <node\|everyone\|default>` | `ofatech.controlcore.settings` | set who may see or change a setting, a category or a mod; `default` removes the rule |
+| `/cc-perms` | `ofatech.controlcore.settings` | list the rules admins set |
+| `/cc-perm-check <id>` | `ofatech.controlcore.settings` | who may see and change one setting, and which rule decides |
+
+See [Permissions](Permissions) for examples.
+
+## Key binds
+
+| Command | Who | Does |
+|---|---|---|
+| `/cc-keys` | anyone | list key actions, your keys, and whether the server can detect them |
+| `/cc-bind <id> <keys>` | any player | change your keys, e.g. `/cc-bind controlcore:open-preferences alt+3` |
+| `/cc-bind-reset <id>` | any player | go back to the server's keys |
+| `/cc-bind-server <id> <keys>` | `ofatech.controlcore.settings` | change the server's keys for everyone who has not chosen their own |
+| `/cc-bind-server-reset <id>` | `ofatech.controlcore.settings` | go back to the mod's default keys |
+| `/cc-keybind-add <name> <keys> <command>` | `ofatech.controlcore.settings` | create `custom:<name>`, run as the player who presses it |
+| `/cc-keybind-add-server <name> <keys> <command>` | `ofatech.controlcore.settings` | create `custom:<name>`, run as the server console |
+| `/cc-keybind-remove <name>` | `ofatech.controlcore.settings` | delete a bind admins created |
+| `/cc-keybind-list` | `ofatech.controlcore.settings` | list the binds admins created, with their commands |
+
+See [Key binds](Key-Binds) for the key syntax and which keys work.
+
+## Mods
+
+| Command | Who | Does |
+|---|---|---|
+| `/cc-mods` | `ofatech.controlcore.settings` | list the server's mods and whether they run |
+
+## Debug tools
+
+| Command | Who | Does |
+|---|---|---|
+| `/cc-input-probe` | `ofatech.controlcore.debug` | show in chat every action your client sends; run again to stop |
+| `/cc-key-probe input` | `ofatech.controlcore.debug` | a test screen that shows the code of every key pressed while it is open |
+
+Players without the debug permission don't see these commands at all.

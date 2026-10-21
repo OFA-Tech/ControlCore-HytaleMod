@@ -132,12 +132,17 @@ themselves with `@AutoService` and get their dependencies through their construc
 
 ## Documentation
 
+**Using ControlCore** (server owners, players, mod authors): the [wiki](https://github.com/OFA-Tech/ControlCore-HytaleMod/wiki).
+Its pages live in [wiki/](wiki) and are published to the GitHub wiki on every push to `main`; edit them there.
+
+**Working on ControlCore:**
+
 | Document | Contents |
 |---|---|
 | [docs/architecture.md](docs/architecture.md) | Layers, rules, lifecycle, package map |
 | [docs/components.md](docs/components.md) | Writing commands, event handlers, modules, tasks; injection |
 | [docs/platforms.md](docs/platforms.md) | Translating Hytale features; integrating other mods |
-| [docs/api.md](docs/api.md) | Using ControlCore from another mod; publishing |
+| [docs/api.md](docs/api.md) | Exact API reference for other mods; publishing |
 | [docs/development.md](docs/development.md) | Running, debugging, custom UI gotchas, known limits |
 
 ## Releasing
