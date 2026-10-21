@@ -59,6 +59,7 @@ panel.match.not_ends_with = Não termina com
 panel.match.not_equals = Diferente de
 panel.match.not_starts_with = Não começa com
 panel.match.starts_with = Começa com
+panel.restart_pending = Reinicie o servidor para aplicar: {keys}.
 panel.saved = Salvo: {name} = {value}
 panel.saved_default = Salvo: {name} = {value} (padrão)
 panel.saved_default_restart = Salvo: {name} = {value} (padrão). Vale após reiniciar.

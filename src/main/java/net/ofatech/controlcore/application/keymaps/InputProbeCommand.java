@@ -13,8 +13,11 @@ import net.ofatech.controlcore.domain.result.Result;
 @AutoService(ModCommand.class)
 public final class InputProbeCommand implements ModCommand {
 
-    /** Same node as the settings commands: server admins. */
-    static final String PERMISSION = "settings";
+    /**
+     * Debug tools need their own node ({@code <base>.debug}): operators have it; grant it to anyone else who
+     * debugs input.
+     */
+    static final String PERMISSION = "debug";
 
     private final InputProbe probe;
 

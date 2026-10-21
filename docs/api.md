@@ -210,6 +210,8 @@ api.keymaps().register(KeyAction.of("admintools", "announce")
 | `/cc-keybind-add-server <name> <keys> <command>` | `<base>.settings` | create `custom:<name>`, run as the server (usable with `<base>.keys.server`) |
 | `/cc-keybind-remove <name>` | `<base>.settings` | delete a bind created by an admin |
 | `/cc-keybind-list` | `<base>.settings` | list the binds admins created, with their commands |
+| `/cc-input-probe` | `<base>.debug` | debug tool: show in chat every key action your client sends (run again to stop) |
+| `/cc-key-probe input` | `<base>.debug` | debug tool: a test screen that shows the code of every key pressed while it is open |
 
 ControlCore registers `controlcore:open-preferences` (runs `/prefs`, default `CTRL + F`).
 

@@ -2,7 +2,9 @@ package net.ofatech.controlcore.application.serverconfig;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.api.ControlCoreEvents;
 import net.ofatech.controlcore.domain.event.ServerConfigChanged;
@@ -41,6 +43,10 @@ public final class ServerConfigEditor implements SettingsEditor {
     private final EventPublisher publisher;
     private final ControlCoreEvents events;
     private final Log log;
+    /** Restart-only keys changed since the server started, with the value they had then, by path. */
+    private final Map<String, Pending> pending = new ConcurrentHashMap<>();
+
+    private record Pending(String startValue, Text name) {}
 
     public ServerConfigEditor(ServerConfiguration server, EventPublisher publisher, ControlCoreEvents events, Log log) {
         this.server = server;
@@ -96,6 +102,17 @@ public final class ServerConfigEditor implements SettingsEditor {
                                 .with("name", entry.name())))));
     }
 
+    /**
+     * @return the names of the keys that were changed since the server started and only apply after a restart,
+     *     sorted by key; a key changed back to its value at start is left out
+     */
+    public List<Text> pendingRestart() {
+        return pending.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> entry.getValue().name())
+                .toList();
+    }
+
     @Override
     public Subscription onAnyChange(Consumer<? super SettingChanged> listener) {
         return events.subscribe(
@@ -113,6 +130,15 @@ public final class ServerConfigEditor implements SettingsEditor {
         }
         return server.write(entry.path(), value).map(after -> {
             if (!after.value().equals(entry.value())) {
+                if (entry.access() == SettingAccess.APPLIES_AFTER_RESTART) {
+                    Pending first = pending.computeIfAbsent(
+                            entry.path(),
+                            path -> new Pending(
+                                    entry.value(), definitionOf(entry).nameText()));
+                    if (first.startValue().equals(after.value())) {
+                        pending.remove(entry.path());
+                    }
+                }
                 SettingId id = idOf(entry.path());
                 log.info("Server config " + entry.path() + " changed from \"" + entry.value() + "\" to \""
                         + after.value() + "\"");

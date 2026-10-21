@@ -13,6 +13,8 @@
 - `/open-admin-config` now requires the `<base permission>.admin` node.
 
 ### Added
+- **Restart reminder:** Server Configs lists the keys changed since the server started that only apply after a
+  restart (a key changed back drops off), and admins get the same note in chat when they join.
 - **Translations** (API 1.5.0): the panel, command replies, errors and command help are shown in each
   player's game language: English, Brazilian Portuguese and Spanish. Missing texts fall back to English. Mods translate their own setting and key texts with
   `Text.key(key, fallback)` and their own `Server/Languages/<language>/<file>.lang` files.
@@ -47,7 +49,8 @@
   command are dropped.
 - The admin panel's Keymaps tab switches between **Server defaults** (the keys everyone gets; Default goes back
   to the mod's) and **My keys** (only yours; Default goes back to the server's). Open panels follow changes.
-- `/cc-input-probe` and `/cc-key-probe input` (admin): show what the client reports for each key.
+- `/cc-input-probe` and `/cc-key-probe input` (debug tools, `<base>.debug`; operators have it): show what the
+  client reports for each key.
 - **Server Configs** tab lists every key of the server's `config.json`, read from Hytale's config
   definition: live keys (name, MOTD, max players, max view radius, connection timeouts, require join
   permission) apply at once, restart keys (world defaults, rate limit, backup, update, world map) apply

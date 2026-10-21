@@ -26,6 +26,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
@@ -38,6 +40,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSearch;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Result;
@@ -147,6 +150,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
 
     private final List<Subscription> subscriptions = new CopyOnWriteArrayList<>();
     private final Translator tr;
+    private final Supplier<List<Text>> pendingRestart;
     private Tab selected;
     /** Admin panel only: whether the Keymaps tab edits the server's keys (else the viewer's own). */
     private boolean editingServerKeys = true;
@@ -155,6 +159,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         super(player, CustomPageLifetime.CanDismiss, Action.CODEC);
         this.log = log;
         this.tr = content.translator();
+        this.pendingRestart = content.pendingRestart();
         this.customKeyBinds = content.customKeyBinds();
         ControlPanelRequest shownSections = request.isEmpty() ? ControlPanelRequest.PLAYER_PREFERENCES : request;
         this.canAddBinds = content.manageKeys() && shownSections.includeRegisteredActions();
@@ -285,6 +290,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         }
         showTab(commands);
         showKeymapMode(commands);
+        showRestartNotice(commands);
 
         for (Tab tab : tabs) {
             events.addEventBinding(
@@ -447,7 +453,27 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                     }
                 })
                 .onFailure(error -> update.set(key.status + ".Text", tr.error(error)));
+        if (key == Section.SERVER_CONFIG) {
+            showRestartNotice(update);
+        }
         sendUpdate(update, false);
+    }
+
+    /** Lists the server config keys that wait for a restart, above the Server Configs list. */
+    private void showRestartNotice(UICommandBuilder commands) {
+        if (!sections.containsKey(Section.SERVER_CONFIG)) {
+            return;
+        }
+        List<Text> names = pendingRestart.get();
+        commands.set("#ServerRestart.Visible", !names.isEmpty());
+        commands.set(
+                "#ServerRestart.Text",
+                names.isEmpty()
+                        ? ""
+                        : tr.t(
+                                "controlcore.panel.restart_pending",
+                                "keys",
+                                names.stream().map(tr::translate).collect(Collectors.joining(", "))));
     }
 
     private void editBind(String id) {
@@ -545,6 +571,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 showValue(section, SettingsSection.kindOf(snapshot), key.row(index), snapshot, update);
                 update.set(key.row(index) + " #Description.Text", section.description(snapshot));
                 update.set(key.status + ".Text", section.changedElsewhere(snapshot));
+                if (key == Section.SERVER_CONFIG) {
+                    showRestartNotice(update);
+                }
                 sendUpdate(update, false);
             });
         } catch (RuntimeException e) {

@@ -208,6 +208,11 @@ class ModRuntimeTest {
                 .isEmpty();
         assertThat(platform.commands.commands.get("cc-perm").spec().permission())
                 .contains("settings");
+        assertThat(platform.commands.commands.get("cc-input-probe").spec().permission())
+                .as("debug tools are not for every admin")
+                .contains("debug");
+        assertThat(platform.commands.commands.get("cc-key-probe").spec().permission())
+                .contains("debug");
         assertThat(platform.commands.commands.get("cc-pref").spec().permission())
                 .isEmpty();
         assertThat(platform.commands.commands.get("cc-pref").spec().playerOnly())
