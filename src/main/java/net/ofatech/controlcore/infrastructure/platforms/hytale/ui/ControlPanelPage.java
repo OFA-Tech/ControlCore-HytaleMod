@@ -63,6 +63,12 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private static final String COLOR_ROW = "Pages/ControlCore/SettingColorRow.ui";
     private static final String LIST_ROW = "Pages/ControlCore/SettingListRow.ui";
     private static final String LIST_ITEM = "Pages/ControlCore/SettingListItem.ui";
+    private static final String MOD_ROW = "Pages/ControlCore/ModRow.ui";
+    private static final String MODS_SEARCH = "ModsSearch";
+    private static final String MOD_SETTINGS = "ModSettings";
+    private static final String MOD_KEYS = "ModKeys";
+    private static final String MOD_CONFIG = "ModConfig";
+    private static final String MOD_ENABLE = "ModEnable";
     private static final String CHOICE_ROW = "Pages/ControlCore/SettingChoiceRow.ui";
     private static final String INFO_ROW = "Pages/ControlCore/SettingInfoRow.ui";
     private static final String CUSTOM_BIND_ROW = "Pages/ControlCore/SettingCustomBindRow.ui";
@@ -93,7 +99,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         SERVER(ControlPanelTab.SERVER_CONFIGS, "#ServerTab", "#ServerTabButton"),
         SETTINGS(ControlPanelTab.MOD_SETTINGS, "#SettingsTab", "#SettingsTabButton"),
         PLAYER(ControlPanelTab.PLAYER_PREFS, "#PlayerTab", "#PlayerTabButton"),
-        KEYMAP(ControlPanelTab.KEYMAPS, "#KeymapTab", "#KeymapTabButton");
+        KEYMAP(ControlPanelTab.KEYMAPS, "#KeymapTab", "#KeymapTabButton"),
+        MODS(ControlPanelTab.MODS, "#ModsTab", "#ModsTabButton");
 
         private final ControlPanelTab tab;
         private final String group;
@@ -119,6 +126,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                 case SERVER, SETTINGS -> request.includeServerSettings();
                 case PLAYER -> request.includePlayerPreferences();
                 case KEYMAP -> request.includeRegisteredActions();
+                case MODS -> true;
             };
         }
     }
@@ -164,6 +172,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
     private final List<Subscription> subscriptions = new CopyOnWriteArrayList<>();
     private final Translator tr;
     private final Supplier<List<Text>> pendingRestart;
+    private final ModsSection mods;
+    /** Mods whose read-only config text is open in the Mods tab. */
+    private final Set<String> openConfigs = new java.util.HashSet<>();
+
     private Tab selected;
     /** Admin panel only: whether the Keymaps tab edits the server's keys (else the viewer's own). */
     private boolean editingServerKeys = true;
@@ -173,6 +185,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
         this.log = log;
         this.tr = content.translator();
         this.pendingRestart = content.pendingRestart();
+        this.mods = new ModsSection(content.mods(), tr);
         this.customKeyBinds = content.customKeyBinds();
         ControlPanelRequest shownSections = request.isEmpty() ? ControlPanelRequest.PLAYER_PREFERENCES : request;
         this.canAddBinds = content.manageKeys() && shownSections.includeRegisteredActions();
@@ -232,6 +245,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
                             tr.t("controlcore.panel.empty.server_keymaps"),
                             tr));
         }
+        content.focus().ifPresent(this::focusMod);
     }
 
     @Override
@@ -277,6 +291,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             events.addEventBinding(CustomUIEventBindingType.ValueChanged, match, search);
             applySearch(key, section, commands, false);
         });
+        buildMods(commands, events);
         for (Tab tab : Tab.values()) {
             commands.set(tab.button + ".Visible", tabs.contains(tab));
         }
@@ -353,6 +368,17 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             editBind(action.id);
         } else if (REMOVE_BIND.equals(name)) {
             removeBind(action.id);
+        } else if (MODS_SEARCH.equals(name)) {
+            mods.search(action.value, ModsSection.Filter.of(action.filter));
+            UICommandBuilder update = new UICommandBuilder();
+            applyModsSearch(update, true);
+            sendUpdate(update, false);
+        } else if (MOD_SETTINGS.equals(name) || MOD_KEYS.equals(name)) {
+            openModSettings(action.id, MOD_KEYS.equals(name));
+        } else if (MOD_CONFIG.equals(name)) {
+            toggleModConfig(action.id);
+        } else if (MOD_ENABLE.equals(name)) {
+            setModEnabled(action.id, Boolean.TRUE.equals(action.checked));
         } else if (name.startsWith(TAB_PREFIX)) {
             selectTab(name.substring(TAB_PREFIX.length()));
         } else {
@@ -777,6 +803,170 @@ final class ControlPanelPage extends InteractiveCustomUIPage<ControlPanelPage.Ac
             }
         }
         return Optional.empty();
+    }
+
+    // --- Mods tab ----------------------------------------------------------------------------------------
+
+    private void buildMods(UICommandBuilder commands, UIEventBuilder events) {
+        List<net.ofatech.controlcore.domain.model.mods.ModsView.Entry> entries = mods.load();
+        commands.set(
+                "#ModsSearchFilter.Entries",
+                Arrays.stream(ModsSection.Filter.values())
+                        .map(option -> new DropdownEntryInfo(
+                                LocalizableString.fromString(tr.t(option.translationKey())), option.name()))
+                        .toList());
+        commands.set("#ModsSearchFilter.Value", mods.filter().name());
+        commands.set("#ModsSearch.Value", mods.query());
+        commands.set("#ModsSearch.PlaceholderText", tr.t("controlcore.panel.mods.search_hint"));
+        EventData search = new EventData()
+                .append(Action.KEY, MODS_SEARCH)
+                .append(Action.VALUE, "#ModsSearch.Value")
+                .append(Action.FILTER, "#ModsSearchFilter.Value");
+        events.addEventBinding(CustomUIEventBindingType.ValueChanged, "#ModsSearch", search);
+        events.addEventBinding(CustomUIEventBindingType.ValueChanged, "#ModsSearchFilter", search);
+        boolean admin = mods.view().canManage();
+        for (int index = 0; index < entries.size(); index++) {
+            var entry = entries.get(index);
+            var mod = entry.mod();
+            String row = "#ModsList[" + index + "]";
+            commands.append("#ModsList", MOD_ROW);
+            commands.set(row + " #Name.Text", mod.name());
+            commands.set(row + " #Version.Text", mods.version(mod));
+            commands.set(row + " #Badges.Text", mods.badges(entry));
+            commands.set(row + " #Description.Text", mods.description(mod));
+            commands.set(row + " #Details.Text", mods.details(mod));
+            mod.logo().ifPresent(logo -> commands.set(row + " #ModLogo.Background", "../../" + logo));
+            boolean settingsHere = (entry.hasServerSettings() && tabs.contains(Tab.SETTINGS))
+                    || (entry.hasPreferences() && tabs.contains(Tab.PLAYER));
+            commands.set(row + " #Settings.Visible", settingsHere);
+            commands.set(row + " #Keys.Visible", entry.hasKeys() && tabs.contains(Tab.KEYMAP));
+            commands.set(row + " #Config.Visible", admin && mod.running() && !mod.core());
+            commands.set(row + " #EnabledBox.Visible", entry.manageable());
+            if (entry.manageable()) {
+                commands.set(row + " #Enabled.Value", mod.enabledAfterRestart());
+                events.addEventBinding(
+                        CustomUIEventBindingType.ValueChanged,
+                        row + " #Enabled",
+                        new EventData()
+                                .append(Action.KEY, MOD_ENABLE)
+                                .append(Action.ID, mod.id())
+                                .append(Action.CHECKED, row + " #Enabled.Value"));
+            }
+            if (openConfigs.contains(mod.id())) {
+                commands.set(row + " #ConfigText.Visible", true);
+                commands.set(row + " #ConfigText.Text", mods.configText(mod.id()));
+            }
+            events.addEventBinding(
+                    CustomUIEventBindingType.Activating,
+                    row + " #Settings",
+                    new EventData().append(Action.KEY, MOD_SETTINGS).append(Action.ID, mod.id()));
+            events.addEventBinding(
+                    CustomUIEventBindingType.Activating,
+                    row + " #Keys",
+                    new EventData().append(Action.KEY, MOD_KEYS).append(Action.ID, mod.id()));
+            events.addEventBinding(
+                    CustomUIEventBindingType.Activating,
+                    row + " #Config",
+                    new EventData().append(Action.KEY, MOD_CONFIG).append(Action.ID, mod.id()));
+        }
+        applyModsSearch(commands, false);
+    }
+
+    private void applyModsSearch(UICommandBuilder commands, boolean report) {
+        var entries = mods.entries();
+        for (int index = 0; index < entries.size(); index++) {
+            commands.set("#ModsList[" + index + "].Visible", mods.shown(entries.get(index)));
+        }
+        int shownCount = mods.shownCount();
+        if (shownCount == 0) {
+            commands.set("#ModsStatus.Text", tr.t("controlcore.panel.mods.none"));
+        } else if (report) {
+            commands.set("#ModsStatus.Text", tr.t("controlcore.panel.mods.shown", "shown", shownCount));
+        } else {
+            commands.set("#ModsStatus.Text", "");
+        }
+    }
+
+    /** Jumps to the mod's settings (or preferences) or keys, searched by its id. */
+    private void openModSettings(String modId, boolean keys) {
+        var entry = mods.find(modId).orElse(null);
+        if (entry == null || entry.namespace().isEmpty()) {
+            return;
+        }
+        Tab tab;
+        Section section;
+        if (keys) {
+            tab = Tab.KEYMAP;
+            section = editingServerKeys && canAddBinds ? Section.SERVER_KEYMAPS : Section.KEYMAPS;
+        } else if (entry.hasServerSettings() && tabs.contains(Tab.SETTINGS)) {
+            tab = Tab.SETTINGS;
+            section = Section.SETTINGS;
+        } else {
+            tab = Tab.PLAYER;
+            section = Section.PREFS;
+        }
+        if (!tabs.contains(tab) || !sections.containsKey(section)) {
+            return;
+        }
+        String text = "mod:" + entry.namespace().get();
+        searches.put(section, SettingSearch.parse(text, SettingSearch.Filter.ALL, SettingSearch.Match.CONTAINS));
+        selected = tab;
+        UICommandBuilder update = new UICommandBuilder();
+        update.set(section.search + ".Value", text);
+        update.set(section.search + "Filter.Value", SettingSearch.Filter.ALL.label());
+        update.set(section.search + "Match.Value", SettingSearch.Match.CONTAINS.label());
+        applySearch(section, sections.get(section), update, true);
+        showTab(update);
+        sendUpdate(update, false);
+    }
+
+    /** Opens on the settings (or preferences) of the mod whose settings ids start with {@code namespace}. */
+    private void focusMod(String namespace) {
+        String text = "mod:" + namespace;
+        SettingSearch search = SettingSearch.parse(text, SettingSearch.Filter.ALL, SettingSearch.Match.CONTAINS);
+        boolean serverSettings = sections.containsKey(Section.SETTINGS)
+                && !sections.get(Section.SETTINGS).entries().stream()
+                        .filter(entry -> entry instanceof SettingsSection.Row)
+                        .map(entry -> ((SettingsSection.Row) entry).snapshot())
+                        .filter(snapshot -> snapshot.id().namespace().equals(namespace))
+                        .toList()
+                        .isEmpty();
+        Section section = serverSettings ? Section.SETTINGS : Section.PREFS;
+        Tab tab = serverSettings ? Tab.SETTINGS : Tab.PLAYER;
+        if (sections.containsKey(section) && tabs.contains(tab)) {
+            searches.put(section, search);
+            selected = tab;
+        }
+    }
+
+    private void toggleModConfig(String modId) {
+        if (modId == null || !mods.view().canManage()) {
+            return;
+        }
+        if (!openConfigs.remove(modId)) {
+            openConfigs.add(modId);
+        }
+        rebuild();
+    }
+
+    private void setModEnabled(String modId, boolean enabled) {
+        var result = mods.view().setEnabled(modId, enabled);
+        if (result.isSuccess()) {
+            rebuild();
+        }
+        UICommandBuilder update = new UICommandBuilder();
+        update.set(
+                "#ModsStatus.Text",
+                result.isSuccess()
+                        ? tr.t(
+                                enabled
+                                        ? "controlcore.panel.mods.enabled_restart"
+                                        : "controlcore.panel.mods.disabled_restart",
+                                "name",
+                                result.value().mod().name())
+                        : tr.error(result.error()));
+        showRestartNotice(update);
+        sendUpdate(update, false);
     }
 
     private void selectTab(String tabName) {

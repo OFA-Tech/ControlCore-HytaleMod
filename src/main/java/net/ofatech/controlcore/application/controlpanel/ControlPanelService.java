@@ -1,10 +1,12 @@
 package net.ofatech.controlcore.application.controlpanel;
 
 import com.google.auto.service.AutoService;
+import java.util.List;
 import java.util.Optional;
 import net.ofatech.controlcore.api.ControlPanelApi;
 import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
+import net.ofatech.controlcore.application.mods.ModsEditor;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.application.settings.PermittedSettingsEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
@@ -35,6 +37,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final KeymapsEditor keymaps;
     private final SettingPermissionPolicy permissions;
     private final Texts texts;
+    private final ModsEditor mods;
 
     public ControlPanelService(
             ControlPanelSettings settings,
@@ -46,7 +49,8 @@ public final class ControlPanelService implements ControlPanelApi {
             ServerConfigEditor serverConfig,
             KeymapsEditor keymaps,
             SettingPermissionPolicy permissions,
-            Texts texts) {
+            Texts texts,
+            ModsEditor mods) {
         this.settings = settings;
         this.players = players;
         this.server = server;
@@ -57,6 +61,7 @@ public final class ControlPanelService implements ControlPanelApi {
         this.keymaps = keymaps;
         this.permissions = permissions;
         this.texts = texts;
+        this.mods = mods;
     }
 
     /**
@@ -85,6 +90,43 @@ public final class ControlPanelService implements ControlPanelApi {
 
     @Override
     public Result<Void> open(PlayerId player, ControlPanelRequest request) {
+        return open(player, request, Optional.empty());
+    }
+
+    /**
+     * Opens the panel on one mod's settings: the admin panel for players who may open it, else their preferences.
+     *
+     * @param mod the mod's id ({@code Group:Name}), name or the first part of its setting ids
+     */
+    public Result<Void> openForMod(PlayerId player, String mod) {
+        String wanted = mod == null ? "" : mod.strip();
+        var entry = mods.viewedBy(Optional.of(player)).list().stream()
+                .filter(candidate -> candidate.mod().id().equalsIgnoreCase(wanted)
+                        || candidate.mod().name().equalsIgnoreCase(wanted)
+                        || candidate
+                                .namespace()
+                                .filter(wanted::equalsIgnoreCase)
+                                .isPresent())
+                .findFirst();
+        if (entry.isEmpty()) {
+            return Result.failure(Error.notFound(
+                    "Mods.Unknown",
+                    Text.key("controlcore.errors.mods.unknown", "There is no mod {id}.")
+                            .with("id", wanted)));
+        }
+        if (entry.get().namespace().isEmpty()) {
+            return Result.failure(Error.notFound(
+                    "Mods.NoSettings",
+                    Text.key("controlcore.errors.mods.no_settings", "{name} has no settings in ControlCore.")
+                            .with("name", entry.get().mod().name())));
+        }
+        ControlPanelRequest request = mayOpenAdminPanel(player) && settings.panelEnabled()
+                ? ControlPanelRequest.ALL
+                : ControlPanelRequest.PLAYER_PREFERENCES;
+        return open(player, request, entry.get().namespace());
+    }
+
+    private Result<Void> open(PlayerId player, ControlPanelRequest request, Optional<String> focus) {
         if (request.isEmpty()) {
             return Result.failure(Error.validation(
                     "ControlPanel.NothingToShow",
@@ -108,7 +150,7 @@ public final class ControlPanelService implements ControlPanelApi {
         // The HyUI page is the full admin layout, so narrower requests always use the built-in panel.
         ControlPanelView view = capabilities
                 .find(ControlPanelView.class)
-                .filter(uiMod -> request.equals(ControlPanelRequest.ALL))
+                .filter(uiMod -> request.equals(ControlPanelRequest.ALL) && focus.isEmpty())
                 .orElse(platformView);
         return view.open(
                 player,
@@ -122,6 +164,12 @@ public final class ControlPanelService implements ControlPanelApi {
                         settings.startTab(player),
                         permissions.isAdmin(player),
                         texts.forPlayer(Optional.of(player)),
-                        serverConfig::pendingRestart));
+                        () -> {
+                            List<Text> names = new java.util.ArrayList<>(serverConfig.pendingRestart());
+                            names.addAll(mods.pendingRestart());
+                            return names;
+                        },
+                        mods.viewedBy(Optional.of(player)),
+                        focus));
     }
 }

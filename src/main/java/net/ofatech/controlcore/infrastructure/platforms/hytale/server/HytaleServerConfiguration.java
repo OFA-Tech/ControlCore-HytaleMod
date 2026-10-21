@@ -202,19 +202,26 @@ public final class HytaleServerConfiguration implements ServerConfiguration {
         } catch (RuntimeException e) {
             return Result.failure(Error.validation("ServerConfig.InvalidValue", path + ": " + reason(e)));
         }
-        config.markChanged();
         if (path.equals(MAX_VIEW_RADIUS)) {
             applyViewRadius(config.getMaxViewRadius());
         }
+        save(config);
+        return Result.success(
+                entry(key, config, encode(config), new HytaleServerConfig(), encode(new HytaleServerConfig())));
+    }
+
+    /**
+     * Saves {@code config} to {@code config.json}, after any save still running: Hytale writes config.json.tmp and
+     * moves it, so overlapping saves collide.
+     */
+    public synchronized void save(HytaleServerConfig config) {
+        config.markChanged();
         if (config.consumeHasChanged()) {
-            // One save at a time: Hytale writes config.json.tmp and moves it, so overlapping saves collide.
             saving = saving.thenCompose(done -> HytaleServerConfig.save(config)).exceptionally(failure -> {
                 log.error("Could not save the server config", failure);
                 return null;
             });
         }
-        return Result.success(
-                entry(key, config, encode(config), new HytaleServerConfig(), encode(new HytaleServerConfig())));
     }
 
     // --- Keys ----------------------------------------------------------------------------------------------

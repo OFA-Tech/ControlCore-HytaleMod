@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Shown in the Mods tab for mods without a logo of their own. -->
+  <rect x="16" y="16" width="480" height="480" rx="72" fill="#1b2742"/>
+  <rect x="34" y="34" width="444" height="444" rx="56" fill="none" stroke="#3c5283" stroke-width="6"/>
+  <path d="M 150 190 L 220 190 A 36 36 0 1 1 292 190 L 362 190 L 362 260 A 36 36 0 1 0 362 332 L 362 380 L 150 380 Z"
+        fill="#7f97c8" stroke="#0b1222" stroke-width="10" stroke-linejoin="round"/>
+</svg>

@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import net.ofatech.controlcore.domain.guard.Guard;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
+import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
@@ -20,6 +21,8 @@ import net.ofatech.controlcore.domain.model.text.Translator;
  * @param manageKeys whether the viewer may change the server's keys and admins' own binds
  * @param translator shows text in the viewer's language (since API 1.5.0)
  * @param pendingRestart names of the server config keys changed since start that apply after a restart
+ * @param mods the Mods tab as the viewer sees it
+ * @param focus a mod id (the first part of setting ids) whose settings the panel opens on, if any
  */
 public record ControlPanelContent(
         ServerSettings server,
@@ -30,7 +33,9 @@ public record ControlPanelContent(
         ControlPanelTab startTab,
         boolean manageKeys,
         Translator translator,
-        Supplier<List<Text>> pendingRestart) {
+        Supplier<List<Text>> pendingRestart,
+        ModsView mods,
+        java.util.Optional<String> focus) {
 
     public ControlPanelContent {
         Guard.notNull(server, "server");
@@ -41,5 +46,7 @@ public record ControlPanelContent(
         Guard.notNull(startTab, "startTab");
         Guard.notNull(translator, "translator");
         Guard.notNull(pendingRestart, "pendingRestart");
+        Guard.notNull(mods, "mods");
+        Guard.notNull(focus, "focus");
     }
 }

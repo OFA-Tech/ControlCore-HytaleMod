@@ -354,7 +354,8 @@ class ModRuntimeTest {
                         "controlcore:control-panel-enabled",
                         "controlcore:empty-hand-keys",
                         "controlcore:welcome-message",
-                        "controlcore:welcome-message-color");
+                        "controlcore:welcome-message-color",
+                        "controlcore:mods-hidden");
     }
 
     @Test
@@ -427,5 +428,68 @@ class ModRuntimeTest {
                         .keymaps()
                         .find(net.ofatech.controlcore.domain.model.settings.SettingId.of("controlcore:toggle-hud")))
                 .isPresent();
+    }
+
+    @Test
+    void theModsTabLinksModsToTheirSettingsAndLetsAdminsTurnThemOff() {
+        platform.modCatalog.add("OFATech:ControlCore", false);
+        platform.modCatalog.add("Acme:Homes", false);
+        platform.modCatalog.add("Hytale:Weather", true);
+        runtime.setup();
+        runtime.start();
+        ControlCoreApi.get()
+                .settings()
+                .register(net.ofatech.controlcore.domain.model.settings.SettingDefinition.server(
+                        "homes", "max", net.ofatech.controlcore.domain.model.settings.SettingType.integer(1, 9), 3));
+        PlayerInfo admin = platform.players.join("Admin");
+        PlayerInfo player = platform.players.join("Player");
+
+        platform.commands.run(COMMAND, admin, Map.of());
+        var mods = platform.controlPanel.lastContent.mods();
+        var homes = mods.list().stream()
+                .filter(e -> e.mod().id().equals("Acme:Homes"))
+                .findFirst()
+                .orElseThrow();
+        var self = mods.list().stream()
+                .filter(e -> e.mod().id().equals("OFATech:ControlCore"))
+                .findFirst()
+                .orElseThrow();
+        var weather =
+                mods.list().stream().filter(e -> e.mod().core()).findFirst().orElseThrow();
+
+        assertThat(homes.namespace()).contains("homes");
+        assertThat(homes.hasServerSettings()).isTrue();
+        assertThat(self.namespace()).contains("controlcore");
+        assertThat(self.hasKeys()).isTrue();
+        assertThat(self.manageable()).as("cannot turn itself off").isFalse();
+        assertThat(weather.manageable()).isFalse();
+        assertThat(homes.manageable()).isTrue();
+
+        assertThat(mods.setEnabled("Acme:Homes", false).isSuccess()).isTrue();
+        assertThat(platform.modCatalog.mods().stream()
+                        .filter(m -> m.id().equals("Acme:Homes"))
+                        .findFirst()
+                        .orElseThrow()
+                        .changesAfterRestart())
+                .isTrue();
+        assertThat(mods.setEnabled("Hytale:Weather", false).error().code()).isEqualTo("Mods.Forbidden");
+
+        platform.commands.run("cc-set", admin, Map.of("id", "controlcore:mods-hidden", "value", "Acme:Homes"));
+        platform.deniedNodes.addAll(java.util.List.of("settings", "admin"));
+        platform.commands.run("prefs", player, Map.of());
+        var playersView = platform.controlPanel.lastContent.mods();
+        assertThat(playersView.canManage()).isFalse();
+        assertThat(playersView.list()).extracting(e -> e.mod().id()).doesNotContain("Acme:Homes");
+        assertThat(playersView.setEnabled("OFATech:ControlCore", false).isFailure())
+                .isTrue();
+
+        var opened = platform.commands.run("cc-config", player, Map.of("mod", "controlcore"));
+        assertThat(opened.isSuccess()).isTrue();
+        assertThat(platform.controlPanel.lastContent.focus()).contains("controlcore");
+        assertThat(platform.commands
+                        .run("cc-config", player, Map.of("mod", "nothing"))
+                        .error()
+                        .code())
+                .isEqualTo("Mods.Unknown");
     }
 }

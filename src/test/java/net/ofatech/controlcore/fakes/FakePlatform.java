@@ -42,6 +42,8 @@ public final class FakePlatform implements Platform {
     public final FakeSettingPermissionStore settingPermissions = new FakeSettingPermissionStore();
     /** Last value ControlCore asked the empty hand to report keys with; null until asked. */
     public volatile Boolean emptyHandKeys;
+
+    public final FakeModCatalog modCatalog = new FakeModCatalog();
     /** Per player: the HUD parts hidden now, after every update ControlCore sent. */
     public final java.util.Map<
                     net.ofatech.controlcore.domain.model.PlayerId,
@@ -73,6 +75,7 @@ public final class FakePlatform implements Platform {
         binder.bind(Scheduler.class, scheduler);
         binder.bind(CommandRegistrar.class, commands);
         binder.bind(ModLookup.class, mods);
+        binder.bind(net.ofatech.controlcore.domain.ports.mods.ModCatalog.class, modCatalog);
         binder.bind(ServerConfiguration.class, serverConfig);
         binder.bind(ControlPanelView.class, controlPanel);
         binder.bind(net.ofatech.controlcore.domain.ports.game.PlayerInput.class, input);
