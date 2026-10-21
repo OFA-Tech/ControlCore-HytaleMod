@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.9.0 - 2026-10-20
+
+First public release (beta). Requires Hytale server 0.7.2 (`>=0.7.2 <0.8.0`); the API for other mods is
+version 1.5.0 (`ControlCoreApi.VERSION`).
+
 ### Changed
 - Rebuilt on the OFA-Tech Hytale mod template: `com.azuredoom.hytale-tools` 1.0.51 instead of
   ScaffoldIt, Gradle 9.8.1, Java 25, Hytale server 0.7.2 (`>=0.7.2 <0.8.0`).
@@ -86,5 +91,5 @@
 - ArchUnit architecture tests, runtime and feature tests with fakes, Spotless, build workflow.
 
 ### Removed
-- Welcome message on join (`ExampleEvent`), avaje-inject, the reflective `ModComponentScanner`,
+- The template's example join message (`ExampleEvent`), avaje-inject, the reflective `ModComponentScanner`,
   unused `*Extensions` helpers and the unused `config/TemplatePlugin/config.json`.

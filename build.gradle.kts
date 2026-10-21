@@ -119,7 +119,11 @@ publishing {
     publications {
         create<MavenPublication>("mod") {
             artifactId = prop("mod_id").lowercase()
-            from(components["java"])
+            // Only the jars: the Hytale tooling adds a dev-only runtime dependency that mods must not inherit,
+            // and everything else ControlCore uses is provided by the server.
+            artifact(tasks.named("jar"))
+            artifact(tasks.named("sourcesJar"))
+            artifact(tasks.named("javadocJar"))
             pom {
                 name.set(prop("mod_name"))
                 description.set(prop("mod_description"))

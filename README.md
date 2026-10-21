@@ -73,7 +73,9 @@ Built on Hytale server **0.7.2** (`>=0.7.2 <0.8.0`), Java 25, Gradle 9.8.1 and
 
 ## Installing
 
-Put `ControlCore-<version>.jar` in the server's `mods/` folder. HyUI (`Ellie:HyUI`) is optional. HyUI
+Download `ControlCore-<version>.jar` from the
+[GitHub releases](https://github.com/OFA-Tech/ControlCore-HytaleMod/releases) (or CurseForge) and put it in the
+server's `mods/` folder. 0.9.x is a beta: back up `mods/OFATech_ControlCore/` before updating. HyUI (`Ellie:HyUI`) is optional. HyUI
 0.9.8 is not compatible with Hytale 0.7 (its pages crash the world on the first update), so ControlCore
 detects that and keeps using the built-in panel.
 
@@ -129,9 +131,13 @@ themselves with `@AutoService` and get their dependencies through their construc
 
 ## Releasing
 
-`.github/workflows/release.yml.disabled` is turned off until the first release; rename it to `release.yml` and uncomment it to enable.
-Then push a tag `vX.Y.Z`: it builds with `-Pstrict`, publishes to GitHub Packages and attaches the
-jars to a GitHub Release.
+1. Set `version` in `gradle.properties` and rename `## Unreleased` in `CHANGELOG.md` to `## X.Y.Z - <date>`
+   (keep an empty `## Unreleased` above it). Merge that to `main`.
+2. Tag `main` and push the tag: `git tag vX.Y.Z` then `git push origin vX.Y.Z`.
+3. `.github/workflows/release.yml` checks the tag matches `version`, builds with `-Pstrict`, publishes
+   `net.ofatech:controlcore` to GitHub Packages and creates a GitHub release with the jar and that version's
+   changelog section. Versions below 1.0.0 (and `-rc.N` style suffixes) are marked as pre-releases.
+4. Upload the same jar to CurseForge with the text in [docs/curseforge.md](docs/curseforge.md).
 
 ## License
 

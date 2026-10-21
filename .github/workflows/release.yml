@@ -1,0 +1,66 @@
+name: Release
+
+# Push a tag vX.Y.Z that matches `version` in gradle.properties. Versions below 1.0.0 and versions with a
+# suffix (v1.2.0-rc.1) are published as pre-releases. Notes come from that version's section in CHANGELOG.md.
+
+on:
+    push:
+        tags:
+            - "v*.*.*"
+
+permissions:
+    contents: write
+    packages: write
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: actions/setup-java@v5
+              with:
+                  distribution: temurin
+                  java-version: "25"
+
+            - uses: gradle/actions/setup-gradle@v5
+
+            - name: Check the tag matches gradle.properties
+              run: |
+                  VERSION=$(grep -E '^version\s*=' gradle.properties | cut -d= -f2 | xargs)
+                  if [ "v${VERSION}" != "${GITHUB_REF_NAME}" ]; then
+                    echo "Tag ${GITHUB_REF_NAME} does not match version ${VERSION} in gradle.properties"
+                    exit 1
+                  fi
+
+            - name: Build
+              run: ./gradlew build -Pstrict
+
+            - name: Publish to GitHub Packages
+              run: ./gradlew publish
+              env:
+                  GITHUB_ACTOR: ${{ github.actor }}
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Create GitHub release
+              run: |
+                  MOD_NAME=$(grep -E '^mod_name\s*=' gradle.properties | cut -d= -f2 | xargs)
+                  VERSION="${GITHUB_REF_NAME#v}"
+                  # The CHANGELOG.md section "## <version> ..." up to the next "## " heading.
+                  awk -v v="$VERSION" '
+                    /^## / { if (found) exit; if (index($0, "## " v) == 1) { found = 1; next } }
+                    found { print }
+                  ' CHANGELOG.md > release-notes.md
+                  if [ ! -s release-notes.md ]; then
+                    echo "No section for ${VERSION} in CHANGELOG.md"
+                    exit 1
+                  fi
+                  FLAGS=""
+                  case "$VERSION" in
+                    0.*|*-*) FLAGS="--prerelease" ;;
+                  esac
+                  gh release create "${GITHUB_REF_NAME}" build/libs/${MOD_NAME}-${VERSION}.jar \
+                    --title "${MOD_NAME} ${VERSION}" \
+                    --notes-file release-notes.md $FLAGS
+              env:
+                  GH_TOKEN: ${{ github.token }}
