@@ -3,6 +3,7 @@ package net.ofatech.controlcore.architecture;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.fields;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static com.tngtech.archunit.library.dependencies.SlicesRuleDefinition.slices;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -92,6 +93,10 @@ class ArchitectureTest {
             .should()
             .dependOnClassesThat()
             .resideInAPackage(PLATFORMS);
+
+    @ArchTest
+    static final ArchRule platformsAreIndependent =
+            slices().matching(ROOT + ".infrastructure.platforms.(*)..").should().notDependOnEachOther();
 
     @ArchTest
     static final ArchRule modPlatformDescriptorsAreSafeToLoad = classes()

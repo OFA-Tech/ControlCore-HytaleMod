@@ -16,6 +16,7 @@ infrastructure  implementations of ports
   ├── persistence     storage
   └── platforms/
       ├── hytale/     Hytale (required host)
+      ├── custominventory/  SupremoSama:CustomInventory (optional)
       └── <mod>/      another mod (optional)
 ```
 

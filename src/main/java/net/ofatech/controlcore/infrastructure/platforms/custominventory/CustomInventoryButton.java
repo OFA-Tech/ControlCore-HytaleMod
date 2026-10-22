@@ -1,4 +1,4 @@
-package net.ofatech.controlcore.infrastructure.platforms.hytale.mods;
+package net.ofatech.controlcore.infrastructure.platforms.custominventory;
 
 import com.hypixel.hytale.common.plugin.PluginIdentifier;
 import com.hypixel.hytale.server.core.plugin.PluginBase;
@@ -10,7 +10,7 @@ import net.ofatech.controlcore.application.controlpanel.ControlPanelService;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-final class CustomInventoryBridge {
+final class CustomInventoryButton {
 
     static final String BUTTON_ID = "controlcore:panel";
     static final String BUTTON_TITLE = "ControlCore";
@@ -18,7 +18,7 @@ final class CustomInventoryBridge {
 
     private static final String API = "com.supremosan.custominventory.";
 
-    private CustomInventoryBridge() {}
+    private CustomInventoryButton() {}
 
     static AutoCloseable install(ControlPanelService panel, Log log) {
         Consumer<Object> openPanel = context -> {
@@ -51,9 +51,9 @@ final class CustomInventoryBridge {
     }
 
     private static ClassLoader pluginLoader() {
-        PluginBase plugin = PluginManager.get().getPlugin(PluginIdentifier.fromString(CustomInventoryButton.MOD_ID));
+        PluginBase plugin = PluginManager.get().getPlugin(PluginIdentifier.fromString(CustomInventoryPlatform.MOD_ID));
         if (plugin == null) {
-            throw new IllegalStateException(CustomInventoryButton.MOD_ID + " is not loaded");
+            throw new IllegalStateException(CustomInventoryPlatform.MOD_ID + " is not loaded");
         }
         return plugin.getClass().getClassLoader();
     }
