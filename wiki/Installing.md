@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Hytale server **0.7.2** (any 0.7.x from 0.7.2 on; not 0.8).
+- Hytale server **0.7.2 or newer 0.7.x** (tested on 0.7.3; not 0.8).
 - No other mod is needed.
 
 ## Steps
