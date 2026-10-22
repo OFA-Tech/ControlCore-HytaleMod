@@ -1,10 +1,7 @@
 package net.ofatech.controlcore.infrastructure.platforms.custominventory;
 
-import com.hypixel.hytale.common.plugin.PluginIdentifier;
-import com.hypixel.hytale.server.core.plugin.PluginBase;
-import com.hypixel.hytale.server.core.plugin.PluginManager;
-import com.hypixel.hytale.server.core.universe.PlayerRef;
 import java.lang.reflect.InvocationTargetException;
+import java.util.UUID;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.application.controlpanel.ControlPanelService;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -20,21 +17,20 @@ final class CustomInventoryButton {
 
     private CustomInventoryButton() {}
 
-    static AutoCloseable install(ControlPanelService panel, Log log) {
+    static AutoCloseable install(ClassLoader modClasses, ControlPanelService panel, Log log) {
         Consumer<Object> openPanel = context -> {
-            PlayerRef player = playerOf(context);
-            panel.openBestFor(PlayerId.of(player.getUuid()))
-                    .onFailure(error -> log.warn("Could not open the control panel for " + player.getUsername()
-                            + " from the inventory: " + error.code()));
+            PlayerId player = PlayerId.of(playerUuid(context));
+            panel.openBestFor(player)
+                    .onFailure(error -> log.warn(
+                            "Could not open the control panel for " + player + " from the inventory: " + error.code()));
         };
-        return register(openPanel);
+        return register(modClasses, openPanel);
     }
 
-    private static AutoCloseable register(Consumer<Object> action) {
+    private static AutoCloseable register(ClassLoader modClasses, Consumer<Object> action) {
         try {
-            ClassLoader loader = pluginLoader();
-            Class<?> pluginType = Class.forName(API + "CustomInventoryPlugin", true, loader);
-            Class<?> definitionType = Class.forName(API + "api.InventoryButtonDefinition", true, loader);
+            Class<?> pluginType = Class.forName(API + "CustomInventoryPlugin", true, modClasses);
+            Class<?> definitionType = Class.forName(API + "api.InventoryButtonDefinition", true, modClasses);
             Object plugin = pluginType.getMethod("get").invoke(null);
             Object registry = pluginType.getMethod("getInventoryRegistry").invoke(plugin);
             Object definition = definitionType
@@ -50,18 +46,11 @@ final class CustomInventoryButton {
         }
     }
 
-    private static ClassLoader pluginLoader() {
-        PluginBase plugin = PluginManager.get().getPlugin(PluginIdentifier.fromString(CustomInventoryPlatform.MOD_ID));
-        if (plugin == null) {
-            throw new IllegalStateException(CustomInventoryPlatform.MOD_ID + " is not loaded");
-        }
-        return plugin.getClass().getClassLoader();
-    }
-
-    private static PlayerRef playerOf(Object context) {
+    private static UUID playerUuid(Object context) {
         try {
-            return (PlayerRef) context.getClass().getMethod("playerRef").invoke(context);
-        } catch (ReflectiveOperationException | ClassCastException e) {
+            Object playerRef = context.getClass().getMethod("playerRef").invoke(context);
+            return (UUID) playerRef.getClass().getMethod("getUuid").invoke(playerRef);
+        } catch (ReflectiveOperationException | ClassCastException | NullPointerException e) {
             throw new IllegalStateException("CustomInventory passed an unexpected context", e);
         }
     }

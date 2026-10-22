@@ -60,8 +60,11 @@ implement it in `platforms/hytale/`, and bind it in `HytalePlatform.bind`.
 
 Ports for other mods are named after the capability, never after the mod (for example `MapMarkers`, not
 `BetterMapApi`). A feature asks `Capabilities.find(MapMarkers.class)` and does not care which mod provides it.
-Each mod gets its own folder, and platforms never depend on each other (an ArchUnit rule checks this), so an
-update of one mod only ever touches its folder.
+Each mod gets its own folder. A mod platform only uses our own code (`domain`, `api`, `application`) and that
+mod: never Hytale (`com.hypixel..`) and never another platform. Whatever it needs from the game comes through a
+port that the Hytale platform implements (for example `ModLookup.classLoader(modId)` to reach the mod's classes).
+ArchUnit checks both rules (`platformsAreIndependent`, `onlyTheHytalePlatformUsesHytale`), so an update of Hytale
+or of one mod only ever touches its own folder.
 
 Current integrations:
 

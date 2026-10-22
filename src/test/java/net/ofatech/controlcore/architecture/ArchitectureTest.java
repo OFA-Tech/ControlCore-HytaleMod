@@ -99,6 +99,17 @@ class ArchitectureTest {
             slices().matching(ROOT + ".infrastructure.platforms.(*)..").should().notDependOnEachOther();
 
     @ArchTest
+    static final ArchRule onlyTheHytalePlatformUsesHytale = noClasses()
+            .that()
+            .resideInAPackage(PLATFORMS)
+            .and()
+            .resideOutsideOfPackage(ROOT + ".infrastructure.platforms.hytale..")
+            .should()
+            .dependOnClassesThat()
+            .resideInAPackage("com.hypixel..")
+            .allowEmptyShould(true);
+
+    @ArchTest
     static final ArchRule modPlatformDescriptorsAreSafeToLoad = classes()
             .that()
             .implement(ModPlatform.class)

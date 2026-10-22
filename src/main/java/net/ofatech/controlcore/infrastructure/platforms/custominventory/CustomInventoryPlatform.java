@@ -2,6 +2,7 @@ package net.ofatech.controlcore.infrastructure.platforms.custominventory;
 
 import com.google.auto.service.AutoService;
 import net.ofatech.controlcore.application.controlpanel.ControlPanelService;
+import net.ofatech.controlcore.domain.ports.mods.ModLookup;
 import net.ofatech.controlcore.domain.ports.platform.CapabilityBinder;
 import net.ofatech.controlcore.domain.ports.platform.ModPlatform;
 import net.ofatech.controlcore.domain.ports.system.Log;
@@ -19,7 +20,11 @@ public final class CustomInventoryPlatform implements ModPlatform {
     @Override
     public void bind(CapabilityBinder binder) {
         Log log = binder.service(Log.class);
-        AutoCloseable button = CustomInventoryButton.install(binder.service(ControlPanelService.class), log);
+        ClassLoader modClasses = binder.service(ModLookup.class)
+                .classLoader(MOD_ID)
+                .orElseThrow(() -> new IllegalStateException(MOD_ID + " is not loaded"));
+        AutoCloseable button =
+                CustomInventoryButton.install(modClasses, binder.service(ControlPanelService.class), log);
         binder.onRelease(() -> {
             try {
                 button.close();
