@@ -29,27 +29,32 @@ $C.@PageOverlay {
 
         $C.@SmallSecondaryTextButton #ServerTabButton {
           @Text = %controlcore.ui.tabs.serverConfigs;
-          Anchor: (Width: 190, Height: 30, Right: 6);
+          Anchor: (Width: 158, Height: 30, Right: 6);
         }
 
         $C.@SmallSecondaryTextButton #SettingsTabButton {
           @Text = %controlcore.ui.tabs.modSettings;
-          Anchor: (Width: 190, Height: 30, Right: 6);
+          Anchor: (Width: 158, Height: 30, Right: 6);
         }
 
         $C.@SmallSecondaryTextButton #PlayerTabButton {
           @Text = %controlcore.ui.tabs.playerPrefs;
-          Anchor: (Width: 190, Height: 30, Right: 6);
+          Anchor: (Width: 158, Height: 30, Right: 6);
         }
 
         $C.@SmallSecondaryTextButton #KeymapTabButton {
           @Text = %controlcore.ui.tabs.keymaps;
-          Anchor: (Width: 190, Height: 30, Right: 6);
+          Anchor: (Width: 158, Height: 30, Right: 6);
         }
 
         $C.@SmallSecondaryTextButton #ModsTabButton {
           @Text = %controlcore.ui.tabs.mods;
-          Anchor: (Width: 190, Height: 30, Right: 6);
+          Anchor: (Width: 158, Height: 30, Right: 6);
+        }
+
+        $C.@SmallSecondaryTextButton #PermissionsTabButton {
+          @Text = %controlcore.ui.tabs.permissions;
+          Anchor: (Width: 158, Height: 30);
         }
       }
 
@@ -302,6 +307,28 @@ $C.@PageOverlay {
             Anchor: (Height: 178);
             Padding: (Right: 10);
           }
+
+          Group #DebugTools {
+            LayoutMode: Left;
+            Visible: false;
+            Anchor: (Height: 34, Top: 8);
+
+            Label {
+              Text: %controlcore.ui.debug.title;
+              FlexWeight: 1;
+              Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, VerticalAlignment: Center);
+            }
+
+            $C.@SmallSecondaryTextButton #ProbeToggle {
+              @Text = %controlcore.ui.debug.probe;
+              Anchor: (Width: 200, Height: 32, Left: 6);
+            }
+
+            $C.@SmallSecondaryTextButton #KeyTest {
+              @Text = %controlcore.ui.debug.keyTest;
+              Anchor: (Width: 160, Height: 32, Left: 6);
+            }
+          }
         }
 
         Group #MyKeymaps {
@@ -382,6 +409,52 @@ $C.@PageOverlay {
           LayoutMode: TopScrolling;
           ScrollbarStyle: $C.@DefaultScrollbarStyle;
           Anchor: (Height: 460);
+          Padding: (Right: 10);
+        }
+      }
+
+      Group #PermissionsTab {
+        LayoutMode: Top;
+        Visible: false;
+
+        Label {
+          Text: %controlcore.ui.tabs.permissions;
+          Style: @SectionTitleStyle;
+          Anchor: (Bottom: 4);
+        }
+
+        Label {
+          Text: %controlcore.ui.permissions.intro;
+          Style: @NoteStyle;
+          Anchor: (Bottom: 8);
+        }
+
+        Group {
+          LayoutMode: Left;
+          Anchor: (Height: 34, Bottom: 8);
+
+          $C.@DropdownBox #PermissionSearchFilter {
+            Anchor: (Width: 150, Right: 6);
+          }
+
+          $C.@DropdownBox #PermissionSearchMatch {
+            Anchor: (Width: 170, Right: 6);
+          }
+
+          $C.@TextField #PermissionSearch {
+            FlexWeight: 1;
+          }
+        }
+
+        Label #PermissionStatus {
+          Style: @StatusStyle;
+          Anchor: (Bottom: 8);
+        }
+
+        Group #PermissionList {
+          LayoutMode: TopScrolling;
+          ScrollbarStyle: $C.@DefaultScrollbarStyle;
+          Anchor: (Height: 430);
           Padding: (Right: 10);
         }
       }

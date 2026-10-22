@@ -6,9 +6,11 @@ import java.util.List;
 import java.util.Optional;
 import net.ofatech.controlcore.api.ControlPanelApi;
 import net.ofatech.controlcore.api.SettingsApi;
+import net.ofatech.controlcore.application.keymaps.InputProbeCommand;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.mods.ModsEditor;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
+import net.ofatech.controlcore.application.settings.PermissionsEditor;
 import net.ofatech.controlcore.application.settings.PermittedSettingsEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.application.text.Texts;
@@ -19,6 +21,8 @@ import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
+import net.ofatech.controlcore.domain.ports.game.InputProbe;
+import net.ofatech.controlcore.domain.ports.game.Permissions;
 import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
 import net.ofatech.controlcore.domain.result.Error;
@@ -37,6 +41,9 @@ public final class ControlPanelService implements ControlPanelApi {
     private final SettingPermissionPolicy permissions;
     private final Texts texts;
     private final ModsEditor mods;
+    private final PermissionsEditor permissionRules;
+    private final InputProbe probe;
+    private final Permissions nodes;
 
     public ControlPanelService(
             ControlPanelSettings settings,
@@ -48,7 +55,10 @@ public final class ControlPanelService implements ControlPanelApi {
             KeymapsEditor keymaps,
             SettingPermissionPolicy permissions,
             Texts texts,
-            ModsEditor mods) {
+            ModsEditor mods,
+            PermissionsEditor permissionRules,
+            InputProbe probe,
+            Permissions nodes) {
         this.settings = settings;
         this.players = players;
         this.server = server;
@@ -59,6 +69,9 @@ public final class ControlPanelService implements ControlPanelApi {
         this.permissions = permissions;
         this.texts = texts;
         this.mods = mods;
+        this.permissionRules = permissionRules;
+        this.probe = probe;
+        this.nodes = nodes;
     }
 
     public boolean mayOpenAdminPanel(PlayerId player) {
@@ -148,6 +161,10 @@ public final class ControlPanelService implements ControlPanelApi {
                             return names;
                         },
                         mods.viewedBy(Optional.of(player)),
+                        permissions.isAdmin(player)
+                                ? Optional.of(permissionRules.viewedBy(texts.forPlayer(Optional.of(player))))
+                                : Optional.empty(),
+                        nodes.hasOwn(player, InputProbeCommand.PERMISSION) ? Optional.of(probe) : Optional.empty(),
                         focus));
     }
 }

@@ -1,0 +1,51 @@
+$C = "../../Common.ui";
+
+Group {
+  LayoutMode: Top;
+  Anchor: (Bottom: 10);
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Height: 38);
+
+    Label #Label {
+      Anchor: (Width: 220, Right: 10);
+      Style: (...$C.@DefaultLabelStyle, RenderBold: true, VerticalAlignment: Center, Wrap: true);
+    }
+
+    Label {
+      Text: %controlcore.ui.permissions.see;
+      Anchor: (Width: 70, Right: 4);
+      Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, VerticalAlignment: Center, HorizontalAlignment: End);
+    }
+
+    $C.@TextField #View {
+      FlexWeight: 1;
+    }
+
+    Label {
+      Text: %controlcore.ui.permissions.change;
+      Anchor: (Width: 80, Left: 8, Right: 4);
+      Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, VerticalAlignment: Center, HorizontalAlignment: End);
+    }
+
+    $C.@TextField #Edit {
+      FlexWeight: 1;
+    }
+
+    $C.@SmallSecondaryTextButton #Save {
+      @Text = %controlcore.ui.save;
+      Anchor: (Width: 80, Height: 32, Left: 6);
+    }
+
+    $C.@SmallTertiaryTextButton #Reset {
+      @Text = %controlcore.ui.default;
+      Anchor: (Width: 90, Height: 32, Left: 6);
+    }
+  }
+
+  Label #Description {
+    Anchor: (Top: 2);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, Wrap: true);
+  }
+}

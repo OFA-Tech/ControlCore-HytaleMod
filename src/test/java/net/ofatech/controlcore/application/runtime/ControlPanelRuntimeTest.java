@@ -60,13 +60,36 @@ class ControlPanelRuntimeTest extends RuntimeTestBase {
         var reset = platform.commands.run("cc-reset", admin, Map.of("id", "controlcore:control-panel-enabled"));
         var opened = platform.commands.run(COMMAND, admin, Map.of());
 
-        assertThat(set.value().text()).contains("controlcore:control-panel-enabled is now false.");
+        assertThat(set.value().text().orElse("")).contains("controlcore:control-panel-enabled is now false.");
         assertThat(platform.settingStore.values).isEmpty();
         assertThat(blocked.error().code()).isEqualTo("ControlPanel.Disabled");
-        assertThat(reset.value().text()).contains("controlcore:control-panel-enabled is now true (default).");
+        assertThat(reset.value().text().orElse(""))
+                .contains("controlcore:control-panel-enabled is now true (default).");
         assertThat(opened.isSuccess()).isTrue();
         assertThat(platform.log.contains("Admin set controlcore:control-panel-enabled = false"))
                 .isTrue();
+    }
+
+    @Test
+    void settingsCommandsAlsoReadAndChangeTheServersConfig() {
+        runtime.setup();
+        runtime.start();
+        PlayerInfo admin = platform.players.join("Admin");
+
+        var get = platform.commands.run("cc-get", admin, Map.of("id", "server:server-name"));
+        var set = platform.commands.run("cc-set", admin, Map.of("id", "server:server-name", "value", "New Name"));
+        var restart =
+                platform.commands.run("cc-set", admin, Map.of("id", "server:defaults.game-mode", "value", "Adventure"));
+        var locked = platform.commands.run("cc-set", admin, Map.of("id", "server:version", "value", "5"));
+        var lockedDetails = platform.commands.run("cc-get", admin, Map.of("id", "server:version"));
+        var reset = platform.commands.run("cc-reset", admin, Map.of("id", "server:server-name"));
+
+        assertThat(get.value().text().orElse("")).contains("server:server-name", "Test Server");
+        assertThat(set.value().text().orElse("")).contains("server:server-name is now New Name.");
+        assertThat(restart.value().text().orElse("")).contains("Applies after a restart.");
+        assertThat(locked.isFailure()).isTrue();
+        assertThat(lockedDetails.value().text().orElse("")).contains("Read-only.");
+        assertThat(reset.value().text().orElse("")).contains("server:server-name is now");
     }
 
     @Test

@@ -5,7 +5,8 @@ enum PanelSection {
     SETTINGS("#SettingsList", "#SettingsStatus", "#SettingsSearch"),
     PREFS("#PlayerList", "#PlayerStatus", "#PlayerSearch"),
     KEYMAPS("#KeymapList", "#KeymapStatus", "#KeymapSearch"),
-    SERVER_KEYMAPS("#ServerKeymapList", "#ServerKeymapStatus", "#ServerKeymapSearch");
+    SERVER_KEYMAPS("#ServerKeymapList", "#ServerKeymapStatus", "#ServerKeymapSearch"),
+    PERMISSIONS("#PermissionList", "#PermissionStatus", "#PermissionSearch");
 
     final String list;
     final String status;

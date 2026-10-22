@@ -28,7 +28,7 @@ import net.ofatech.controlcore.domain.result.Result;
 
 public final class ServerConfigEditor implements SettingsEditor {
 
-    static final String NAMESPACE = "server";
+    public static final String NAMESPACE = "server";
     private static final int MAX_TEXT = 256;
     private static final int MAX_SUMMARY = 4096;
 
@@ -45,6 +45,10 @@ public final class ServerConfigEditor implements SettingsEditor {
         this.publisher = publisher;
         this.events = events;
         this.log = log;
+    }
+
+    public static boolean owns(SettingId id) {
+        return NAMESPACE.equals(id.namespace());
     }
 
     public static SettingId idOf(String path) {

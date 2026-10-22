@@ -18,6 +18,7 @@ final class PanelAction {
     static final String NUMBER = "@Number";
     static final String ITEM = "Item";
     static final String COLOR = "@Color";
+    static final String EDIT = "@Edit";
 
     static final BuilderCodec<PanelAction> CODEC = BuilderCodec.builder(PanelAction.class, PanelAction::new)
             .append(new KeyedCodec<>(KEY, Codec.STRING), (action, value) -> action.name = value, action -> action.name)
@@ -45,6 +46,8 @@ final class PanelAction {
                     new KeyedCodec<>(COLOR, Codec.STRING),
                     (action, value) -> action.color = value,
                     action -> action.color)
+            .add()
+            .append(new KeyedCodec<>(EDIT, Codec.STRING), (action, value) -> action.edit = value, action -> action.edit)
             .add()
             .append(
                     new KeyedCodec<>(NUMBER, Codec.FLOAT),
@@ -81,6 +84,7 @@ final class PanelAction {
     Double number;
     String item;
     String color;
+    String edit;
     String bindName;
     String bindKeys;
     String filter;

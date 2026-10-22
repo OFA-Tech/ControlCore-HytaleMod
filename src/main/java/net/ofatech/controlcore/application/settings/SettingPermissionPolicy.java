@@ -115,6 +115,30 @@ public final class SettingPermissionPolicy {
         }
     }
 
+    public Result<SettingPermission> replaceRule(String target, String view, String edit) {
+        Result<String> key = target(target);
+        if (key.isFailure()) {
+            return Result.failure(key.error());
+        }
+        try {
+            SettingPermission rule =
+                    SettingPermission.INHERIT.withView(nodeOrNone(view)).withEdit(nodeOrNone(edit));
+            store.put(key.value(), rule);
+            return Result.success(rule);
+        } catch (RuntimeException e) {
+            return Result.failure(Error.validation("Settings.InvalidPermission", e.getMessage()));
+        }
+    }
+
+    public SettingPermission rule(String targetKey) {
+        return store.all().getOrDefault(targetKey, SettingPermission.INHERIT);
+    }
+
+    private static String nodeOrNone(String text) {
+        String value = text == null ? "" : text.strip();
+        return value.isEmpty() || value.equalsIgnoreCase("default") ? null : value;
+    }
+
     public static Result<String> target(String target) {
         String text = target == null ? "" : target.strip().toLowerCase(Locale.ROOT);
         for (String prefix : new String[] {SETTING, CATEGORY, MOD}) {

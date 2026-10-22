@@ -25,7 +25,17 @@ Every setting, including every `config.json` key in Server Configs, has two side
 **Defaults:** server settings are for ControlCore admins; player preferences are each player's own. The console and
 ControlCore admins can always see and change everything.
 
-Mods can set their own rules in code. Admins override them with `/cc-perm`.
+Mods can set their own rules in code. Admins override them in the panel's **Permissions** tab or with `/cc-perm`.
+
+### In the panel
+
+`/open-admin-config` → **Permissions** (admins only) lists every mod, category, setting and `config.json` key:
+
+- Each setting's line says who may see and change it **now**, and which rule decides it (like `/cc-perm-check`).
+- **See** and **Change** hold your rule for that line. Leave a field empty to inherit, or write a full node or
+  `everyone`. **Save** stores both; **Default** removes your rule.
+- **Whole mod** and **Whole category** lines set a rule for everything below them.
+- The search line works like everywhere else; **Changed only** lists the rules you set (like `/cc-perms`).
 
 ### `/cc-perm <target> <view|edit|both> <node|everyone|default>`
 

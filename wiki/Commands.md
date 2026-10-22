@@ -17,19 +17,20 @@ Admin commands also work from the server console; commands about your own prefer
 
 | Command | Who | Does |
 |---|---|---|
-| `/cc-settings` | anyone | list server settings you may see, with their values (`(default)` if unchanged) |
-| `/cc-get <id>` | who may see it | name, description, value, default, type and scope of one setting |
-| `/cc-set <id> <value>` | who may change it | change a server setting; the value may contain spaces |
-| `/cc-reset <id>` | who may change it | put a server setting back to its default |
+| `/cc-settings` | anyone | list mods' server settings you may see, with their values (`(default)` if unchanged) |
+| `/cc-get <id>` | who may see it | name, description, value, default, type and scope of one setting or `config.json` key |
+| `/cc-set <id> <value>` | who may change it | change a server setting or `config.json` key; the value may contain spaces |
+| `/cc-reset <id>` | who may change it | put a server setting or `config.json` key back to its default |
 | `/cc-prefs` | any player | list your preferences |
 | `/cc-pref <id> <value>` | any player | change one of your preferences |
 | `/cc-pref-reset <id>` | any player | put a preference back to its default |
 
-Ids look like `mod:key`, for example `controlcore:welcome-message`. These commands cover mods' settings; the
-server's `config.json` keys are changed in the panel's **Server Configs** tab. Their ids (`server:motd`,
-`server:connection-timeouts.play-timeout`, …) are used with `/cc-perm` and `/cc-perm-check`.
+Ids look like `mod:key`, for example `controlcore:welcome-message`. The server's `config.json` keys are `server:…`,
+for example `server:motd` or `server:connection-timeouts.play-timeout`; `/cc-set` says when a key only applies after a
+restart, and read-only keys can't be changed.
 
 ```
+/cc-set server:motd Have fun!
 /cc-set controlcore:welcome-message Welcome, {player}!
 /cc-set controlcore:welcome-message-color #55ff55
 /cc-set controlcore:mods-hidden SomeMod, OtherMod
@@ -37,6 +38,8 @@ server's `config.json` keys are changed in the panel's **Server Configs** tab. T
 ```
 
 ## Permissions
+
+All three are also in the panel's **Permissions** tab.
 
 | Command | Who | Does |
 |---|---|---|
@@ -75,4 +78,5 @@ See [Key binds](Key-Binds) for the key syntax and which keys work.
 | `/cc-input-probe` | `ofatech.controlcore.debug` | show in chat every action your client sends; run again to stop |
 | `/cc-key-probe input` | `ofatech.controlcore.debug` | a test screen that shows the code of every key pressed while it is open |
 
-Players without the debug permission don't see these commands at all.
+Players without the debug permission don't see these commands at all. With it, the panel's Keymaps tab
+(**Server defaults**) has buttons for both.

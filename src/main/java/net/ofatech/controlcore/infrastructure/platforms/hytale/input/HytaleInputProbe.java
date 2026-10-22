@@ -63,6 +63,11 @@ public final class HytaleInputProbe implements InputProbe, PlayerPacketWatcher {
     }
 
     @Override
+    public boolean isOn(PlayerId player) {
+        return probing.contains(player.value());
+    }
+
+    @Override
     public Result<Void> openKeyTest(PlayerId player, String target) {
         KeyProbePage.Target where;
         try {
