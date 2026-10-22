@@ -73,6 +73,8 @@ Every list has a search box with a field filter and equals / starts with / conta
 - **HUD**: players hide or show parts of the game's HUD in `/prefs`, admins set rules per part, and a bindable
   key hides the whole HUD.
 - **Mods**: `/cc-mods` lists the server's mods and whether they run.
+- **CustomInventory**: with [CustomInventory](https://github.com/SupremoSama/Hytale-CustomInventory) installed,
+  its inventory screen (Adventure mode, Tab) has a **ControlCore** button that opens the panel.
 
 **For mod authors** (`ControlCoreApi`, see [docs/api.md](docs/api.md)): register typed settings (server-wide or
 per player) and their permissions, key actions (`KeyAction.of(modId, action)`), HUD elements and translated

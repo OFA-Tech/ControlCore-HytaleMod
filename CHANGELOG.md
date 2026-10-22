@@ -7,6 +7,8 @@
   `SentryDsn` (crash reporting) appears read-only in Server Configs.
 
 ### Added
+- Works with [CustomInventory](https://github.com/SupremoSama/Hytale-CustomInventory): when it is installed, its
+  inventory screen gets a **ControlCore** button that opens the admin panel (admins) or `/prefs` (everyone else).
 - **Permissions tab** (admins): see and change who may see and change each setting, `config.json` key, category
   or mod, with the rule that decides it today. Everything `/cc-perm`, `/cc-perms` and `/cc-perm-check` do.
 - **Debug buttons** in Keymaps → Server defaults for players with the debug permission: input probe on/off and
