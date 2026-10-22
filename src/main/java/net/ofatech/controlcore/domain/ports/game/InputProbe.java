@@ -9,5 +9,7 @@ public interface InputProbe {
 
     boolean toggle(PlayerId player);
 
+    boolean isOn(PlayerId player);
+
     Result<Void> openKeyTest(PlayerId player, String target);
 }

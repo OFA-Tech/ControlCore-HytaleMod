@@ -11,6 +11,7 @@ import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.mods.ModsEditor;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.application.settings.ModNames;
+import net.ofatech.controlcore.application.settings.PermissionsEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
@@ -18,9 +19,12 @@ import net.ofatech.controlcore.domain.model.ModSettings;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.ServerSettings;
+import net.ofatech.controlcore.domain.model.settings.PermissionsView;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
+import net.ofatech.controlcore.domain.ports.game.InputProbe;
 import net.ofatech.controlcore.domain.result.ErrorType;
+import net.ofatech.controlcore.domain.result.Result;
 import net.ofatech.controlcore.fakes.FakeCustomKeyBindStore;
 import net.ofatech.controlcore.fakes.FakeKeyBindStore;
 import net.ofatech.controlcore.fakes.FakeModCatalog;
@@ -45,6 +49,23 @@ class ControlPanelServiceTest {
     private final RecordingControlPanelView builtIn = new RecordingControlPanelView();
     private final PlayerInfo admin = players.join("Admin");
     private SettingsRegistry registry;
+    private boolean debugAllowed = true;
+    private final InputProbe probe = new InputProbe() {
+        @Override
+        public boolean toggle(PlayerId player) {
+            return true;
+        }
+
+        @Override
+        public boolean isOn(PlayerId player) {
+            return false;
+        }
+
+        @Override
+        public Result<Void> openKeyTest(PlayerId player, String target) {
+            return Result.success();
+        }
+    };
 
     private ControlPanelService service() {
         RecordingLog log = new RecordingLog();
@@ -59,17 +80,21 @@ class ControlPanelServiceTest {
                 (player, node) -> true,
                 log);
         var policy = new SettingPermissionPolicy(new FakeSettingPermissionStore(), (player, node) -> true, registry);
+        var serverConfig = new ServerConfigEditor(server, bus, bus, log);
         return new ControlPanelService(
                 new ControlPanelSettings(registry, settings),
                 players,
                 server,
                 builtIn,
                 registry,
-                new ServerConfigEditor(server, bus, bus, log),
+                serverConfig,
                 new KeymapsEditor(keyRegistry, TestTexts.of(registry, players), modNames),
                 policy,
                 TestTexts.of(registry, players),
-                new ModsEditor(new FakeModCatalog(), registry, keyRegistry, modNames, policy, log));
+                new ModsEditor(new FakeModCatalog(), registry, keyRegistry, modNames, policy, log),
+                new PermissionsEditor(registry, serverConfig, policy),
+                probe,
+                (player, node) -> !node.equals("debug") || debugAllowed);
     }
 
     @Test
@@ -99,6 +124,49 @@ class ControlPanelServiceTest {
                 .extracting(snapshot -> snapshot.id().toString())
                 .contains("server:server-name", "server:connection-timeouts.play-timeout", "server:ban-storage");
         assertThat(service.isAvailable()).isTrue();
+    }
+
+    @Test
+    void adminsGetThePermissionRulesAndTheDebugToolsTheyMayUse() {
+        var service = service();
+
+        service.open(admin.id(), ControlPanelRequest.ALL);
+
+        PermissionsView rules = builtIn.lastContent.permissions().orElseThrow();
+        assertThat(rules.list())
+                .extracting(PermissionsView.Entry::target)
+                .contains(
+                        "mod:server",
+                        "setting:server:server-name",
+                        "mod:controlcore",
+                        "setting:controlcore:panel-start-tab");
+        assertThat(rules.save("setting:server:server-name", "", "staff.name").isSuccess())
+                .isTrue();
+        assertThat(rules.list())
+                .filteredOn(entry -> entry.target().equals("setting:server:server-name"))
+                .singleElement()
+                .satisfies(entry -> {
+                    assertThat(entry.edit()).isEqualTo("staff.name");
+                    assertThat(entry.view()).isEmpty();
+                    assertThat(entry.adminRule()).isTrue();
+                    assertThat(entry.description()).contains("staff.name");
+                });
+        assertThat(rules.reset("setting:server:server-name").isSuccess()).isTrue();
+        assertThat(rules.list())
+                .filteredOn(entry -> entry.target().equals("setting:server:server-name"))
+                .singleElement()
+                .satisfies(entry -> assertThat(entry.adminRule()).isFalse());
+        assertThat(builtIn.lastContent.debug()).isPresent();
+    }
+
+    @Test
+    void debugToolsNeedTheDebugPermission() {
+        debugAllowed = false;
+        var service = service();
+
+        service.open(admin.id(), ControlPanelRequest.ALL);
+
+        assertThat(builtIn.lastContent.debug()).isEmpty();
     }
 
     @Test

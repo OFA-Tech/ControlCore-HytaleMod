@@ -60,6 +60,7 @@ public final class FakePlatform implements Platform {
     public final FakeModCatalog modCatalog = new FakeModCatalog();
     public final Map<PlayerId, Set<HudPart>> hiddenHud = new ConcurrentHashMap<>();
     public final Set<String> deniedNodes = ConcurrentHashMap.newKeySet();
+    public final Set<PlayerId> probing = ConcurrentHashMap.newKeySet();
 
     public final FakeServerConfiguration serverConfig = new FakeServerConfiguration(
             new ServerSettings("Test Server", "Welcome", false, 10, 5, java.time.Duration.ofMinutes(10)));
@@ -101,7 +102,12 @@ public final class FakePlatform implements Platform {
         binder.bind(InputProbe.class, new InputProbe() {
             @Override
             public boolean toggle(PlayerId player) {
-                return false;
+                return probing.add(player) || !probing.remove(player);
+            }
+
+            @Override
+            public boolean isOn(PlayerId player) {
+                return probing.contains(player);
             }
 
             @Override

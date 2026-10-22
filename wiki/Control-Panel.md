@@ -51,10 +51,17 @@ Your own preferences: the same rows, but only for you. Default returns to the mo
 - **Server defaults** (admins): the keys every player gets unless they choose their own, plus the **Add bind** form
   to create command binds. See [Key binds](Key-Binds).
 - **My keys:** your own keys. Default returns to the server's keys.
+- **Debug tools** (players with `ofatech.controlcore.debug`, under Server defaults): turn the input probe on and off,
+  and open the key test screen. The same as `/cc-input-probe` and `/cc-key-probe input`.
 
 ### Mods
 
 Every mod and asset pack. See [Mods tab](Mods-Tab).
+
+### Permissions
+
+Admins only: who may see and change each setting, `config.json` key, category or mod. See
+[Permissions](Permissions#in-the-panel).
 
 ## Search
 
@@ -83,4 +90,4 @@ The status line says how many rows match, for example "5 of 55 shown".
 | Setting | Effect |
 |---|---|
 | `controlcore:control-panel-enabled` | `false` switches `/open-admin-config` off (`/prefs` keeps working) |
-| `controlcore:panel-start-tab` (each player) | which tab opens first |
+| `controlcore:panel-start-tab` (each player) | which tab opens first (a tab you can't open falls back to the first one) |

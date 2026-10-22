@@ -40,6 +40,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingSearch;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
+import net.ofatech.controlcore.domain.ports.game.InputProbe;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -53,13 +54,16 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private static final String KEYMAP_MODE_SERVER = "KeymapMode:Server";
     private static final String KEYMAP_MODE_MINE = "KeymapMode:Mine";
     private static final String CUSTOM_NAMESPACE = "custom";
+    private static final String PROBE_TOGGLE = "ProbeToggle";
+    private static final String KEY_TEST = "KeyTest";
 
     private enum Tab {
         SERVER(ControlPanelTab.SERVER_CONFIGS, "#ServerTab", "#ServerTabButton"),
         SETTINGS(ControlPanelTab.MOD_SETTINGS, "#SettingsTab", "#SettingsTabButton"),
         PLAYER(ControlPanelTab.PLAYER_PREFS, "#PlayerTab", "#PlayerTabButton"),
         KEYMAP(ControlPanelTab.KEYMAPS, "#KeymapTab", "#KeymapTabButton"),
-        MODS(ControlPanelTab.MODS, "#ModsTab", "#ModsTabButton");
+        MODS(ControlPanelTab.MODS, "#ModsTab", "#ModsTabButton"),
+        PERMISSIONS(ControlPanelTab.PERMISSIONS, "#PermissionsTab", "#PermissionsTabButton");
 
         private final ControlPanelTab tab;
         private final String group;
@@ -82,7 +86,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
         boolean shownFor(ControlPanelRequest request) {
             return switch (this) {
-                case SERVER, SETTINGS -> request.includeServerSettings();
+                case SERVER, SETTINGS, PERMISSIONS -> request.includeServerSettings();
                 case PLAYER -> request.includePlayerPreferences();
                 case KEYMAP -> request.includeRegisteredActions();
                 case MODS -> true;
@@ -105,6 +109,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private final List<Subscription> subscriptions = new CopyOnWriteArrayList<>();
     private final ModsTab modsTab;
     private final Optional<KeyBindForm> bindForm;
+    private final Optional<PermissionsTab> permissionsTab;
+    private final Optional<InputProbe> probe;
+    private final PlayerId viewerId;
 
     private Tab selected;
     private boolean editingServerKeys = true;
@@ -120,8 +127,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         boolean manageKeys = content.manageKeys() && shownSections.includeRegisteredActions();
         this.bindForm =
                 manageKeys ? Optional.of(new KeyBindForm(content.customKeyBinds(), tr, hooks)) : Optional.empty();
+        this.permissionsTab = shownSections.includeServerSettings()
+                ? content.permissions().map(view -> new PermissionsTab(view, tr, hooks))
+                : Optional.empty();
+        this.probe = manageKeys ? content.debug() : Optional.empty();
+        this.viewerId = PlayerId.of(player.getUuid());
         for (Tab tab : Tab.values()) {
-            if (tab.shownFor(shownSections)) {
+            if (tab.shownFor(shownSections) && (tab != Tab.PERMISSIONS || permissionsTab.isPresent())) {
                 tabs.add(tab);
             }
         }
@@ -193,6 +205,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         });
         modsTab.build(
                 commands, events, tabs.contains(Tab.SETTINGS), tabs.contains(Tab.PLAYER), tabs.contains(Tab.KEYMAP));
+        permissionsTab.ifPresent(tab -> {
+            tab.build(commands, events, searches.getOrDefault(PermissionsTab.SECTION, SettingSearch.ALL));
+            buildSearch(PermissionsTab.SECTION, commands, events);
+        });
+        buildDebugTools(commands, events);
         for (Tab tab : Tab.values()) {
             commands.set(tab.button + ".Visible", tabs.contains(tab));
         }
@@ -300,11 +317,24 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     public void handleDataEvent(
             @Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull PanelAction action) {
         String name = action.name();
-        if (bindForm.map(form -> form.handle(action)).orElse(false) || modsTab.handle(action)) {
+        if (bindForm.map(form -> form.handle(action)).orElse(false)
+                || modsTab.handle(action)
+                || permissionsTab.map(tab -> tab.handle(action)).orElse(false)) {
             return;
         }
         if (CLOSE.equals(name)) {
             close();
+        } else if (PROBE_TOGGLE.equals(name) || KEY_TEST.equals(name)) {
+            handleDebug(name);
+        } else if (SEARCH.equals(name) && PermissionsTab.SECTION.name().equals(action.section)) {
+            permissionsTab.ifPresent(tab -> {
+                SettingSearch search = SettingSearch.parse(
+                        action.value, SettingSearch.Filter.of(action.filter), SettingSearch.Match.of(action.match));
+                searches.put(PermissionsTab.SECTION, search);
+                UICommandBuilder update = new UICommandBuilder();
+                tab.search(search, update);
+                sendUpdate(update, false);
+            });
         } else if (SEARCH.equals(name)) {
             sectionOf(action.section).ifPresent(key -> {
                 searches.put(
@@ -329,6 +359,49 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         } else {
             sectionOf(action.section).ifPresent(key -> handleSettingAction(key, sections.get(key), name, action));
         }
+    }
+
+    private void buildDebugTools(UICommandBuilder commands, UIEventBuilder events) {
+        commands.set("#DebugTools.Visible", probe.isPresent());
+        if (probe.isEmpty()) {
+            return;
+        }
+        showProbeButton(commands);
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating, "#ProbeToggle", EventData.of(PanelAction.KEY, PROBE_TOGGLE));
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating, "#KeyTest", EventData.of(PanelAction.KEY, KEY_TEST));
+    }
+
+    private void showProbeButton(UICommandBuilder commands) {
+        probe.ifPresent(tool -> commands.set(
+                "#ProbeToggle.Text",
+                tr.t(
+                        tool.isOn(viewerId)
+                                ? "controlcore.panel.debug.probe_stop"
+                                : "controlcore.panel.debug.probe_start")));
+    }
+
+    private void handleDebug(String name) {
+        if (probe.isEmpty()) {
+            return;
+        }
+        InputProbe tool = probe.get();
+        UICommandBuilder update = new UICommandBuilder();
+        if (PROBE_TOGGLE.equals(name)) {
+            boolean on = tool.toggle(viewerId);
+            showProbeButton(update);
+            update.set(
+                    PanelSection.SERVER_KEYMAPS.status + ".Text",
+                    tr.t(on ? "controlcore.debug.probe_on" : "controlcore.debug.probe_off"));
+        } else {
+            Result<Void> opened = tool.openKeyTest(viewerId, InputProbe.KEY_TEST_TARGETS);
+            if (opened.isSuccess()) {
+                return;
+            }
+            update.set(PanelSection.SERVER_KEYMAPS.status + ".Text", tr.error(opened.error()));
+        }
+        sendUpdate(update, false);
     }
 
     private void handleSettingAction(PanelSection key, SettingsSection section, String name, PanelAction action) {
@@ -728,7 +801,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         return Optional.empty();
     }
 
-    private final class Hooks implements ModsTab.Host, KeyBindForm.Host {
+    private final class Hooks implements ModsTab.Host, KeyBindForm.Host, PermissionsTab.Host {
 
         @Override
         public void rebuild() {

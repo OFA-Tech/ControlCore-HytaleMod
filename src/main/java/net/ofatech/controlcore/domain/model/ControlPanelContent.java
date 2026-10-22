@@ -6,9 +6,11 @@ import java.util.function.Supplier;
 import net.ofatech.controlcore.domain.guard.Guard;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
+import net.ofatech.controlcore.domain.model.settings.PermissionsView;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
+import net.ofatech.controlcore.domain.ports.game.InputProbe;
 
 public record ControlPanelContent(
         ServerSettings server,
@@ -21,6 +23,8 @@ public record ControlPanelContent(
         Translator translator,
         Supplier<List<Text>> pendingRestart,
         ModsView mods,
+        Optional<PermissionsView> permissions,
+        Optional<InputProbe> debug,
         Optional<String> focus) {
 
     public ControlPanelContent {
@@ -33,6 +37,8 @@ public record ControlPanelContent(
         Guard.notNull(translator, "translator");
         Guard.notNull(pendingRestart, "pendingRestart");
         Guard.notNull(mods, "mods");
+        Guard.notNull(permissions, "permissions");
+        Guard.notNull(debug, "debug");
         Guard.notNull(focus, "focus");
     }
 }

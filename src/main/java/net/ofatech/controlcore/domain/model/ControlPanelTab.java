@@ -9,7 +9,8 @@ public enum ControlPanelTab {
     MOD_SETTINGS("Mod Settings"),
     PLAYER_PREFS("Player Prefs"),
     KEYMAPS("Keymaps"),
-    MODS("Mods");
+    MODS("Mods"),
+    PERMISSIONS("Permissions");
 
     private final String label;
 

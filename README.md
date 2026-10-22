@@ -47,8 +47,11 @@ a value changes elsewhere. Tabs:
   check box, dropdown, slider plus field for numbers with a range, colour picker, item list. A text setting can
   show its colour in the same row.
 - **Keymaps**: the server's default keys (admins, with a form for their own command binds) and your own keys.
+  Players with the debug permission also get buttons for the input probe and the key test.
 - **Mods**: every mod and asset pack with its logo, version, authors and state; buttons jump to its settings and
   keys. Admins turn mods on or off from the next start and read their config files.
+- **Permissions** (admins): who may see and who may change each setting, config key, category or mod, with the
+  rule that decides it today. The same rules as `/cc-perm`.
 
 Every list has a search box with a field filter and equals / starts with / contains / ends with (for example
 `mod:controlcore`, `key:ctrl+f`, `is:changed`).
@@ -57,10 +60,11 @@ Every list has a search box with a field filter and equals / starts with / conta
 
 - **Translations**: everything ControlCore shows follows each player's game language (English, Brazilian
   Portuguese, Spanish), with English as fallback. See [docs/api.md](docs/api.md#translations-api-150).
-- **Settings commands**: admins use `/cc-settings`, `/cc-get`, `/cc-set`, `/cc-reset`; players use `/cc-prefs`,
+- **Settings commands**: admins use `/cc-settings`, `/cc-get`, `/cc-set`, `/cc-reset` (also on `config.json`
+  keys such as `server:motd`); players use `/cc-prefs`,
   `/cc-pref`, `/cc-pref-reset`. `/cc-config <mod>` opens the panel on one mod's settings.
 - **Permissions per setting**: who may see and who may change each setting, category or mod is set by mods and
-  overridden by admins with `/cc-perm` (`/cc-perms`, `/cc-perm-check <id>`).
+  overridden by admins in the Permissions tab or with `/cc-perm` (`/cc-perms`, `/cc-perm-check <id>`).
 - **Key binds**: players rebind key actions in Keymaps or with `/cc-keys`, `/cc-bind`, `/cc-bind-reset`; admins
   set server keys with `/cc-bind-server` and create command binds without a mod (`/cc-keybind-add`,
   `/cc-keybind-add-server`, `/cc-keybind-list`, `/cc-keybind-remove`). Hytale only reports some keys to servers
