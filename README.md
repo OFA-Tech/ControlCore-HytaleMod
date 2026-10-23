@@ -84,7 +84,7 @@ and per player `controlcore:show-welcome-message`, `controlcore:panel-start-tab`
 `Settings.json` in the mod's data folder holds `ControlPanelEnabled` (default `true`), the default of
 `controlcore:control-panel-enabled`; changed values live in `SettingValues.json`.
 
-Built on Hytale server **0.7.3** (runs on `>=0.7.2 <0.8.0`), Java 25, Gradle 9.8.1 and
+Built on Hytale server **0.7.4** (runs on `>=0.7.2 <0.8.0`), Java 25, Gradle 9.8.1 and
 [`com.azuredoom.hytale-tools`](https://github.com/AzureDoom/Hytale-Gradle-Plugin).
 
 ## Installing
