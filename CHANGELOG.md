@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.11.0 - 2026-10-22
+
+Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.4. The API for other mods
+is unchanged (**2.0.0**); mods built for 0.10.0 keep working.
+
 ### Added
 - Works with [CustomInventory](https://github.com/SupremoSama/Hytale-CustomInventory): when it is installed, its
   inventory screen gets a **ControlCore** button that opens the admin panel (admins) or `/prefs` (everyone else).
