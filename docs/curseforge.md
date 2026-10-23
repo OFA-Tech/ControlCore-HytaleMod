@@ -3,11 +3,10 @@
 Text to paste when creating the CurseForge project and uploading a file. Upload the same
 `ControlCore-<version>.jar` the GitHub release has.
 
-- **Name:** ControlCore
-- **Summary (max 255):** A server control panel and settings backbone for Hytale: edit config.json in game,
-  per-setting permissions, mod settings and player preferences, key binds for commands, in English, Portuguese
-  and Spanish.
-- **Category:** Server Utility (also: Admin Tools, Library / API)
+- **Name:** Control Core
+- **Summary (max 255):** An in-game control panel for server owners: edit config.json, mod settings, player
+  preferences, permissions and key binds for commands.
+- **Categories:** Utility, Quality of Life, Library
 - **Game version:** Hytale 0.7 (0.7.2 to 0.7.4)
 - **Release type:** Beta for 0.x
 - **License:** MIT
@@ -15,37 +14,109 @@ Text to paste when creating the CurseForge project and uploading a file. Upload 
 
 ## Description
 
-**ControlCore** gives server owners one in-game panel for everything they configure, and gives other mods a
-shared place to put their settings and key binds.
+Paste into the project's Description (Markdown). The images are the project's own CurseForge screenshots.
 
-### For server owners
-- **/open-admin-config** opens the control panel:
-  - **Server Configs:** every key of `config.json`, read from Hytale's own config definition. Changes save at
-    once; keys that need a restart say so, and a reminder lists them until you restart.
-  - **Mod Settings:** every setting other mods register with ControlCore.
-  - **Player Prefs:** your own preferences.
-  - **Keymaps:** the server's default keys and your own, plus your own key binds that run any command.
-- **Search** in every list, with a field filter and equals / starts with / contains / ends with (and not).
-- **Permissions per setting:** let moderators see or change only some settings (`/cc-perm`).
-- **Key binds for commands:** `/cc-keybind-add warp-spawn ctrl+r warp spawn {player}`; run as the player or
-  as the server. Q, E, R, F, O, mouse buttons, hotbar 1-9 and combinations with Ctrl, Alt, Shift or Space.
-- **Languages:** English, Portuguese (Brazil) and Spanish, following each player's game language.
+**ControlCore** is an in-game control panel for Hytale servers. Edit `config.json`, mod settings, player preferences, permissions and key binds without leaving the game, and give other mods one shared place for their settings.
 
-### For players
-- **/prefs** opens your own preferences and key bindings.
+> **Beta.** Requires a Hytale server **0.7.2 or newer 0.7.x** (tested on 0.7.4). Back up `mods/OFATech_ControlCore/` before updating.
 
-### For mod authors
-Register typed settings (server-wide or per player), key actions and translated names through
-`ControlCoreApi`. ControlCore stores them, shows them in the panel, checks permissions and tells you when they
-change. Maven: `net.ofatech:controlcore` on GitHub Packages. See the
-[API docs](https://github.com/OFA-Tech/ControlCore-HytaleMod/blob/main/docs/api.md).
+![The ControlCore panel: Server Configs](https://media.forgecdn.net/attachments/2092/759/server-configs-png.png)
 
-### Notes
-- Beta: back up `mods/OFATech_ControlCore/` before updating.
-- Hytale servers only see actions, not raw keys, so keys like H or Caps Lock cannot be bound.
+## Why ControlCore?
 
-## Screenshots to add
-1. Server Configs tab with the search and a restart reminder.
-2. Mod Settings tab.
-3. Keymaps tab with the Server defaults / My keys switch and the Add bind form.
-4. The panel in Portuguese.
+- **No more editing JSON by hand.** Every key of the server's `config.json` is in the panel, with its description, limits and default.
+- **One panel for every mod.** Mods that use ControlCore show their settings and key binds in the same place, with the same search and permissions.
+- **Players get their own settings.** `/prefs` lets each player pick their keys, HUD and preferences.
+- **Your language.** English, Português (Brasil) and Español, following each player's game language.
+
+## The panel
+
+Open it with **`/open-admin-config`**. Six tabs:
+
+| Tab | What you can do |
+|---|---|
+| **Server Configs** | Change any `config.json` key. Changes save at once; keys that only apply after a restart say so, and a reminder lists them until you restart. |
+| **Mod Settings** | Settings registered by ControlCore and other mods: check boxes, sliders, text, colours, lists and dropdowns. |
+| **Player Prefs** | Your own preferences, including which parts of the HUD you see. |
+| **Keymaps** | The server's default keys and your own, plus key binds that run any command. |
+| **Mods** | Every installed mod with its logo, version and status. Jump to its settings and keys, turn it on or off, read its config files. |
+| **Permissions** | Decide who may see and who may change each setting, category or whole mod. |
+
+### Find anything in seconds
+
+Every list has a search with a field filter (name, mod, value, key, ...) and *contains / equals / starts with / ends with*, plus "changed only".
+
+![Searching Server Configs for "timeout"](https://media.forgecdn.net/attachments/2092/758/search-configs-png.png)
+
+### Mod settings with real controls
+
+Sliders for numbers, colour pickers, lists you can add to and remove from, and a **Default** button on every row.
+
+![Mod Settings](https://media.forgecdn.net/attachments/2092/756/mod-configs-png.png)
+
+### Key binds that run commands
+
+Bind keys to any command, without writing a mod. Run it as the player or as the server, set a server-wide default, and let every player choose their own keys.
+
+```
+/cc-keybind-add warp-spawn ctrl+r warp spawn {player}
+```
+
+![Keymaps: server defaults and the Add bind form](https://media.forgecdn.net/attachments/2092/755/keymaps-defaults-png.png)
+
+![Keymaps: a player's own keys](https://media.forgecdn.net/attachments/2092/754/keymaps-custom-png.png)
+
+> Hytale servers only see game actions, not raw keys. Binds use Q, E, R, F, O, the mouse buttons, hotbar 1-9 and combinations with Ctrl, Alt or Shift. Keys such as H or Caps Lock can't be detected by any server mod.
+
+### Every mod at a glance
+
+![The Mods tab](https://media.forgecdn.net/attachments/2092/757/modlist-png.png)
+
+### Speaks your players' language
+
+![The panel in Portuguese](https://media.forgecdn.net/attachments/2092/760/traducao-ptbr-png.png)
+
+## For players
+
+- **`/prefs`** opens your own preferences: your key binds, your HUD (hide the compass, health, chat and 20 more parts) and more.
+- **Hide or show the HUD** with one key you choose, for clean screenshots.
+
+## Works with CustomInventory
+
+With [CustomInventory](https://github.com/SupremoSama/Hytale-CustomInventory) installed, its inventory screen gets a **ControlCore** button: admins open the admin panel, players open their preferences.
+
+![The ControlCore button in CustomInventory](https://media.forgecdn.net/attachments/2092/753/inventory-button-png.png)
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `/open-admin-config` | Open the admin panel |
+| `/prefs` | Open your own preferences |
+| `/cc-config <mod>` | Open the panel on one mod's settings |
+| `/cc-get`, `/cc-set`, `/cc-reset` | Read and change any setting or `config.json` key from chat or the console |
+| `/cc-keybind-add`, `/cc-keybind-remove` | Create and remove command key binds |
+| `/cc-perm`, `/cc-perms`, `/cc-perm-check` | Manage permissions per setting |
+| `/cc-mods` | List the server's mods |
+
+The full list, with permissions, is in the [wiki](https://github.com/OFA-Tech/ControlCore-HytaleMod/wiki/Commands).
+
+## For mod authors
+
+Register settings (server-wide or per player), key actions and HUD elements in a few lines. ControlCore stores the values, shows them in the panel, checks permissions, translates the names and tells your mod when something changes.
+
+```java
+ControlCoreApi.find().ifPresent(api ->
+    api.settings().register(
+        SettingDefinition.server("homes", "max-homes", SettingType.integer(1, 50), 3)
+            .named("Max homes")
+            .inCategory("Limits")));
+```
+
+Get started with the [mod author guide](https://github.com/OFA-Tech/ControlCore-HytaleMod/wiki/Mod-Author-Quick-Start).
+
+## Links
+
+- [Wiki](https://github.com/OFA-Tech/ControlCore-HytaleMod/wiki): installing, the panel, commands, permissions, key binds
+- [Source code](https://github.com/OFA-Tech/ControlCore-HytaleMod) (MIT license)
+- [Report a bug or suggest a feature](https://github.com/OFA-Tech/ControlCore-HytaleMod/issues)
