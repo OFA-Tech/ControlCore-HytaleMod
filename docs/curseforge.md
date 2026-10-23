@@ -8,7 +8,7 @@ Text to paste when creating the CurseForge project and uploading a file. Upload 
   per-setting permissions, mod settings and player preferences, key binds for commands, in English, Portuguese
   and Spanish.
 - **Category:** Server Utility (also: Admin Tools, Library / API)
-- **Game version:** Hytale 0.7 (0.7.2 and 0.7.3)
+- **Game version:** Hytale 0.7 (0.7.2 to 0.7.4)
 - **Release type:** Beta for 0.x
 - **License:** MIT
 - **Source:** https://github.com/OFA-Tech/ControlCore-HytaleMod

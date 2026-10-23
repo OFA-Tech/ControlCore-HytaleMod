@@ -2,10 +2,6 @@
 
 ## Unreleased
 
-### Changed
-- Built and tested on Hytale server 0.7.3; 0.7.2 is still supported (`>=0.7.2 <0.8.0`). The new `config.json` key
-  `SentryDsn` (crash reporting) appears read-only in Server Configs.
-
 ### Added
 - Works with [CustomInventory](https://github.com/SupremoSama/Hytale-CustomInventory): when it is installed, its
   inventory screen gets a **ControlCore** button that opens the admin panel (admins) or `/prefs` (everyone else).
@@ -20,8 +16,8 @@
 
 ### Changed
 - `/cc-input-probe` replies in the player's language.
-- Built and tested on Hytale server 0.7.3; 0.7.2 is still supported (`>=0.7.2 <0.8.0`). The new `config.json` key
-  `SentryDsn` (crash reporting) appears read-only in Server Configs.
+- Built and tested on Hytale server 0.7.4; 0.7.2 and 0.7.3 are still supported (`>=0.7.2 <0.8.0`). The new
+  `config.json` key `SentryDsn` (crash reporting, added in 0.7.3) appears read-only in Server Configs.
 
 ## 0.10.0 - 2026-10-21
 
