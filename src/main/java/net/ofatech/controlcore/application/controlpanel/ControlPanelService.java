@@ -94,6 +94,13 @@ public final class ControlPanelService implements ControlPanelApi {
         return open(player, request, Optional.empty());
     }
 
+    public Result<Void> openBestFor(PlayerId player) {
+        ControlPanelRequest request = mayOpenAdminPanel(player) && settings.panelEnabled()
+                ? ControlPanelRequest.ALL
+                : ControlPanelRequest.PLAYER_PREFERENCES;
+        return open(player, request);
+    }
+
     public Result<Void> openForMod(PlayerId player, String mod) {
         String wanted = mod == null ? "" : mod.strip();
         var entry = mods.viewedBy(Optional.of(player)).list().stream()

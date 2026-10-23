@@ -60,8 +60,17 @@ implement it in `platforms/hytale/`, and bind it in `HytalePlatform.bind`.
 
 Ports for other mods are named after the capability, never after the mod (for example `MapMarkers`, not
 `BetterMapApi`). A feature asks `Capabilities.find(MapMarkers.class)` and does not care which mod provides it.
-The mechanism is in place (`ModPlatform`, `CapabilityBinder`, `Capabilities`) and tested with a test-only
-integration; ControlCore has no optional mod integration at the moment.
+Each mod gets its own folder. A mod platform only uses our own code (`domain`, `api`, `application`) and that
+mod: never Hytale (`com.hypixel..`) and never another platform. Whatever it needs from the game comes through a
+port that the Hytale platform implements (for example `ModLookup.classLoader(modId)` to reach the mod's classes).
+ArchUnit checks both rules (`platformsAreIndependent`, `onlyTheHytalePlatformUsesHytale`), so an update of Hytale
+or of one mod only ever touches its own folder.
+
+Current integrations:
+
+| Folder | Mod | What it does |
+|---|---|---|
+| `platforms/custominventory/` | `SupremoSama:CustomInventory` | Adds a **ControlCore** button to its inventory screen that opens the panel (`ControlPanelService.openBestFor`). Uses the mod's API by reflection at runtime, so ControlCore builds without its jar. |
 
 ### Steps
 

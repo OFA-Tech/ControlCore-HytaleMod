@@ -16,6 +16,7 @@ infrastructure  implementations of ports
   ├── persistence     storage
   └── platforms/
       ├── hytale/     Hytale (required host)
+      ├── custominventory/  SupremoSama:CustomInventory (optional)
       └── <mod>/      another mod (optional)
 ```
 
@@ -26,7 +27,7 @@ infrastructure  implementations of ports
 | `application` | `domain`, `api`, AutoService annotations |
 | `infrastructure.system`, `.persistence` | `domain`, Gson |
 | `infrastructure.platforms.hytale` | everything, `com.hypixel..` |
-| `infrastructure.platforms.<mod>` | everything, `com.hypixel..`, that mod's packages |
+| `infrastructure.platforms.<mod>` | `domain`, `api`, `application`, that mod (no `com.hypixel..`, no other platform) |
 | `Main` | `JavaPlugin`, `ModRuntime`, `HytalePlatform` |
 
 ## Package map

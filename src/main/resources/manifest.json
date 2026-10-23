@@ -16,7 +16,7 @@
         "Hytale:AssetModule": "*"
     },
     "OptionalDependencies": {
-        
+        "SupremoSama:CustomInventory": "*"
     },
     "DisabledByDefault": false,
     "Main": "net.ofatech.controlcore.Main",

@@ -58,6 +58,12 @@ Your own preferences: the same rows, but only for you. Default returns to the mo
 
 Every mod and asset pack. See [Mods tab](Mods-Tab).
 
+### From the inventory
+
+With [CustomInventory](https://github.com/SupremoSama/Hytale-CustomInventory) installed, its inventory screen
+(Adventure mode, Tab) has a **ControlCore** button. It opens the admin panel for players who may use it and
+`/prefs` for everyone else. Hytale's own inventory screen can't have extra buttons.
+
 ### Permissions
 
 Admins only: who may see and change each setting, `config.json` key, category or mod. See
