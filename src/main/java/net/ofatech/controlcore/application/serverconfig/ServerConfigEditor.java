@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.api.ControlCoreEvents;
+import net.ofatech.controlcore.application.history.ChangeContext;
 import net.ofatech.controlcore.domain.event.ServerConfigChanged;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
@@ -37,6 +38,7 @@ public final class ServerConfigEditor implements SettingsEditor {
     private final ControlCoreEvents events;
     private final Log log;
     private final Map<String, Pending> pending = new ConcurrentHashMap<>();
+    private final Map<String, String> lastSeen = new ConcurrentHashMap<>();
 
     private record Pending(String startValue, Text name) {}
 
@@ -120,6 +122,7 @@ public final class ServerConfigEditor implements SettingsEditor {
                             .with("name", entry.name())));
         }
         return server.write(entry.path(), value).map(after -> {
+            lastSeen.put(entry.path(), after.value());
             if (!after.value().equals(entry.value())) {
                 if (entry.access() == SettingAccess.APPLIES_AFTER_RESTART) {
                     Pending first = pending.computeIfAbsent(
@@ -137,6 +140,22 @@ public final class ServerConfigEditor implements SettingsEditor {
             }
             return snapshotOf(after);
         });
+    }
+
+    public synchronized void checkOutsideChanges() {
+        boolean first = lastSeen.isEmpty();
+        for (ConfigEntry entry : server.entries()) {
+            if (entry.access() == SettingAccess.READ_ONLY) {
+                continue;
+            }
+            String before = lastSeen.put(entry.path(), entry.value());
+            if (!first && before != null && !before.equals(entry.value())) {
+                log.info("Server config " + entry.path() + " changed outside ControlCore from \"" + before + "\" to \""
+                        + entry.value() + "\"");
+                ChangeContext.fromOutside(
+                        () -> publisher.publish(new ServerConfigChanged(idOf(entry.path()), before, entry.value())));
+            }
+        }
     }
 
     private Result<ConfigEntry> find(SettingId id) {

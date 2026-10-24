@@ -3,6 +3,7 @@ package net.ofatech.controlcore.application.runtime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Map;
 import net.ofatech.controlcore.api.ControlCoreApi;
@@ -88,12 +89,15 @@ class ModRuntimeTest extends RuntimeTestBase {
         runtime.setup();
         runtime.start();
 
-        assertThat(platform.scheduler.entries).hasSize(1);
+        assertThat(platform.scheduler.entries)
+                .extracting(entry -> entry.period)
+                .containsExactlyInAnyOrder(Duration.ofMinutes(5), Duration.ofSeconds(5));
         platform.scheduler.runAll();
         assertThat(platform.playerData.flushes).isEqualTo(1);
 
         runtime.shutdown();
-        assertThat(platform.scheduler.entries.getFirst().cancelled).isTrue();
+        assertThat(platform.scheduler.entries)
+                .allSatisfy(entry -> assertThat(entry.cancelled).isTrue());
         assertThat(platform.playerData.flushes).isEqualTo(2);
     }
 

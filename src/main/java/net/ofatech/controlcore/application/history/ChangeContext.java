@@ -42,6 +42,13 @@ public final class ChangeContext {
         return run(new Attribution(actor, Source.ROLLBACK, undoes), work);
     }
 
+    public static void fromOutside(Runnable work) {
+        run(new Attribution(Actor.console("Hytale"), Source.OUTSIDE, 0), () -> {
+            work.run();
+            return null;
+        });
+    }
+
     public static <T> T restoringSnapshot(Actor actor, Supplier<T> work) {
         return run(new Attribution(actor, Source.SNAPSHOT, 0), work);
     }

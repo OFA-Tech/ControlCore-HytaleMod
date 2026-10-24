@@ -122,6 +122,6 @@ public final class HytalePlatform implements Platform {
 
     @Override
     public void connect(EventPublisher publisher) {
-        new HytaleGameEvents(plugin.getEventRegistry(), publisher).register();
+        new HytaleGameEvents(plugin.getEventRegistry(), plugin.getEntityStoreRegistry(), publisher).register();
     }
 }

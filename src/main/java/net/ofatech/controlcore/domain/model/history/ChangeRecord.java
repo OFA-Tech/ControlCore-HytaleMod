@@ -31,7 +31,8 @@ public record ChangeRecord(
         COMMAND,
         API,
         ROLLBACK,
-        SNAPSHOT
+        SNAPSHOT,
+        OUTSIDE
     }
 
     public record Actor(Optional<PlayerId> player, String name) {

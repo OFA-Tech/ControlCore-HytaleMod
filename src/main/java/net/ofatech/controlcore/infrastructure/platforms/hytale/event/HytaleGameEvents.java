@@ -1,5 +1,6 @@
 package net.ofatech.controlcore.infrastructure.platforms.hytale.event;
 
+import com.hypixel.hytale.component.ComponentRegistryProxy;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.event.EventRegistry;
@@ -15,16 +16,20 @@ import net.ofatech.controlcore.infrastructure.platforms.hytale.mapping.Ids;
 public final class HytaleGameEvents {
 
     private final EventRegistry registry;
+    private final ComponentRegistryProxy<EntityStore> entities;
     private final EventPublisher publisher;
 
-    public HytaleGameEvents(EventRegistry registry, EventPublisher publisher) {
+    public HytaleGameEvents(
+            EventRegistry registry, ComponentRegistryProxy<EntityStore> entities, EventPublisher publisher) {
         this.registry = registry;
+        this.entities = entities;
         this.publisher = publisher;
     }
 
     public void register() {
         registry.registerGlobal(PlayerReadyEvent.class, (PlayerReadyEvent event) -> onReady(event));
         registry.register(PlayerDisconnectEvent.class, (PlayerDisconnectEvent event) -> onDisconnect(event));
+        entities.registerSystem(new GameModeChangeSystem(publisher));
     }
 
     private void onReady(PlayerReadyEvent event) {

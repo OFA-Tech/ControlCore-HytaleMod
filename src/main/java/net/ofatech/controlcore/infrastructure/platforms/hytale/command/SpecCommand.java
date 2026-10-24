@@ -61,9 +61,15 @@ final class SpecCommand extends AbstractCommand {
             context.sendMessage(Messages.error("Something went wrong while running this command."));
             return DONE;
         }
-        result.onSuccess(reply -> reply.text().ifPresent(text -> context.sendMessage(Messages.text(text))))
+        result.onSuccess(reply -> reply.text()
+                        .ifPresent(text ->
+                                context.sendMessage(Messages.text(player.isPresent() ? text : forConsole(text)))))
                 .onFailure(error -> context.sendMessage(Messages.error(error)));
         return DONE;
+    }
+
+    static String forConsole(String text) {
+        return text.replace(" \u00b7 ", " - ").replace('\u00b7', '-');
     }
 
     private Map<String, Object> values(CommandContext context) {

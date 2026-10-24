@@ -572,3 +572,4 @@ errors.snapshots.invalid_name = '{name}' can't be a snapshot name: use 1 to 40 l
 errors.snapshots.no_parts = Choose at least one part to save.
 errors.snapshots.unknown = There is no snapshot {name}.
 errors.snapshots.unknown_part = '{part}' is not a part. Use all, config, settings, settings:<mod>/<mod>, keys, permissions, mods or players.
+history.source.outside = outside ControlCore

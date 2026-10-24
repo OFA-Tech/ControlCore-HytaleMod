@@ -752,8 +752,8 @@ $C.@PageOverlay {
 
                   Label {
                     Text: %controlcore.ui.snapshots.partConfig;
-                    Style: @NoteStyle;
-                    Anchor: (Width: 110, Right: 6);
+                    Style: (...@NoteStyle, VerticalAlignment: Center);
+                    Anchor: (Height: 26, Width: 110, Right: 6);
                   }
                   $C.@CheckBox #SnapPartSettings {
                     Anchor: (Width: 26, Height: 26, Right: 6);
@@ -761,8 +761,8 @@ $C.@PageOverlay {
 
                   Label {
                     Text: %controlcore.ui.snapshots.partSettings;
-                    Style: @NoteStyle;
-                    Anchor: (Width: 120, Right: 6);
+                    Style: (...@NoteStyle, VerticalAlignment: Center);
+                    Anchor: (Height: 26, Width: 120, Right: 6);
                   }
                   $C.@CheckBox #SnapPartKeys {
                     Anchor: (Width: 26, Height: 26, Right: 6);
@@ -770,8 +770,8 @@ $C.@PageOverlay {
 
                   Label {
                     Text: %controlcore.ui.snapshots.partKeys;
-                    Style: @NoteStyle;
-                    Anchor: (Width: 130, Right: 6);
+                    Style: (...@NoteStyle, VerticalAlignment: Center);
+                    Anchor: (Height: 26, Width: 130, Right: 6);
                   }
                   $C.@CheckBox #SnapPartPermissions {
                     Anchor: (Width: 26, Height: 26, Right: 6);
@@ -779,8 +779,8 @@ $C.@PageOverlay {
 
                   Label {
                     Text: %controlcore.ui.snapshots.partPermissions;
-                    Style: @NoteStyle;
-                    Anchor: (Width: 120, Right: 6);
+                    Style: (...@NoteStyle, VerticalAlignment: Center);
+                    Anchor: (Height: 26, Width: 120, Right: 6);
                   }
                   $C.@CheckBox #SnapPartMods {
                     Anchor: (Width: 26, Height: 26, Right: 6);
@@ -788,8 +788,8 @@ $C.@PageOverlay {
 
                   Label {
                     Text: %controlcore.ui.snapshots.partMods;
-                    Style: @NoteStyle;
-                    Anchor: (Width: 100, Right: 6);
+                    Style: (...@NoteStyle, VerticalAlignment: Center);
+                    Anchor: (Height: 26, Width: 100, Right: 6);
                   }
                   $C.@CheckBox #SnapPartPlayers {
                     Anchor: (Width: 26, Height: 26, Right: 6);
@@ -797,8 +797,8 @@ $C.@PageOverlay {
 
                   Label {
                     Text: %controlcore.ui.snapshots.partPlayers;
-                    Style: @NoteStyle;
-                    Anchor: (Width: 150, Right: 6);
+                    Style: (...@NoteStyle, VerticalAlignment: Center);
+                    Anchor: (Height: 26, Width: 150, Right: 6);
                   }
                 }
               }
