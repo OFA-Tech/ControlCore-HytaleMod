@@ -63,6 +63,10 @@ final class SettingRows {
         String icon() {
             return ICONS + icon + ".png";
         }
+
+        String legendButton() {
+            return "#Legend" + icon;
+        }
     }
 
     static void heading(PanelSection key, String element, String text, String count, UICommandBuilder commands) {

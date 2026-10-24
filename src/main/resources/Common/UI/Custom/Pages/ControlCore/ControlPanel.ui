@@ -21,6 +21,21 @@ $C = "../../Common.ui";
   Pressed: (Background: #1d3140, LabelStyle: @TabLabel)
 );
 
+@LegendLabel = (FontSize: 14, TextColor: #c9c3b3, VerticalAlignment: Center, HorizontalAlignment: Start);
+@LegendLabelOn = (FontSize: 14, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center, HorizontalAlignment: Start);
+
+@LegendStyle = TextButtonStyle(
+  Default: (Background: #182a37, LabelStyle: @LegendLabel),
+  Hovered: (Background: #223a4b, LabelStyle: @LegendLabel),
+  Pressed: (Background: #223a4b, LabelStyle: @LegendLabel)
+);
+
+@LegendOnStyle = TextButtonStyle(
+  Default: (Background: #2c4252, LabelStyle: @LegendLabelOn),
+  Hovered: (Background: #2c4252, LabelStyle: @LegendLabelOn),
+  Pressed: (Background: #2c4252, LabelStyle: @LegendLabelOn)
+);
+
 @SelectedTabStyle = TextButtonStyle(
   Default: (Background: #1d3140, LabelStyle: @TabLabelOn),
   Hovered: (Background: #1d3140, LabelStyle: @TabLabelOn),
@@ -194,6 +209,13 @@ $C.@PageOverlay {
           }
         }
 
+        Group #Columns {
+          LayoutMode: Left;
+
+          Group #Tabs {
+            LayoutMode: Top;
+            FlexWeight: 1;
+
           Group #ServerTab {
             LayoutMode: Top;
 
@@ -221,7 +243,7 @@ $C.@PageOverlay {
 
               Label #ServerStatus {
                 Style: @CountStyle;
-                Anchor: (Width: 220, Left: 10);
+                Anchor: (Width: 150, Left: 10);
               }
             }
 
@@ -262,7 +284,7 @@ $C.@PageOverlay {
 
               Label #SettingsStatus {
                 Style: @CountStyle;
-                Anchor: (Width: 220, Left: 10);
+                Anchor: (Width: 150, Left: 10);
               }
             }
 
@@ -303,7 +325,7 @@ $C.@PageOverlay {
 
               Label #PlayerStatus {
                 Style: @CountStyle;
-                Anchor: (Width: 220, Left: 10);
+                Anchor: (Width: 150, Left: 10);
               }
             }
 
@@ -406,7 +428,7 @@ $C.@PageOverlay {
 
                 Label #ServerKeymapStatus {
                   Style: @CountStyle;
-                  Anchor: (Width: 220, Left: 10);
+                  Anchor: (Width: 150, Left: 10);
                 }
               }
 
@@ -468,7 +490,7 @@ $C.@PageOverlay {
 
                 Label #KeymapStatus {
                   Style: @CountStyle;
-                  Anchor: (Width: 220, Left: 10);
+                  Anchor: (Width: 150, Left: 10);
                 }
               }
 
@@ -506,7 +528,7 @@ $C.@PageOverlay {
 
               Label #ModsStatus {
                 Style: @CountStyle;
-                Anchor: (Width: 220, Left: 10);
+                Anchor: (Width: 150, Left: 10);
               }
             }
 
@@ -547,7 +569,7 @@ $C.@PageOverlay {
 
               Label #PermissionStatus {
                 Style: @CountStyle;
-                Anchor: (Width: 220, Left: 10);
+                Anchor: (Width: 150, Left: 10);
               }
             }
 
@@ -559,6 +581,135 @@ $C.@PageOverlay {
               Padding: (Right: 10);
             }
           }
+          }
+
+          Group #Legend {
+            LayoutMode: Top;
+            Anchor: (Width: 196, Left: 14);
+            Visible: false;
+
+            Label {
+              Text: %controlcore.ui.legend.title;
+              Style: @SubsectionTitleStyle;
+              Anchor: (Height: 22);
+            }
+
+            Group {
+              Anchor: (Height: 1, Top: 3, Bottom: 8);
+              Background: #4a6273;
+            }
+
+            Group {
+              LayoutMode: Left;
+              Anchor: (Height: 30, Bottom: 4);
+
+              Group {
+                Anchor: (Width: 18, Height: 18, Top: 6, Right: 8);
+              }
+
+              TextButton #LegendAll {
+                Style: @LegendStyle;
+                FlexWeight: 1;
+              }
+            }
+
+            Group {
+              LayoutMode: Left;
+              Anchor: (Height: 30, Bottom: 4);
+
+              Group {
+                Anchor: (Width: 18, Height: 18, Top: 6, Right: 8);
+                Background: "Icons/Changed.png";
+              }
+
+              TextButton #LegendChanged {
+                Style: @LegendStyle;
+                FlexWeight: 1;
+              }
+            }
+
+            Group {
+              LayoutMode: Left;
+              Anchor: (Height: 30, Bottom: 4);
+
+              Group {
+                Anchor: (Width: 18, Height: 18, Top: 6, Right: 8);
+                Background: "Icons/Default.png";
+              }
+
+              TextButton #LegendDefault {
+                Style: @LegendStyle;
+                FlexWeight: 1;
+              }
+            }
+
+            Group {
+              LayoutMode: Left;
+              Anchor: (Height: 30, Bottom: 4);
+
+              Group {
+                Anchor: (Width: 18, Height: 18, Top: 6, Right: 8);
+                Background: "Icons/Unsaved.png";
+              }
+
+              TextButton #LegendUnsaved {
+                Style: @LegendStyle;
+                FlexWeight: 1;
+              }
+            }
+
+            Group {
+              LayoutMode: Left;
+              Anchor: (Height: 30, Bottom: 4);
+
+              Group {
+                Anchor: (Width: 18, Height: 18, Top: 6, Right: 8);
+                Background: "Icons/Error.png";
+              }
+
+              TextButton #LegendError {
+                Style: @LegendStyle;
+                FlexWeight: 1;
+              }
+            }
+
+            Group {
+              LayoutMode: Left;
+              Anchor: (Height: 30, Bottom: 4);
+
+              Group {
+                Anchor: (Width: 18, Height: 18, Top: 6, Right: 8);
+                Background: "Icons/Restart.png";
+              }
+
+              TextButton #LegendRestart {
+                Style: @LegendStyle;
+                FlexWeight: 1;
+              }
+            }
+
+            Group {
+              LayoutMode: Left;
+              Anchor: (Height: 30, Bottom: 4);
+
+              Group {
+                Anchor: (Width: 18, Height: 18, Top: 6, Right: 8);
+                Background: "Icons/Locked.png";
+              }
+
+              TextButton #LegendLocked {
+                Style: @LegendStyle;
+                FlexWeight: 1;
+              }
+            }
+
+            Label {
+              Text: %controlcore.ui.legend.hint;
+              Style: @NoteStyle;
+              Anchor: (Top: 8);
+            }
+          }
+        }
       }
 
       Group {

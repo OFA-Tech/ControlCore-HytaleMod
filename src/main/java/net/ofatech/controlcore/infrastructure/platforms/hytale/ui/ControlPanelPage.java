@@ -58,6 +58,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private static final String CUSTOM_NAMESPACE = "custom";
     private static final String PROBE_TOGGLE = "ProbeToggle";
     private static final String KEY_TEST = "KeyTest";
+    private static final String LEGEND_PREFIX = "Legend:";
+    private static final String LEGEND_ALL = "#LegendAll";
 
     private enum Tab {
         SERVER(ControlPanelTab.SERVER_CONFIGS, "#ServerTab", "#ServerTabButton"),
@@ -120,6 +122,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private final Map<String, String> undo = new HashMap<>();
     private final Set<String> undoRows = new HashSet<>();
     private Set<String> restartNames = Set.of();
+    private final Map<PanelSection, SettingRows.State> legendFilters = new EnumMap<>(PanelSection.class);
 
     private final List<Subscription> subscriptions = new CopyOnWriteArrayList<>();
     private final ModsTab modsTab;
@@ -249,6 +252,14 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
         events.addEventBinding(
                 CustomUIEventBindingType.Activating, "#CloseButton", EventData.of(PanelAction.KEY, CLOSE));
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating, LEGEND_ALL, EventData.of(PanelAction.KEY, LEGEND_PREFIX));
+        for (SettingRows.State state : SettingRows.State.values()) {
+            events.addEventBinding(
+                    CustomUIEventBindingType.Activating,
+                    state.legendButton(),
+                    EventData.of(PanelAction.KEY, LEGEND_PREFIX + state.name()));
+        }
         if (subscriptions.isEmpty()) {
             sections.forEach((key, section) ->
                     subscriptions.add(section.listen(change -> onSettingChanged(key, section, change))));
@@ -333,6 +344,83 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
     }
 
+    private Optional<PanelSection> currentSection() {
+        PanelSection key = switch (selected) {
+            case SERVER -> PanelSection.SERVER_CONFIG;
+            case SETTINGS -> PanelSection.SETTINGS;
+            case PLAYER -> PanelSection.PREFS;
+            case KEYMAP ->
+                editingServerKeys && bindForm.isPresent() ? PanelSection.SERVER_KEYMAPS : PanelSection.KEYMAPS;
+            case MODS, PERMISSIONS -> null;
+        };
+        return key != null && sections.containsKey(key) ? Optional.of(key) : Optional.empty();
+    }
+
+    private void showLegend(UICommandBuilder update) {
+        Optional<PanelSection> current = currentSection();
+        update.set("#Legend.Visible", current.isPresent());
+        if (current.isEmpty()) {
+            return;
+        }
+        PanelSection key = current.get();
+        SettingsSection section = sections.get(key);
+        SettingSearch search = searches.getOrDefault(key, SettingSearch.ALL);
+        Map<SettingRows.State, Integer> counts = new EnumMap<>(SettingRows.State.class);
+        int total = 0;
+        for (SettingsSection.Entry entry : built.getOrDefault(key, List.of())) {
+            if (entry instanceof SettingsSection.Row row) {
+                SettingSnapshot snapshot = latest.getOrDefault(shownKey(key, row.id()), row.snapshot());
+                if (matchesSearch(section, search, snapshot)) {
+                    total++;
+                    counts.merge(state(key, snapshot), 1, Integer::sum);
+                }
+            }
+        }
+        SettingRows.State active = legendFilters.get(key);
+        update.set(LEGEND_ALL + ".Text", " " + tr.t("controlcore.panel.legend.all", "count", total));
+        update.set(LEGEND_ALL + ".Style", Value.ref(LAYOUT, active == null ? "LegendOnStyle" : "LegendStyle"));
+        for (SettingRows.State state : SettingRows.State.values()) {
+            update.set(
+                    state.legendButton() + ".Text",
+                    " "
+                            + tr.t(
+                                    "controlcore.panel.legend." + state.name().toLowerCase(Locale.ROOT),
+                                    "count",
+                                    counts.getOrDefault(state, 0)));
+            update.set(
+                    state.legendButton() + ".Style",
+                    Value.ref(LAYOUT, state == active ? "LegendOnStyle" : "LegendStyle"));
+        }
+    }
+
+    private void filterByState(String stateName) {
+        Optional<PanelSection> current = currentSection();
+        if (current.isEmpty()) {
+            return;
+        }
+        PanelSection key = current.get();
+        SettingRows.State state = null;
+        for (SettingRows.State candidate : SettingRows.State.values()) {
+            if (candidate.name().equals(stateName)) {
+                state = candidate;
+            }
+        }
+        if (state == null || state == legendFilters.get(key)) {
+            legendFilters.remove(key);
+        } else {
+            legendFilters.put(key, state);
+        }
+        UICommandBuilder update = new UICommandBuilder();
+        applySearch(key, sections.get(key), update, true);
+        showLegend(update);
+        sendUpdate(update, false);
+    }
+
+    private static boolean matchesSearch(SettingsSection section, SettingSearch search, SettingSnapshot snapshot) {
+        return search.matches(
+                snapshot, section.name(snapshot), section.category(snapshot), section.description(snapshot));
+    }
+
     private static void footer(UICommandBuilder update, String text) {
         update.set("#FooterStatus.Text", text);
     }
@@ -355,6 +443,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
         UICommandBuilder update = new UICommandBuilder();
         showState(key, index, snapshot, update);
+        showLegend(update);
         sendUpdate(update, false);
     }
 
@@ -401,6 +490,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 showState(key, index, current, update);
             }
         }
+        showLegend(update);
         sendUpdate(update, false);
     }
 
@@ -412,6 +502,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             errors.put(shownKey(key, snapshot.id()), message);
             showState(key, index, snapshot, update);
         }
+        showLegend(update);
     }
 
     private void succeeded(
@@ -431,6 +522,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         if (index != null) {
             showState(key, index, after, update);
         }
+        showLegend(update);
     }
 
     private void buildSearch(PanelSection key, UICommandBuilder commands, UIEventBuilder events) {
@@ -505,6 +597,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                                 SettingSearch.Match.of(action.match)));
                 UICommandBuilder update = new UICommandBuilder();
                 applySearch(key, sections.get(key), update, true);
+                showLegend(update);
                 sendUpdate(update, false);
             });
         } else if (KEYMAP_MODE_SERVER.equals(name) || KEYMAP_MODE_MINE.equals(name)) {
@@ -512,10 +605,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 editingServerKeys = KEYMAP_MODE_SERVER.equals(name);
                 UICommandBuilder update = new UICommandBuilder();
                 showKeymapMode(update);
+                showLegend(update);
                 sendUpdate(update, false);
             }
         } else if (name.startsWith(TAB_PREFIX)) {
             selectTab(name.substring(TAB_PREFIX.length()));
+        } else if (name.startsWith(LEGEND_PREFIX)) {
+            filterByState(name.substring(LEGEND_PREFIX.length()));
         } else {
             sectionOf(action.section).ifPresent(key -> handleSettingAction(key, sections.get(key), name, action));
         }
@@ -775,6 +871,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 unsaved.remove(shownKey(key, id));
                 showState(key, index, snapshot, update);
                 footer(update, section.changedElsewhere(snapshot));
+                showLegend(update);
                 sendUpdate(update, false);
             });
         } catch (RuntimeException e) {
@@ -843,6 +940,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             commands.set(tab.edge() + ".Visible", on);
             commands.set(tab.button + ".Style", Value.ref(LAYOUT, on ? "SelectedTabStyle" : "TabStyle"));
         }
+        showLegend(commands);
     }
 
     private void showKeymapMode(UICommandBuilder commands) {
@@ -858,6 +956,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private void applySearch(PanelSection key, SettingsSection section, UICommandBuilder commands, boolean report) {
         List<SettingsSection.Entry> entries = built.getOrDefault(key, List.of());
         SettingSearch search = searches.getOrDefault(key, SettingSearch.ALL);
+        SettingRows.State legend = legendFilters.get(key);
+        boolean filtered = !search.isEmpty() || legend != null;
         boolean[] visible = new boolean[entries.size()];
         int rows = 0;
         int matching = 0;
@@ -866,16 +966,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             switch (entries.get(index)) {
                 case SettingsSection.Heading ignored -> {
                     heading = index;
-                    visible[index] = search.isEmpty();
+                    visible[index] = !filtered;
                 }
                 case SettingsSection.Row row -> {
                     rows++;
                     SettingSnapshot snapshot = latest.getOrDefault(shownKey(key, row.id()), row.snapshot());
-                    visible[index] = search.matches(
-                            snapshot,
-                            section.name(snapshot),
-                            section.category(snapshot),
-                            section.description(snapshot));
+                    visible[index] = matchesSearch(section, search, snapshot)
+                            && (legend == null || state(key, snapshot) == legend);
                     if (visible[index]) {
                         matching++;
                         if (heading >= 0) {
@@ -890,7 +987,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
         if (report) {
             String status;
-            if (search.isEmpty()) {
+            if (!filtered) {
                 status = "";
             } else if (matching == 0) {
                 status = search.text().isEmpty()
