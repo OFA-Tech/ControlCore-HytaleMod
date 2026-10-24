@@ -1,0 +1,49 @@
+$C = "../../Common.ui";
+
+Group {
+  LayoutMode: Top;
+  Padding: (Top: 8, Bottom: 0);
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Height: 32);
+
+    Group #State {
+      Anchor: (Width: 18, Height: 18, Top: 7, Right: 10);
+      Background: "Icons/Changed.png";
+    }
+
+    Label #What {
+      Anchor: (Width: 300, Right: 10);
+      Style: (...$C.@DefaultLabelStyle, FontSize: 15, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center, Wrap: true);
+    }
+
+    Label #Change {
+      FlexWeight: 1;
+      Style: (...$C.@DefaultLabelStyle, TextColor: #c9c3b3, VerticalAlignment: Center, Wrap: true);
+    }
+
+    Label #RolledBack {
+      Visible: false;
+      Anchor: (Height: 20, Top: 6, Left: 8);
+      Padding: (Horizontal: 7);
+      Background: #2c4252;
+      Style: (FontSize: 11, TextColor: #e9e4d6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+    }
+
+    $C.@SmallTertiaryTextButton #Rollback {
+      @Text = %controlcore.ui.history.rollback;
+      Anchor: (Width: 150, Height: 32, Left: 8);
+    }
+  }
+
+  Label #Details {
+    Anchor: (Left: 28, Top: 3);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #9fb0bd, Wrap: true);
+  }
+
+  Group {
+    Anchor: (Height: 1, Top: 9);
+    Background: #263c4c;
+  }
+}

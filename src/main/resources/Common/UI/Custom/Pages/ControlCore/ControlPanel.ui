@@ -92,7 +92,7 @@ $C.@PageOverlay {
 
           Group #ServerTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 172, Right: 4);
+            Anchor: (Width: 150, Right: 4);
 
             Group #ServerTabEdge {
               Anchor: (Height: 3);
@@ -109,7 +109,7 @@ $C.@PageOverlay {
 
           Group #SettingsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 172, Right: 4);
+            Anchor: (Width: 150, Right: 4);
 
             Group #SettingsTabEdge {
               Anchor: (Height: 3);
@@ -126,7 +126,7 @@ $C.@PageOverlay {
 
           Group #PlayerTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 172, Right: 4);
+            Anchor: (Width: 150, Right: 4);
 
             Group #PlayerTabEdge {
               Anchor: (Height: 3);
@@ -143,7 +143,7 @@ $C.@PageOverlay {
 
           Group #KeymapTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 172, Right: 4);
+            Anchor: (Width: 150, Right: 4);
 
             Group #KeymapTabEdge {
               Anchor: (Height: 3);
@@ -160,7 +160,7 @@ $C.@PageOverlay {
 
           Group #ModsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 172, Right: 4);
+            Anchor: (Width: 150, Right: 4);
 
             Group #ModsTabEdge {
               Anchor: (Height: 3);
@@ -177,7 +177,7 @@ $C.@PageOverlay {
 
           Group #PermissionsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 172);
+            Anchor: (Width: 150, Right: 4);
 
             Group #PermissionsTabEdge {
               Anchor: (Height: 3);
@@ -187,6 +187,23 @@ $C.@PageOverlay {
 
             TextButton #PermissionsTabButton {
               Text: %controlcore.ui.tabs.permissions;
+              Style: @TabStyle;
+              Anchor: (Height: 35);
+            }
+          }
+
+          Group #HistoryTabSlot {
+            LayoutMode: Top;
+            Anchor: (Width: 150);
+
+            Group #HistoryTabEdge {
+              Anchor: (Height: 3);
+              Background: #e8a93b;
+              Visible: false;
+            }
+
+            TextButton #HistoryTabButton {
+              Text: %controlcore.ui.tabs.history;
               Style: @TabStyle;
               Anchor: (Height: 35);
             }
@@ -615,6 +632,237 @@ $C.@PageOverlay {
               ScrollbarStyle: $C.@DefaultScrollbarStyle;
               Anchor: (Height: 430);
               Padding: (Right: 10);
+            }
+          }
+
+          Group #HistoryTab {
+            LayoutMode: Top;
+            Visible: false;
+
+            Group #HistoryModeButtons {
+              LayoutMode: Left;
+              Visible: false;
+              Anchor: (Height: 32, Bottom: 10);
+
+              TextButton #HistoryModeChanges {
+                Text: %controlcore.ui.history.modeChanges;
+                Style: @SegmentStyle;
+                Anchor: (Width: 180, Right: 2);
+              }
+
+              TextButton #HistoryModeSnapshots {
+                Text: %controlcore.ui.history.modeSnapshots;
+                Style: @SegmentStyle;
+                Anchor: (Width: 180);
+              }
+            }
+
+            Group #HistoryChanges {
+              LayoutMode: Top;
+
+              Label {
+                Text: %controlcore.ui.history.intro;
+                Style: @NoteStyle;
+                Anchor: (Bottom: 8);
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 34, Bottom: 8);
+
+                $C.@DropdownBox #HistoryFilter {
+                  Anchor: (Width: 200, Right: 6);
+                }
+
+                $C.@TextField #HistorySearch {
+                  FlexWeight: 1;
+                }
+
+                Label #HistoryStatus {
+                  Style: @CountStyle;
+                  Anchor: (Width: 220, Left: 10);
+                }
+              }
+
+              Label #HistoryEmpty {
+                Text: %controlcore.ui.history.empty;
+                Style: @NoteStyle;
+                Visible: false;
+              }
+
+              Group #HistoryList {
+                LayoutMode: TopScrolling;
+                ScrollbarStyle: $C.@DefaultScrollbarStyle;
+                Anchor: (Height: 430);
+                Padding: (Right: 10);
+              }
+            }
+
+            Group #SnapshotsPanel {
+              LayoutMode: Top;
+              Visible: false;
+
+              Label {
+                Text: %controlcore.ui.snapshots.intro;
+                Style: @NoteStyle;
+                Anchor: (Bottom: 8);
+              }
+
+              Group #SnapshotForm {
+                LayoutMode: Top;
+                Anchor: (Bottom: 10);
+                Background: #182a37;
+                Padding: (Full: 10);
+
+                Label {
+                  Text: %controlcore.ui.snapshots.title;
+                  Style: @SubsectionTitleStyle;
+                  Anchor: (Height: 20, Bottom: 6);
+                }
+
+                Group {
+                  LayoutMode: Left;
+                  Anchor: (Height: 38);
+
+                  $C.@TextField #SnapshotName {
+                    Anchor: (Width: 260, Right: 6);
+                  }
+
+                  $C.@DropdownBox #SnapshotMods {
+                    Anchor: (Width: 280, Right: 6);
+                  }
+
+                  Group {
+                    FlexWeight: 1;
+                  }
+
+                  $C.@SmallSecondaryTextButton #SnapshotSave {
+                    @Text = %controlcore.ui.snapshots.save;
+                    Anchor: (Width: 190, Height: 34);
+                  }
+                }
+
+                Group {
+                  LayoutMode: Left;
+                  Anchor: (Height: 30, Top: 6);
+
+                  $C.@CheckBox #SnapPartConfig {
+                    Anchor: (Width: 26, Height: 26, Right: 6);
+                  }
+
+                  Label {
+                    Text: %controlcore.ui.snapshots.partConfig;
+                    Style: (...@NoteStyle, VerticalAlignment: Center);
+                    Anchor: (Height: 26, Width: 110, Right: 6);
+                  }
+                  $C.@CheckBox #SnapPartSettings {
+                    Anchor: (Width: 26, Height: 26, Right: 6);
+                  }
+
+                  Label {
+                    Text: %controlcore.ui.snapshots.partSettings;
+                    Style: (...@NoteStyle, VerticalAlignment: Center);
+                    Anchor: (Height: 26, Width: 120, Right: 6);
+                  }
+                  $C.@CheckBox #SnapPartKeys {
+                    Anchor: (Width: 26, Height: 26, Right: 6);
+                  }
+
+                  Label {
+                    Text: %controlcore.ui.snapshots.partKeys;
+                    Style: (...@NoteStyle, VerticalAlignment: Center);
+                    Anchor: (Height: 26, Width: 130, Right: 6);
+                  }
+                  $C.@CheckBox #SnapPartPermissions {
+                    Anchor: (Width: 26, Height: 26, Right: 6);
+                  }
+
+                  Label {
+                    Text: %controlcore.ui.snapshots.partPermissions;
+                    Style: (...@NoteStyle, VerticalAlignment: Center);
+                    Anchor: (Height: 26, Width: 120, Right: 6);
+                  }
+                  $C.@CheckBox #SnapPartMods {
+                    Anchor: (Width: 26, Height: 26, Right: 6);
+                  }
+
+                  Label {
+                    Text: %controlcore.ui.snapshots.partMods;
+                    Style: (...@NoteStyle, VerticalAlignment: Center);
+                    Anchor: (Height: 26, Width: 100, Right: 6);
+                  }
+                  $C.@CheckBox #SnapPartPlayers {
+                    Anchor: (Width: 26, Height: 26, Right: 6);
+                  }
+
+                  Label {
+                    Text: %controlcore.ui.snapshots.partPlayers;
+                    Style: (...@NoteStyle, VerticalAlignment: Center);
+                    Anchor: (Height: 26, Width: 150, Right: 6);
+                  }
+                }
+              }
+
+              Group #SnapshotPreview {
+                LayoutMode: Top;
+                Visible: false;
+                Anchor: (Bottom: 10);
+                Background: #13202a;
+                Padding: (Full: 10);
+
+                Label #SnapshotPreviewTitle {
+                  Style: @SubsectionTitleStyle;
+                  Anchor: (Height: 20, Bottom: 6);
+                }
+
+                Group {
+                  LayoutMode: TopScrolling;
+                  ScrollbarStyle: $C.@DefaultScrollbarStyle;
+                  Anchor: (Height: 150);
+                  Padding: (Right: 10);
+
+                  Label #SnapshotPreviewText {
+                    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #c9c3b3, Wrap: true);
+                  }
+                }
+
+                Group {
+                  LayoutMode: Left;
+                  Anchor: (Height: 34, Top: 8);
+
+                  $C.@SmallSecondaryTextButton #SnapshotRestore {
+                    @Text = %controlcore.ui.snapshots.restore;
+                    Anchor: (Width: 170, Height: 32, Right: 6);
+                  }
+
+                  $C.@SmallSecondaryTextButton #SnapshotRestoreSafe {
+                    @Text = %controlcore.ui.snapshots.restoreSafe;
+                    Anchor: (Width: 330, Height: 32, Right: 6);
+                  }
+
+                  Group {
+                    FlexWeight: 1;
+                  }
+
+                  $C.@SmallTertiaryTextButton #SnapshotPreviewClose {
+                    @Text = %controlcore.ui.snapshots.cancel;
+                    Anchor: (Width: 140, Height: 32);
+                  }
+                }
+              }
+
+              Label #SnapshotsEmpty {
+                Text: %controlcore.ui.snapshots.empty;
+                Style: @NoteStyle;
+                Visible: false;
+              }
+
+              Group #SnapshotList {
+                LayoutMode: TopScrolling;
+                ScrollbarStyle: $C.@DefaultScrollbarStyle;
+                Anchor: (Height: 290);
+                Padding: (Right: 10);
+              }
             }
           }
           }

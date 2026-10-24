@@ -17,6 +17,7 @@ import net.ofatech.controlcore.application.component.ModTask;
 import net.ofatech.controlcore.application.component.ModuleContext;
 import net.ofatech.controlcore.application.component.TaskSchedule;
 import net.ofatech.controlcore.application.event.DomainEventBus;
+import net.ofatech.controlcore.application.history.ChangeContext;
 import net.ofatech.controlcore.application.text.CommandTexts;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.event.DomainEvent;
@@ -80,7 +81,11 @@ public final class ModRuntime {
                 failures,
                 command -> commands.register(
                         CommandTexts.spec(command.spec(), texts),
-                        CommandTexts.handler(command.spec(), command::execute, texts)));
+                        CommandTexts.handler(
+                                command.spec(),
+                                commandContext -> ChangeContext.fromCommand(
+                                        commandContext.sender(), () -> command.execute(commandContext)),
+                                texts)));
         each(eventHandlerType(), failures, handler -> subscriptions.add(subscribe(handler)));
         each(FeatureModule.class, failures, module -> {
             if (module.isEnabled(context)) {

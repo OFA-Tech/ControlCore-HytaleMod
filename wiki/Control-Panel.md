@@ -95,6 +95,35 @@ With [CustomInventory](https://github.com/SupremoSama/Hytale-CustomInventory) in
 Admins only: who may see and change each setting, `config.json` key, category or mod. See
 [Permissions](Permissions#in-the-panel).
 
+### History
+
+Admins (and players with `ofatech.controlcore.history`) see every server-wide change: `config.json` keys, mod
+settings, the server's keys, custom binds, permission rules and mods turned on or off. Each line shows what changed,
+`old -> new`, and `#number · when · who · from where` (panel, command, mod or rollback). Players' own preferences
+are not recorded.
+
+- The dropdown limits the list to one kind; the search matches names, people, values and `#number`. The newest 200
+  changes are listed; `/cc-history --filter=<text>` searches further back.
+- **Roll back** puts back the old value and records the rollback; a change can be rolled back once.
+- Rows in Server Configs, Mod Settings and the server's Keymaps that have changes show a **History** button that
+  opens this tab filtered to them.
+- How long changes are kept: `controlcore:history-days` (default 90).
+
+### Snapshots
+
+**History** → **Snapshots** (admins, or `ofatech.controlcore.snapshots`):
+
+- **New snapshot:** a name (letters, digits, `-`, `_`), what to include (config.json, mod settings, keys and binds,
+  permissions, mods on/off, players' preferences) and, for mod settings, all mods or one. A snapshot with the same
+  name is replaced.
+- **Preview restore** lists every difference as `current -> snapshot`, and how many saved values are skipped
+  (a mod that is gone, a read-only key). **Restore** applies them; **Save current state, then restore** first keeps
+  the current state as `before-<name>`. Each restored value shows up in Changes as "snapshot", so single values can
+  still be rolled back.
+- Restoring mod settings only touches the mods the snapshot holds; players' preferences only when it holds them.
+- **Delete** asks for a second click.
+- Snapshots are files in `mods/OFATech_ControlCore/snapshots/`; copy one to another server to restore it there.
+
 ## Search
 
 Every list has a search line: `[ field ▾ ] [ match ▾ ] [ text ]`.

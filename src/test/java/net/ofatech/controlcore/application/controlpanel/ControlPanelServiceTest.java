@@ -6,6 +6,9 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 import net.ofatech.controlcore.application.event.DomainEventBus;
+import net.ofatech.controlcore.application.history.ChangeHistory;
+import net.ofatech.controlcore.application.history.ChangeRecorder;
+import net.ofatech.controlcore.application.history.HistoryEditor;
 import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.mods.ModsEditor;
@@ -14,6 +17,7 @@ import net.ofatech.controlcore.application.settings.ModNames;
 import net.ofatech.controlcore.application.settings.PermissionsEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
+import net.ofatech.controlcore.application.snapshot.SnapshotService;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.ModSettings;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -25,6 +29,8 @@ import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
 import net.ofatech.controlcore.domain.result.ErrorType;
 import net.ofatech.controlcore.domain.result.Result;
+import net.ofatech.controlcore.fakes.FakeChangeLogStore;
+import net.ofatech.controlcore.fakes.FakeClock;
 import net.ofatech.controlcore.fakes.FakeCustomKeyBindStore;
 import net.ofatech.controlcore.fakes.FakeKeyBindStore;
 import net.ofatech.controlcore.fakes.FakeModCatalog;
@@ -34,6 +40,7 @@ import net.ofatech.controlcore.fakes.FakeServerConfiguration;
 import net.ofatech.controlcore.fakes.FakeSettingPermissionStore;
 import net.ofatech.controlcore.fakes.FakeSettingStore;
 import net.ofatech.controlcore.fakes.FakeSettings;
+import net.ofatech.controlcore.fakes.FakeSnapshotStore;
 import net.ofatech.controlcore.fakes.RecordingControlPanelView;
 import net.ofatech.controlcore.fakes.RecordingLog;
 import net.ofatech.controlcore.fakes.TestTexts;
@@ -78,9 +85,38 @@ class ControlPanelServiceTest {
                 new FakeCustomKeyBindStore(),
                 new FakePlayerData(),
                 (player, node) -> true,
-                log);
-        var policy = new SettingPermissionPolicy(new FakeSettingPermissionStore(), (player, node) -> true, registry);
+                log,
+                ChangeRecorder.NONE);
+        var policy = new SettingPermissionPolicy(
+                new FakeSettingPermissionStore(), (player, node) -> true, registry, ChangeRecorder.NONE);
         var serverConfig = new ServerConfigEditor(server, bus, bus, log);
+        var mods =
+                new ModsEditor(new FakeModCatalog(), registry, keyRegistry, modNames, policy, log, ChangeRecorder.NONE);
+        var history = new HistoryEditor(
+                new ChangeHistory(new FakeChangeLogStore(), new FakeClock()),
+                registry,
+                serverConfig,
+                keyRegistry,
+                policy,
+                mods,
+                (player, node) -> true,
+                TestTexts.of(registry, players));
+        var snapshots = new SnapshotService(
+                new FakeSnapshotStore(),
+                registry,
+                serverConfig,
+                keyRegistry,
+                new FakeCustomKeyBindStore(),
+                new FakeSettingPermissionStore(),
+                policy,
+                mods,
+                new FakePlayerData(),
+                players,
+                (player, node) -> true,
+                history,
+                TestTexts.of(registry, players),
+                new FakeClock(),
+                log);
         return new ControlPanelService(
                 new ControlPanelSettings(registry, settings),
                 players,
@@ -91,10 +127,12 @@ class ControlPanelServiceTest {
                 new KeymapsEditor(keyRegistry, TestTexts.of(registry, players), modNames),
                 policy,
                 TestTexts.of(registry, players),
-                new ModsEditor(new FakeModCatalog(), registry, keyRegistry, modNames, policy, log),
+                mods,
                 new PermissionsEditor(registry, serverConfig, policy),
                 probe,
-                (player, node) -> !node.equals("debug") || debugAllowed);
+                (player, node) -> !node.equals("debug") || debugAllowed,
+                history,
+                snapshots);
     }
 
     @Test

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import net.ofatech.controlcore.application.history.ChangeRecorder;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBind;
@@ -41,7 +42,8 @@ class KeyDispatcherTest {
             customBinds,
             new FakePlayerData(),
             (player, node) -> !denied.contains(node),
-            new RecordingLog());
+            new RecordingLog(),
+            ChangeRecorder.NONE);
     private PlayerId caio;
     private final KeyDispatcher dispatcher = new KeyDispatcher(keymaps, runner, players, clock, new RecordingLog());
 
@@ -192,7 +194,12 @@ class KeyDispatcherTest {
         assertThat(commands()).containsExactly("warp spawn Caio");
 
         var reloaded = new KeymapRegistry(
-                serverBinds, customBinds, new FakePlayerData(), (player, node) -> true, new RecordingLog());
+                serverBinds,
+                customBinds,
+                new FakePlayerData(),
+                (player, node) -> true,
+                new RecordingLog(),
+                ChangeRecorder.NONE);
         reloaded.loadCustom();
         assertThat(reloaded.find(SettingId.of("custom:announce")).orElseThrow().runsAsServer())
                 .isTrue();

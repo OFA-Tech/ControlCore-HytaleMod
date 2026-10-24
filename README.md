@@ -53,6 +53,9 @@ a value changes elsewhere. Tabs:
   keys. Admins turn mods on or off from the next start and read their config files.
 - **Permissions** (admins): who may see and who may change each setting, config key, category or mod, with the
   rule that decides it today. The same rules as `/cc-perm`.
+- **History** (admins): every server-wide change with who, when and from where, and **Roll back** to undo one.
+  The same as `/cc-history` and `/cc-rollback`. Its **Snapshots** view saves the whole setup (or parts of it) under a
+  name, shows what restoring would change, and restores it; snapshot files can be copied between servers.
 
 Every row shows its state (changed, default, not saved, error, needs a restart, locked); a Legend counts and
 filters them, errors appear under their row and Undo puts back a change. Every list has a search box with a field

@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import net.ofatech.controlcore.application.event.DomainEventBus;
+import net.ofatech.controlcore.application.history.ChangeRecorder;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
@@ -30,7 +31,7 @@ class SettingPermissionPolicyTest {
     private final FakeSettingPermissionStore store = new FakeSettingPermissionStore();
     private final Set<String> granted = new HashSet<>();
     private final SettingPermissionPolicy policy =
-            new SettingPermissionPolicy(store, (player, node) -> granted.contains(node), registry);
+            new SettingPermissionPolicy(store, (player, node) -> granted.contains(node), registry, ChangeRecorder.NONE);
     private final Optional<PlayerId> player = Optional.of(PlayerId.of(UUID.randomUUID()));
 
     private final SettingDefinition<Integer> maxHomes = SettingDefinition.server(

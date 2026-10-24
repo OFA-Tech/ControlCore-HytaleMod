@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import net.ofatech.controlcore.application.history.ChangeRecorder;
 import net.ofatech.controlcore.application.settings.ModNames;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -31,7 +32,8 @@ class KeymapsEditorTest {
             new FakeCustomKeyBindStore(),
             new FakePlayerData(),
             (player, node) -> true,
-            new RecordingLog());
+            new RecordingLog(),
+            ChangeRecorder.NONE);
     private final KeymapsEditor editor = new KeymapsEditor(keymaps, TestTexts.standalone(), new ModNames());
     private final PlayerId alice = PlayerId.of(UUID.randomUUID());
     private final PlayerId bob = PlayerId.of(UUID.randomUUID());

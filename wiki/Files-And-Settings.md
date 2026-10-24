@@ -12,6 +12,8 @@ ControlCore keeps its data in `mods/OFATech_ControlCore/`. Back up this folder b
 | `KeyBinds.json` | the server's keys for key actions |
 | `CustomKeyBinds.json` | binds admins created with `/cc-keybind-add` |
 | `SettingPermissions.json` | admins' `/cc-perm` rules |
+| `snapshots/<name>.json` | snapshots; copy one to another server's folder to restore it there |
+| `history/<year>-<month>.jsonl` | the change history, one change per line; months older than `controlcore:history-days` are deleted |
 
 The Server Configs tab writes to Hytale's own `config.json` in the server folder.
 
@@ -29,6 +31,8 @@ no longer fits (for example after a mod narrowed a range) falls back to the defa
 | `controlcore:welcome-message-color` | `#ffaa00` | colour of the welcome message (shown in the same row) |
 | `controlcore:empty-hand-keys` | `true` | let Q, E, right click, ability 4 and dodge be bound with an empty hand (see [Key binds](Key-Binds)) |
 | `controlcore:mods-hidden` | empty | mods players don't see in the Mods tab |
+| `controlcore:history-days` | `90` | how many days the change history keeps (1 to 3650) |
+| `controlcore:keys-keep-game-action` | `true` | bound keys also do their normal game action (see [Key binds](Key-Binds)) |
 | `controlcore:hud-rule.<part>` | Players choose | rule for each HUD part (see [HUD](HUD)) |
 
 ### Each player

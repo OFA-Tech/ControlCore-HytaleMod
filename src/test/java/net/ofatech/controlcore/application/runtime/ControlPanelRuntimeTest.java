@@ -111,6 +111,7 @@ class ControlPanelRuntimeTest extends RuntimeTestBase {
                 .containsExactly(
                         "controlcore:control-panel-enabled",
                         "controlcore:empty-hand-keys",
+                        "controlcore:history-days",
                         "controlcore:keys-keep-game-action",
                         "controlcore:welcome-message",
                         "controlcore:welcome-message-color",

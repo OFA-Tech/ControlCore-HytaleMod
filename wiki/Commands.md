@@ -49,6 +49,35 @@ All three are also in the panel's **Permissions** tab.
 
 See [Permissions](Permissions) for examples.
 
+## History
+
+Also in the panel's **History** tab.
+
+| Command | Who | Does |
+|---|---|---|
+| `/cc-history [--filter=text]` | admins or `ofatech.controlcore.history` | the latest 10 changes, optionally only those whose name, who or value contains the filter |
+| `/cc-rollback <number>` | admins or `ofatech.controlcore.history.rollback` | put back the value change `#number` replaced |
+
+## Snapshots
+
+Also in the panel: **History** → **Snapshots**. All need admins or `ofatech.controlcore.snapshots`.
+
+| Command | Does |
+|---|---|
+| `/cc-snapshot-save <name> [--parts=...]` | save a snapshot (replaces one with the same name). `--parts=` is `all` (default: everything except players) or parts joined with `+`: `config`, `settings`, `settings:<mod>/<mod>`, `keys`, `permissions`, `mods`, `players` |
+| `/cc-snapshots` | list the snapshots |
+| `/cc-snapshot-diff <name>` | what restoring would change, without changing anything |
+| `/cc-snapshot-restore <name>` | restore it |
+| `/cc-snapshot-restore-safe <name>` | save the current state as `before-<name>`, then restore it |
+| `/cc-snapshot-delete <name>` | delete it |
+
+```
+/cc-snapshot-save pvp-weekend --parts=config+settings+keys
+/cc-snapshot-save homes-only --parts=settings:homes
+/cc-snapshot-diff pvp-weekend
+/cc-snapshot-restore-safe pvp-weekend
+```
+
 ## Key binds
 
 | Command | Who | Does |
