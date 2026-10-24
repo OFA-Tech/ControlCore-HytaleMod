@@ -17,8 +17,8 @@ that produce one:
 | a short **Alt** tap while standing still | |
 | **Ctrl, Alt, Shift, Space** held together with the keys above | for example `ctrl+r`, `alt+3`, `shift+mouse_middle` |
 
-**Not detectable:** H, Tab, Caps Lock, F1-F12, WASD and other keys the game doesn't turn into an action. They are
-accepted and saved, but shown as "not available" until Hytale reports them.
+**Not detectable:** H, Tab, Caps Lock, F1-F12, WASD and other keys the game doesn't turn into an action. Commands
+accept and save them; the panel shows such a bind as "Custom" and it does nothing until Hytale reports those keys.
 
 Keys mean the **game action**, not the physical key: `q` means "ability 1". If a player moved ability 1 to another
 key in their game settings, that key triggers the bind.
@@ -28,7 +28,14 @@ The setting `controlcore:empty-hand-keys` (on by default) gives the empty hand, 
 do-nothing action for right click, abilities 1, 2 and 4 and dodge, so those can be bound too. Weapons and tools keep
 their own abilities. Turn it off if another mod changes the empty hand.
 
-## Writing keys
+## Picking keys in the panel
+
+Keymaps shows two dropdowns per action: a key to **hold** (none, Ctrl, Alt, Shift, Space or standing still) and a
+**main key**. Only keys that work are listed, each with its game action, for example "Q · Ability 1". The choice
+saves at once. A combination made with commands that the dropdowns can't show (such as Ctrl+Alt+3) appears as
+"Custom: ..." and stays until you pick something else; extra alternatives are kept and listed as "Also: ...".
+
+## Writing keys (commands)
 
 - Keys held together are joined with `+`: `ctrl+f`, `alt+shift+3`.
 - Alternatives with `|`: `alt+3 | mouse_middle`.
@@ -52,9 +59,12 @@ their own abilities. Turn it off if another mod changes the empty hand.
 **Default** on a player's row goes back to the server's keys; on a server row, to the mod's. Players who chose their
 own keys keep them when the server's keys change.
 
-When several actions match one press, the one with the most held keys wins (Ctrl+F over F). The key's normal game
-action (ability, interact, attack, game mode switch) is cancelled when a bind fires, unless the mod keeps it; hotbar
-changes are never cancelled.
+When several actions match one press, the one with the most held keys wins (Ctrl+F over F); equal ones all run.
+
+The key's normal game action (ability, interact, attack, game mode switch) **still happens** by default: F opens a
+door and runs its binds. The server setting **Bound keys keep their game action**
+(`controlcore:keys-keep-game-action`) turned off makes binds replace the key's action instead, unless the mod keeps
+it. Hotbar changes are never cancelled.
 
 ## Admins' command binds
 
@@ -72,7 +82,8 @@ Create a bind that runs any command:
   use is logged.
 - The bind becomes `custom:<name>`; adding the same name again replaces it. Quotes around the whole command are
   dropped.
-- In the panel: Keymaps → **Server defaults** has an **Add bind** form, and each bind has **Edit** and **Remove**.
+- In the panel: Keymaps → **Server defaults** → **+ New bind** opens a form (name, keys from the two dropdowns,
+  command, "run as the server"); each bind has **Edit** and **Remove**.
 - `/cc-keybind-list` lists them, `/cc-keybind-remove <name>` deletes one.
 - Players can rebind admins' binds for themselves like any other action.
 

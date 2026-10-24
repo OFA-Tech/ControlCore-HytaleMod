@@ -4,7 +4,27 @@
 [Permissions](Permissions)) sees only those. Players open their own part with `/prefs` (see [For players](For-Players)).
 
 Panels update by themselves: when another admin, a command or a mod changes a value, every open panel shows the
-new value and the status line says "Changed elsewhere".
+new value and the footer says "Changed elsewhere".
+
+## Reading the panel
+
+Every setting row has the same layout: **state mark · name · control · Undo · Default · Save**. The description
+under the name ends with the default value.
+
+| Mark | Means |
+|---|---|
+| filled orange diamond | **Changed**: the value differs from its default |
+| hollow diamond | **Default**: still on its default |
+| half circle | **Not saved**: you typed something and haven't pressed Save |
+| red cross | **Error**: the last save was refused; the reason is written under the row |
+| blue arrow | **Restart**: saved, but only applies after the server restarts |
+| hatched square | **Locked**: read-only (Hytale internals, or you may only see it) |
+
+- The **Legend** column on the right counts each state. Click a line to show only those rows; click it again or
+  **All** to show everything. The counts follow the search box.
+- **Undo** appears after you change a row and puts back the value it had before.
+- A blue banner at the top of every tab lists changes that wait for a restart.
+- Save messages appear in the footer, next to **Close**.
 
 ## Tabs
 
@@ -17,7 +37,7 @@ World map, …).
 - **Applies at once:** server name, message of the day, max players, max view radius, require join permission and the
   connection timeouts.
 - **Applies after a restart:** default world, game mode and hardcore mode, rate limit, backup, update, world map and
-  "display tmp tags". A gold line at the top lists every changed key that waits for a restart, until you restart.
+  "display tmp tags". A banner at the top lists every changed key that waits for a restart, until you restart.
 - **Read-only:** the password, storage settings, modules, mods and log levels. Edit those in `config.json` while the
   server is stopped.
 - **Default** puts back the value of a fresh Hytale server. Two keys have no such value (backup directory, update
@@ -39,8 +59,11 @@ editor its type needs:
 | Colour | colour picker and hex field (`#rrggbb`, `f0a` also works) |
 | List | one line per item with **Remove**, and a field with **Add** |
 
-Every row has **Default**, which returns the value to the mod's default. A text can show its colour in the same row
-(for example ControlCore's welcome message).
+Every row has **Default**, which returns the value to the mod's default, and **Undo** after a change. A text can
+show its colour in the same row (for example ControlCore's welcome message).
+
+`controlcore:keys-keep-game-action` (**Bound keys keep their game action**, on by default) decides whether a bound
+key still does its normal game action too. See [Key binds](Key-Binds#who-decides-the-keys).
 
 ### Player Prefs
 
@@ -48,8 +71,11 @@ Your own preferences: the same rows, but only for you. Default returns to the mo
 
 ### Keymaps
 
-- **Server defaults** (admins): the keys every player gets unless they choose their own, plus the **Add bind** form
-  to create command binds. See [Key binds](Key-Binds).
+Each action has two dropdowns: an optional key to **hold** (Ctrl, Alt, Shift, Space, standing still) and the
+**main key** (Q, E, R, F, O, mouse buttons, hotbar 1-9, ability 4, dodge, Alt tap). Picking saves at once.
+
+- **Server defaults** (admins): the keys every player gets unless they choose their own. **+ New bind** opens a form
+  to create command binds; **Edit** and **Remove** sit under each one. See [Key binds](Key-Binds).
 - **My keys:** your own keys. Default returns to the server's keys.
 - **Debug tools** (players with `ofatech.controlcore.debug`, under Server defaults): turn the input probe on and off,
   and open the key test screen. The same as `/cc-input-probe` and `/cc-key-probe input`.
@@ -89,7 +115,7 @@ Every list has a search line: `[ field ▾ ] [ match ▾ ] [ text ]`.
 | `is:changed` / `is:default` | rows changed from / still on their default |
 | `-word`, `-mod:server` | hide rows that match |
 
-The status line says how many rows match, for example "5 of 55 shown".
+The end of the search line says how many rows match, for example "5 of 55 shown".
 
 ## Panel settings
 
