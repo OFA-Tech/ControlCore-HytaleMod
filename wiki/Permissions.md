@@ -12,6 +12,7 @@ All nodes start with **`ofatech.controlcore`**. Operators have every node.
 | `ofatech.controlcore.debug` | the debug commands `/cc-input-probe` and `/cc-key-probe` |
 | `ofatech.controlcore.history` | see the change history (History tab, `/cc-history`) |
 | `ofatech.controlcore.history.rollback` | roll changes back; for settings it still needs the right to change that setting |
+| `ofatech.controlcore.snapshots` | save, restore and delete snapshots |
 
 Players without any node can still use `/prefs`, their own preferences and keys, `/cc-keys`, `/cc-settings` (showing
 only what they may see) and the Mods tab.
