@@ -210,7 +210,8 @@ api.keymaps().register(KeyAction.of("admintools", "announce")
   Default on a player's row goes back to the server's keys; on a server row, to the mod's. When
   several actions match, the one with the most held keys wins (Ctrl+F over F); equal ones all run.
 - **Game actions:** the pressed key's own game action (ability, use, attack, game mode switch) is cancelled
-  unless the action calls `keepGameAction()`. Hotbar changes are never cancelled.
+  unless the action calls `keepGameAction()`. Hotbar changes are never cancelled. The server setting
+  `controlcore:keys-keep-game-action` (on by default) keeps every key's game action, so binds run in addition.
 - Commands run on a virtual thread through Hytale's command manager, with the player's permissions;
   `onPress` code also runs on a virtual thread, so hop to the world thread for world changes. A 250 ms
   cooldown stops repeats.

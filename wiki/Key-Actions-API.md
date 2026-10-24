@@ -53,7 +53,8 @@ work: `Key.CTRL, Key.R` or `Key.ALT, Key.NUM_3` are good choices; `Key.H` is not
 - A 250 ms cooldown stops repeats.
 - When several actions match a press, the one with the most held keys wins (Ctrl+F over F); equal ones all run.
 - The pressed key's own game action (ability, interact, attack, game mode switch) is cancelled unless you call
-  `.keepGameAction()`. Hotbar changes are never cancelled.
+  `.keepGameAction()`. Hotbar changes are never cancelled. Server owners can keep the game action for every
+  bind with the setting **Bound keys keep their game action** (`controlcore:keys-keep-game-action`, on by default).
 
 ## Running as the server
 
