@@ -43,12 +43,13 @@ class KeyDispatcherTest {
             (player, node) -> !denied.contains(node),
             new RecordingLog());
     private PlayerId caio;
+    private final KeyDispatcher dispatcher = new KeyDispatcher(keymaps, runner, players, clock, new RecordingLog());
 
     @BeforeEach
     void setUp() {
         PlayerInfo info = players.join("Caio");
         caio = info.id();
-        input.listen(new KeyDispatcher(keymaps, runner, players, clock, new RecordingLog()));
+        input.listen(dispatcher);
         keymaps.register(KeyAction.of("homes", "home").command("home {player}").defaultKeys(Key.F));
         keymaps.register(KeyAction.of("homes", "spawn").command("/spawn").defaultKeys(Key.CTRL, Key.F));
     }
@@ -58,6 +59,16 @@ class KeyDispatcherTest {
         boolean cancelled = input.press(caio, KeySignal.USE);
 
         assertThat(cancelled).isTrue();
+        assertThat(commands()).containsExactly("home Caio");
+    }
+
+    @Test
+    void theGameActionCanBeKeptForEveryBind() {
+        dispatcher.keepGameActions(true);
+
+        boolean cancelled = input.press(caio, KeySignal.USE);
+
+        assertThat(cancelled).isFalse();
         assertThat(commands()).containsExactly("home Caio");
     }
 

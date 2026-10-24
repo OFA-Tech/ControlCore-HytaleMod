@@ -472,3 +472,5 @@ panel.keypick.also = También: {keys}
 panel.mods.badge.code = Código
 panel.mods.badge.no_code = Sin código
 panel.mods.badge.no_assets = Sin recursos
+settings.keys_keep_game_action.name = Las teclas con atajo mantienen su acción del juego
+settings.keys_keep_game_action.desc = Activado: la tecla hace ambas cosas, F sigue abriendo puertas y también ejecuta sus atajos. Desactívalo para que los atajos reemplacen la acción de la tecla, salvo que el mod pida mantenerla.

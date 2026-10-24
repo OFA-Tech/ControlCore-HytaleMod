@@ -29,6 +29,7 @@ public final class KeyDispatcher implements PlayerInput.Listener {
     private final Log log;
     private final Map<PlayerId, Set<KeySignal>> held = new ConcurrentHashMap<>();
     private final Map<String, Instant> lastFired = new ConcurrentHashMap<>();
+    private volatile boolean keepGameActions;
 
     public KeyDispatcher(KeymapRegistry keymaps, CommandRunner runner, Players players, Clock clock, Log log) {
         this.keymaps = keymaps;
@@ -59,7 +60,11 @@ public final class KeyDispatcher implements PlayerInput.Listener {
                 block |= action.blocksGameAction();
             }
         }
-        return block && !signal.isHotbar();
+        return block && !keepGameActions && !signal.isHotbar();
+    }
+
+    public void keepGameActions(boolean keep) {
+        keepGameActions = keep;
     }
 
     @Override

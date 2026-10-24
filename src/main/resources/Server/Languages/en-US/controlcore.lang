@@ -472,3 +472,5 @@ panel.keypick.also = Also: {keys}
 panel.mods.badge.code = Code
 panel.mods.badge.no_code = No code
 panel.mods.badge.no_assets = No assets
+settings.keys_keep_game_action.name = Bound keys keep their game action
+settings.keys_keep_game_action.desc = When on, a bound key does both: F still opens doors and also runs its binds. Turn off to let binds replace the key's own action, unless the mod asks to keep it.

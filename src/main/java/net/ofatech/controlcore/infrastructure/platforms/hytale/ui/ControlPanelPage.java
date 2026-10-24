@@ -696,6 +696,12 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 }
                 action.value = KeyPicker.compose(action.value, action.bindKeys, current.value());
                 if (action.value.equals(current.value())) {
+                    UICommandBuilder update = new UICommandBuilder();
+                    Integer index = rowIndexes.get(key).get(current.id());
+                    if (index != null) {
+                        showRowValue(key, section, index, current, update);
+                    }
+                    sendUpdate(update, false);
                     return;
                 }
                 name = SettingRows.SAVE;
