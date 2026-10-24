@@ -103,7 +103,7 @@ settings, the server's keys, custom binds, permission rules and mods turned on o
 are not recorded.
 
 - The dropdown limits the list to one kind; the search matches names, people, values and `#number`. The newest 200
-  changes are listed; `/cc-history <filter>` searches further back.
+  changes are listed; `/cc-history --filter=<text>` searches further back.
 - **Roll back** puts back the old value and records the rollback; a change can be rolled back once.
 - Rows in Server Configs, Mod Settings and the server's Keymaps that have changes show a **History** button that
   opens this tab filtered to them.

@@ -95,11 +95,10 @@ class SnapshotRuntimeTest extends RuntimeTestBase {
 
     @Test
     void saveFirstKeepsTheCurrentState() {
-        run("cc-snapshot-save", Map.of("name", "a", "parts", "settings"));
+        run("cc-snapshot-save", Map.of("name", "a", "parts", "settings+players"));
         run("cc-set", Map.of("id", WELCOME, "value", "Now"));
 
-        assertThat(reply("cc-snapshot-restore", Map.of("name", "a", "safety", "save-first")))
-                .contains("before-a");
+        assertThat(reply("cc-snapshot-restore-safe", Map.of("name", "a"))).contains("before-a");
 
         assertThat(platform.snapshots.snapshots.get("before-a").settings()).containsEntry(WELCOME, "Now");
         assertThat(value(WELCOME)).isEmpty();

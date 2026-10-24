@@ -571,4 +571,4 @@ errors.snapshots.forbidden = Solo los admins pueden usar instantáneas.
 errors.snapshots.invalid_name = '{name}' no puede ser el nombre de una instantánea: usa de 1 a 40 letras, números, - o _.
 errors.snapshots.no_parts = Elige al menos una parte para guardar.
 errors.snapshots.unknown = No existe la instantánea {name}.
-errors.snapshots.unknown_part = '{part}' no es una parte. Usa all, config, settings, settings:<mod>+<mod>, keys, permissions, mods o players.
+errors.snapshots.unknown_part = '{part}' no es una parte. Usa all, config, settings, settings:<mod>/<mod>, keys, permissions, mods o players.

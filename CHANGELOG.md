@@ -10,7 +10,7 @@
 - **History tab** (7th tab): newest first, with a filter by kind and a search (name, who, value or `#number`).
   **Roll back** puts back the value a change replaced; the rollback is recorded too. Server-wide rows with changes
   get a **History** button that opens the tab filtered to them.
-- `/cc-history [filter]` lists the latest 10 changes; `/cc-rollback <number>` rolls one back.
+- `/cc-history [--filter=text]` lists the latest 10 changes; `/cc-rollback <number>` rolls one back.
 - New nodes `ofatech.controlcore.history` (see the history) and `ofatech.controlcore.history.rollback` (roll back);
   ControlCore admins have both. Rolling back a setting still checks that you may change it.
 - **Snapshots.** Save the server's setup under a name and restore it later: `config.json`, mod settings (all mods
@@ -18,8 +18,8 @@
   preferences and keys. Restoring first shows each difference (`old -> new`); **Save current state, then restore**
   keeps a `before-<name>` snapshot. Restores are recorded in History as "snapshot". Each snapshot is one JSON file in
   `mods/OFATech_ControlCore/snapshots/`, so a setup like `pvp-weekend` can be copied to another server.
-  In the panel: History → **Snapshots**. Commands: `/cc-snapshot-save <name> [parts]`, `/cc-snapshots`,
-  `/cc-snapshot-diff <name>`, `/cc-snapshot-restore <name> [save-first]`, `/cc-snapshot-delete <name>`.
+  In the panel: History → **Snapshots**. Commands: `/cc-snapshot-save <name> [--parts=...]`, `/cc-snapshots`,
+  `/cc-snapshot-diff <name>`, `/cc-snapshot-restore <name>`, `/cc-snapshot-restore-safe <name>`, `/cc-snapshot-delete <name>`.
   Admins only, or the node `ofatech.controlcore.snapshots`.
 - New server setting `controlcore:history-days` (default 90): how long history is kept. It is stored as one file per
   month in `mods/OFATech_ControlCore/history/`; older months are deleted.

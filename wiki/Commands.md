@@ -55,7 +55,7 @@ Also in the panel's **History** tab.
 
 | Command | Who | Does |
 |---|---|---|
-| `/cc-history [filter]` | admins or `ofatech.controlcore.history` | the latest 10 changes, optionally only those whose name, who or value contains the filter |
+| `/cc-history [--filter=text]` | admins or `ofatech.controlcore.history` | the latest 10 changes, optionally only those whose name, who or value contains the filter |
 | `/cc-rollback <number>` | admins or `ofatech.controlcore.history.rollback` | put back the value change `#number` replaced |
 
 ## Snapshots
@@ -64,17 +64,18 @@ Also in the panel: **History** → **Snapshots**. All need admins or `ofatech.co
 
 | Command | Does |
 |---|---|
-| `/cc-snapshot-save <name> [parts]` | save a snapshot (replaces one with the same name). `parts` is `all` (default: everything except players) or a list: `config`, `settings`, `settings:<mod>+<mod>`, `keys`, `permissions`, `mods`, `players` |
+| `/cc-snapshot-save <name> [--parts=...]` | save a snapshot (replaces one with the same name). `--parts=` is `all` (default: everything except players) or parts joined with `+`: `config`, `settings`, `settings:<mod>/<mod>`, `keys`, `permissions`, `mods`, `players` |
 | `/cc-snapshots` | list the snapshots |
 | `/cc-snapshot-diff <name>` | what restoring would change, without changing anything |
-| `/cc-snapshot-restore <name> [save-first]` | restore it; `save-first` saves the current state as `before-<name>` first |
+| `/cc-snapshot-restore <name>` | restore it |
+| `/cc-snapshot-restore-safe <name>` | save the current state as `before-<name>`, then restore it |
 | `/cc-snapshot-delete <name>` | delete it |
 
 ```
-/cc-snapshot-save pvp-weekend config,settings,keys
-/cc-snapshot-save homes-only settings:homes
+/cc-snapshot-save pvp-weekend --parts=config+settings+keys
+/cc-snapshot-save homes-only --parts=settings:homes
 /cc-snapshot-diff pvp-weekend
-/cc-snapshot-restore pvp-weekend save-first
+/cc-snapshot-restore-safe pvp-weekend
 ```
 
 ## Key binds

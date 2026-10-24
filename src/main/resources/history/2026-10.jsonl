@@ -1,2 +1,5 @@
 {"id":1,"at":"2026-10-24T19:14:40.611215600Z","player":"3a030bb2-462f-4acd-93e2-7d2f76cbba79","by":"CaioMBA","source":"PANEL","kind":"SERVER_CONFIG","target":"server:motd","before":"","after":"TESTING","restart":false,"undoes":0}
 {"id":2,"at":"2026-10-24T19:14:58.051642600Z","player":"3a030bb2-462f-4acd-93e2-7d2f76cbba79","by":"CaioMBA","source":"ROLLBACK","kind":"SERVER_CONFIG","target":"server:motd","before":"TESTING","after":"","restart":false,"undoes":1}
+{"id":3,"at":"2026-10-24T19:38:25.962991900Z","by":"Console","source":"COMMAND","kind":"SERVER_CONFIG","target":"server:motd","before":"","after":"Snapshot test","restart":false,"undoes":0}
+{"id":4,"at":"2026-10-24T19:40:46.459138800Z","by":"Console","source":"COMMAND","kind":"SERVER_CONFIG","target":"server:motd","before":"","after":"Snapshot test","restart":false,"undoes":0}
+{"id":5,"at":"2026-10-24T19:40:48.572999800Z","by":"Console","source":"SNAPSHOT","kind":"SERVER_CONFIG","target":"server:motd","before":"Snapshot test","after":"","restart":false,"undoes":0}

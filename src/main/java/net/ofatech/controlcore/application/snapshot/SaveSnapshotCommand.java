@@ -28,7 +28,7 @@ public final class SaveSnapshotCommand implements ModCommand {
                 .optionalArg(
                         "parts",
                         ArgType.STRING,
-                        "all (default), or a list like config,keys,settings:controlcore+homes,permissions,mods,players");
+                        "all (default), or parts joined with +, like config+keys+settings:controlcore/homes+permissions+mods+players");
     }
 
     @Override

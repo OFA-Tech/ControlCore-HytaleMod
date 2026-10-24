@@ -34,7 +34,7 @@ final class SnapshotCommands {
         String value = text == null || text.isBlank() ? "all" : text.strip();
         Set<Part> parts = EnumSet.noneOf(Part.class);
         Set<String> mods = new LinkedHashSet<>();
-        for (String piece : value.split(",")) {
+        for (String piece : value.split("[,+\\s]+")) {
             String part = piece.strip();
             if (part.isEmpty()) {
                 continue;
@@ -45,7 +45,7 @@ final class SnapshotCommands {
             }
             if (part.toLowerCase(java.util.Locale.ROOT).startsWith("settings:")) {
                 parts.add(Part.SETTINGS);
-                for (String mod : part.substring("settings:".length()).split("\\+")) {
+                for (String mod : part.substring("settings:".length()).split("/")) {
                     if (!mod.isBlank()) {
                         mods.add(mod.strip());
                     }
@@ -58,7 +58,7 @@ final class SnapshotCommands {
                         "Snapshots.UnknownPart",
                         Text.key(
                                         "controlcore.errors.snapshots.unknown_part",
-                                        "'{part}' is not a part. Use all, config, settings, settings:<mod>+<mod>,"
+                                        "'{part}' is not a part. Use all, config, settings, settings:<mod>/<mod>,"
                                                 + " keys, permissions, mods or players.")
                                 .with("part", part)));
             }

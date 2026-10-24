@@ -14,26 +14,32 @@ public final class RestoreSnapshotCommand implements ModCommand {
 
     private final SnapshotService snapshots;
     private final Texts texts;
+    private final boolean saveFirst;
 
     public RestoreSnapshotCommand(SnapshotService snapshots, Texts texts) {
+        this(snapshots, texts, false);
+    }
+
+    RestoreSnapshotCommand(SnapshotService snapshots, Texts texts, boolean saveFirst) {
         this.snapshots = snapshots;
         this.texts = texts;
+        this.saveFirst = saveFirst;
     }
 
     @Override
     public CommandSpec spec() {
+        if (saveFirst) {
+            return CommandSpec.named("cc-snapshot-restore-safe")
+                    .description("Save the current state as before-<name>, then restore the snapshot")
+                    .arg("name", ArgType.STRING, "Snapshot name");
+        }
         return CommandSpec.named("cc-snapshot-restore")
                 .description("Restore a snapshot (check it first with /cc-snapshot-diff)")
-                .arg("name", ArgType.STRING, "Snapshot name")
-                .optionalArg("safety", ArgType.STRING, "save-first: save the current state as before-<name> first");
+                .arg("name", ArgType.STRING, "Snapshot name");
     }
 
     @Override
     public Result<Reply> execute(CommandContext context) {
-        boolean saveFirst = context.arg("safety")
-                .map(Object::toString)
-                .map(text -> text.strip().equalsIgnoreCase("save-first"))
-                .orElse(false);
         return snapshots
                 .restore(
                         context.string("name"),
