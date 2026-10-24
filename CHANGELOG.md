@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.13.0 - 2026-10-24
+
+Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.4. The API for other mods
+is unchanged (**2.0.0**); mods built for 0.10.0 keep working. New data folders `history/` and `snapshots/` are
+created on first use; nothing needs migrating.
+
 ### Added
 - **Change history.** Every server-wide change is recorded: `config.json` keys, mod settings, the server's keys,
   custom binds, permission rules and mods turned on or off. Each entry says who made it (player, console or a mod),
@@ -26,6 +32,10 @@
 
 ### Fixed
 - The "Permissions" start-tab option was missing its accent in Portuguese.
+- `config.json` changes made outside ControlCore (Hytale's `/maxplayers`, `/maxviewradius`, ...) are noticed within
+  5 seconds: open panels update and History records them as "outside ControlCore".
+- HUD parts a player hid (or a server rule hides) stay hidden after a game-mode change.
+- Command replies in the server console and log use `-` instead of `·`, which the log file showed as `�`.
 
 ## 0.12.0 - 2026-10-24
 
