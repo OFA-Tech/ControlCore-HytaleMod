@@ -104,29 +104,13 @@ final class SettingsSection {
     String description(SettingSnapshot snapshot) {
         SettingDefinition<?> definition = snapshot.definition();
         String text = tr.translate(definition.descriptionText()).strip();
-        String details;
-        if (keys) {
-            details = tr.t(
-                    scope == SettingScope.SERVER
-                            ? "controlcore.panel.keys_details_mod"
-                            : "controlcore.panel.keys_details_server",
-                    "keys",
-                    definition.formattedDefault(),
-                    "id",
-                    definition.id());
-        } else if (snapshot.access() == SettingAccess.READ_ONLY) {
-            details = tr.t("controlcore.panel.details_read_only", "id", definition.id());
-        } else {
-            details = tr.t(
-                    "controlcore.panel.details",
-                    "type",
-                    tr.translate(definition.type().describeText()),
-                    "default",
-                    shown(definition.formattedDefault(), snapshot),
-                    "id",
-                    definition.id());
-        }
-        return text.isBlank() ? details : text + " (" + details + ")";
+        String details = snapshot.access() == SettingAccess.READ_ONLY
+                ? tr.t("controlcore.panel.row_read_only")
+                : tr.t(
+                        "controlcore.panel.row_default",
+                        "value",
+                        keys ? definition.formattedDefault() : shown(definition.formattedDefault(), snapshot));
+        return text.isBlank() ? details : text + " · " + details;
     }
 
     SettingScope scope() {

@@ -41,9 +41,45 @@ final class SettingRows {
 
     private SettingRows() {}
 
-    static void heading(PanelSection key, String element, String text, UICommandBuilder commands) {
+    static final String TYPED = "Typed";
+    static final String UNDO = "Undo";
+
+    private static final String ICONS = "Pages/ControlCore/Icons/";
+
+    enum State {
+        RESTART("Restart"),
+        ERROR("Error"),
+        UNSAVED("Unsaved"),
+        CHANGED("Changed"),
+        LOCKED("Locked"),
+        DEFAULT("Default");
+
+        private final String icon;
+
+        State(String icon) {
+            this.icon = icon;
+        }
+
+        String icon() {
+            return ICONS + icon + ".png";
+        }
+    }
+
+    static void heading(PanelSection key, String element, String text, String count, UICommandBuilder commands) {
         commands.append(key.list, HEADING);
-        commands.set(element + ".Text", text);
+        commands.set(element + " #Text.Text", text);
+        commands.set(element + " #Count.Text", count);
+    }
+
+    static boolean canUndo(SettingsSection.Row row) {
+        return row.kind() != SettingsSection.Kind.INFO && row.color().isEmpty();
+    }
+
+    static boolean tracksTyping(SettingsSection.Kind kind) {
+        return switch (kind) {
+            case TEXT, INTEGER, DECIMAL, COLOR -> true;
+            default -> false;
+        };
     }
 
     static void build(
@@ -172,6 +208,16 @@ final class SettingRows {
                             .append(PanelAction.ITEM, row.color().get().id().toString()));
         } else if (row.kind() != SettingsSection.Kind.INFO) {
             events.addEventBinding(CustomUIEventBindingType.Activating, element + " #Reset", event(RESET, key, id));
+        }
+        if (canUndo(row)) {
+            events.addEventBinding(CustomUIEventBindingType.Activating, element + " #Undo", event(UNDO, key, id));
+        }
+        if (tracksTyping(row.kind())) {
+            events.addEventBinding(
+                    CustomUIEventBindingType.ValueChanged,
+                    input,
+                    event(TYPED, key, id).append(PanelAction.VALUE, input + ".Value"),
+                    false);
         }
     }
 

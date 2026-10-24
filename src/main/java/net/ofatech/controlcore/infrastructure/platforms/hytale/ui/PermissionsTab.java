@@ -51,7 +51,7 @@ final class PermissionsTab {
         for (PermissionsView.Entry entry : entries) {
             if (!entry.heading().equals(heading)) {
                 heading = entry.heading();
-                SettingRows.heading(SECTION, SECTION.row(element), heading, commands);
+                SettingRows.heading(SECTION, SECTION.row(element), heading, "", commands);
                 element++;
             }
             headingElements.add(element - 1);

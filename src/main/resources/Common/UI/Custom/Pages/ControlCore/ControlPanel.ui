@@ -1,471 +1,577 @@
 $C = "../../Common.ui";
 
-@SectionTitleStyle = (...$C.@DefaultLabelStyle, RenderBold: true, FontSize: 18);
-@SubsectionTitleStyle = (...$C.@DefaultLabelStyle, RenderBold: true, RenderUppercase: true, FontSize: 13, TextColor: #878e9c);
-@NoteStyle = (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, Wrap: true);
+@SubsectionTitleStyle = (...$C.@DefaultLabelStyle, RenderBold: true, RenderUppercase: true, FontSize: 13, TextColor: #9fb0bd);
+@NoteStyle = (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #9fb0bd, Wrap: true);
 @RowLabelStyle = (...$C.@DefaultLabelStyle, RenderBold: true, VerticalAlignment: Center);
 @RowValueStyle = (...$C.@DefaultLabelStyle, VerticalAlignment: Center, Wrap: true);
-@StatusStyle = (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #E8A93B, Wrap: true);
+@StatusStyle = (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #e8a93b, Wrap: true);
+
+@TitleStyle = (FontSize: 18, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center);
+@BrandStyle = (FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center);
+@BannerStyle = (FontSize: 14, TextColor: #e9e4d6, VerticalAlignment: Center, Wrap: true);
+@FooterStyle = (FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center);
+
+@TabLabel = (FontSize: 14, TextColor: #9fb0bd, VerticalAlignment: Center, HorizontalAlignment: Center);
+@TabLabelOn = (FontSize: 14, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center, HorizontalAlignment: Center);
+
+@TabStyle = TextButtonStyle(
+  Default: (Background: #162733, LabelStyle: @TabLabel),
+  Hovered: (Background: #1d3140, LabelStyle: @TabLabel),
+  Pressed: (Background: #1d3140, LabelStyle: @TabLabel)
+);
+
+@SelectedTabStyle = TextButtonStyle(
+  Default: (Background: #1d3140, LabelStyle: @TabLabelOn),
+  Hovered: (Background: #1d3140, LabelStyle: @TabLabelOn),
+  Pressed: (Background: #1d3140, LabelStyle: @TabLabelOn)
+);
 
 $C.@PageOverlay {
   LayoutMode: Middle;
 
-  $C.@DecoratedContainer {
+  Group {
     Anchor: (Width: 1040);
+    LayoutMode: Top;
+    Background: #2c4252;
+    Padding: (Full: 1);
 
-    #Title {
-      $C.@Title {
-        @Text = %controlcore.ui.title;
-      }
-    }
-
-    #Content {
+    Group #Frame {
       LayoutMode: Top;
-      Padding: (Full: 16);
+      Background: #13202a;
+
+      Group #TitleBar {
+        LayoutMode: Left;
+        Anchor: (Height: 48);
+        Padding: (Horizontal: 20);
+
+        Label {
+          Text: %controlcore.ui.title;
+          Style: @TitleStyle;
+          Anchor: (Width: 132);
+        }
+
+        Label {
+          Text: "OFA-Tech";
+          Style: @BrandStyle;
+          FlexWeight: 1;
+        }
+      }
 
       Group #TabButtons {
         LayoutMode: Left;
-        Anchor: (Height: 32, Bottom: 14);
+        Anchor: (Height: 38);
+        Padding: (Horizontal: 16);
 
-        $C.@SmallSecondaryTextButton #ServerTabButton {
-          @Text = %controlcore.ui.tabs.serverConfigs;
-          Anchor: (Width: 158, Height: 30, Right: 6);
-        }
-
-        $C.@SmallSecondaryTextButton #SettingsTabButton {
-          @Text = %controlcore.ui.tabs.modSettings;
-          Anchor: (Width: 158, Height: 30, Right: 6);
-        }
-
-        $C.@SmallSecondaryTextButton #PlayerTabButton {
-          @Text = %controlcore.ui.tabs.playerPrefs;
-          Anchor: (Width: 158, Height: 30, Right: 6);
-        }
-
-        $C.@SmallSecondaryTextButton #KeymapTabButton {
-          @Text = %controlcore.ui.tabs.keymaps;
-          Anchor: (Width: 158, Height: 30, Right: 6);
-        }
-
-        $C.@SmallSecondaryTextButton #ModsTabButton {
-          @Text = %controlcore.ui.tabs.mods;
-          Anchor: (Width: 158, Height: 30, Right: 6);
-        }
-
-        $C.@SmallSecondaryTextButton #PermissionsTabButton {
-          @Text = %controlcore.ui.tabs.permissions;
-          Anchor: (Width: 158, Height: 30);
-        }
-      }
-
-      Group #ServerTab {
-        LayoutMode: Top;
-
-        Label {
-          Text: %controlcore.ui.server.title;
-          Style: @SectionTitleStyle;
-          Anchor: (Bottom: 4);
-        }
-
-        Label {
-          Text: %controlcore.ui.server.intro;
-          Style: @NoteStyle;
-          Anchor: (Bottom: 8);
-        }
-
-        Label #ServerRestart {
-          Style: @StatusStyle;
-          Visible: false;
-          Anchor: (Bottom: 8);
-        }
-
-        Group {
-          LayoutMode: Left;
-          Anchor: (Height: 34, Bottom: 8);
-
-          $C.@DropdownBox #ServerSearchFilter {
-            Anchor: (Width: 150, Right: 6);
-          }
-
-          $C.@DropdownBox #ServerSearchMatch {
-            Anchor: (Width: 170, Right: 6);
-          }
-
-          $C.@TextField #ServerSearch {
-            FlexWeight: 1;
-          }
-        }
-
-        Label #ServerStatus {
-          Style: @StatusStyle;
-          Anchor: (Bottom: 8);
-        }
-
-        Group #ServerList {
-          LayoutMode: TopScrolling;
-          ScrollbarStyle: $C.@DefaultScrollbarStyle;
-          Anchor: (Height: 460);
-          Padding: (Right: 10);
-        }
-      }
-
-      Group #SettingsTab {
-        LayoutMode: Top;
-        Visible: false;
-
-        Label {
-          Text: %controlcore.ui.tabs.modSettings;
-          Style: @SectionTitleStyle;
-          Anchor: (Bottom: 4);
-        }
-
-        Label {
-          Text: %controlcore.ui.settings.intro;
-          Style: @NoteStyle;
-          Anchor: (Bottom: 8);
-        }
-
-        Group {
-          LayoutMode: Left;
-          Anchor: (Height: 34, Bottom: 8);
-
-          $C.@DropdownBox #SettingsSearchFilter {
-            Anchor: (Width: 150, Right: 6);
-          }
-
-          $C.@DropdownBox #SettingsSearchMatch {
-            Anchor: (Width: 170, Right: 6);
-          }
-
-          $C.@TextField #SettingsSearch {
-            FlexWeight: 1;
-          }
-        }
-
-        Label #SettingsStatus {
-          Style: @StatusStyle;
-          Anchor: (Bottom: 8);
-        }
-
-        Group #SettingsList {
-          LayoutMode: TopScrolling;
-          ScrollbarStyle: $C.@DefaultScrollbarStyle;
-          Anchor: (Height: 460);
-          Padding: (Right: 10);
-        }
-      }
-
-      Group #PlayerTab {
-        LayoutMode: Top;
-        Visible: false;
-
-        Label {
-          Text: %controlcore.ui.prefs.title;
-          Style: @SectionTitleStyle;
-          Anchor: (Bottom: 4);
-        }
-
-        Label {
-          Text: %controlcore.ui.prefs.intro;
-          Style: @NoteStyle;
-          Anchor: (Bottom: 8);
-        }
-
-        Group {
-          LayoutMode: Left;
-          Anchor: (Height: 34, Bottom: 8);
-
-          $C.@DropdownBox #PlayerSearchFilter {
-            Anchor: (Width: 150, Right: 6);
-          }
-
-          $C.@DropdownBox #PlayerSearchMatch {
-            Anchor: (Width: 170, Right: 6);
-          }
-
-          $C.@TextField #PlayerSearch {
-            FlexWeight: 1;
-          }
-        }
-
-        Label #PlayerStatus {
-          Style: @StatusStyle;
-          Anchor: (Bottom: 8);
-        }
-
-        Group #PlayerList {
-          LayoutMode: TopScrolling;
-          ScrollbarStyle: $C.@DefaultScrollbarStyle;
-          Anchor: (Height: 460);
-          Padding: (Right: 10);
-        }
-      }
-
-      Group #KeymapTab {
-        LayoutMode: Top;
-        Visible: false;
-
-        Label {
-          Text: %controlcore.ui.tabs.keymaps;
-          Style: @SectionTitleStyle;
-          Anchor: (Bottom: 4);
-        }
-
-        Group #KeymapModeButtons {
-          LayoutMode: Left;
-          Visible: false;
-          Anchor: (Height: 34, Bottom: 8);
-
-          $C.@SmallSecondaryTextButton #KeymapModeServer {
-            @Text = %controlcore.ui.keymaps.modeServer;
-            Anchor: (Width: 170, Height: 32, Right: 6);
-          }
-
-          $C.@SmallSecondaryTextButton #KeymapModeMine {
-            @Text = %controlcore.ui.keymaps.modeMine;
-            Anchor: (Width: 120, Height: 32);
-          }
-        }
-
-        Group #ServerKeymaps {
-          LayoutMode: Top;
-          Visible: false;
-
-          Label {
-            Text: %controlcore.ui.keymaps.serverIntro;
-            Style: @NoteStyle;
-            Anchor: (Bottom: 8);
-          }
-
-          Group #CustomBindForm {
+          Group #ServerTabSlot {
             LayoutMode: Top;
-            Anchor: (Bottom: 8);
+            Anchor: (Width: 158, Right: 4);
+
+            Group #ServerTabEdge {
+              Anchor: (Height: 3);
+              Background: #e8a93b;
+              Visible: false;
+            }
+
+            TextButton #ServerTabButton {
+              Text: %controlcore.ui.tabs.serverConfigs;
+              Style: @TabStyle;
+              Anchor: (Height: 35);
+            }
+          }
+
+          Group #SettingsTabSlot {
+            LayoutMode: Top;
+            Anchor: (Width: 158, Right: 4);
+
+            Group #SettingsTabEdge {
+              Anchor: (Height: 3);
+              Background: #e8a93b;
+              Visible: false;
+            }
+
+            TextButton #SettingsTabButton {
+              Text: %controlcore.ui.tabs.modSettings;
+              Style: @TabStyle;
+              Anchor: (Height: 35);
+            }
+          }
+
+          Group #PlayerTabSlot {
+            LayoutMode: Top;
+            Anchor: (Width: 158, Right: 4);
+
+            Group #PlayerTabEdge {
+              Anchor: (Height: 3);
+              Background: #e8a93b;
+              Visible: false;
+            }
+
+            TextButton #PlayerTabButton {
+              Text: %controlcore.ui.tabs.playerPrefs;
+              Style: @TabStyle;
+              Anchor: (Height: 35);
+            }
+          }
+
+          Group #KeymapTabSlot {
+            LayoutMode: Top;
+            Anchor: (Width: 158, Right: 4);
+
+            Group #KeymapTabEdge {
+              Anchor: (Height: 3);
+              Background: #e8a93b;
+              Visible: false;
+            }
+
+            TextButton #KeymapTabButton {
+              Text: %controlcore.ui.tabs.keymaps;
+              Style: @TabStyle;
+              Anchor: (Height: 35);
+            }
+          }
+
+          Group #ModsTabSlot {
+            LayoutMode: Top;
+            Anchor: (Width: 158, Right: 4);
+
+            Group #ModsTabEdge {
+              Anchor: (Height: 3);
+              Background: #e8a93b;
+              Visible: false;
+            }
+
+            TextButton #ModsTabButton {
+              Text: %controlcore.ui.tabs.mods;
+              Style: @TabStyle;
+              Anchor: (Height: 35);
+            }
+          }
+
+          Group #PermissionsTabSlot {
+            LayoutMode: Top;
+            Anchor: (Width: 158);
+
+            Group #PermissionsTabEdge {
+              Anchor: (Height: 3);
+              Background: #e8a93b;
+              Visible: false;
+            }
+
+            TextButton #PermissionsTabButton {
+              Text: %controlcore.ui.tabs.permissions;
+              Style: @TabStyle;
+              Anchor: (Height: 35);
+            }
+          }
+      }
+
+      Group #Body {
+        LayoutMode: Top;
+        Background: #1d3140;
+        Padding: (Full: 16);
+
+        Group #RestartBanner {
+          LayoutMode: Left;
+          Visible: false;
+          Anchor: (Height: 36, Bottom: 10);
+          Background: #1b2f44;
+          Padding: (Horizontal: 10);
+
+          Group {
+            Anchor: (Width: 4, Right: 10);
+            Background: #7fb2e0;
+          }
+
+          Group {
+            Anchor: (Width: 18, Height: 18, Top: 9, Right: 10);
+            Background: "Icons/Restart.png";
+          }
+
+          Label #RestartText {
+            Style: @BannerStyle;
+            FlexWeight: 1;
+          }
+        }
+
+          Group #ServerTab {
+            LayoutMode: Top;
+
+            Label {
+              Text: %controlcore.ui.server.intro;
+              Style: @NoteStyle;
+              Anchor: (Bottom: 8);
+            }
 
             Group {
               LayoutMode: Left;
-              Anchor: (Height: 38);
+              Anchor: (Height: 34, Bottom: 8);
 
-              $C.@TextField #NewBindName {
+              $C.@DropdownBox #ServerSearchFilter {
                 Anchor: (Width: 150, Right: 6);
               }
 
-              $C.@TextField #NewBindKeys {
-                Anchor: (Width: 140, Right: 6);
+              $C.@DropdownBox #ServerSearchMatch {
+                Anchor: (Width: 170, Right: 6);
               }
 
-              $C.@TextField #NewBindCommand {
+              $C.@TextField #ServerSearch {
                 FlexWeight: 1;
               }
+            }
+
+            Label #ServerStatus {
+              Style: @StatusStyle;
+              Anchor: (Bottom: 8);
+            }
+
+            Group #ServerList {
+              LayoutMode: TopScrolling;
+              ScrollbarStyle: $C.@DefaultScrollbarStyle;
+              Anchor: (Height: 430);
+              Padding: (Right: 10);
+            }
+          }
+
+          Group #SettingsTab {
+            LayoutMode: Top;
+            Visible: false;
+
+            Label {
+              Text: %controlcore.ui.settings.intro;
+              Style: @NoteStyle;
+              Anchor: (Bottom: 8);
             }
 
             Group {
               LayoutMode: Left;
-              Anchor: (Height: 34, Top: 4);
+              Anchor: (Height: 34, Bottom: 8);
 
-              $C.@CheckBox #NewBindAsServer {
-                Anchor: (Width: 26, Height: 26, Right: 8);
+              $C.@DropdownBox #SettingsSearchFilter {
+                Anchor: (Width: 150, Right: 6);
               }
 
-              Label {
-                Text: %controlcore.ui.bind.asServer;
+              $C.@DropdownBox #SettingsSearchMatch {
+                Anchor: (Width: 170, Right: 6);
+              }
+
+              $C.@TextField #SettingsSearch {
                 FlexWeight: 1;
-                Style: @NoteStyle;
-              }
-
-              $C.@SmallSecondaryTextButton #NewBindAdd {
-                @Text = %controlcore.ui.bind.save;
-                Anchor: (Width: 110, Height: 32, Left: 6);
               }
             }
-          }
 
-          Group {
-            LayoutMode: Left;
-            Anchor: (Height: 34, Bottom: 8);
-
-            $C.@DropdownBox #ServerKeymapSearchFilter {
-              Anchor: (Width: 150, Right: 6);
+            Label #SettingsStatus {
+              Style: @StatusStyle;
+              Anchor: (Bottom: 8);
             }
 
-            $C.@DropdownBox #ServerKeymapSearchMatch {
-              Anchor: (Width: 170, Right: 6);
-            }
-
-            $C.@TextField #ServerKeymapSearch {
-              FlexWeight: 1;
+            Group #SettingsList {
+              LayoutMode: TopScrolling;
+              ScrollbarStyle: $C.@DefaultScrollbarStyle;
+              Anchor: (Height: 430);
+              Padding: (Right: 10);
             }
           }
 
-          Label #ServerKeymapStatus {
-            Style: @StatusStyle;
-            Anchor: (Bottom: 8);
-          }
-
-          Group #ServerKeymapList {
-            LayoutMode: TopScrolling;
-            ScrollbarStyle: $C.@DefaultScrollbarStyle;
-            Anchor: (Height: 178);
-            Padding: (Right: 10);
-          }
-
-          Group #DebugTools {
-            LayoutMode: Left;
+          Group #PlayerTab {
+            LayoutMode: Top;
             Visible: false;
-            Anchor: (Height: 34, Top: 8);
 
             Label {
-              Text: %controlcore.ui.debug.title;
-              FlexWeight: 1;
-              Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, VerticalAlignment: Center);
+              Text: %controlcore.ui.prefs.intro;
+              Style: @NoteStyle;
+              Anchor: (Bottom: 8);
             }
 
-            $C.@SmallSecondaryTextButton #ProbeToggle {
-              @Text = %controlcore.ui.debug.probe;
-              Anchor: (Width: 200, Height: 32, Left: 6);
+            Group {
+              LayoutMode: Left;
+              Anchor: (Height: 34, Bottom: 8);
+
+              $C.@DropdownBox #PlayerSearchFilter {
+                Anchor: (Width: 150, Right: 6);
+              }
+
+              $C.@DropdownBox #PlayerSearchMatch {
+                Anchor: (Width: 170, Right: 6);
+              }
+
+              $C.@TextField #PlayerSearch {
+                FlexWeight: 1;
+              }
             }
 
-            $C.@SmallSecondaryTextButton #KeyTest {
-              @Text = %controlcore.ui.debug.keyTest;
-              Anchor: (Width: 160, Height: 32, Left: 6);
-            }
-          }
-        }
-
-        Group #MyKeymaps {
-          LayoutMode: Top;
-
-          Label {
-            Text: %controlcore.ui.keymaps.mineIntro;
-            Style: @NoteStyle;
-            Anchor: (Bottom: 8);
-          }
-
-          Group {
-            LayoutMode: Left;
-            Anchor: (Height: 34, Bottom: 8);
-
-            $C.@DropdownBox #KeymapSearchFilter {
-              Anchor: (Width: 150, Right: 6);
+            Label #PlayerStatus {
+              Style: @StatusStyle;
+              Anchor: (Bottom: 8);
             }
 
-            $C.@DropdownBox #KeymapSearchMatch {
-              Anchor: (Width: 170, Right: 6);
-            }
-
-            $C.@TextField #KeymapSearch {
-              FlexWeight: 1;
+            Group #PlayerList {
+              LayoutMode: TopScrolling;
+              ScrollbarStyle: $C.@DefaultScrollbarStyle;
+              Anchor: (Height: 430);
+              Padding: (Right: 10);
             }
           }
 
-          Label #KeymapStatus {
-            Style: @StatusStyle;
-            Anchor: (Bottom: 8);
+          Group #KeymapTab {
+            LayoutMode: Top;
+            Visible: false;
+
+            Group #KeymapModeButtons {
+              LayoutMode: Left;
+              Visible: false;
+              Anchor: (Height: 34, Bottom: 8);
+
+              $C.@SmallSecondaryTextButton #KeymapModeServer {
+                @Text = %controlcore.ui.keymaps.modeServer;
+                Anchor: (Width: 170, Height: 32, Right: 6);
+              }
+
+              $C.@SmallSecondaryTextButton #KeymapModeMine {
+                @Text = %controlcore.ui.keymaps.modeMine;
+                Anchor: (Width: 120, Height: 32);
+              }
+            }
+
+            Group #ServerKeymaps {
+              LayoutMode: Top;
+              Visible: false;
+
+              Label {
+                Text: %controlcore.ui.keymaps.serverIntro;
+                Style: @NoteStyle;
+                Anchor: (Bottom: 8);
+              }
+
+              Group #CustomBindForm {
+                LayoutMode: Top;
+                Anchor: (Bottom: 8);
+
+                Group {
+                  LayoutMode: Left;
+                  Anchor: (Height: 38);
+
+                  $C.@TextField #NewBindName {
+                    Anchor: (Width: 150, Right: 6);
+                  }
+
+                  $C.@TextField #NewBindKeys {
+                    Anchor: (Width: 140, Right: 6);
+                  }
+
+                  $C.@TextField #NewBindCommand {
+                    FlexWeight: 1;
+                  }
+                }
+
+                Group {
+                  LayoutMode: Left;
+                  Anchor: (Height: 34, Top: 4);
+
+                  $C.@CheckBox #NewBindAsServer {
+                    Anchor: (Width: 26, Height: 26, Right: 8);
+                  }
+
+                  Label {
+                    Text: %controlcore.ui.bind.asServer;
+                    FlexWeight: 1;
+                    Style: @NoteStyle;
+                  }
+
+                  $C.@SmallSecondaryTextButton #NewBindAdd {
+                    @Text = %controlcore.ui.bind.save;
+                    Anchor: (Width: 110, Height: 32, Left: 6);
+                  }
+                }
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 34, Bottom: 8);
+
+                $C.@DropdownBox #ServerKeymapSearchFilter {
+                  Anchor: (Width: 150, Right: 6);
+                }
+
+                $C.@DropdownBox #ServerKeymapSearchMatch {
+                  Anchor: (Width: 170, Right: 6);
+                }
+
+                $C.@TextField #ServerKeymapSearch {
+                  FlexWeight: 1;
+                }
+              }
+
+              Label #ServerKeymapStatus {
+                Style: @StatusStyle;
+                Anchor: (Bottom: 8);
+              }
+
+              Group #ServerKeymapList {
+                LayoutMode: TopScrolling;
+                ScrollbarStyle: $C.@DefaultScrollbarStyle;
+                Anchor: (Height: 178);
+                Padding: (Right: 10);
+              }
+
+              Group #DebugTools {
+                LayoutMode: Left;
+                Visible: false;
+                Anchor: (Height: 34, Top: 8);
+
+                Label {
+                  Text: %controlcore.ui.debug.title;
+                  FlexWeight: 1;
+                  Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, VerticalAlignment: Center);
+                }
+
+                $C.@SmallSecondaryTextButton #ProbeToggle {
+                  @Text = %controlcore.ui.debug.probe;
+                  Anchor: (Width: 200, Height: 32, Left: 6);
+                }
+
+                $C.@SmallSecondaryTextButton #KeyTest {
+                  @Text = %controlcore.ui.debug.keyTest;
+                  Anchor: (Width: 160, Height: 32, Left: 6);
+                }
+              }
+            }
+
+            Group #MyKeymaps {
+              LayoutMode: Top;
+
+              Label {
+                Text: %controlcore.ui.keymaps.mineIntro;
+                Style: @NoteStyle;
+                Anchor: (Bottom: 8);
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 34, Bottom: 8);
+
+                $C.@DropdownBox #KeymapSearchFilter {
+                  Anchor: (Width: 150, Right: 6);
+                }
+
+                $C.@DropdownBox #KeymapSearchMatch {
+                  Anchor: (Width: 170, Right: 6);
+                }
+
+                $C.@TextField #KeymapSearch {
+                  FlexWeight: 1;
+                }
+              }
+
+              Label #KeymapStatus {
+                Style: @StatusStyle;
+                Anchor: (Bottom: 8);
+              }
+
+              Group #KeymapList {
+                LayoutMode: TopScrolling;
+                ScrollbarStyle: $C.@DefaultScrollbarStyle;
+                Anchor: (Height: 420);
+                Padding: (Right: 10);
+              }
+            }
           }
 
-          Group #KeymapList {
-            LayoutMode: TopScrolling;
-            ScrollbarStyle: $C.@DefaultScrollbarStyle;
-            Anchor: (Height: 420);
-            Padding: (Right: 10);
-          }
-        }
-      }
+          Group #ModsTab {
+            LayoutMode: Top;
+            Visible: false;
 
-      Group #ModsTab {
-        LayoutMode: Top;
-        Visible: false;
+            Label {
+              Text: %controlcore.ui.mods.intro;
+              Style: @NoteStyle;
+              Anchor: (Bottom: 8);
+            }
 
-        Label {
-          Text: %controlcore.ui.tabs.mods;
-          Style: @SectionTitleStyle;
-          Anchor: (Bottom: 4);
-        }
+            Group {
+              LayoutMode: Left;
+              Anchor: (Height: 34, Bottom: 8);
 
-        Label {
-          Text: %controlcore.ui.mods.intro;
-          Style: @NoteStyle;
-          Anchor: (Bottom: 8);
-        }
+              $C.@DropdownBox #ModsSearchFilter {
+                Anchor: (Width: 220, Right: 6);
+              }
 
-        Group {
-          LayoutMode: Left;
-          Anchor: (Height: 34, Bottom: 8);
+              $C.@TextField #ModsSearch {
+                FlexWeight: 1;
+              }
+            }
 
-          $C.@DropdownBox #ModsSearchFilter {
-            Anchor: (Width: 220, Right: 6);
-          }
+            Label #ModsStatus {
+              Style: @StatusStyle;
+              Anchor: (Bottom: 8);
+            }
 
-          $C.@TextField #ModsSearch {
-            FlexWeight: 1;
-          }
-        }
-
-        Label #ModsStatus {
-          Style: @StatusStyle;
-          Anchor: (Bottom: 8);
-        }
-
-        Group #ModsList {
-          LayoutMode: TopScrolling;
-          ScrollbarStyle: $C.@DefaultScrollbarStyle;
-          Anchor: (Height: 460);
-          Padding: (Right: 10);
-        }
-      }
-
-      Group #PermissionsTab {
-        LayoutMode: Top;
-        Visible: false;
-
-        Label {
-          Text: %controlcore.ui.tabs.permissions;
-          Style: @SectionTitleStyle;
-          Anchor: (Bottom: 4);
-        }
-
-        Label {
-          Text: %controlcore.ui.permissions.intro;
-          Style: @NoteStyle;
-          Anchor: (Bottom: 8);
-        }
-
-        Group {
-          LayoutMode: Left;
-          Anchor: (Height: 34, Bottom: 8);
-
-          $C.@DropdownBox #PermissionSearchFilter {
-            Anchor: (Width: 150, Right: 6);
+            Group #ModsList {
+              LayoutMode: TopScrolling;
+              ScrollbarStyle: $C.@DefaultScrollbarStyle;
+              Anchor: (Height: 430);
+              Padding: (Right: 10);
+            }
           }
 
-          $C.@DropdownBox #PermissionSearchMatch {
-            Anchor: (Width: 170, Right: 6);
+          Group #PermissionsTab {
+            LayoutMode: Top;
+            Visible: false;
+
+            Label {
+              Text: %controlcore.ui.permissions.intro;
+              Style: @NoteStyle;
+              Anchor: (Bottom: 8);
+            }
+
+            Group {
+              LayoutMode: Left;
+              Anchor: (Height: 34, Bottom: 8);
+
+              $C.@DropdownBox #PermissionSearchFilter {
+                Anchor: (Width: 150, Right: 6);
+              }
+
+              $C.@DropdownBox #PermissionSearchMatch {
+                Anchor: (Width: 170, Right: 6);
+              }
+
+              $C.@TextField #PermissionSearch {
+                FlexWeight: 1;
+              }
+            }
+
+            Label #PermissionStatus {
+              Style: @StatusStyle;
+              Anchor: (Bottom: 8);
+            }
+
+            Group #PermissionList {
+              LayoutMode: TopScrolling;
+              ScrollbarStyle: $C.@DefaultScrollbarStyle;
+              Anchor: (Height: 430);
+              Padding: (Right: 10);
+            }
           }
-
-          $C.@TextField #PermissionSearch {
-            FlexWeight: 1;
-          }
-        }
-
-        Label #PermissionStatus {
-          Style: @StatusStyle;
-          Anchor: (Bottom: 8);
-        }
-
-        Group #PermissionList {
-          LayoutMode: TopScrolling;
-          ScrollbarStyle: $C.@DefaultScrollbarStyle;
-          Anchor: (Height: 430);
-          Padding: (Right: 10);
-        }
       }
 
       Group {
-        Anchor: (Vertical: 14, Height: 1);
-        Background: #5e512c;
+        Anchor: (Height: 1);
+        Background: #2c4252;
       }
 
-      $C.@TextButton #CloseButton {
-        Text: %controlcore.ui.close;
+      Group #Footer {
+        LayoutMode: Left;
+        Anchor: (Height: 50);
+        Padding: (Horizontal: 20);
+
+        Label #FooterStatus {
+          Style: @FooterStyle;
+          FlexWeight: 1;
+        }
+
+        $C.@SmallSecondaryTextButton #CloseButton {
+          @Text = %controlcore.ui.close;
+          Anchor: (Width: 130, Height: 32, Top: 9);
+        }
       }
     }
   }
