@@ -46,15 +46,18 @@ a value changes elsewhere. Tabs:
 - **Mod Settings** and **Player Prefs**: every registered setting, with the editor its type needs: text field,
   check box, dropdown, slider plus field for numbers with a range, colour picker, item list. A text setting can
   show its colour in the same row.
-- **Keymaps**: the server's default keys (admins, with a form for their own command binds) and your own keys.
+- **Keymaps**: the server's default keys (admins, with a form for their own command binds) and your own keys,
+  picked from dropdowns that list only keys the server can detect.
   Players with the debug permission also get buttons for the input probe and the key test.
 - **Mods**: every mod and asset pack with its logo, version, authors and state; buttons jump to its settings and
   keys. Admins turn mods on or off from the next start and read their config files.
 - **Permissions** (admins): who may see and who may change each setting, config key, category or mod, with the
   rule that decides it today. The same rules as `/cc-perm`.
 
-Every list has a search box with a field filter and equals / starts with / contains / ends with (for example
-`mod:controlcore`, `key:ctrl+f`, `is:changed`).
+Every row shows its state (changed, default, not saved, error, needs a restart, locked); a Legend counts and
+filters them, errors appear under their row and Undo puts back a change. Every list has a search box with a field
+filter and equals / starts with / contains / ends with (for example `mod:controlcore`, `key:ctrl+f`,
+`is:changed`).
 
 **For server owners and players**
 

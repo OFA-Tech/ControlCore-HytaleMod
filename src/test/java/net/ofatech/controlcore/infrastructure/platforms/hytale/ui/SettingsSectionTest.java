@@ -92,10 +92,9 @@ class SettingsSectionTest {
         assertThat(saved.value().value()).isEqualTo("7");
         assertThat(max.get()).isEqualTo(7);
         assertThat(section.saved(saved.value())).isEqualTo("Saved: Max homes = 7");
-        assertThat(invalid.error().description()).contains("integer 1..9");
+        assertThat(invalid.error().description()).contains("whole number from 1 to 9");
         assertThat(unknown.error().code()).isEqualTo("Settings.InvalidId");
-        assertThat(section.description(saved.value()))
-                .isEqualTo("Homes per player (integer 1..9, default 3 · homes:max)");
+        assertThat(section.description(saved.value())).isEqualTo("Homes per player · Default: 3");
     }
 
     @Test

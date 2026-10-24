@@ -1,6 +1,26 @@
 $C = "../../Common.ui";
 
-Label {
-  Anchor: (Top: 4, Bottom: 6);
-  Style: (...$C.@DefaultLabelStyle, RenderBold: true, RenderUppercase: true, FontSize: 13, TextColor: #878e9c);
+Group {
+  LayoutMode: Top;
+  Anchor: (Top: 14, Bottom: 2);
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Height: 22);
+
+    Label #Text {
+      FlexWeight: 1;
+      Style: (...$C.@DefaultLabelStyle, RenderBold: true, RenderUppercase: true, FontSize: 13, TextColor: #c9c3b3, VerticalAlignment: Center);
+    }
+
+    Label #Count {
+      Anchor: (Width: 220);
+      Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #9fb0bd, HorizontalAlignment: End, VerticalAlignment: Center);
+    }
+  }
+
+  Group {
+    Anchor: (Height: 1, Top: 3);
+    Background: #4a6273;
+  }
 }

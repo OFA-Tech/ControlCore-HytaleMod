@@ -26,6 +26,7 @@ import net.ofatech.controlcore.domain.result.Result;
 final class SettingsSection {
 
     enum Kind {
+        KEYS,
         TEXT,
         INTEGER,
         DECIMAL,
@@ -84,9 +85,7 @@ final class SettingsSection {
     }
 
     String placeholder(SettingSnapshot snapshot) {
-        return keys
-                ? tr.t("controlcore.panel.keys_hint")
-                : tr.translate(snapshot.definition().type().describeText());
+        return tr.translate(snapshot.definition().type().describeText());
     }
 
     String name(SettingSnapshot snapshot) {
@@ -104,29 +103,19 @@ final class SettingsSection {
     String description(SettingSnapshot snapshot) {
         SettingDefinition<?> definition = snapshot.definition();
         String text = tr.translate(definition.descriptionText()).strip();
-        String details;
         if (keys) {
-            details = tr.t(
-                    scope == SettingScope.SERVER
-                            ? "controlcore.panel.keys_details_mod"
-                            : "controlcore.panel.keys_details_server",
-                    "keys",
-                    definition.formattedDefault(),
-                    "id",
-                    definition.id());
-        } else if (snapshot.access() == SettingAccess.READ_ONLY) {
-            details = tr.t("controlcore.panel.details_read_only", "id", definition.id());
-        } else {
-            details = tr.t(
-                    "controlcore.panel.details",
-                    "type",
-                    tr.translate(definition.type().describeText()),
-                    "default",
-                    shown(definition.formattedDefault(), snapshot),
-                    "id",
-                    definition.id());
+            String rest = KeyPicker.read(snapshot.value()).rest();
+            if (!rest.isEmpty()) {
+                text = text + (text.isBlank() ? "" : " · ") + tr.t("controlcore.panel.keypick.also", "keys", rest);
+            }
         }
-        return text.isBlank() ? details : text + " (" + details + ")";
+        String details = snapshot.access() == SettingAccess.READ_ONLY
+                ? tr.t("controlcore.panel.row_read_only")
+                : tr.t(
+                        "controlcore.panel.row_default",
+                        "value",
+                        keys ? definition.formattedDefault() : shown(definition.formattedDefault(), snapshot));
+        return text.isBlank() ? details : text + " · " + details;
     }
 
     SettingScope scope() {
@@ -153,7 +142,7 @@ final class SettingsSection {
                 category = snapshot.definition().heading();
                 entries.add(new Heading(category(snapshot)));
             }
-            entries.add(new Row(kindOf(snapshot), snapshot, inlineColor(snapshot, byId)));
+            entries.add(new Row(kind(snapshot), snapshot, inlineColor(snapshot, byId)));
         }
         return entries;
     }
@@ -219,6 +208,11 @@ final class SettingsSection {
         }
         return change.scope() == scope
                 && (scope == SettingScope.SERVER || change.player().equals(player));
+    }
+
+    Kind kind(SettingSnapshot snapshot) {
+        Kind kind = kindOf(snapshot);
+        return keys && kind == Kind.TEXT ? Kind.KEYS : kind;
     }
 
     static Kind kindOf(SettingSnapshot snapshot) {
@@ -310,6 +304,10 @@ final class SettingsSection {
                 name(snapshot),
                 "value",
                 shown(snapshot.value(), snapshot));
+    }
+
+    Translator translator() {
+        return tr;
     }
 
     String error(Error error) {

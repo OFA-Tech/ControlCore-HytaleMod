@@ -6,7 +6,8 @@ players in `/prefs`.
 ## Each row
 
 - Logo, name, version, description, authors, website and id.
-- Labels: **Asset pack**, **Off**, **Failed to load**, **On after a restart**, **Off after a restart**.
+- Badges: **Code** (blue) or **No code**, **Assets** (green) or **No assets**, and when it applies **Off**,
+  **Failed to load**, **On after a restart**, **Off after a restart** and **Hytale**.
 - **Settings** and **Keys** buttons open that mod's settings or key actions, already searched. They only show when the
   mod registered settings or keys with ControlCore.
 

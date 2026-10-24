@@ -112,29 +112,33 @@ final class ModsSection {
         return mod.version().isEmpty() ? "" : "v" + mod.version();
     }
 
-    String badges(ModsView.Entry entry) {
+    record Badges(boolean code, boolean assets, String state, String stateText, boolean hytale) {}
+
+    Badges badges(ModsView.Entry entry) {
         ModInfo mod = entry.mod();
-        List<String> badges = new ArrayList<>();
-        switch (mod.kind()) {
-            case ASSET_PACK -> badges.add(tr.t("controlcore.panel.mods.badge.asset_pack"));
-            case PLUGIN_WITH_ASSETS -> badges.add(tr.t("controlcore.panel.mods.badge.assets"));
-            case PLUGIN -> {}
-        }
+        boolean code = mod.kind() != ModInfo.Kind.ASSET_PACK;
+        boolean assets = mod.kind() != ModInfo.Kind.PLUGIN;
+        String state = "";
+        String stateText = "";
         switch (mod.state()) {
-            case DISABLED, NOT_LOADED -> badges.add(tr.t("controlcore.panel.mods.badge.disabled"));
-            case FAILED -> badges.add(tr.t("controlcore.panel.mods.badge.failed"));
+            case DISABLED, NOT_LOADED -> {
+                state = "Off";
+                stateText = tr.t("controlcore.panel.mods.badge.disabled");
+            }
+            case FAILED -> {
+                state = "Failed";
+                stateText = tr.t("controlcore.panel.mods.badge.failed");
+            }
             case ENABLED -> {}
         }
         if (mod.changesAfterRestart()) {
-            badges.add(tr.t(
+            state = "Restart";
+            stateText = tr.t(
                     mod.enabledAfterRestart()
                             ? "controlcore.panel.mods.badge.on_after_restart"
-                            : "controlcore.panel.mods.badge.off_after_restart"));
+                            : "controlcore.panel.mods.badge.off_after_restart");
         }
-        if (mod.core()) {
-            badges.add(tr.t("controlcore.panel.mods.badge.hytale"));
-        }
-        return String.join(" · ", badges);
+        return new Badges(code, assets, state, stateText, mod.core());
     }
 
     String description(ModInfo mod) {

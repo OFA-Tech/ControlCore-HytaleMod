@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+### Changed
+- **New look for the control panel.** The panel is wider (1120), the selected tab has a gold edge, and every
+  setting row follows one layout: state mark, name, control, then Undo, Default and Save.
+- **State marks and legend:** each row shows whether it is changed, on its default, not saved yet, has an error,
+  needs a restart or is locked. A **Legend** column on the right counts each state and filters the list with one
+  click; the counts follow the search.
+- **Feedback where you look:** errors appear under the row they belong to ("'abc' is not a whole number from 1 to
+  32."), save messages in the footer, and a restart banner at the top of every tab.
+- **Undo** after a change puts back the previous value.
+- **Keys are picked, not typed:** each key row has two dropdowns, a key to hold (Ctrl, Alt, Shift, Space, standing
+  still) and a main key, listing only keys the server can detect. Combinations the dropdowns can't show are kept
+  and shown as "Custom". The **New bind** form folds away and uses the same dropdowns.
+- **Mods tab badges:** Code and Assets as coloured badges, plus Off, Failed, restart and Hytale badges.
+- **Bound keys keep their game action** (new server setting `controlcore:keys-keep-game-action`, on by default):
+  F still opens doors and also runs its binds. Turn it off to let binds replace the key's own action.
+- Row descriptions say the default in plain words instead of the type and id; Server defaults / My keys is a
+  two-part switch.
+
+### Fixed
+- "Permissões" was missing its accent in Portuguese.
+
+### Removed
+- The UI test screen `/cc-key-probe ui` used while building the new look.
+
 ## 0.11.0 - 2026-10-22
 
 Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.4. The API for other mods

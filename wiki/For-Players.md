@@ -12,7 +12,9 @@ If a server runs ControlCore, you can change some things for yourself, without b
 - **Keymaps → My keys:** the key combinations for the server's actions. See below.
 - **Mods:** the server's mods with their versions.
 
-Each row has **Default** to undo your change. Every list has a search box.
+Each row shows a mark for its state (changed, default, not saved, ...), explained in the Legend on the right.
+**Undo** puts back your last change and **Default** the default. Keys are picked from two dropdowns. Every list
+has a search box.
 
 The panel and messages follow your game language (English, Portuguese and Spanish are included).
 

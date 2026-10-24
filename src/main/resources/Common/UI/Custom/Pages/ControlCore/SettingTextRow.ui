@@ -2,15 +2,20 @@ $C = "../../Common.ui";
 
 Group {
   LayoutMode: Top;
-  Anchor: (Bottom: 10);
+  Padding: (Top: 8, Bottom: 0);
 
   Group {
     LayoutMode: Left;
     Anchor: (Height: 38);
 
+    Group #State {
+      Anchor: (Width: 18, Height: 18, Top: 10, Right: 10);
+      Background: "Icons/Default.png";
+    }
+
     Label #Label {
-      Anchor: (Width: 240, Right: 10);
-      Style: (...$C.@DefaultLabelStyle, RenderBold: true, VerticalAlignment: Center, Wrap: true);
+      Anchor: (Width: 250, Right: 10);
+      Style: (...$C.@DefaultLabelStyle, FontSize: 15, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center, Wrap: true);
     }
 
     $C.@TextField #Input {
@@ -19,17 +24,34 @@ Group {
 
     $C.@SmallSecondaryTextButton #Save {
       @Text = %controlcore.ui.save;
-      Anchor: (Width: 80, Height: 32, Left: 6);
+      Anchor: (Width: 98, Height: 32, Left: 6);
+    }
+
+    $C.@SmallTertiaryTextButton #Undo {
+      @Text = %controlcore.ui.undo;
+      Anchor: (Width: 110, Height: 32, Left: 6);
+      Visible: false;
     }
 
     $C.@SmallTertiaryTextButton #Reset {
       @Text = %controlcore.ui.default;
-      Anchor: (Width: 90, Height: 32, Left: 6);
+      Anchor: (Width: 128, Height: 32, Left: 6);
     }
   }
 
+  Label #Error {
+    Visible: false;
+    Anchor: (Left: 28, Top: 4);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #e88a72, RenderBold: true, Wrap: true);
+  }
+
   Label #Description {
-    Anchor: (Top: 2);
-    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, Wrap: true);
+    Anchor: (Left: 28, Top: 3);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #9fb0bd, Wrap: true);
+  }
+
+  Group {
+    Anchor: (Height: 1, Top: 9);
+    Background: #263c4c;
   }
 }

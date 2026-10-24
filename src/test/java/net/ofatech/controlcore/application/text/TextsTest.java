@@ -93,8 +93,8 @@ class TextsTest {
 
         assertThat(forAna.translate(definition.nameText())).isEqualTo("Aba inicial do painel");
         assertThat(forAna.translate(definition.optionText("Server Configs"))).isEqualTo("Config. do servidor");
-        assertThat(forAna.error(invalid)).isEqualTo("'70' não é um inteiro válido 1..9.");
-        assertThat(invalid.description()).isEqualTo("'70' is not a valid integer 1..9.");
+        assertThat(forAna.error(invalid)).isEqualTo("'70' não é um número inteiro de 1 a 9.");
+        assertThat(invalid.description()).isEqualTo("'70' is not a whole number from 1 to 9.");
     }
 
     @Test
