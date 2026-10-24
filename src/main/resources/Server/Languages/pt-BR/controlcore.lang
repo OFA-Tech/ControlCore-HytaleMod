@@ -106,8 +106,8 @@ settings.welcome_message.name = Mensagem de boas-vindas
 # ---- Value types ----
 types.boolean = booleano (true/false)
 types.choice = um de {options}
-types.decimal = decimal {min}..{max}
-types.integer = inteiro {min}..{max}
+types.decimal = número de {min} a {max}
+types.integer = número inteiro de {min} a {max}
 types.text = texto (até {max} caracteres)
 # ---- Key actions ----
 keys.actions.open_preferences.desc = Abre suas preferências e atalhos de teclas.
@@ -283,8 +283,8 @@ errors.controlpanel.player_offline = Esse jogador não está online.
 errors.controlpanel.player_not_in_world = Esse jogador não está em um mundo.
 errors.invalid_value.boolean = '{value}' não é um booleano válido (true/false).
 errors.invalid_value.choice = '{value}' não é válido; use um de {options}.
-errors.invalid_value.decimal = '{value}' não é um decimal válido {min}..{max}.
-errors.invalid_value.integer = '{value}' não é um inteiro válido {min}..{max}.
+errors.invalid_value.decimal = '{value}' não é um número de {min} a {max}.
+errors.invalid_value.integer = '{value}' não é um número inteiro de {min} a {max}.
 errors.invalid_value.text = '{value}' não é um texto válido (até {max} caracteres).
 errors.keys.invalid_name = '{text}' não é um nome válido: use letras minúsculas, números, - e _.
 errors.keys.one_main_key = Só uma destas pode estar em uma combinação: Q, E, R, F, O, 1-9 e os botões do mouse.
@@ -434,3 +434,5 @@ panel.row_default = Padrão: {value}
 panel.row_read_only = Somente leitura
 panel.undone = Desfeito: {name} voltou a ser {value}.
 panel.heading_count = {count} configurações
+types.integer_any = número inteiro
+errors.invalid_value.integer_any = '{value}' não é um número inteiro.

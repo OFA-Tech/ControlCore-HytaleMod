@@ -106,8 +106,8 @@ settings.welcome_message.name = Welcome message
 # ---- Value types ----
 types.boolean = boolean (true/false)
 types.choice = one of {options}
-types.decimal = decimal {min}..{max}
-types.integer = integer {min}..{max}
+types.decimal = number from {min} to {max}
+types.integer = whole number from {min} to {max}
 types.text = text (up to {max} characters)
 # ---- Key actions ----
 keys.actions.open_preferences.desc = Opens your preferences and key bindings.
@@ -283,8 +283,8 @@ errors.controlpanel.player_offline = That player is not online.
 errors.controlpanel.player_not_in_world = That player is not in a world.
 errors.invalid_value.boolean = '{value}' is not a valid boolean (true/false).
 errors.invalid_value.choice = '{value}' is not a valid one of {options}.
-errors.invalid_value.decimal = '{value}' is not a valid decimal {min}..{max}.
-errors.invalid_value.integer = '{value}' is not a valid integer {min}..{max}.
+errors.invalid_value.decimal = '{value}' is not a number from {min} to {max}.
+errors.invalid_value.integer = '{value}' is not a whole number from {min} to {max}.
 errors.invalid_value.text = '{value}' is not a valid text (up to {max} characters).
 errors.keys.invalid_name = '{text}' is not a valid name: use lower case letters, digits, - and _.
 errors.keys.one_main_key = Only one of these can be in a combination: Q, E, R, F, O, 1-9 and the mouse buttons.
@@ -434,3 +434,5 @@ panel.row_default = Default: {value}
 panel.row_read_only = Read-only
 panel.undone = Undone: {name} is {value} again.
 panel.heading_count = {count} settings
+types.integer_any = whole number
+errors.invalid_value.integer_any = '{value}' is not a whole number.

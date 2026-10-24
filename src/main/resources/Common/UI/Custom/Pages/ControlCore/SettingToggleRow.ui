@@ -14,7 +14,7 @@ Group {
     }
 
     Label #Label {
-      Anchor: (Width: 222, Right: 10);
+      Anchor: (Width: 250, Right: 10);
       Style: (...$C.@DefaultLabelStyle, FontSize: 15, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center, Wrap: true);
     }
 

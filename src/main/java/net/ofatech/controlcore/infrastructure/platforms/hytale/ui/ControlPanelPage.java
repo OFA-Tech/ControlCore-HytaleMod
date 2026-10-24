@@ -316,7 +316,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         if (unsaved.contains(shownKey)) {
             return SettingRows.State.UNSAVED;
         }
-        return snapshot.overridden() ? SettingRows.State.CHANGED : SettingRows.State.DEFAULT;
+        return snapshot.value().equals(snapshot.definition().formattedDefault())
+                ? SettingRows.State.DEFAULT
+                : SettingRows.State.CHANGED;
     }
 
     private void showState(PanelSection key, int index, SettingSnapshot snapshot, UICommandBuilder update) {
@@ -549,15 +551,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         if (PROBE_TOGGLE.equals(name)) {
             boolean on = tool.toggle(viewerId);
             showProbeButton(update);
-            update.set(
-                    PanelSection.SERVER_KEYMAPS.status + ".Text",
-                    tr.t(on ? "controlcore.debug.probe_on" : "controlcore.debug.probe_off"));
+            footer(update, tr.t(on ? "controlcore.debug.probe_on" : "controlcore.debug.probe_off"));
         } else {
             Result<Void> opened = tool.openKeyTest(viewerId, InputProbe.KEY_TEST_TARGETS);
             if (opened.isSuccess()) {
                 return;
             }
-            update.set(PanelSection.SERVER_KEYMAPS.status + ".Text", tr.error(opened.error()));
+            footer(update, tr.error(opened.error()));
         }
         sendUpdate(update, false);
     }

@@ -14,7 +14,7 @@ final class KeyBindForm {
     static final String EDIT = "EditBind";
     static final String REMOVE = "RemoveBind";
 
-    private static final String STATUS = PanelSection.SERVER_KEYMAPS.status + ".Text";
+    private static final String STATUS = "#FooterStatus.Text";
 
     interface Host {
         void rebuild();

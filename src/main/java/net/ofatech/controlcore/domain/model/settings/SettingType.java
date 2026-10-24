@@ -162,7 +162,7 @@ public sealed interface SettingType<T>
 
     private static <T> Result<T> invalid(String text, SettingType<?> type) {
         Text described = type.describeText();
-        String english = "'" + text + "' is not a valid " + type.describe() + ".";
+        String english = "'" + text + "' is not a " + type.describe() + ".";
         Text message = described
                 .key()
                 .map(key -> key.replace("controlcore.types.", "controlcore.errors.invalid_value."))
@@ -248,12 +248,17 @@ public sealed interface SettingType<T>
 
         @Override
         public String describe() {
-            return "integer " + min + ".." + max;
+            return anyValue() ? "whole number" : "whole number from " + min + " to " + max;
         }
 
         @Override
         public Text describeText() {
-            return Text.key("controlcore.types.integer", describe()).with("min", min, "max", max);
+            return Text.key(anyValue() ? "controlcore.types.integer_any" : "controlcore.types.integer", describe())
+                    .with("min", min, "max", max);
+        }
+
+        private boolean anyValue() {
+            return min == Integer.MIN_VALUE && max == Integer.MAX_VALUE;
         }
     }
 
@@ -301,7 +306,7 @@ public sealed interface SettingType<T>
 
         @Override
         public String describe() {
-            return "decimal " + min + ".." + max;
+            return "number from " + min + " to " + max;
         }
 
         @Override

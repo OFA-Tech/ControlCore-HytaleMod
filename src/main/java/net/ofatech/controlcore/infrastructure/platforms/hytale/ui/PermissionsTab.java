@@ -86,7 +86,7 @@ final class PermissionsTab {
                 SAVE.equals(name) ? view.save(action.id, action.value, action.edit) : view.reset(action.id);
         if (result.isFailure()) {
             UICommandBuilder update = new UICommandBuilder();
-            update.set(SECTION.status + ".Text", tr.error(result.error()));
+            update.set("#FooterStatus.Text", tr.error(result.error()));
             host.send(update);
             return true;
         }
@@ -101,7 +101,7 @@ final class PermissionsTab {
             show(entries.get(index), SECTION.row(rowElements.get(index)), update);
         }
         applySearch(update, false);
-        update.set(SECTION.status + ".Text", result.value());
+        update.set("#FooterStatus.Text", result.value());
         host.send(update);
         return true;
     }

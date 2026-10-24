@@ -153,7 +153,7 @@ final class ModsTab {
         }
         UICommandBuilder update = new UICommandBuilder();
         update.set(
-                STATUS,
+                "#FooterStatus.Text",
                 result.isSuccess()
                         ? tr.t(
                                 enabled

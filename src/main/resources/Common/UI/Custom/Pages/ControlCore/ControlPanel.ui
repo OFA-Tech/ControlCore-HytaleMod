@@ -5,6 +5,7 @@ $C = "../../Common.ui";
 @RowLabelStyle = (...$C.@DefaultLabelStyle, RenderBold: true, VerticalAlignment: Center);
 @RowValueStyle = (...$C.@DefaultLabelStyle, VerticalAlignment: Center, Wrap: true);
 @StatusStyle = (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #e8a93b, Wrap: true);
+@CountStyle = (FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center, HorizontalAlignment: End);
 
 @TitleStyle = (FontSize: 18, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center);
 @BrandStyle = (FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center);
@@ -217,12 +218,13 @@ $C.@PageOverlay {
               $C.@TextField #ServerSearch {
                 FlexWeight: 1;
               }
+
+              Label #ServerStatus {
+                Style: @CountStyle;
+                Anchor: (Width: 220, Left: 10);
+              }
             }
 
-            Label #ServerStatus {
-              Style: @StatusStyle;
-              Anchor: (Bottom: 8);
-            }
 
             Group #ServerList {
               LayoutMode: TopScrolling;
@@ -257,12 +259,13 @@ $C.@PageOverlay {
               $C.@TextField #SettingsSearch {
                 FlexWeight: 1;
               }
+
+              Label #SettingsStatus {
+                Style: @CountStyle;
+                Anchor: (Width: 220, Left: 10);
+              }
             }
 
-            Label #SettingsStatus {
-              Style: @StatusStyle;
-              Anchor: (Bottom: 8);
-            }
 
             Group #SettingsList {
               LayoutMode: TopScrolling;
@@ -297,12 +300,13 @@ $C.@PageOverlay {
               $C.@TextField #PlayerSearch {
                 FlexWeight: 1;
               }
+
+              Label #PlayerStatus {
+                Style: @CountStyle;
+                Anchor: (Width: 220, Left: 10);
+              }
             }
 
-            Label #PlayerStatus {
-              Style: @StatusStyle;
-              Anchor: (Bottom: 8);
-            }
 
             Group #PlayerList {
               LayoutMode: TopScrolling;
@@ -399,12 +403,13 @@ $C.@PageOverlay {
                 $C.@TextField #ServerKeymapSearch {
                   FlexWeight: 1;
                 }
+
+                Label #ServerKeymapStatus {
+                  Style: @CountStyle;
+                  Anchor: (Width: 220, Left: 10);
+                }
               }
 
-              Label #ServerKeymapStatus {
-                Style: @StatusStyle;
-                Anchor: (Bottom: 8);
-              }
 
               Group #ServerKeymapList {
                 LayoutMode: TopScrolling;
@@ -460,12 +465,13 @@ $C.@PageOverlay {
                 $C.@TextField #KeymapSearch {
                   FlexWeight: 1;
                 }
+
+                Label #KeymapStatus {
+                  Style: @CountStyle;
+                  Anchor: (Width: 220, Left: 10);
+                }
               }
 
-              Label #KeymapStatus {
-                Style: @StatusStyle;
-                Anchor: (Bottom: 8);
-              }
 
               Group #KeymapList {
                 LayoutMode: TopScrolling;
@@ -497,12 +503,13 @@ $C.@PageOverlay {
               $C.@TextField #ModsSearch {
                 FlexWeight: 1;
               }
+
+              Label #ModsStatus {
+                Style: @CountStyle;
+                Anchor: (Width: 220, Left: 10);
+              }
             }
 
-            Label #ModsStatus {
-              Style: @StatusStyle;
-              Anchor: (Bottom: 8);
-            }
 
             Group #ModsList {
               LayoutMode: TopScrolling;
@@ -537,12 +544,13 @@ $C.@PageOverlay {
               $C.@TextField #PermissionSearch {
                 FlexWeight: 1;
               }
+
+              Label #PermissionStatus {
+                Style: @CountStyle;
+                Anchor: (Width: 220, Left: 10);
+              }
             }
 
-            Label #PermissionStatus {
-              Style: @StatusStyle;
-              Anchor: (Bottom: 8);
-            }
 
             Group #PermissionList {
               LayoutMode: TopScrolling;
