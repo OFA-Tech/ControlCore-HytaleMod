@@ -911,7 +911,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         if (inlineColors.contains(shownKey(key, snapshot.id()))) {
             SettingRows.showPicker(key.row(index), snapshot, update);
         } else {
-            SettingRows.showValue(section, SettingsSection.kindOf(snapshot), key.row(index), snapshot, update);
+            SettingRows.showValue(section, section.kind(snapshot), key.row(index), snapshot, update);
         }
     }
 

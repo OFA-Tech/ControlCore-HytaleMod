@@ -144,8 +144,7 @@ final class SettingsSection {
                 category = snapshot.definition().heading();
                 entries.add(new Heading(category(snapshot)));
             }
-            Kind kind = kindOf(snapshot);
-            entries.add(new Row(keys && kind == Kind.TEXT ? Kind.KEYS : kind, snapshot, inlineColor(snapshot, byId)));
+            entries.add(new Row(kind(snapshot), snapshot, inlineColor(snapshot, byId)));
         }
         return entries;
     }
@@ -211,6 +210,11 @@ final class SettingsSection {
         }
         return change.scope() == scope
                 && (scope == SettingScope.SERVER || change.player().equals(player));
+    }
+
+    Kind kind(SettingSnapshot snapshot) {
+        Kind kind = kindOf(snapshot);
+        return keys && kind == Kind.TEXT ? Kind.KEYS : kind;
     }
 
     static Kind kindOf(SettingSnapshot snapshot) {
