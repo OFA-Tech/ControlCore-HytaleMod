@@ -32,7 +32,7 @@ import net.ofatech.controlcore.domain.result.Result;
 @AutoService(SettingsApi.class)
 public final class SettingsRegistry implements SettingsApi {
 
-    static final String PLAYER_KEY_PREFIX = "setting:";
+    public static final String PLAYER_KEY_PREFIX = "setting:";
 
     private static final Comparator<SettingSnapshot> DISPLAY_ORDER = Comparator.comparing(
                     (SettingSnapshot snapshot) -> snapshot.definition().heading())

@@ -14,6 +14,7 @@ import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.application.settings.PermissionsEditor;
 import net.ofatech.controlcore.application.settings.PermittedSettingsEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
+import net.ofatech.controlcore.application.snapshot.SnapshotService;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.ControlPanelContent;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
@@ -46,6 +47,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final InputProbe probe;
     private final Permissions nodes;
     private final HistoryEditor history;
+    private final SnapshotService snapshots;
 
     public ControlPanelService(
             ControlPanelSettings settings,
@@ -61,7 +63,8 @@ public final class ControlPanelService implements ControlPanelApi {
             PermissionsEditor permissionRules,
             InputProbe probe,
             Permissions nodes,
-            HistoryEditor history) {
+            HistoryEditor history,
+            SnapshotService snapshots) {
         this.settings = settings;
         this.players = players;
         this.server = server;
@@ -76,6 +79,7 @@ public final class ControlPanelService implements ControlPanelApi {
         this.probe = probe;
         this.nodes = nodes;
         this.history = history;
+        this.snapshots = snapshots;
     }
 
     public boolean mayOpenAdminPanel(PlayerId player) {
@@ -176,13 +180,16 @@ public final class ControlPanelService implements ControlPanelApi {
                                 ? Optional.of(permissionRules.viewedBy(texts.forPlayer(Optional.of(player))))
                                 : Optional.empty(),
                         history.maySee(Optional.of(player))
-                                ? Optional.of(history.viewedBy(
-                                        player,
-                                        players.find(player)
-                                                .map(info -> info.name())
-                                                .orElse(player.toString())))
+                                ? Optional.of(history.viewedBy(player, nameOf(player)))
+                                : Optional.empty(),
+                        snapshots.mayUse(Optional.of(player))
+                                ? Optional.of(snapshots.viewedBy(player, nameOf(player)))
                                 : Optional.empty(),
                         nodes.hasOwn(player, InputProbeCommand.PERMISSION) ? Optional.of(probe) : Optional.empty(),
                         focus));
+    }
+
+    private String nameOf(PlayerId player) {
+        return players.find(player).map(info -> info.name()).orElse(player.toString());
     }
 }

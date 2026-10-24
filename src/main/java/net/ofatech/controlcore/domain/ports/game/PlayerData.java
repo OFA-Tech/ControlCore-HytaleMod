@@ -1,5 +1,6 @@
 package net.ofatech.controlcore.domain.ports.game;
 
+import java.util.Map;
 import java.util.Optional;
 import net.ofatech.controlcore.domain.model.PlayerId;
 
@@ -12,4 +13,6 @@ public interface PlayerData {
     void remove(PlayerId player, String key);
 
     void flush();
+
+    Map<PlayerId, Map<String, String>> all();
 }

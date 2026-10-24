@@ -33,7 +33,7 @@ import net.ofatech.controlcore.domain.result.Result;
 @AutoService(KeymapsApi.class)
 public final class KeymapRegistry implements KeymapsApi {
 
-    static final String PLAYER_KEY_PREFIX = "keybind:";
+    public static final String PLAYER_KEY_PREFIX = "keybind:";
     public static final String CUSTOM = "custom";
     public static final String SERVER_KEYS_NODE = "keys.server";
 

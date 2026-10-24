@@ -30,7 +30,8 @@ public record ChangeRecord(
         PANEL,
         COMMAND,
         API,
-        ROLLBACK
+        ROLLBACK,
+        SNAPSHOT
     }
 
     public record Actor(Optional<PlayerId> player, String name) {

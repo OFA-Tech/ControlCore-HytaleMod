@@ -46,6 +46,13 @@ public final class JsonPlayerDataStore implements PlayerData {
     }
 
     @Override
+    public Map<PlayerId, Map<String, String>> all() {
+        Map<PlayerId, Map<String, String>> copy = new HashMap<>();
+        data.forEach((id, values) -> copy.put(PlayerId.of(id), Map.copyOf(values)));
+        return copy;
+    }
+
+    @Override
     public synchronized void flush() {
         if (!dirty) {
             return;

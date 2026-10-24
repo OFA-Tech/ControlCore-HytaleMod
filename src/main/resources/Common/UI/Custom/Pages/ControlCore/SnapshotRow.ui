@@ -1,0 +1,41 @@
+$C = "../../Common.ui";
+
+Group {
+  LayoutMode: Top;
+  Padding: (Top: 8, Bottom: 0);
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Height: 32);
+
+    Group {
+      Anchor: (Width: 18, Height: 18, Top: 7, Right: 10);
+      Background: "Icons/Default.png";
+    }
+
+    Label #Name {
+      FlexWeight: 1;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 15, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center);
+    }
+
+    $C.@SmallSecondaryTextButton #Preview {
+      @Text = %controlcore.ui.snapshots.preview;
+      Anchor: (Width: 170, Height: 32, Left: 8);
+    }
+
+    $C.@SmallTertiaryTextButton #Delete {
+      @Text = %controlcore.ui.snapshots.delete;
+      Anchor: (Width: 120, Height: 32, Left: 6);
+    }
+  }
+
+  Label #Details {
+    Anchor: (Left: 28, Top: 3);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #9fb0bd, Wrap: true);
+  }
+
+  Group {
+    Anchor: (Height: 1, Top: 9);
+    Background: #263c4c;
+  }
+}

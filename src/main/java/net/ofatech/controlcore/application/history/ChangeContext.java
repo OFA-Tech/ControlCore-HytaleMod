@@ -42,6 +42,10 @@ public final class ChangeContext {
         return run(new Attribution(actor, Source.ROLLBACK, undoes), work);
     }
 
+    public static <T> T restoringSnapshot(Actor actor, Supplier<T> work) {
+        return run(new Attribution(actor, Source.SNAPSHOT, 0), work);
+    }
+
     private static <T> T run(Attribution attribution, Supplier<T> work) {
         Attribution outer = CURRENT.get();
         if (outer != null && outer.source() == Source.ROLLBACK) {

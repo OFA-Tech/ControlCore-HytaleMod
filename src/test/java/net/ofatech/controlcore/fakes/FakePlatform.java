@@ -15,6 +15,7 @@ import net.ofatech.controlcore.domain.ports.config.KeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.SettingPermissionStore;
 import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
+import net.ofatech.controlcore.domain.ports.config.SnapshotStore;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
 import net.ofatech.controlcore.domain.ports.game.CommandRunner;
 import net.ofatech.controlcore.domain.ports.game.EmptyHandInput;
@@ -57,6 +58,7 @@ public final class FakePlatform implements Platform {
     public final FakeCustomKeyBindStore customKeyBinds = new FakeCustomKeyBindStore();
     public final FakeSettingPermissionStore settingPermissions = new FakeSettingPermissionStore();
     public final FakeChangeLogStore changeLog = new FakeChangeLogStore();
+    public final FakeSnapshotStore snapshots = new FakeSnapshotStore();
     public volatile Boolean emptyHandKeys;
 
     public final FakeModCatalog modCatalog = new FakeModCatalog();
@@ -96,6 +98,7 @@ public final class FakePlatform implements Platform {
         binder.bind(CustomKeyBindStore.class, customKeyBinds);
         binder.bind(SettingPermissionStore.class, settingPermissions);
         binder.bind(ChangeLogStore.class, changeLog);
+        binder.bind(SnapshotStore.class, snapshots);
         binder.bind(EmptyHandInput.class, on -> emptyHandKeys = on);
         binder.bind(HudDisplay.class, (player, hide, show) -> {
             var hidden = hiddenHud.computeIfAbsent(player, key -> EnumSet.noneOf(HudPart.class));

@@ -17,6 +17,7 @@ import net.ofatech.controlcore.application.settings.ModNames;
 import net.ofatech.controlcore.application.settings.PermissionsEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
+import net.ofatech.controlcore.application.snapshot.SnapshotService;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.ModSettings;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -39,6 +40,7 @@ import net.ofatech.controlcore.fakes.FakeServerConfiguration;
 import net.ofatech.controlcore.fakes.FakeSettingPermissionStore;
 import net.ofatech.controlcore.fakes.FakeSettingStore;
 import net.ofatech.controlcore.fakes.FakeSettings;
+import net.ofatech.controlcore.fakes.FakeSnapshotStore;
 import net.ofatech.controlcore.fakes.RecordingControlPanelView;
 import net.ofatech.controlcore.fakes.RecordingLog;
 import net.ofatech.controlcore.fakes.TestTexts;
@@ -99,6 +101,22 @@ class ControlPanelServiceTest {
                 mods,
                 (player, node) -> true,
                 TestTexts.of(registry, players));
+        var snapshots = new SnapshotService(
+                new FakeSnapshotStore(),
+                registry,
+                serverConfig,
+                keyRegistry,
+                new FakeCustomKeyBindStore(),
+                new FakeSettingPermissionStore(),
+                policy,
+                mods,
+                new FakePlayerData(),
+                players,
+                (player, node) -> true,
+                history,
+                TestTexts.of(registry, players),
+                new FakeClock(),
+                log);
         return new ControlPanelService(
                 new ControlPanelSettings(registry, settings),
                 players,
@@ -113,7 +131,8 @@ class ControlPanelServiceTest {
                 new PermissionsEditor(registry, serverConfig, policy),
                 probe,
                 (player, node) -> !node.equals("debug") || debugAllowed,
-                history);
+                history,
+                snapshots);
     }
 
     @Test

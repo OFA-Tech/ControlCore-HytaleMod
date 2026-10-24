@@ -199,8 +199,11 @@ public final class HistoryEditor {
     }
 
     public String what(ChangeRecord record, Translator tr) {
-        String target = record.target();
-        return switch (record.kind()) {
+        return what(record.kind(), record.target(), tr);
+    }
+
+    public String what(ChangeRecord.Kind kind, String target, Translator tr) {
+        return switch (kind) {
             case SETTING -> settingName(settings, target, tr);
             case SERVER_CONFIG -> settingName(serverConfig, target, tr);
             case SERVER_KEYS ->

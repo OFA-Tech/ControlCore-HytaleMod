@@ -55,6 +55,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private static final String CLOSE = "Close";
     private static final String TAB_PREFIX = "Tab:";
     private static final String HISTORY_LINK = "HistoryOf";
+    private static final String HISTORY_MODE_CHANGES = "HistoryModeChanges";
+    private static final String HISTORY_MODE_SNAPSHOTS = "HistoryModeSnapshots";
     private static final String SEARCH = "Search";
     private static final String KEYMAP_MODE_SERVER = "KeymapMode:Server";
     private static final String KEYMAP_MODE_MINE = "KeymapMode:Mine";
@@ -133,6 +135,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private final Optional<KeyBindForm> bindForm;
     private final Optional<PermissionsTab> permissionsTab;
     private final Optional<HistoryTab> historyTab;
+    private final Optional<SnapshotsTab> snapshotsTab;
+    private boolean showingSnapshots;
     private final Optional<InputProbe> probe;
     private final PlayerId viewerId;
     private final String viewerName;
@@ -157,13 +161,17 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         this.historyTab = shownSections.includeServerSettings()
                 ? content.history().map(view -> new HistoryTab(view, tr, hooks))
                 : Optional.empty();
+        this.snapshotsTab = shownSections.includeServerSettings()
+                ? content.snapshots().map(view -> new SnapshotsTab(view, tr, hooks))
+                : Optional.empty();
+        this.showingSnapshots = historyTab.isEmpty();
         this.probe = manageKeys ? content.debug() : Optional.empty();
         this.viewerId = PlayerId.of(player.getUuid());
         this.viewerName = player.getUsername();
         for (Tab tab : Tab.values()) {
             if (tab.shownFor(shownSections)
                     && (tab != Tab.PERMISSIONS || permissionsTab.isPresent())
-                    && (tab != Tab.HISTORY || historyTab.isPresent())) {
+                    && (tab != Tab.HISTORY || historyTab.isPresent() || snapshotsTab.isPresent())) {
                 tabs.add(tab);
             }
         }
@@ -241,6 +249,16 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             buildSearch(PermissionsTab.SECTION, commands, events);
         });
         historyTab.ifPresent(tab -> tab.build(commands, events));
+        snapshotsTab.ifPresent(tab -> tab.build(commands, events));
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating,
+                "#HistoryModeChanges",
+                EventData.of(PanelAction.KEY, HISTORY_MODE_CHANGES));
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating,
+                "#HistoryModeSnapshots",
+                EventData.of(PanelAction.KEY, HISTORY_MODE_SNAPSHOTS));
+        showHistoryMode(commands);
         buildDebugTools(commands, events);
         commands.set("#TabButtons.Visible", tabs.size() > 1);
         bindForm.ifPresent(form -> {
@@ -329,17 +347,31 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 new EventData().append(PanelAction.KEY, HISTORY_LINK).append(PanelAction.ID, id.toString()));
     }
 
+    private void showHistoryMode(UICommandBuilder commands) {
+        boolean both = historyTab.isPresent() && snapshotsTab.isPresent();
+        commands.set("#HistoryModeButtons.Visible", both);
+        commands.set("#HistoryChanges.Visible", !showingSnapshots);
+        commands.set("#SnapshotsPanel.Visible", showingSnapshots);
+        commands.set(
+                "#HistoryModeChanges.Style", Value.ref(LAYOUT, showingSnapshots ? "SegmentStyle" : "SegmentOnStyle"));
+        commands.set(
+                "#HistoryModeSnapshots.Style", Value.ref(LAYOUT, showingSnapshots ? "SegmentOnStyle" : "SegmentStyle"));
+        commands.setObject("#HistoryList.Anchor", height(both ? 388 : 430));
+    }
+
     private void showHistoryOf(String target) {
         if (historyTab.isEmpty() || !tabs.contains(Tab.HISTORY) || target == null) {
             return;
         }
         HistoryTab tab = historyTab.get();
         selected = Tab.HISTORY;
+        showingSnapshots = false;
         if (tab.stale()) {
             rebuild();
         }
         UICommandBuilder update = new UICommandBuilder();
         tab.focus(target, update);
+        showHistoryMode(update);
         showTab(update);
         sendUpdate(update, false);
     }
@@ -619,11 +651,18 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         if (bindForm.map(form -> form.handle(action)).orElse(false)
                 || modsTab.handle(action)
                 || permissionsTab.map(tab -> tab.handle(action)).orElse(false)
-                || historyTab.map(tab -> tab.handle(action)).orElse(false)) {
+                || historyTab.map(tab -> tab.handle(action)).orElse(false)
+                || snapshotsTab.map(tab -> tab.handle(action)).orElse(false)) {
             return;
         }
         if (CLOSE.equals(name)) {
             close();
+        } else if (HISTORY_MODE_CHANGES.equals(name) || HISTORY_MODE_SNAPSHOTS.equals(name)) {
+            showingSnapshots =
+                    snapshotsTab.isPresent() && (HISTORY_MODE_SNAPSHOTS.equals(name) || historyTab.isEmpty());
+            UICommandBuilder update = new UICommandBuilder();
+            showHistoryMode(update);
+            sendUpdate(update, false);
         } else if (HISTORY_LINK.equals(name)) {
             showHistoryOf(action.id);
         } else if (PROBE_TOGGLE.equals(name) || KEY_TEST.equals(name)) {
@@ -1165,7 +1204,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         return Optional.empty();
     }
 
-    private final class Hooks implements ModsTab.Host, KeyBindForm.Host, PermissionsTab.Host, HistoryTab.Host {
+    private final class Hooks
+            implements ModsTab.Host, KeyBindForm.Host, PermissionsTab.Host, HistoryTab.Host, SnapshotsTab.Host {
 
         @Override
         public void rebuild() {
@@ -1190,6 +1230,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         @Override
         public void showRestartNotice(UICommandBuilder update) {
             ControlPanelPage.this.showRestartNotice(update);
+        }
+
+        @Override
+        public void resize(String element, int pixels, UICommandBuilder update) {
+            update.setObject(element + ".Anchor", height(pixels));
         }
     }
 }
