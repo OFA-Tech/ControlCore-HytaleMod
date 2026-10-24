@@ -26,6 +26,7 @@ import net.ofatech.controlcore.domain.result.Result;
 final class SettingsSection {
 
     enum Kind {
+        KEYS,
         TEXT,
         INTEGER,
         DECIMAL,
@@ -104,6 +105,12 @@ final class SettingsSection {
     String description(SettingSnapshot snapshot) {
         SettingDefinition<?> definition = snapshot.definition();
         String text = tr.translate(definition.descriptionText()).strip();
+        if (keys) {
+            String rest = KeyPicker.read(snapshot.value()).rest();
+            if (!rest.isEmpty()) {
+                text = text + (text.isBlank() ? "" : " · ") + tr.t("controlcore.panel.keypick.also", "keys", rest);
+            }
+        }
         String details = snapshot.access() == SettingAccess.READ_ONLY
                 ? tr.t("controlcore.panel.row_read_only")
                 : tr.t(
@@ -137,7 +144,8 @@ final class SettingsSection {
                 category = snapshot.definition().heading();
                 entries.add(new Heading(category(snapshot)));
             }
-            entries.add(new Row(kindOf(snapshot), snapshot, inlineColor(snapshot, byId)));
+            Kind kind = kindOf(snapshot);
+            entries.add(new Row(keys && kind == Kind.TEXT ? Kind.KEYS : kind, snapshot, inlineColor(snapshot, byId)));
         }
         return entries;
     }
@@ -294,6 +302,10 @@ final class SettingsSection {
                 name(snapshot),
                 "value",
                 shown(snapshot.value(), snapshot));
+    }
+
+    Translator translator() {
+        return tr;
     }
 
     String error(Error error) {

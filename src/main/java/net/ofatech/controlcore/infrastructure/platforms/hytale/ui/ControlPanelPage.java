@@ -689,6 +689,17 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 undoChange(key, section, action);
                 return;
             }
+            case SettingRows.PICK_KEYS -> {
+                SettingSnapshot current = latestOf(key, action.id);
+                if (current == null) {
+                    return;
+                }
+                action.value = KeyPicker.compose(action.value, action.bindKeys, current.value());
+                if (action.value.equals(current.value())) {
+                    return;
+                }
+                name = SettingRows.SAVE;
+            }
             default -> {}
         }
         SettingSnapshot before = latestOf(key, action.id);

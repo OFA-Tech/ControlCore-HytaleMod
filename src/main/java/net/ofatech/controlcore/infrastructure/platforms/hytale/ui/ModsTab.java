@@ -72,7 +72,7 @@ final class ModsTab {
             commands.append(LIST, ROW);
             commands.set(row + " #Name.Text", mod.name());
             commands.set(row + " #Version.Text", mods.version(mod));
-            commands.set(row + " #Badges.Text", mods.badges(entry));
+            showBadges(row, mods.badges(entry), commands);
             commands.set(row + " #Description.Text", mods.description(mod));
             commands.set(row + " #Details.Text", mods.details(mod));
             mod.logo().ifPresent(logo -> commands.set(row + " #ModLogo.Background", logo));
@@ -133,6 +133,28 @@ final class ModsTab {
             commands.set(STATUS, tr.t("controlcore.panel.mods.shown", "shown", shownCount));
         } else {
             commands.set(STATUS, "");
+        }
+    }
+
+    private void showBadges(String row, ModsSection.Badges badges, UICommandBuilder commands) {
+        commands.set(row + " #BadgeCode.Visible", badges.code());
+        commands.set(row + " #BadgeNoCode.Visible", !badges.code());
+        commands.set(row + " #BadgeAssets.Visible", badges.assets());
+        commands.set(row + " #BadgeNoAssets.Visible", !badges.assets());
+        commands.set(row + " #BadgeCode.Text", tr.t("controlcore.panel.mods.badge.code"));
+        commands.set(row + " #BadgeNoCode.Text", tr.t("controlcore.panel.mods.badge.no_code"));
+        commands.set(row + " #BadgeAssets.Text", tr.t("controlcore.panel.mods.badge.assets"));
+        commands.set(row + " #BadgeNoAssets.Text", tr.t("controlcore.panel.mods.badge.no_assets"));
+        for (String state : java.util.List.of("Off", "Failed", "Restart")) {
+            boolean on = state.equals(badges.state());
+            commands.set(row + " #Badge" + state + ".Visible", on);
+            if (on) {
+                commands.set(row + " #Badge" + state + ".Text", badges.stateText());
+            }
+        }
+        commands.set(row + " #BadgeHytale.Visible", badges.hytale());
+        if (badges.hytale()) {
+            commands.set(row + " #BadgeHytale.Text", tr.t("controlcore.panel.mods.badge.hytale"));
         }
     }
 

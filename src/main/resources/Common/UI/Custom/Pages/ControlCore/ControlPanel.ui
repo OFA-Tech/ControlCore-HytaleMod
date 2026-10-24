@@ -412,8 +412,12 @@ $C.@PageOverlay {
                     Anchor: (Width: 200, Right: 6);
                   }
 
-                  $C.@TextField #NewBindKeys {
-                    Anchor: (Width: 160, Right: 6);
+                  $C.@DropdownBox #NewBindHold {
+                    Anchor: (Width: 150, Right: 6);
+                  }
+
+                  $C.@DropdownBox #NewBindKey {
+                    Anchor: (Width: 180, Right: 6);
                   }
 
                   $C.@TextField #NewBindCommand {

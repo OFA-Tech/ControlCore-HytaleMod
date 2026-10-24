@@ -9,6 +9,7 @@ import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import java.util.List;
 import java.util.Locale;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
+import net.ofatech.controlcore.domain.model.text.Translator;
 
 final class SettingRows {
 
@@ -38,6 +39,8 @@ final class SettingRows {
     private static final String CHOICE_ROW = "Pages/ControlCore/SettingChoiceRow.ui";
     private static final String INFO_ROW = "Pages/ControlCore/SettingInfoRow.ui";
     private static final String CUSTOM_BIND_ROW = "Pages/ControlCore/SettingCustomBindRow.ui";
+    private static final String KEY_ROW = "Pages/ControlCore/SettingKeyRow.ui";
+    static final String PICK_KEYS = "PickKeys";
 
     private SettingRows() {}
 
@@ -75,6 +78,20 @@ final class SettingRows {
         commands.set(element + " #Count.Text", count);
     }
 
+    static void showKeys(Translator tr, String hold, String key, String value, UICommandBuilder commands) {
+        KeyPicker.Picked picked = KeyPicker.read(value);
+        commands.set(hold + ".Entries", entries(KeyPicker.holds(tr)));
+        commands.set(key + ".Entries", entries(KeyPicker.keys(tr, picked)));
+        commands.set(hold + ".Value", picked.hold());
+        commands.set(key + ".Value", picked.key());
+    }
+
+    private static List<DropdownEntryInfo> entries(List<KeyPicker.Option> options) {
+        return options.stream()
+                .map(option -> new DropdownEntryInfo(LocalizableString.fromString(option.label()), option.value()))
+                .toList();
+    }
+
     static boolean canUndo(SettingsSection.Row row) {
         return row.kind() != SettingsSection.Kind.INFO && row.color().isEmpty();
     }
@@ -98,6 +115,26 @@ final class SettingRows {
         String input = element + " #Input";
         String id = snapshot.id().toString();
         switch (row.kind()) {
+            case KEYS -> {
+                commands.append(key.list, KEY_ROW);
+                commands.set(element + " #BindButtons.Visible", customBind);
+                if (customBind) {
+                    events.addEventBinding(
+                            CustomUIEventBindingType.Activating, element + " #Edit", event(KeyBindForm.EDIT, key, id));
+                    events.addEventBinding(
+                            CustomUIEventBindingType.Activating,
+                            element + " #Remove",
+                            event(KeyBindForm.REMOVE, key, id));
+                }
+                for (String part : List.of(" #Hold", " #Key")) {
+                    events.addEventBinding(
+                            CustomUIEventBindingType.ValueChanged,
+                            element + part,
+                            event(PICK_KEYS, key, id)
+                                    .append(PanelAction.VALUE, element + " #Hold.Value")
+                                    .append(PanelAction.KEYS, element + " #Key.Value"));
+                }
+            }
             case TEXT -> {
                 if (row.color().isPresent()) {
                     commands.append(key.list, TEXT_COLOR_ROW);
@@ -233,6 +270,8 @@ final class SettingRows {
             UICommandBuilder commands) {
         String input = element + " #Input";
         switch (kind) {
+            case KEYS ->
+                showKeys(section.translator(), element + " #Hold", element + " #Key", snapshot.value(), commands);
             case TEXT, CHOICE -> commands.set(input + ".Value", snapshot.value());
             case COLOR -> {
                 commands.set(input + ".Value", snapshot.value());

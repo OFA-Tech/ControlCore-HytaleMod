@@ -45,7 +45,7 @@ final class KeyBindForm {
         events.addEventBinding(
                 CustomUIEventBindingType.Activating, "#NewBindToggle", EventData.of(PanelAction.KEY, TOGGLE));
         commands.set("#NewBindName.PlaceholderText", tr.t("controlcore.panel.bind.name_hint"));
-        commands.set("#NewBindKeys.PlaceholderText", tr.t("controlcore.panel.bind.keys_hint"));
+        SettingRows.showKeys(tr, "#NewBindHold", "#NewBindKey", "none", commands);
         commands.set("#NewBindCommand.PlaceholderText", tr.t("controlcore.panel.bind.command_hint"));
         events.addEventBinding(
                 CustomUIEventBindingType.Activating,
@@ -53,7 +53,8 @@ final class KeyBindForm {
                 new EventData()
                         .append(PanelAction.KEY, ADD)
                         .append(PanelAction.NAME, "#NewBindName.Value")
-                        .append(PanelAction.KEYS, "#NewBindKeys.Value")
+                        .append(PanelAction.KEYS, "#NewBindKey.Value")
+                        .append(PanelAction.EDIT, "#NewBindHold.Value")
                         .append(PanelAction.VALUE, "#NewBindCommand.Value")
                         .append(PanelAction.CHECKED, "#NewBindAsServer.Value"));
     }
@@ -95,7 +96,7 @@ final class KeyBindForm {
                 .ifPresentOrElse(
                         bind -> {
                             update.set("#NewBindName.Value", bind.name());
-                            update.set("#NewBindKeys.Value", bind.keys());
+                            SettingRows.showKeys(tr, "#NewBindHold", "#NewBindKey", bind.keys(), update);
                             update.set("#NewBindCommand.Value", bind.command());
                             update.set("#NewBindAsServer.Value", bind.runAsServer());
                             update.set(STATUS, tr.t("controlcore.panel.bind.editing", "name", bind.name()));
@@ -118,8 +119,8 @@ final class KeyBindForm {
     }
 
     private void add(PanelAction action) {
-        Result<String> result =
-                binds.add(action.bindName, action.bindKeys, action.value, Boolean.TRUE.equals(action.checked));
+        String keys = KeyPicker.compose(action.edit, action.bindKeys, "none");
+        Result<String> result = binds.add(action.bindName, keys, action.value, Boolean.TRUE.equals(action.checked));
         if (result.isSuccess()) {
             host.rebuild();
         }
@@ -127,7 +128,7 @@ final class KeyBindForm {
         update.set(STATUS, result.isSuccess() ? result.value() : tr.error(result.error()));
         if (result.isSuccess()) {
             update.set("#NewBindName.Value", "");
-            update.set("#NewBindKeys.Value", "");
+            SettingRows.showKeys(tr, "#NewBindHold", "#NewBindKey", "none", update);
             update.set("#NewBindCommand.Value", "");
             update.set("#NewBindAsServer.Value", false);
         }

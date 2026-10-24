@@ -1,5 +1,8 @@
 $C = "../../Common.ui";
 
+@BadgeOn = (FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+@BadgeOff = (FontSize: 11, TextColor: #5f7383, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+
 Group {
   LayoutMode: Top;
   Padding: (Top: 10);
@@ -30,8 +33,66 @@ Group {
           Anchor: (Right: 10);
         }
 
-        Label #Badges {
-          Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #e8a93b, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+        Label #BadgeCode {
+          Anchor: (Height: 20, Top: 1, Right: 4);
+          Padding: (Horizontal: 7);
+          Background: #2f5d8a;
+          Style: @BadgeOn;
+        }
+
+        Label #BadgeNoCode {
+          Visible: false;
+          Anchor: (Height: 20, Top: 1, Right: 4);
+          Padding: (Horizontal: 7);
+          Background: #1b2c38;
+          Style: @BadgeOff;
+        }
+
+        Label #BadgeAssets {
+          Anchor: (Height: 20, Top: 1, Right: 4);
+          Padding: (Horizontal: 7);
+          Background: #3f6e3c;
+          Style: @BadgeOn;
+        }
+
+        Label #BadgeNoAssets {
+          Visible: false;
+          Anchor: (Height: 20, Top: 1, Right: 4);
+          Padding: (Horizontal: 7);
+          Background: #1b2c38;
+          Style: @BadgeOff;
+        }
+
+        Label #BadgeOff {
+          Visible: false;
+          Anchor: (Height: 20, Top: 1, Left: 6, Right: 4);
+          Padding: (Horizontal: 7);
+          Background: #4a5866;
+          Style: @BadgeOn;
+        }
+
+        Label #BadgeFailed {
+          Visible: false;
+          Anchor: (Height: 20, Top: 1, Left: 6, Right: 4);
+          Padding: (Horizontal: 7);
+          Background: #9c4434;
+          Style: @BadgeOn;
+        }
+
+        Label #BadgeRestart {
+          Visible: false;
+          Anchor: (Height: 20, Top: 1, Left: 6, Right: 4);
+          Padding: (Horizontal: 7);
+          Background: #2a4f6e;
+          Style: (...@BadgeOn, TextColor: #a9d1f2);
+        }
+
+        Label #BadgeHytale {
+          Visible: false;
+          Anchor: (Height: 20, Top: 1, Left: 6, Right: 4);
+          Padding: (Horizontal: 7);
+          Background: #6b5422;
+          Style: (...@BadgeOn, TextColor: #f2d69a);
         }
       }
 
