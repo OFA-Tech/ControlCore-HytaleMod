@@ -85,9 +85,7 @@ final class SettingsSection {
     }
 
     String placeholder(SettingSnapshot snapshot) {
-        return keys
-                ? tr.t("controlcore.panel.keys_hint")
-                : tr.translate(snapshot.definition().type().describeText());
+        return tr.translate(snapshot.definition().type().describeText());
     }
 
     String name(SettingSnapshot snapshot) {

@@ -26,7 +26,6 @@ ui.title = ControlCore
 # ---- Control panel ----
 panel.bind.command_hint = command, e.g. warp spawn {player}
 panel.bind.editing = Editing custom:{name}: change it above and click Save bind.
-panel.bind.keys_hint = keys, e.g. ctrl+r
 panel.bind.name_hint = name, e.g. warp-spawn
 panel.bind.unknown = There is no key bind {id}.
 panel.changed_elsewhere = Changed elsewhere: {name} = {value}
@@ -50,7 +49,6 @@ panel.filter.unchanged = Default only
 panel.filter.value = Value / keys
 panel.keys_details_mod = mod keys {keys} · {id}
 panel.keys_details_server = server keys {keys} · {id}
-panel.keys_hint = keys, for example ctrl+f or alt+3 | mouse_middle; none unbinds
 panel.match.contains = Contains
 panel.match.ends_with = Ends with
 panel.match.equals = Equals
@@ -376,7 +374,6 @@ panel.mods_filter.everything = Everything (with Hytale's)
 panel.mods.search_hint = Search name, id, author or description
 panel.mods.none = No mod matches.
 panel.mods.shown = {shown} shown.
-panel.mods.badge.asset_pack = Asset pack
 panel.mods.badge.assets = Assets
 panel.mods.badge.disabled = Off
 panel.mods.badge.failed = Failed to load

@@ -38,7 +38,6 @@ final class SettingRows {
     private static final String LIST_ITEM = "Pages/ControlCore/SettingListItem.ui";
     private static final String CHOICE_ROW = "Pages/ControlCore/SettingChoiceRow.ui";
     private static final String INFO_ROW = "Pages/ControlCore/SettingInfoRow.ui";
-    private static final String CUSTOM_BIND_ROW = "Pages/ControlCore/SettingCustomBindRow.ui";
     private static final String KEY_ROW = "Pages/ControlCore/SettingKeyRow.ui";
     static final String PICK_KEYS = "PickKeys";
 
@@ -153,17 +152,7 @@ final class SettingRows {
                             event(PICK_INLINE, key, id).append(PanelAction.VALUE, element + " #Picker.Color"),
                             false);
                 } else {
-                    commands.append(key.list, customBind ? CUSTOM_BIND_ROW : TEXT_ROW);
-                    if (customBind) {
-                        events.addEventBinding(
-                                CustomUIEventBindingType.Activating,
-                                element + " #Edit",
-                                event(KeyBindForm.EDIT, key, id));
-                        events.addEventBinding(
-                                CustomUIEventBindingType.Activating,
-                                element + " #Remove",
-                                event(KeyBindForm.REMOVE, key, id));
-                    }
+                    commands.append(key.list, TEXT_ROW);
                     bindSave(key, element, id, events);
                 }
                 commands.set(input + ".PlaceholderText", section.placeholder(snapshot));

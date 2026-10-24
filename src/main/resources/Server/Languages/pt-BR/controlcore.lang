@@ -26,7 +26,6 @@ ui.title = ControlCore
 # ---- Control panel ----
 panel.bind.command_hint = comando, ex.: warp spawn {player}
 panel.bind.editing = Editando custom:{name}: altere acima e clique em Salvar atalho.
-panel.bind.keys_hint = teclas, ex.: ctrl+r
 panel.bind.name_hint = nome, ex.: warp-spawn
 panel.bind.unknown = Não existe o atalho {id}.
 panel.changed_elsewhere = Alterado em outro lugar: {name} = {value}
@@ -50,7 +49,6 @@ panel.filter.unchanged = Só no padrão
 panel.filter.value = Valor / teclas
 panel.keys_details_mod = teclas do mod {keys} · {id}
 panel.keys_details_server = teclas do servidor {keys} · {id}
-panel.keys_hint = teclas, por exemplo ctrl+f ou alt+3 | mouse_middle; none remove o atalho
 panel.match.contains = Contém
 panel.match.ends_with = Termina com
 panel.match.equals = Igual a
@@ -376,7 +374,6 @@ panel.mods_filter.everything = Tudo (com os do Hytale)
 panel.mods.search_hint = Buscar nome, id, autor ou descrição
 panel.mods.none = Nenhum mod corresponde.
 panel.mods.shown = {shown} exibidos.
-panel.mods.badge.asset_pack = Pacote de assets
 panel.mods.badge.assets = Recursos
 panel.mods.badge.disabled = Desligado
 panel.mods.badge.failed = Falhou ao carregar
