@@ -3,7 +3,9 @@ package net.ofatech.controlcore.application.history;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.application.mods.ModsEditor;
@@ -79,6 +81,11 @@ public final class HistoryEditor {
             @Override
             public long newest() {
                 return history.newestId();
+            }
+
+            @Override
+            public Set<String> targets() {
+                return history.targets();
             }
 
             @Override
@@ -177,7 +184,7 @@ public final class HistoryEditor {
                 record.target(),
                 WHEN.format(record.at().atZone(ZoneId.systemDefault())),
                 who(record.actor(), tr),
-                tr.t("controlcore.history.source." + record.source().name().toLowerCase(java.util.Locale.ROOT)),
+                tr.t("controlcore.history.source." + record.source().name().toLowerCase(Locale.ROOT)),
                 what(record, tr),
                 shown(record.kind(), record.oldValue(), tr),
                 shown(record.kind(), record.newValue(), tr),

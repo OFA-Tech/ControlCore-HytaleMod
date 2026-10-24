@@ -520,3 +520,4 @@ errors.history.already = Change #{id} was already rolled back.
 errors.history.admin_only = Only admins can roll this change back.
 settings.history_days.name = Keep change history (days)
 settings.history_days.desc = How long the History tab and /cc-history keep changes. Older months are deleted.
+ui.history.link = History

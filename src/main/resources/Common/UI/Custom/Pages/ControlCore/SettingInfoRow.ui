@@ -30,9 +30,20 @@ Group {
     Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #e88a72, RenderBold: true, Wrap: true);
   }
 
-  Label #Description {
+  Group {
+    LayoutMode: Left;
     Anchor: (Left: 28, Top: 3);
-    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #9fb0bd, Wrap: true);
+
+    Label #Description {
+      FlexWeight: 1;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #9fb0bd, Wrap: true);
+    }
+
+    $C.@SmallTertiaryTextButton #History {
+      @Text = %controlcore.ui.history.link;
+      Anchor: (Width: 100, Height: 26, Left: 8);
+      Visible: false;
+    }
   }
 
   Group {

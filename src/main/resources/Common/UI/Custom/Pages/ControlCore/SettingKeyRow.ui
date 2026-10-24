@@ -72,6 +72,12 @@ Group {
         Anchor: (Width: 106, Height: 28, Left: 6);
       }
     }
+
+    $C.@SmallTertiaryTextButton #History {
+      @Text = %controlcore.ui.history.link;
+      Anchor: (Width: 100, Height: 26, Left: 8);
+      Visible: false;
+    }
   }
 
   Group {

@@ -9,6 +9,7 @@ import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord;
 import net.ofatech.controlcore.domain.model.history.HistoryView;
 import net.ofatech.controlcore.domain.model.text.Translator;
@@ -67,6 +68,7 @@ final class HistoryTab {
     private long newest;
     private String query = "";
     private Filter filter = Filter.ALL;
+    private Set<String> targets;
 
     HistoryTab(HistoryView view, Translator tr, Host host) {
         this.view = view;
@@ -76,6 +78,7 @@ final class HistoryTab {
 
     void build(UICommandBuilder commands, UIEventBuilder events) {
         List<HistoryView.Entry> all = view.entries();
+        targets = null;
         total = all.size();
         newest = all.isEmpty() ? 0 : all.getFirst().id();
         entries = all.subList(0, Math.min(ROWS, all.size()));
@@ -120,6 +123,21 @@ final class HistoryTab {
             }
         }
         applySearch(commands);
+    }
+
+    boolean has(String target) {
+        if (targets == null) {
+            targets = view.targets();
+        }
+        return targets.contains(target) || targets.contains("setting:" + target);
+    }
+
+    void focus(String target, UICommandBuilder update) {
+        query = target;
+        filter = Filter.ALL;
+        update.set("#HistorySearch.Value", query);
+        update.set("#HistoryFilter.Value", filter.name());
+        applySearch(update);
     }
 
     boolean stale() {

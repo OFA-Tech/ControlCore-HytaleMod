@@ -520,3 +520,4 @@ errors.history.already = A mudança #{id} já foi revertida.
 errors.history.admin_only = Só admins podem reverter esta mudança.
 settings.history_days.name = Guardar histórico (dias)
 settings.history_days.desc = Por quanto tempo a aba Histórico e o /cc-history guardam as mudanças. Meses mais antigos são apagados.
+ui.history.link = Histórico

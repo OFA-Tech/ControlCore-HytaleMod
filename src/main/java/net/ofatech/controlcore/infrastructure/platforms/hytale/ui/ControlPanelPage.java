@@ -54,6 +54,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
     private static final String CLOSE = "Close";
     private static final String TAB_PREFIX = "Tab:";
+    private static final String HISTORY_LINK = "HistoryOf";
     private static final String SEARCH = "Search";
     private static final String KEYMAP_MODE_SERVER = "KeymapMode:Server";
     private static final String KEYMAP_MODE_MINE = "KeymapMode:Mine";
@@ -304,6 +305,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                             && key == PanelSection.SERVER_KEYMAPS
                             && CUSTOM_NAMESPACE.equals(row.id().namespace());
                     SettingRows.build(key, section, row, element, customBind, commands, events);
+                    showHistoryLink(key, element, row.id(), commands, events);
                     if (SettingRows.canUndo(row)) {
                         undoRows.add(shownKey(key, row.id()));
                     }
@@ -311,6 +313,35 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 }
             }
         }
+    }
+
+    private void showHistoryLink(
+            PanelSection key, String element, SettingId id, UICommandBuilder commands, UIEventBuilder events) {
+        boolean serverWide =
+                key == PanelSection.SERVER_CONFIG || key == PanelSection.SETTINGS || key == PanelSection.SERVER_KEYMAPS;
+        if (!serverWide || !historyTab.map(tab -> tab.has(id.toString())).orElse(false)) {
+            return;
+        }
+        commands.set(element + " #History.Visible", true);
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating,
+                element + " #History",
+                new EventData().append(PanelAction.KEY, HISTORY_LINK).append(PanelAction.ID, id.toString()));
+    }
+
+    private void showHistoryOf(String target) {
+        if (historyTab.isEmpty() || !tabs.contains(Tab.HISTORY) || target == null) {
+            return;
+        }
+        HistoryTab tab = historyTab.get();
+        selected = Tab.HISTORY;
+        if (tab.stale()) {
+            rebuild();
+        }
+        UICommandBuilder update = new UICommandBuilder();
+        tab.focus(target, update);
+        showTab(update);
+        sendUpdate(update, false);
     }
 
     private String headingCount(List<SettingsSection.Entry> entries, int heading) {
@@ -593,6 +624,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
         if (CLOSE.equals(name)) {
             close();
+        } else if (HISTORY_LINK.equals(name)) {
+            showHistoryOf(action.id);
         } else if (PROBE_TOGGLE.equals(name) || KEY_TEST.equals(name)) {
             handleDebug(name);
         } else if (SEARCH.equals(name) && PermissionsTab.SECTION.name().equals(action.section)) {

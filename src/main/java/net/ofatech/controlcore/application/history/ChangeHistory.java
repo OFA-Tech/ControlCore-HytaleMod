@@ -6,8 +6,10 @@ import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
 import net.ofatech.controlcore.domain.ports.config.ChangeLogStore;
@@ -65,6 +67,12 @@ public final class ChangeHistory implements ChangeRecorder {
 
     public synchronized List<ChangeRecord> newestFirst() {
         return List.copyOf(records);
+    }
+
+    public synchronized Set<String> targets() {
+        Set<String> targets = new HashSet<>();
+        records.forEach(record -> targets.add(record.target()));
+        return targets;
     }
 
     public synchronized long newestId() {

@@ -1,6 +1,7 @@
 package net.ofatech.controlcore.domain.model.history;
 
 import java.util.List;
+import java.util.Set;
 import net.ofatech.controlcore.domain.result.Result;
 
 public interface HistoryView {
@@ -23,6 +24,8 @@ public interface HistoryView {
     List<Entry> entries();
 
     long newest();
+
+    Set<String> targets();
 
     boolean canRollback();
 
