@@ -49,6 +49,15 @@ All three are also in the panel's **Permissions** tab.
 
 See [Permissions](Permissions) for examples.
 
+## History
+
+Also in the panel's **History** tab.
+
+| Command | Who | Does |
+|---|---|---|
+| `/cc-history [filter]` | admins or `ofatech.controlcore.history` | the latest 10 changes, optionally only those whose name, who or value contains the filter |
+| `/cc-rollback <number>` | admins or `ofatech.controlcore.history.rollback` | put back the value change `#number` replaced |
+
 ## Key binds
 
 | Command | Who | Does |

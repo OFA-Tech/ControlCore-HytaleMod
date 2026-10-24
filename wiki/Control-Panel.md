@@ -95,6 +95,20 @@ With [CustomInventory](https://github.com/SupremoSama/Hytale-CustomInventory) in
 Admins only: who may see and change each setting, `config.json` key, category or mod. See
 [Permissions](Permissions#in-the-panel).
 
+### History
+
+Admins (and players with `ofatech.controlcore.history`) see every server-wide change: `config.json` keys, mod
+settings, the server's keys, custom binds, permission rules and mods turned on or off. Each line shows what changed,
+`old → new`, and `#number · when · who · from where` (panel, command, mod or rollback). Players' own preferences
+are not recorded.
+
+- The dropdown limits the list to one kind; the search matches names, people, values and `#number`. The newest 200
+  changes are listed; `/cc-history <filter>` searches further back.
+- **Roll back** puts back the old value and records the rollback; a change can be rolled back once.
+- Rows in Server Configs, Mod Settings and the server's Keymaps that have changes show a **History** button that
+  opens this tab filtered to them.
+- How long changes are kept: `controlcore:history-days` (default 90).
+
 ## Search
 
 Every list has a search line: `[ field ▾ ] [ match ▾ ] [ text ]`.
