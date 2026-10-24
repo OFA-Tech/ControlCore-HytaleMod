@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import net.ofatech.controlcore.api.ControlPanelApi;
 import net.ofatech.controlcore.api.SettingsApi;
+import net.ofatech.controlcore.application.history.HistoryEditor;
 import net.ofatech.controlcore.application.keymaps.InputProbeCommand;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.mods.ModsEditor;
@@ -44,6 +45,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final PermissionsEditor permissionRules;
     private final InputProbe probe;
     private final Permissions nodes;
+    private final HistoryEditor history;
 
     public ControlPanelService(
             ControlPanelSettings settings,
@@ -58,7 +60,8 @@ public final class ControlPanelService implements ControlPanelApi {
             ModsEditor mods,
             PermissionsEditor permissionRules,
             InputProbe probe,
-            Permissions nodes) {
+            Permissions nodes,
+            HistoryEditor history) {
         this.settings = settings;
         this.players = players;
         this.server = server;
@@ -72,6 +75,7 @@ public final class ControlPanelService implements ControlPanelApi {
         this.permissionRules = permissionRules;
         this.probe = probe;
         this.nodes = nodes;
+        this.history = history;
     }
 
     public boolean mayOpenAdminPanel(PlayerId player) {
@@ -170,6 +174,13 @@ public final class ControlPanelService implements ControlPanelApi {
                         mods.viewedBy(Optional.of(player)),
                         permissions.isAdmin(player)
                                 ? Optional.of(permissionRules.viewedBy(texts.forPlayer(Optional.of(player))))
+                                : Optional.empty(),
+                        history.maySee(Optional.of(player))
+                                ? Optional.of(history.viewedBy(
+                                        player,
+                                        players.find(player)
+                                                .map(info -> info.name())
+                                                .orElse(player.toString())))
                                 : Optional.empty(),
                         nodes.hasOwn(player, InputProbeCommand.PERMISSION) ? Optional.of(probe) : Optional.empty(),
                         focus));

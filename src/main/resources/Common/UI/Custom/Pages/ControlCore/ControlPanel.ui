@@ -92,7 +92,7 @@ $C.@PageOverlay {
 
           Group #ServerTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 172, Right: 4);
+            Anchor: (Width: 150, Right: 4);
 
             Group #ServerTabEdge {
               Anchor: (Height: 3);
@@ -109,7 +109,7 @@ $C.@PageOverlay {
 
           Group #SettingsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 172, Right: 4);
+            Anchor: (Width: 150, Right: 4);
 
             Group #SettingsTabEdge {
               Anchor: (Height: 3);
@@ -126,7 +126,7 @@ $C.@PageOverlay {
 
           Group #PlayerTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 172, Right: 4);
+            Anchor: (Width: 150, Right: 4);
 
             Group #PlayerTabEdge {
               Anchor: (Height: 3);
@@ -143,7 +143,7 @@ $C.@PageOverlay {
 
           Group #KeymapTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 172, Right: 4);
+            Anchor: (Width: 150, Right: 4);
 
             Group #KeymapTabEdge {
               Anchor: (Height: 3);
@@ -160,7 +160,7 @@ $C.@PageOverlay {
 
           Group #ModsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 172, Right: 4);
+            Anchor: (Width: 150, Right: 4);
 
             Group #ModsTabEdge {
               Anchor: (Height: 3);
@@ -177,7 +177,7 @@ $C.@PageOverlay {
 
           Group #PermissionsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 172);
+            Anchor: (Width: 150, Right: 4);
 
             Group #PermissionsTabEdge {
               Anchor: (Height: 3);
@@ -187,6 +187,23 @@ $C.@PageOverlay {
 
             TextButton #PermissionsTabButton {
               Text: %controlcore.ui.tabs.permissions;
+              Style: @TabStyle;
+              Anchor: (Height: 35);
+            }
+          }
+
+          Group #HistoryTabSlot {
+            LayoutMode: Top;
+            Anchor: (Width: 150);
+
+            Group #HistoryTabEdge {
+              Anchor: (Height: 3);
+              Background: #e8a93b;
+              Visible: false;
+            }
+
+            TextButton #HistoryTabButton {
+              Text: %controlcore.ui.tabs.history;
               Style: @TabStyle;
               Anchor: (Height: 35);
             }
@@ -611,6 +628,48 @@ $C.@PageOverlay {
 
 
             Group #PermissionList {
+              LayoutMode: TopScrolling;
+              ScrollbarStyle: $C.@DefaultScrollbarStyle;
+              Anchor: (Height: 430);
+              Padding: (Right: 10);
+            }
+          }
+
+          Group #HistoryTab {
+            LayoutMode: Top;
+            Visible: false;
+
+            Label {
+              Text: %controlcore.ui.history.intro;
+              Style: @NoteStyle;
+              Anchor: (Bottom: 8);
+            }
+
+            Group {
+              LayoutMode: Left;
+              Anchor: (Height: 34, Bottom: 8);
+
+              $C.@DropdownBox #HistoryFilter {
+                Anchor: (Width: 200, Right: 6);
+              }
+
+              $C.@TextField #HistorySearch {
+                FlexWeight: 1;
+              }
+
+              Label #HistoryStatus {
+                Style: @CountStyle;
+                Anchor: (Width: 220, Left: 10);
+              }
+            }
+
+            Label #HistoryEmpty {
+              Text: %controlcore.ui.history.empty;
+              Style: @NoteStyle;
+              Visible: false;
+            }
+
+            Group #HistoryList {
               LayoutMode: TopScrolling;
               ScrollbarStyle: $C.@DefaultScrollbarStyle;
               Anchor: (Height: 430);

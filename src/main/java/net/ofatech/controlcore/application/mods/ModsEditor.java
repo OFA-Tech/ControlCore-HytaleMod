@@ -10,9 +10,11 @@ import java.util.Set;
 import net.ofatech.controlcore.api.KeymapsApi;
 import net.ofatech.controlcore.api.Setting;
 import net.ofatech.controlcore.api.SettingsApi;
+import net.ofatech.controlcore.application.history.ChangeRecorder;
 import net.ofatech.controlcore.application.settings.ModNames;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
 import net.ofatech.controlcore.domain.model.mods.ModInfo;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
@@ -35,6 +37,7 @@ public final class ModsEditor {
     private final ModNames modNames;
     private final SettingPermissionPolicy permissions;
     private final Log log;
+    private final ChangeRecorder history;
     private final Setting<List<String>> hidden;
 
     public ModsEditor(
@@ -43,13 +46,15 @@ public final class ModsEditor {
             KeymapsApi keymaps,
             ModNames modNames,
             SettingPermissionPolicy permissions,
-            Log log) {
+            Log log,
+            ChangeRecorder history) {
         this.catalog = catalog;
         this.settings = settings;
         this.keymaps = keymaps;
         this.modNames = modNames;
         this.permissions = permissions;
         this.log = log;
+        this.history = history;
         this.hidden = settings.register(SettingDefinition.server(
                                 "controlcore", "mods-hidden", SettingType.textList(200, 128), List.<String>of())
                         .named(Text.key("controlcore.settings.mods_hidden.name", "Mods hidden from players"))
@@ -155,8 +160,10 @@ public final class ModsEditor {
                         Text.key("controlcore.errors.mods.forbidden", "You may not turn {name} on or off.")
                                 .with("name", entry.get().mod().name())));
             }
+            boolean before = entry.get().mod().enabledAfterRestart();
             return catalog.setEnabled(entry.get().mod().id(), enabled).map(changed -> {
                 log.info((enabled ? "Enabled " : "Disabled ") + changed.id() + " from the next start");
+                history.record(Kind.MOD, changed.id(), Boolean.toString(before), Boolean.toString(enabled), true);
                 return new Entry(
                         changed,
                         entry.get().namespace(),

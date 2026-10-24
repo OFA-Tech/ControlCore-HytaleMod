@@ -29,6 +29,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
+import net.ofatech.controlcore.application.history.ChangeContext;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.ControlPanelContent;
@@ -68,7 +69,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         PLAYER(ControlPanelTab.PLAYER_PREFS, "#PlayerTab", "#PlayerTabButton"),
         KEYMAP(ControlPanelTab.KEYMAPS, "#KeymapTab", "#KeymapTabButton"),
         MODS(ControlPanelTab.MODS, "#ModsTab", "#ModsTabButton"),
-        PERMISSIONS(ControlPanelTab.PERMISSIONS, "#PermissionsTab", "#PermissionsTabButton");
+        PERMISSIONS(ControlPanelTab.PERMISSIONS, "#PermissionsTab", "#PermissionsTabButton"),
+        HISTORY(ControlPanelTab.HISTORY, "#HistoryTab", "#HistoryTabButton");
 
         private final ControlPanelTab tab;
         private final String group;
@@ -99,7 +101,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
         boolean shownFor(ControlPanelRequest request) {
             return switch (this) {
-                case SERVER, SETTINGS, PERMISSIONS -> request.includeServerSettings();
+                case SERVER, SETTINGS, PERMISSIONS, HISTORY -> request.includeServerSettings();
                 case PLAYER -> request.includePlayerPreferences();
                 case KEYMAP -> request.includeRegisteredActions();
                 case MODS -> true;
@@ -129,8 +131,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private final ModsTab modsTab;
     private final Optional<KeyBindForm> bindForm;
     private final Optional<PermissionsTab> permissionsTab;
+    private final Optional<HistoryTab> historyTab;
     private final Optional<InputProbe> probe;
     private final PlayerId viewerId;
+    private final String viewerName;
 
     private Tab selected;
     private boolean editingServerKeys = true;
@@ -149,10 +153,16 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         this.permissionsTab = shownSections.includeServerSettings()
                 ? content.permissions().map(view -> new PermissionsTab(view, tr, hooks))
                 : Optional.empty();
+        this.historyTab = shownSections.includeServerSettings()
+                ? content.history().map(view -> new HistoryTab(view, tr, hooks))
+                : Optional.empty();
         this.probe = manageKeys ? content.debug() : Optional.empty();
         this.viewerId = PlayerId.of(player.getUuid());
+        this.viewerName = player.getUsername();
         for (Tab tab : Tab.values()) {
-            if (tab.shownFor(shownSections) && (tab != Tab.PERMISSIONS || permissionsTab.isPresent())) {
+            if (tab.shownFor(shownSections)
+                    && (tab != Tab.PERMISSIONS || permissionsTab.isPresent())
+                    && (tab != Tab.HISTORY || historyTab.isPresent())) {
                 tabs.add(tab);
             }
         }
@@ -229,6 +239,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             tab.build(commands, events, searches.getOrDefault(PermissionsTab.SECTION, SettingSearch.ALL));
             buildSearch(PermissionsTab.SECTION, commands, events);
         });
+        historyTab.ifPresent(tab -> tab.build(commands, events));
         buildDebugTools(commands, events);
         commands.set("#TabButtons.Visible", tabs.size() > 1);
         bindForm.ifPresent(form -> {
@@ -352,7 +363,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             case PLAYER -> PanelSection.PREFS;
             case KEYMAP ->
                 editingServerKeys && bindForm.isPresent() ? PanelSection.SERVER_KEYMAPS : PanelSection.KEYMAPS;
-            case MODS, PERMISSIONS -> null;
+            case MODS, PERMISSIONS, HISTORY -> null;
         };
         return key != null && sections.containsKey(key) ? Optional.of(key) : Optional.empty();
     }
@@ -569,10 +580,15 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     @Override
     public void handleDataEvent(
             @Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull PanelAction action) {
+        ChangeContext.fromPanel(viewerId, viewerName, () -> handle(action));
+    }
+
+    private void handle(PanelAction action) {
         String name = action.name();
         if (bindForm.map(form -> form.handle(action)).orElse(false)
                 || modsTab.handle(action)
-                || permissionsTab.map(tab -> tab.handle(action)).orElse(false)) {
+                || permissionsTab.map(tab -> tab.handle(action)).orElse(false)
+                || historyTab.map(tab -> tab.handle(action)).orElse(false)) {
             return;
         }
         if (CLOSE.equals(name)) {
@@ -942,6 +958,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         for (Tab tab : tabs) {
             if (tab.name().equals(tabName) && tab != selected) {
                 selected = tab;
+                if (tab == Tab.HISTORY && historyTab.map(HistoryTab::stale).orElse(false)) {
+                    rebuild();
+                    return;
+                }
                 UICommandBuilder update = new UICommandBuilder();
                 showTab(update);
                 sendUpdate(update, false);
@@ -1112,7 +1132,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         return Optional.empty();
     }
 
-    private final class Hooks implements ModsTab.Host, KeyBindForm.Host, PermissionsTab.Host {
+    private final class Hooks implements ModsTab.Host, KeyBindForm.Host, PermissionsTab.Host, HistoryTab.Host {
 
         @Override
         public void rebuild() {

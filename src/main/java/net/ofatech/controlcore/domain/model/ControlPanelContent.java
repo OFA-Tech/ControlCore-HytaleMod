@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import net.ofatech.controlcore.domain.guard.Guard;
+import net.ofatech.controlcore.domain.model.history.HistoryView;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.settings.PermissionsView;
@@ -24,6 +25,7 @@ public record ControlPanelContent(
         Supplier<List<Text>> pendingRestart,
         ModsView mods,
         Optional<PermissionsView> permissions,
+        Optional<HistoryView> history,
         Optional<InputProbe> debug,
         Optional<String> focus) {
 
@@ -38,6 +40,7 @@ public record ControlPanelContent(
         Guard.notNull(pendingRestart, "pendingRestart");
         Guard.notNull(mods, "mods");
         Guard.notNull(permissions, "permissions");
+        Guard.notNull(history, "history");
         Guard.notNull(debug, "debug");
         Guard.notNull(focus, "focus");
     }

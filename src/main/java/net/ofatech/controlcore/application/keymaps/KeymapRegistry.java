@@ -10,9 +10,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.api.KeymapsApi;
+import net.ofatech.controlcore.application.history.ChangeRecorder;
+import net.ofatech.controlcore.application.history.HistoryValues;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBind;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
 import net.ofatech.controlcore.domain.model.keys.KeyBinds;
@@ -39,6 +42,7 @@ public final class KeymapRegistry implements KeymapsApi {
     private final PlayerData playerData;
     private final Permissions permissions;
     private final Log log;
+    private final ChangeRecorder history;
     private final Map<SettingId, KeyAction> actions = new ConcurrentHashMap<>();
     private final List<Consumer<? super SettingChanged>> listeners = new CopyOnWriteArrayList<>();
 
@@ -47,12 +51,14 @@ public final class KeymapRegistry implements KeymapsApi {
             CustomKeyBindStore customBinds,
             PlayerData playerData,
             Permissions permissions,
-            Log log) {
+            Log log,
+            ChangeRecorder history) {
         this.serverBinds = serverBinds;
         this.customBinds = customBinds;
         this.playerData = playerData;
         this.permissions = permissions;
         this.log = log;
+        this.history = history;
     }
 
     @Override
@@ -177,21 +183,31 @@ public final class KeymapRegistry implements KeymapsApi {
     public Result<KeyAction> addCustom(String name, String keys, String command, boolean runAsServer) {
         return customAction(name, keys, command, runAsServer)
                 .flatMap(action -> put(action).map(registered -> {
-                    customBinds.put(new CustomKeyBind(
+                    String before = HistoryValues.bind(findCustom(action.id().key()));
+                    CustomKeyBind bind = new CustomKeyBind(
                             action.id().key(),
                             action.defaultKeys().toString(),
                             action.command().orElseThrow(),
-                            runAsServer));
+                            runAsServer);
+                    customBinds.put(bind);
+                    history.record(
+                            Kind.CUSTOM_BIND,
+                            action.id().toString(),
+                            before,
+                            HistoryValues.bind(Optional.of(bind)),
+                            false);
                     return registered;
                 }));
     }
 
     public Result<KeyAction> removeCustom(String name) {
         return customId(name).flatMap(this::known).map(action -> {
+            String before = HistoryValues.bind(findCustom(action.id().key()));
             actions.remove(action.id());
             customBinds.remove(action.id().key());
             serverBinds.remove(action.id());
             serverBinds.flush();
+            history.record(Kind.CUSTOM_BIND, action.id().toString(), before, "", false);
             return action;
         });
     }

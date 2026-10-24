@@ -3,6 +3,7 @@ package net.ofatech.controlcore.infrastructure.platforms.hytale;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
+import net.ofatech.controlcore.domain.ports.config.ChangeLogStore;
 import net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.KeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.SettingPermissionStore;
@@ -30,6 +31,7 @@ import net.ofatech.controlcore.domain.ports.system.Translations;
 import net.ofatech.controlcore.infrastructure.i18n.BundledTranslations;
 import net.ofatech.controlcore.infrastructure.persistence.JsonCustomKeyBindStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonKeyBindStore;
+import net.ofatech.controlcore.infrastructure.persistence.JsonLinesChangeLog;
 import net.ofatech.controlcore.infrastructure.persistence.JsonPlayerDataStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonSettingPermissionStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonSettingStore;
@@ -105,6 +107,9 @@ public final class HytalePlatform implements Platform {
         binder.bind(
                 CustomKeyBindStore.class,
                 new JsonCustomKeyBindStore(plugin.getDataDirectory().resolve("CustomKeyBinds.json"), log));
+        binder.bind(
+                ChangeLogStore.class,
+                new JsonLinesChangeLog(plugin.getDataDirectory().resolve("history"), log));
         binder.bind(
                 SettingPermissionStore.class,
                 new JsonSettingPermissionStore(plugin.getDataDirectory().resolve("SettingPermissions.json"), log));
