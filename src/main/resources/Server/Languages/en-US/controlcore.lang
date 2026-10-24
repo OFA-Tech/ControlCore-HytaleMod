@@ -445,3 +445,6 @@ panel.legend.unsaved = Not saved · {count}
 panel.legend.error = Error · {count}
 panel.legend.restart = Restart · {count}
 panel.legend.locked = Locked · {count}
+ui.bind.new = + New bind
+ui.bind.title = New bind
+panel.bind.close = Close form

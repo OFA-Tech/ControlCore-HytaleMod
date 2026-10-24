@@ -445,3 +445,6 @@ panel.legend.unsaved = Sin guardar · {count}
 panel.legend.error = Error · {count}
 panel.legend.restart = Reinicio · {count}
 panel.legend.locked = Bloqueadas · {count}
+ui.bind.new = + Nuevo atajo
+ui.bind.title = Nuevo atajo
+panel.bind.close = Cerrar formulario

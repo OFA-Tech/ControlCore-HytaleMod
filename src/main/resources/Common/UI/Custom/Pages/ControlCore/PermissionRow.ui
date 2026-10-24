@@ -2,21 +2,26 @@ $C = "../../Common.ui";
 
 Group {
   LayoutMode: Top;
-  Anchor: (Bottom: 10);
+  Padding: (Top: 8);
 
   Group {
     LayoutMode: Left;
     Anchor: (Height: 38);
 
+    Group #State {
+      Anchor: (Width: 18, Height: 18, Top: 10, Right: 10);
+      Background: "Icons/Default.png";
+    }
+
     Label #Label {
       Anchor: (Width: 220, Right: 10);
-      Style: (...$C.@DefaultLabelStyle, RenderBold: true, VerticalAlignment: Center, Wrap: true);
+      Style: (...$C.@DefaultLabelStyle, FontSize: 15, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center, Wrap: true);
     }
 
     Label {
       Text: %controlcore.ui.permissions.see;
-      Anchor: (Width: 70, Right: 4);
-      Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, VerticalAlignment: Center, HorizontalAlignment: End);
+      Anchor: (Width: 64, Right: 6);
+      Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center, HorizontalAlignment: End);
     }
 
     $C.@TextField #View {
@@ -25,8 +30,8 @@ Group {
 
     Label {
       Text: %controlcore.ui.permissions.change;
-      Anchor: (Width: 80, Left: 8, Right: 4);
-      Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, VerticalAlignment: Center, HorizontalAlignment: End);
+      Anchor: (Width: 76, Left: 8, Right: 6);
+      Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center, HorizontalAlignment: End);
     }
 
     $C.@TextField #Edit {
@@ -35,17 +40,22 @@ Group {
 
     $C.@SmallSecondaryTextButton #Save {
       @Text = %controlcore.ui.save;
-      Anchor: (Width: 80, Height: 32, Left: 6);
+      Anchor: (Width: 98, Height: 32, Left: 6);
     }
 
     $C.@SmallTertiaryTextButton #Reset {
       @Text = %controlcore.ui.default;
-      Anchor: (Width: 90, Height: 32, Left: 6);
+      Anchor: (Width: 128, Height: 32, Left: 6);
     }
   }
 
   Label #Description {
-    Anchor: (Top: 2);
-    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, Wrap: true);
+    Anchor: (Left: 28, Top: 3);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #9fb0bd, Wrap: true);
+  }
+
+  Group {
+    Anchor: (Height: 1, Top: 9);
+    Background: #263c4c;
   }
 }

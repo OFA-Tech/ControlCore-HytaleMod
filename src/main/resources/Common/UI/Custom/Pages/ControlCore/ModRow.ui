@@ -2,15 +2,13 @@ $C = "../../Common.ui";
 
 Group {
   LayoutMode: Top;
-  Anchor: (Bottom: 8);
-  Background: $C.@InputBoxBackground;
-  Padding: (Full: 6);
+  Padding: (Top: 10);
 
   Group {
     LayoutMode: Left;
 
     Group #ModLogo {
-      Anchor: (Width: 64, Height: 64, Right: 10);
+      Anchor: (Width: 56, Height: 56, Right: 12);
       Background: "../../ControlCore_ModIcon.png";
     }
 
@@ -23,45 +21,47 @@ Group {
         Anchor: (Height: 22);
 
         Label #Name {
-          Style: (...$C.@DefaultLabelStyle, RenderBold: true, FontSize: 16, TextColor: #e8c36a);
-          Anchor: (Right: 8);
+          Style: (...$C.@DefaultLabelStyle, RenderBold: true, FontSize: 16, TextColor: #e9e4d6, VerticalAlignment: Center);
+          Anchor: (Right: 10);
         }
 
         Label #Version {
-          Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #c9ced8, VerticalAlignment: Center);
-          Anchor: (Right: 8);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center);
+          Anchor: (Right: 10);
         }
 
         Label #Badges {
-          Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #E8A93B, VerticalAlignment: Center);
+          Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #e8a93b, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
         }
       }
 
       Label #Description {
-        Style: (...$C.@DefaultLabelStyle, FontSize: 13, Wrap: true);
+        Anchor: (Top: 2);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #c9c3b3, Wrap: true);
       }
 
       Label #Details {
-        Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #878e9c, Wrap: true);
+        Anchor: (Top: 2);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #9fb0bd, Wrap: true);
       }
 
       Group {
         LayoutMode: Left;
-        Anchor: (Height: 32, Top: 4);
+        Anchor: (Height: 32, Top: 6);
 
         $C.@SmallSecondaryTextButton #Settings {
           @Text = %controlcore.ui.mods.settings;
-          Anchor: (Width: 110, Height: 28, Right: 6);
+          Anchor: (Width: 150, Height: 30, Right: 6);
         }
 
         $C.@SmallSecondaryTextButton #Keys {
           @Text = %controlcore.ui.mods.keys;
-          Anchor: (Width: 90, Height: 28, Right: 6);
+          Anchor: (Width: 100, Height: 30, Right: 6);
         }
 
         $C.@SmallTertiaryTextButton #Config {
           @Text = %controlcore.ui.mods.config;
-          Anchor: (Width: 130, Height: 28, Right: 6);
+          Anchor: (Width: 190, Height: 30, Right: 6);
         }
 
         Group {
@@ -70,16 +70,16 @@ Group {
 
         Group #EnabledBox {
           LayoutMode: Left;
-          Anchor: (Height: 28);
+          Anchor: (Height: 30);
 
           Label {
             Text: %controlcore.ui.mods.enabled;
-            Style: (...$C.@DefaultLabelStyle, VerticalAlignment: Center);
-            Anchor: (Right: 6);
+            Style: (...$C.@DefaultLabelStyle, TextColor: #c9c3b3, VerticalAlignment: Center);
+            Anchor: (Right: 8);
           }
 
           $C.@CheckBox #Enabled {
-            Anchor: (Width: 26, Height: 26);
+            Anchor: (Width: 26, Height: 26, Top: 2);
           }
         }
       }
@@ -88,7 +88,14 @@ Group {
 
   Label #ConfigText {
     Visible: false;
-    Anchor: (Top: 6);
-    Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #c9ced8, Wrap: true);
+    Anchor: (Left: 68, Top: 8);
+    Padding: (Full: 8);
+    Background: #13202a;
+    Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #c9c3b3, Wrap: true);
+  }
+
+  Group {
+    Anchor: (Height: 1, Top: 10);
+    Background: #263c4c;
   }
 }

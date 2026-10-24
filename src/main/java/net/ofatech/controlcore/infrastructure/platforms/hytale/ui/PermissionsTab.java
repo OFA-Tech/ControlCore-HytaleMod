@@ -116,6 +116,9 @@ final class PermissionsTab {
         commands.set(row + " #Description.Text", entry.description());
         commands.set(row + " #View.Value", entry.view());
         commands.set(row + " #Edit.Value", entry.edit());
+        boolean ruled = !entry.view().isBlank() || !entry.edit().isBlank();
+        commands.set(
+                row + " #State.Background", (ruled ? SettingRows.State.CHANGED : SettingRows.State.DEFAULT).icon());
     }
 
     private void applySearch(UICommandBuilder commands, boolean report) {

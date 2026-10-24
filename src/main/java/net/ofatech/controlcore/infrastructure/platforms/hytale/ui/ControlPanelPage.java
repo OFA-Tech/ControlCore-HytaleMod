@@ -6,6 +6,7 @@ import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
+import com.hypixel.hytale.server.core.ui.Anchor;
 import com.hypixel.hytale.server.core.ui.DropdownEntryInfo;
 import com.hypixel.hytale.server.core.ui.LocalizableString;
 import com.hypixel.hytale.server.core.ui.Value;
@@ -949,8 +950,25 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         commands.set("#KeymapModeButtons.Visible", admin);
         commands.set("#ServerKeymaps.Visible", server);
         commands.set("#MyKeymaps.Visible", !server);
-        commands.set("#KeymapModeServer.Disabled", server);
-        commands.set("#KeymapModeMine.Disabled", admin && !server);
+        commands.set("#NewBindToggle.Visible", server);
+        commands.set("#KeymapModeServer.Style", Value.ref(LAYOUT, server ? "SegmentOnStyle" : "SegmentStyle"));
+        commands.set("#KeymapModeMine.Style", Value.ref(LAYOUT, server ? "SegmentStyle" : "SegmentOnStyle"));
+        listHeights(commands);
+    }
+
+    private void listHeights(UICommandBuilder commands) {
+        boolean admin = bindForm.isPresent();
+        int server = 386
+                - (probe.isPresent() ? 42 : 0)
+                - (bindForm.map(KeyBindForm::isOpen).orElse(false) ? 112 : 0);
+        commands.setObject("#ServerKeymapList.Anchor", height(server));
+        commands.setObject("#KeymapList.Anchor", height(admin ? 388 : 430));
+    }
+
+    private static Anchor height(int pixels) {
+        Anchor anchor = new Anchor();
+        anchor.setHeight(Value.of(pixels));
+        return anchor;
     }
 
     private void applySearch(PanelSection key, SettingsSection section, UICommandBuilder commands, boolean report) {
@@ -1092,6 +1110,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         @Override
         public void showSettingsOf(ModsView.Entry entry, boolean keys) {
             ControlPanelPage.this.showSettingsOf(entry, keys);
+        }
+
+        @Override
+        public void formToggled(UICommandBuilder update) {
+            listHeights(update);
         }
 
         @Override

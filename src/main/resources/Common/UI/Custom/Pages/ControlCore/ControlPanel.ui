@@ -36,6 +36,18 @@ $C = "../../Common.ui";
   Pressed: (Background: #2c4252, LabelStyle: @LegendLabelOn)
 );
 
+@SegmentStyle = TextButtonStyle(
+  Default: (Background: #162733, LabelStyle: @TabLabel),
+  Hovered: (Background: #223a4b, LabelStyle: @TabLabel),
+  Pressed: (Background: #223a4b, LabelStyle: @TabLabel)
+);
+
+@SegmentOnStyle = TextButtonStyle(
+  Default: (Background: #2c4252, LabelStyle: @TabLabelOn),
+  Hovered: (Background: #2c4252, LabelStyle: @TabLabelOn),
+  Pressed: (Background: #2c4252, LabelStyle: @TabLabelOn)
+);
+
 @SelectedTabStyle = TextButtonStyle(
   Default: (Background: #1d3140, LabelStyle: @TabLabelOn),
   Hovered: (Background: #1d3140, LabelStyle: @TabLabelOn),
@@ -345,16 +357,27 @@ $C.@PageOverlay {
             Group #KeymapModeButtons {
               LayoutMode: Left;
               Visible: false;
-              Anchor: (Height: 34, Bottom: 8);
+              Anchor: (Height: 32, Bottom: 10);
 
-              $C.@SmallSecondaryTextButton #KeymapModeServer {
-                @Text = %controlcore.ui.keymaps.modeServer;
-                Anchor: (Width: 170, Height: 32, Right: 6);
+              TextButton #KeymapModeServer {
+                Text: %controlcore.ui.keymaps.modeServer;
+                Style: @SegmentStyle;
+                Anchor: (Width: 200, Right: 2);
               }
 
-              $C.@SmallSecondaryTextButton #KeymapModeMine {
-                @Text = %controlcore.ui.keymaps.modeMine;
-                Anchor: (Width: 120, Height: 32);
+              TextButton #KeymapModeMine {
+                Text: %controlcore.ui.keymaps.modeMine;
+                Style: @SegmentStyle;
+                Anchor: (Width: 160);
+              }
+
+              Group {
+                FlexWeight: 1;
+              }
+
+              $C.@SmallSecondaryTextButton #NewBindToggle {
+                @Text = %controlcore.ui.bind.new;
+                Anchor: (Width: 170, Height: 32);
               }
             }
 
@@ -370,7 +393,16 @@ $C.@PageOverlay {
 
               Group #CustomBindForm {
                 LayoutMode: Top;
-                Anchor: (Bottom: 8);
+                Visible: false;
+                Anchor: (Bottom: 10);
+                Background: #182a37;
+                Padding: (Full: 10);
+
+                Label {
+                  Text: %controlcore.ui.bind.title;
+                  Style: @SubsectionTitleStyle;
+                  Anchor: (Height: 20, Bottom: 6);
+                }
 
                 Group {
                   LayoutMode: Left;
@@ -405,7 +437,7 @@ $C.@PageOverlay {
 
                   $C.@SmallSecondaryTextButton #NewBindAdd {
                     @Text = %controlcore.ui.bind.save;
-                    Anchor: (Width: 110, Height: 32, Left: 6);
+                    Anchor: (Width: 150, Height: 32, Left: 6);
                   }
                 }
               }
@@ -436,7 +468,7 @@ $C.@PageOverlay {
               Group #ServerKeymapList {
                 LayoutMode: TopScrolling;
                 ScrollbarStyle: $C.@DefaultScrollbarStyle;
-                Anchor: (Height: 178);
+                Anchor: (Height: 344);
                 Padding: (Right: 10);
               }
 
@@ -448,17 +480,17 @@ $C.@PageOverlay {
                 Label {
                   Text: %controlcore.ui.debug.title;
                   FlexWeight: 1;
-                  Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, VerticalAlignment: Center);
+                  Style: @FooterStyle;
                 }
 
-                $C.@SmallSecondaryTextButton #ProbeToggle {
+                $C.@SmallTertiaryTextButton #ProbeToggle {
                   @Text = %controlcore.ui.debug.probe;
-                  Anchor: (Width: 200, Height: 32, Left: 6);
+                  Anchor: (Width: 230, Height: 32, Left: 6);
                 }
 
-                $C.@SmallSecondaryTextButton #KeyTest {
+                $C.@SmallTertiaryTextButton #KeyTest {
                   @Text = %controlcore.ui.debug.keyTest;
-                  Anchor: (Width: 160, Height: 32, Left: 6);
+                  Anchor: (Width: 230, Height: 32, Left: 6);
                 }
               }
             }
@@ -498,7 +530,7 @@ $C.@PageOverlay {
               Group #KeymapList {
                 LayoutMode: TopScrolling;
                 ScrollbarStyle: $C.@DefaultScrollbarStyle;
-                Anchor: (Height: 420);
+                Anchor: (Height: 430);
                 Padding: (Right: 10);
               }
             }
@@ -519,7 +551,7 @@ $C.@PageOverlay {
               Anchor: (Height: 34, Bottom: 8);
 
               $C.@DropdownBox #ModsSearchFilter {
-                Anchor: (Width: 220, Right: 6);
+                Anchor: (Width: 240, Right: 6);
               }
 
               $C.@TextField #ModsSearch {

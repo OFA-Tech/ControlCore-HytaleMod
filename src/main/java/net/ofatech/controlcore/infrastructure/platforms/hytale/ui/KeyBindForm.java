@@ -13,6 +13,7 @@ final class KeyBindForm {
     static final String ADD = "AddBind";
     static final String EDIT = "EditBind";
     static final String REMOVE = "RemoveBind";
+    static final String TOGGLE = "ToggleBindForm";
 
     private static final String STATUS = "#FooterStatus.Text";
 
@@ -20,11 +21,14 @@ final class KeyBindForm {
         void rebuild();
 
         void send(UICommandBuilder update);
+
+        void formToggled(UICommandBuilder update);
     }
 
     private final CustomKeyBindEditor binds;
     private final Translator tr;
     private final Host host;
+    private boolean open;
 
     KeyBindForm(CustomKeyBindEditor binds, Translator tr, Host host) {
         this.binds = binds;
@@ -32,7 +36,14 @@ final class KeyBindForm {
         this.host = host;
     }
 
+    boolean isOpen() {
+        return open;
+    }
+
     void build(UICommandBuilder commands, UIEventBuilder events) {
+        show(commands);
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating, "#NewBindToggle", EventData.of(PanelAction.KEY, TOGGLE));
         commands.set("#NewBindName.PlaceholderText", tr.t("controlcore.panel.bind.name_hint"));
         commands.set("#NewBindKeys.PlaceholderText", tr.t("controlcore.panel.bind.keys_hint"));
         commands.set("#NewBindCommand.PlaceholderText", tr.t("controlcore.panel.bind.command_hint"));
@@ -52,6 +63,13 @@ final class KeyBindForm {
             case ADD -> add(action);
             case EDIT -> edit(action.id);
             case REMOVE -> remove(action.id);
+            case TOGGLE -> {
+                open = !open;
+                UICommandBuilder update = new UICommandBuilder();
+                show(update);
+                host.formToggled(update);
+                host.send(update);
+            }
             default -> {
                 return false;
             }
@@ -59,11 +77,20 @@ final class KeyBindForm {
         return true;
     }
 
+    private void show(UICommandBuilder commands) {
+        commands.set("#CustomBindForm.Visible", open);
+        commands.set(
+                "#NewBindToggle.Text", open ? tr.t("controlcore.panel.bind.close") : tr.t("controlcore.ui.bind.new"));
+    }
+
     private void edit(String id) {
         if (id == null) {
             return;
         }
         UICommandBuilder update = new UICommandBuilder();
+        open = true;
+        show(update);
+        host.formToggled(update);
         binds.find(id)
                 .ifPresentOrElse(
                         bind -> {
