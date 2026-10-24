@@ -46,7 +46,7 @@ $C.@PageOverlay {
   LayoutMode: Middle;
 
   Group {
-    Anchor: (Width: 1040);
+    Anchor: (Width: 1120);
     LayoutMode: Top;
     Background: #2c4252;
     Padding: (Full: 1);
@@ -80,7 +80,7 @@ $C.@PageOverlay {
 
           Group #ServerTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 158, Right: 4);
+            Anchor: (Width: 172, Right: 4);
 
             Group #ServerTabEdge {
               Anchor: (Height: 3);
@@ -97,7 +97,7 @@ $C.@PageOverlay {
 
           Group #SettingsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 158, Right: 4);
+            Anchor: (Width: 172, Right: 4);
 
             Group #SettingsTabEdge {
               Anchor: (Height: 3);
@@ -114,7 +114,7 @@ $C.@PageOverlay {
 
           Group #PlayerTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 158, Right: 4);
+            Anchor: (Width: 172, Right: 4);
 
             Group #PlayerTabEdge {
               Anchor: (Height: 3);
@@ -131,7 +131,7 @@ $C.@PageOverlay {
 
           Group #KeymapTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 158, Right: 4);
+            Anchor: (Width: 172, Right: 4);
 
             Group #KeymapTabEdge {
               Anchor: (Height: 3);
@@ -148,7 +148,7 @@ $C.@PageOverlay {
 
           Group #ModsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 158, Right: 4);
+            Anchor: (Width: 172, Right: 4);
 
             Group #ModsTabEdge {
               Anchor: (Height: 3);
@@ -165,7 +165,7 @@ $C.@PageOverlay {
 
           Group #PermissionsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 158);
+            Anchor: (Width: 172);
 
             Group #PermissionsTabEdge {
               Anchor: (Height: 3);
@@ -243,7 +243,7 @@ $C.@PageOverlay {
 
               Label #ServerStatus {
                 Style: @CountStyle;
-                Anchor: (Width: 150, Left: 10);
+                Anchor: (Width: 120, Left: 10);
               }
             }
 
@@ -284,7 +284,7 @@ $C.@PageOverlay {
 
               Label #SettingsStatus {
                 Style: @CountStyle;
-                Anchor: (Width: 150, Left: 10);
+                Anchor: (Width: 120, Left: 10);
               }
             }
 
@@ -325,7 +325,7 @@ $C.@PageOverlay {
 
               Label #PlayerStatus {
                 Style: @CountStyle;
-                Anchor: (Width: 150, Left: 10);
+                Anchor: (Width: 120, Left: 10);
               }
             }
 
@@ -428,7 +428,7 @@ $C.@PageOverlay {
 
                 Label #ServerKeymapStatus {
                   Style: @CountStyle;
-                  Anchor: (Width: 150, Left: 10);
+                  Anchor: (Width: 120, Left: 10);
                 }
               }
 
@@ -490,7 +490,7 @@ $C.@PageOverlay {
 
                 Label #KeymapStatus {
                   Style: @CountStyle;
-                  Anchor: (Width: 150, Left: 10);
+                  Anchor: (Width: 120, Left: 10);
                 }
               }
 
@@ -528,7 +528,7 @@ $C.@PageOverlay {
 
               Label #ModsStatus {
                 Style: @CountStyle;
-                Anchor: (Width: 150, Left: 10);
+                Anchor: (Width: 120, Left: 10);
               }
             }
 
@@ -569,7 +569,7 @@ $C.@PageOverlay {
 
               Label #PermissionStatus {
                 Style: @CountStyle;
-                Anchor: (Width: 150, Left: 10);
+                Anchor: (Width: 120, Left: 10);
               }
             }
 

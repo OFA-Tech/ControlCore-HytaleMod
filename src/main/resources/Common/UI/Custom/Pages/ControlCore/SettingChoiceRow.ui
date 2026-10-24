@@ -26,13 +26,13 @@ Group {
 
     $C.@SmallTertiaryTextButton #Undo {
       @Text = %controlcore.ui.undo;
-      Anchor: (Width: 90, Height: 32, Left: 6);
+      Anchor: (Width: 110, Height: 32, Left: 6);
       Visible: false;
     }
 
     $C.@SmallTertiaryTextButton #Reset {
       @Text = %controlcore.ui.default;
-      Anchor: (Width: 90, Height: 32, Left: 6);
+      Anchor: (Width: 128, Height: 32, Left: 6);
     }
   }
 

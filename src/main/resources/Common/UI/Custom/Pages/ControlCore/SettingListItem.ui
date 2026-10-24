@@ -11,6 +11,6 @@ Group {
 
   $C.@SmallTertiaryTextButton #Remove {
     @Text = %controlcore.ui.remove;
-    Anchor: (Width: 90, Height: 28, Left: 6);
+    Anchor: (Width: 106, Height: 28, Left: 6);
   }
 }
