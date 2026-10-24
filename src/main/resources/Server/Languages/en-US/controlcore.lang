@@ -67,7 +67,7 @@ panel.saved_restart = Saved: {name} = {value}. Applies after a restart.
 panel.search.nothing = Nothing matches "{text}".
 panel.search.nothing_filtered = Nothing matches this filter.
 panel.search.shown = {count} of {total} shown.
-panel.search_hint = Search: words, mod:, name:, key:ctrl+f, is:changed, -word
+panel.search_hint = Search: words, mod:, key:, is:changed, -word
 tabs.keymaps = Keymaps
 tabs.mod_settings = Mod Settings
 tabs.player_prefs = Player Prefs

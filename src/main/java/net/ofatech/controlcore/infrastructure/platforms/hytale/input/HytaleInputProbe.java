@@ -69,12 +69,9 @@ public final class HytaleInputProbe implements InputProbe, PlayerPacketWatcher {
 
     @Override
     public Result<Void> openKeyTest(PlayerId player, String target) {
-        boolean uiTest = "ui".equalsIgnoreCase(target.trim());
         KeyProbePage.Target where;
         try {
-            where = uiTest
-                    ? KeyProbePage.Target.INPUT
-                    : KeyProbePage.Target.valueOf(target.trim().toUpperCase(Locale.ROOT));
+            where = KeyProbePage.Target.valueOf(target.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             return Result.failure(Error.validation(
                     "InputProbe.UnknownTarget",
@@ -91,12 +88,7 @@ public final class HytaleInputProbe implements InputProbe, PlayerPacketWatcher {
             try {
                 Player component = store.getComponent(entity, Player.getComponentType());
                 if (component != null && entity.isValid()) {
-                    component
-                            .getPageManager()
-                            .openCustomPage(
-                                    entity,
-                                    store,
-                                    uiTest ? new UiSpikePage(playerRef, log) : new KeyProbePage(playerRef, where, log));
+                    component.getPageManager().openCustomPage(entity, store, new KeyProbePage(playerRef, where, log));
                 }
             } catch (RuntimeException e) {
                 log.error("Could not open the key test for " + playerRef.getUsername(), e);

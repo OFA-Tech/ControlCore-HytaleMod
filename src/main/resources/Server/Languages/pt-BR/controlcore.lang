@@ -67,7 +67,7 @@ panel.saved_restart = Salvo: {name} = {value}. Vale após reiniciar.
 panel.search.nothing = Nada corresponde a "{text}".
 panel.search.nothing_filtered = Nada corresponde a este filtro.
 panel.search.shown = {count} de {total} exibidos.
-panel.search_hint = Buscar: palavras, mod:, name:, key:ctrl+f, is:changed, -palavra
+panel.search_hint = Buscar: palavras, mod:, key:, is:changed, -palavra
 tabs.keymaps = Teclas
 tabs.mod_settings = Config. de mods
 tabs.player_prefs = Preferências
