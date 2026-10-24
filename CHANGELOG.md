@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.12.0 - 2026-10-24
+
+Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.4. The API for other mods
+is unchanged (**2.0.0**); mods built for 0.10.0 keep working. The control panel has a new look; nothing on disk
+changes, so updating needs no migration.
+
 ### Changed
 - **New look for the control panel.** The panel is wider (1120), the selected tab has a gold edge, and every
   setting row follows one layout: state mark, name, control, then Undo, Default and Save.
