@@ -173,6 +173,19 @@ public final class HytaleWorlds implements Worlds {
         WorldConfig fresh = new WorldConfig();
         List<ConfigEntry> entries = new ArrayList<>();
         entries.add(info(STATUS, PERFORMANCE, "Status", "Right now, in this world.", status(world)));
+        entries.add(new ConfigEntry(
+                TPS,
+                PERFORMANCE,
+                "Ticks per second",
+                "How often the world updates. The game keeps its normal speed; lower values update in bigger, less smooth"
+                        + " steps and use less CPU on busy servers.",
+                ConfigValueKind.INTEGER,
+                List.of(),
+                1,
+                MAX_TPS,
+                Integer.toString(world.getTps()),
+                Optional.of(Integer.toString(TickingThread.TPS)),
+                SettingAccess.EDITABLE));
         for (Toggle toggle : TOGGLES) {
             entries.add(new ConfigEntry(
                     toggle.path(),
@@ -202,18 +215,6 @@ public final class HytaleWorlds implements Worlds {
                         fresh.getGameMode() == null
                                 ? GameMode.Adventure.name()
                                 : fresh.getGameMode().name()),
-                SettingAccess.EDITABLE));
-        entries.add(new ConfigEntry(
-                TPS,
-                PERFORMANCE,
-                "Ticks per second",
-                "How often the world updates. Lower saves CPU but makes it run slower.",
-                ConfigValueKind.INTEGER,
-                List.of(),
-                1,
-                MAX_TPS,
-                Integer.toString(world.getTps()),
-                Optional.of(Integer.toString(TickingThread.TPS)),
                 SettingAccess.EDITABLE));
         entries.add(percent(name, SPEED, "Player speed (%)", "Movement speed here; 0 uses the server-wide value."));
         entries.add(percent(name, JUMP, "Jump strength (%)", "Jump height here; 0 uses the server-wide value."));

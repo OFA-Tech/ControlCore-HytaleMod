@@ -481,7 +481,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             }
             count++;
         }
-        return tr.t("controlcore.panel.heading_count", "count", count);
+        return count == 1
+                ? tr.t("controlcore.panel.heading_count_one")
+                : tr.t("controlcore.panel.heading_count", "count", count);
     }
 
     private SettingRows.State state(PanelSection key, SettingSnapshot snapshot) {
