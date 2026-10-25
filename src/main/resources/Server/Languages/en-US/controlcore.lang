@@ -689,3 +689,4 @@ keys.game_action.keep = Game action: keep
 keys.game_action.replace = Game action: replace
 keys.game_action.saved = {name}: {mode}.
 errors.keys.unknown_game_action_mode = '{mode}' is not server, keep or replace.
+snapshots.part.worlds = worlds
