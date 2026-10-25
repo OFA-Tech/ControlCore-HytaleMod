@@ -29,7 +29,8 @@ public record ControlPanelContent(
         Optional<HistoryView> history,
         Optional<SnapshotsView> snapshots,
         Optional<InputProbe> debug,
-        Optional<String> focus) {
+        Optional<String> focus,
+        List<String> worlds) {
 
     public ControlPanelContent {
         Guard.notNull(server, "server");
@@ -46,5 +47,6 @@ public record ControlPanelContent(
         Guard.notNull(snapshots, "snapshots");
         Guard.notNull(debug, "debug");
         Guard.notNull(focus, "focus");
+        worlds = List.copyOf(worlds);
     }
 }

@@ -40,7 +40,8 @@ final class SnapshotCommands {
                 continue;
             }
             if (part.equalsIgnoreCase("all")) {
-                parts.addAll(EnumSet.of(Part.CONFIG, Part.SETTINGS, Part.KEYS, Part.PERMISSIONS, Part.MODS));
+                parts.addAll(
+                        EnumSet.of(Part.CONFIG, Part.WORLDS, Part.SETTINGS, Part.KEYS, Part.PERMISSIONS, Part.MODS));
                 continue;
             }
             if (part.toLowerCase(java.util.Locale.ROOT).startsWith("settings:")) {

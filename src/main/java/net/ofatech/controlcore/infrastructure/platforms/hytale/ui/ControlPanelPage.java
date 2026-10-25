@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import net.ofatech.controlcore.application.history.ChangeContext;
+import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.ControlPanelContent;
@@ -65,6 +66,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private static final String KEY_TEST = "KeyTest";
     private static final String LEGEND_PREFIX = "Legend:";
     private static final String LEGEND_ALL = "#LegendAll";
+    private static final String SERVER_MODE_CONFIG = "ServerMode:Config";
+    private static final String SERVER_MODE_WORLDS = "ServerMode:Worlds";
+    private static final String SERVER_WORLD = "ServerWorld";
 
     private enum Tab {
         SERVER(ControlPanelTab.SERVER_CONFIGS, "#ServerTab", "#ServerTabButton"),
@@ -142,6 +146,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private final String viewerName;
 
     private Tab selected;
+    private final List<String> worlds;
+    private boolean showingWorlds;
+    private String world;
     private boolean editingServerKeys = true;
 
     ControlPanelPage(PlayerRef player, ControlPanelRequest request, ControlPanelContent content, Log log) {
@@ -168,6 +175,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         this.probe = manageKeys ? content.debug() : Optional.empty();
         this.viewerId = PlayerId.of(player.getUuid());
         this.viewerName = player.getUsername();
+        this.worlds = content.worlds();
+        this.world = worlds.contains("default")
+                ? "default"
+                : worlds.stream().findFirst().orElse("");
         for (Tab tab : Tab.values()) {
             if (tab.shownFor(shownSections)
                     && (tab != Tab.PERMISSIONS || permissionsTab.isPresent())
@@ -259,6 +270,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 "#HistoryModeSnapshots",
                 EventData.of(PanelAction.KEY, HISTORY_MODE_SNAPSHOTS));
         showHistoryMode(commands);
+        buildServerMode(commands, events);
         buildDebugTools(commands, events);
         commands.set("#TabButtons.Visible", tabs.size() > 1);
         bindForm.ifPresent(form -> {
@@ -359,6 +371,72 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         commands.setObject("#HistoryList.Anchor", height(both ? 388 : 430));
     }
 
+    private void buildServerMode(UICommandBuilder commands, UIEventBuilder events) {
+        commands.set(
+                "#ServerModeButtons.Visible", sections.containsKey(PanelSection.SERVER_CONFIG) && !worlds.isEmpty());
+        commands.set(
+                "#ServerWorld.Entries",
+                worlds.stream()
+                        .map(name -> new DropdownEntryInfo(LocalizableString.fromString(name), name))
+                        .toList());
+        commands.set("#ServerWorld.Value", world);
+        if (!worlds.isEmpty()) {
+            commands.setObject("#ServerList.Anchor", height(390));
+        }
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating,
+                "#ServerModeConfig",
+                EventData.of(PanelAction.KEY, SERVER_MODE_CONFIG));
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating,
+                "#ServerModeWorlds",
+                EventData.of(PanelAction.KEY, SERVER_MODE_WORLDS));
+        events.addEventBinding(
+                CustomUIEventBindingType.ValueChanged,
+                "#ServerWorld",
+                new EventData().append(PanelAction.KEY, SERVER_WORLD).append(PanelAction.VALUE, "#ServerWorld.Value"));
+        showServerMode(commands);
+    }
+
+    private void showServerMode(UICommandBuilder commands) {
+        commands.set("#ServerModeConfig.Style", Value.ref(LAYOUT, showingWorlds ? "SegmentStyle" : "SegmentOnStyle"));
+        commands.set("#ServerModeWorlds.Style", Value.ref(LAYOUT, showingWorlds ? "SegmentOnStyle" : "SegmentStyle"));
+        commands.set("#ServerWorld.Visible", showingWorlds);
+        commands.set("#ServerIntro.Visible", !showingWorlds);
+        commands.set("#WorldsIntro.Visible", showingWorlds);
+    }
+
+    private void refreshServerScope() {
+        UICommandBuilder update = new UICommandBuilder();
+        showServerMode(update);
+        SettingsSection section = sections.get(PanelSection.SERVER_CONFIG);
+        if (section != null) {
+            applySearch(PanelSection.SERVER_CONFIG, section, update, true);
+        }
+        showLegend(update);
+        sendUpdate(update, false);
+    }
+
+    private boolean inScope(PanelSection key, SettingId id) {
+        if (key != PanelSection.SERVER_CONFIG) {
+            return true;
+        }
+        if (!showingWorlds) {
+            return !ServerConfigEditor.isWorld(id);
+        }
+        return ServerConfigEditor.isWorld(id) && id.key().startsWith(ServerConfigEditor.worldPrefix(world));
+    }
+
+    private boolean headingInScope(PanelSection key, List<SettingsSection.Entry> entries, int heading) {
+        for (int index = heading + 1; index < entries.size(); index++) {
+            if (entries.get(index) instanceof SettingsSection.Row row) {
+                return inScope(key, row.id());
+            }
+            return false;
+        }
+        return false;
+    }
+
     private void showHistoryOf(String target) {
         if (historyTab.isEmpty() || !tabs.contains(Tab.HISTORY) || target == null) {
             return;
@@ -445,7 +523,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         for (SettingsSection.Entry entry : built.getOrDefault(key, List.of())) {
             if (entry instanceof SettingsSection.Row row) {
                 SettingSnapshot snapshot = latest.getOrDefault(shownKey(key, row.id()), row.snapshot());
-                if (matchesSearch(section, search, snapshot)) {
+                if (inScope(key, row.id()) && matchesSearch(section, search, snapshot)) {
                     total++;
                     counts.merge(state(key, snapshot), 1, Integer::sum);
                 }
@@ -663,6 +741,14 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             UICommandBuilder update = new UICommandBuilder();
             showHistoryMode(update);
             sendUpdate(update, false);
+        } else if (SERVER_MODE_CONFIG.equals(name) || SERVER_MODE_WORLDS.equals(name)) {
+            showingWorlds = SERVER_MODE_WORLDS.equals(name) && !worlds.isEmpty();
+            refreshServerScope();
+        } else if (SERVER_WORLD.equals(name)) {
+            if (action.value != null && worlds.contains(action.value)) {
+                world = action.value;
+            }
+            refreshServerScope();
         } else if (HISTORY_LINK.equals(name)) {
             showHistoryOf(action.id);
         } else if (PROBE_TOGGLE.equals(name) || KEY_TEST.equals(name)) {
@@ -1093,12 +1179,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             switch (entries.get(index)) {
                 case SettingsSection.Heading ignored -> {
                     heading = index;
-                    visible[index] = !filtered;
+                    visible[index] = !filtered && headingInScope(key, entries, index);
                 }
                 case SettingsSection.Row row -> {
                     rows++;
                     SettingSnapshot snapshot = latest.getOrDefault(shownKey(key, row.id()), row.snapshot());
-                    visible[index] = matchesSearch(section, search, snapshot)
+                    visible[index] = inScope(key, row.id())
+                            && matchesSearch(section, search, snapshot)
                             && (legend == null || state(key, snapshot) == legend);
                     if (visible[index]) {
                         matching++;

@@ -248,9 +248,39 @@ $C.@PageOverlay {
           Group #ServerTab {
             LayoutMode: Top;
 
-            Label {
+            Group #ServerModeButtons {
+              LayoutMode: Left;
+              Visible: false;
+              Anchor: (Height: 32, Bottom: 8);
+
+              TextButton #ServerModeConfig {
+                Text: %controlcore.ui.server.modeConfig;
+                Style: @SegmentStyle;
+                Anchor: (Width: 180, Right: 2);
+              }
+
+              TextButton #ServerModeWorlds {
+                Text: %controlcore.ui.server.modeWorlds;
+                Style: @SegmentStyle;
+                Anchor: (Width: 180, Right: 12);
+              }
+
+              $C.@DropdownBox #ServerWorld {
+                Visible: false;
+                Anchor: (Width: 220);
+              }
+            }
+
+            Label #ServerIntro {
               Text: %controlcore.ui.server.intro;
               Style: @NoteStyle;
+              Anchor: (Bottom: 8);
+            }
+
+            Label #WorldsIntro {
+              Text: %controlcore.ui.server.worldsIntro;
+              Style: @NoteStyle;
+              Visible: false;
               Anchor: (Bottom: 8);
             }
 
@@ -753,7 +783,16 @@ $C.@PageOverlay {
                   Label {
                     Text: %controlcore.ui.snapshots.partConfig;
                     Style: (...@NoteStyle, VerticalAlignment: Center);
-                    Anchor: (Height: 26, Width: 110, Right: 6);
+                    Anchor: (Height: 26, Width: 100, Right: 6);
+                  }
+                  $C.@CheckBox #SnapPartWorlds {
+                    Anchor: (Width: 26, Height: 26, Right: 6);
+                  }
+
+                  Label {
+                    Text: %controlcore.ui.snapshots.partWorlds;
+                    Style: (...@NoteStyle, VerticalAlignment: Center);
+                    Anchor: (Height: 26, Width: 80, Right: 6);
                   }
                   $C.@CheckBox #SnapPartSettings {
                     Anchor: (Width: 26, Height: 26, Right: 6);
@@ -762,7 +801,7 @@ $C.@PageOverlay {
                   Label {
                     Text: %controlcore.ui.snapshots.partSettings;
                     Style: (...@NoteStyle, VerticalAlignment: Center);
-                    Anchor: (Height: 26, Width: 120, Right: 6);
+                    Anchor: (Height: 26, Width: 110, Right: 6);
                   }
                   $C.@CheckBox #SnapPartKeys {
                     Anchor: (Width: 26, Height: 26, Right: 6);
@@ -771,7 +810,7 @@ $C.@PageOverlay {
                   Label {
                     Text: %controlcore.ui.snapshots.partKeys;
                     Style: (...@NoteStyle, VerticalAlignment: Center);
-                    Anchor: (Height: 26, Width: 130, Right: 6);
+                    Anchor: (Height: 26, Width: 120, Right: 6);
                   }
                   $C.@CheckBox #SnapPartPermissions {
                     Anchor: (Width: 26, Height: 26, Right: 6);
@@ -780,7 +819,7 @@ $C.@PageOverlay {
                   Label {
                     Text: %controlcore.ui.snapshots.partPermissions;
                     Style: (...@NoteStyle, VerticalAlignment: Center);
-                    Anchor: (Height: 26, Width: 120, Right: 6);
+                    Anchor: (Height: 26, Width: 110, Right: 6);
                   }
                   $C.@CheckBox #SnapPartMods {
                     Anchor: (Width: 26, Height: 26, Right: 6);
@@ -789,7 +828,7 @@ $C.@PageOverlay {
                   Label {
                     Text: %controlcore.ui.snapshots.partMods;
                     Style: (...@NoteStyle, VerticalAlignment: Center);
-                    Anchor: (Height: 26, Width: 100, Right: 6);
+                    Anchor: (Height: 26, Width: 95, Right: 6);
                   }
                   $C.@CheckBox #SnapPartPlayers {
                     Anchor: (Width: 26, Height: 26, Right: 6);
@@ -798,7 +837,7 @@ $C.@PageOverlay {
                   Label {
                     Text: %controlcore.ui.snapshots.partPlayers;
                     Style: (...@NoteStyle, VerticalAlignment: Center);
-                    Anchor: (Height: 26, Width: 150, Right: 6);
+                    Anchor: (Height: 26, Width: 135, Right: 6);
                   }
                 }
               }

@@ -357,9 +357,10 @@ public final class SnapshotService {
         Map<String, SettingPermission> rules = new TreeMap<>();
         Map<String, Boolean> enabled = new TreeMap<>();
         Map<String, Map<String, String>> playerValues = new TreeMap<>();
-        if (parts.contains(Part.CONFIG)) {
+        if (parts.contains(Part.CONFIG) || parts.contains(Part.WORLDS)) {
             for (SettingSnapshot snapshot : serverConfig.snapshot(SettingScope.SERVER, Optional.empty())) {
-                if (snapshot.access() != SettingAccess.READ_ONLY) {
+                Part part = ServerConfigEditor.isWorld(snapshot.id()) ? Part.WORLDS : Part.CONFIG;
+                if (parts.contains(part) && snapshot.access() != SettingAccess.READ_ONLY) {
                     config.put(snapshot.id().toString(), snapshot.value());
                 }
             }
@@ -432,8 +433,13 @@ public final class SnapshotService {
     Plan differences(Snapshot snapshot, Translator tr) {
         List<Change> changes = new ArrayList<>();
         int[] skipped = {0};
-        if (snapshot.has(Part.CONFIG)) {
+        if (snapshot.has(Part.CONFIG) || snapshot.has(Part.WORLDS)) {
             snapshot.config().forEach((id, value) -> {
+                boolean world =
+                        SettingId.parse(id).map(ServerConfigEditor::isWorld).orElse(false);
+                if (!snapshot.has(world ? Part.WORLDS : Part.CONFIG)) {
+                    return;
+                }
                 Result<SettingSnapshot> current =
                         SettingId.parse(id).flatMap(parsed -> serverConfig.read(parsed, Optional.empty()));
                 if (current.isFailure() || current.value().access() == SettingAccess.READ_ONLY) {

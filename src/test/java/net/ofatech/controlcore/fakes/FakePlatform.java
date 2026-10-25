@@ -25,9 +25,11 @@ import net.ofatech.controlcore.domain.ports.game.Messenger;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
 import net.ofatech.controlcore.domain.ports.game.PlayerData;
 import net.ofatech.controlcore.domain.ports.game.PlayerInput;
+import net.ofatech.controlcore.domain.ports.game.PlayerTuning;
 import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.game.Scheduler;
 import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
+import net.ofatech.controlcore.domain.ports.game.Worlds;
 import net.ofatech.controlcore.domain.ports.mods.ModCatalog;
 import net.ofatech.controlcore.domain.ports.mods.ModLookup;
 import net.ofatech.controlcore.domain.ports.platform.Platform;
@@ -59,6 +61,8 @@ public final class FakePlatform implements Platform {
     public final FakeSettingPermissionStore settingPermissions = new FakeSettingPermissionStore();
     public final FakeChangeLogStore changeLog = new FakeChangeLogStore();
     public final FakeSnapshotStore snapshots = new FakeSnapshotStore();
+    public final FakeWorlds worlds = new FakeWorlds().add("default");
+    public final FakePlayerTuning tuning = new FakePlayerTuning();
     public volatile Boolean emptyHandKeys;
 
     public final FakeModCatalog modCatalog = new FakeModCatalog();
@@ -99,6 +103,8 @@ public final class FakePlatform implements Platform {
         binder.bind(SettingPermissionStore.class, settingPermissions);
         binder.bind(ChangeLogStore.class, changeLog);
         binder.bind(SnapshotStore.class, snapshots);
+        binder.bind(Worlds.class, worlds);
+        binder.bind(PlayerTuning.class, tuning);
         binder.bind(EmptyHandInput.class, on -> emptyHandKeys = on);
         binder.bind(HudDisplay.class, (player, hide, show) -> {
             var hidden = hiddenHud.computeIfAbsent(player, key -> EnumSet.noneOf(HudPart.class));

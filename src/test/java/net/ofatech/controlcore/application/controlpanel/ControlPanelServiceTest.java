@@ -27,6 +27,7 @@ import net.ofatech.controlcore.domain.model.settings.PermissionsView;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
+import net.ofatech.controlcore.domain.ports.game.Worlds;
 import net.ofatech.controlcore.domain.result.ErrorType;
 import net.ofatech.controlcore.domain.result.Result;
 import net.ofatech.controlcore.fakes.FakeChangeLogStore;
@@ -89,7 +90,7 @@ class ControlPanelServiceTest {
                 ChangeRecorder.NONE);
         var policy = new SettingPermissionPolicy(
                 new FakeSettingPermissionStore(), (player, node) -> true, registry, ChangeRecorder.NONE);
-        var serverConfig = new ServerConfigEditor(server, bus, bus, log);
+        var serverConfig = new ServerConfigEditor(server, Worlds.NONE, bus, bus, log);
         var mods =
                 new ModsEditor(new FakeModCatalog(), registry, keyRegistry, modNames, policy, log, ChangeRecorder.NONE);
         var history = new HistoryEditor(

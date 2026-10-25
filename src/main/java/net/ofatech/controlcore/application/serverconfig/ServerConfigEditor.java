@@ -1,5 +1,6 @@
 package net.ofatech.controlcore.application.serverconfig;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -23,6 +24,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
 import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
+import net.ofatech.controlcore.domain.ports.game.Worlds;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
@@ -30,10 +32,12 @@ import net.ofatech.controlcore.domain.result.Result;
 public final class ServerConfigEditor implements SettingsEditor {
 
     public static final String NAMESPACE = "server";
+    public static final String WORLD_NAMESPACE = "world";
     private static final int MAX_TEXT = 256;
     private static final int MAX_SUMMARY = 4096;
 
     private final ServerConfiguration server;
+    private final Worlds worlds;
     private final EventPublisher publisher;
     private final ControlCoreEvents events;
     private final Log log;
@@ -42,15 +46,83 @@ public final class ServerConfigEditor implements SettingsEditor {
 
     private record Pending(String startValue, Text name) {}
 
-    public ServerConfigEditor(ServerConfiguration server, EventPublisher publisher, ControlCoreEvents events, Log log) {
+    private record Source(SettingId id, ConfigEntry entry, Optional<String> world) {}
+
+    public ServerConfigEditor(
+            ServerConfiguration server, Worlds worlds, EventPublisher publisher, ControlCoreEvents events, Log log) {
         this.server = server;
+        this.worlds = worlds;
         this.publisher = publisher;
         this.events = events;
         this.log = log;
     }
 
     public static boolean owns(SettingId id) {
-        return NAMESPACE.equals(id.namespace());
+        return NAMESPACE.equals(id.namespace()) || WORLD_NAMESPACE.equals(id.namespace());
+    }
+
+    public static boolean isWorld(SettingId id) {
+        return WORLD_NAMESPACE.equals(id.namespace());
+    }
+
+    public static SettingId worldIdOf(String world, String path) {
+        return new SettingId(WORLD_NAMESPACE, slug(world) + "." + idOf(path).key());
+    }
+
+    public static String worldPrefix(String world) {
+        return slug(world) + ".";
+    }
+
+    private static String slug(String world) {
+        String slug =
+                world.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9_-]+", "-").replaceAll("^[-_]+", "");
+        return slug.isEmpty() ? "world" : slug;
+    }
+
+    public List<String> worldNames() {
+        return worlds.names();
+    }
+
+    public Optional<String> worldOf(SettingId id) {
+        if (!isWorld(id)) {
+            return Optional.empty();
+        }
+        for (String world : worlds.names()) {
+            if (id.key().startsWith(slug(world) + ".")) {
+                return Optional.of(world);
+            }
+        }
+        return Optional.empty();
+    }
+
+    public void applySavedWorldSettings() {
+        worlds.applySaved();
+    }
+
+    private List<Source> sources() {
+        List<Source> sources = new ArrayList<>();
+        server.entries().forEach(entry -> sources.add(new Source(idOf(entry.path()), entry, Optional.empty())));
+        for (String world : worlds.names()) {
+            for (ConfigEntry entry : worlds.entries(world)) {
+                sources.add(new Source(worldIdOf(world, entry.path()), inWorld(world, entry), Optional.of(world)));
+            }
+        }
+        return sources;
+    }
+
+    private static ConfigEntry inWorld(String world, ConfigEntry entry) {
+        return new ConfigEntry(
+                entry.path(),
+                world + " · " + entry.section(),
+                entry.name(),
+                entry.description(),
+                entry.kind(),
+                entry.options(),
+                entry.min(),
+                entry.max(),
+                entry.value(),
+                entry.defaultValue(),
+                entry.access());
     }
 
     public static SettingId idOf(String path) {
@@ -65,7 +137,7 @@ public final class ServerConfigEditor implements SettingsEditor {
         if (scope != SettingScope.SERVER) {
             return List.of();
         }
-        return server.entries().stream().map(ServerConfigEditor::snapshotOf).toList();
+        return sources().stream().map(ServerConfigEditor::snapshotOf).toList();
     }
 
     @Override
@@ -78,9 +150,9 @@ public final class ServerConfigEditor implements SettingsEditor {
         if (player.isPresent()) {
             return Result.failure(wrongScope(id));
         }
-        return find(id).flatMap(entry -> {
-            SettingDefinition<?> definition = definitionOf(entry);
-            return normalise(definition, text).flatMap(value -> apply(entry, value));
+        return find(id).flatMap(source -> {
+            SettingDefinition<?> definition = definitionOf(source);
+            return normalise(definition, text).flatMap(value -> apply(source, value));
         });
     }
 
@@ -89,14 +161,15 @@ public final class ServerConfigEditor implements SettingsEditor {
         if (player.isPresent()) {
             return Result.failure(wrongScope(id));
         }
-        return find(id).flatMap(entry -> entry.defaultValue()
-                .map(value -> apply(entry, value))
+        return find(id).flatMap(source -> source.entry()
+                .defaultValue()
+                .map(value -> apply(source, value))
                 .orElseGet(() -> Result.failure(Error.validation(
                         "ServerConfig.NoDefault",
                         Text.key(
                                         "controlcore.errors.serverconfig.no_default",
                                         "{name} has no default value; type a value or remove the key from config.json.")
-                                .with("name", entry.name())))));
+                                .with("name", source.entry().name())))));
     }
 
     public List<Text> pendingRestart() {
@@ -114,54 +187,61 @@ public final class ServerConfigEditor implements SettingsEditor {
                         change.id(), SettingScope.SERVER, Optional.empty(), change.oldValue(), change.newValue())));
     }
 
-    private Result<SettingSnapshot> apply(ConfigEntry entry, String value) {
+    private Result<SettingSnapshot> apply(Source source, String value) {
+        ConfigEntry entry = source.entry();
         if (entry.access() == SettingAccess.READ_ONLY) {
             return Result.failure(Error.forbidden(
                     "ServerConfig.ReadOnly",
                     Text.key("controlcore.errors.serverconfig.read_only", "{name} cannot be changed here.")
                             .with("name", entry.name())));
         }
-        return server.write(entry.path(), value).map(after -> {
-            lastSeen.put(entry.path(), after.value());
+        Result<ConfigEntry> written = source.world().isPresent()
+                ? worlds.write(source.world().get(), entry.path(), value)
+                        .map(after -> inWorld(source.world().get(), after))
+                : server.write(entry.path(), value);
+        return written.map(after -> {
+            lastSeen.put(source.id().toString(), after.value());
             if (!after.value().equals(entry.value())) {
                 if (entry.access() == SettingAccess.APPLIES_AFTER_RESTART) {
                     Pending first = pending.computeIfAbsent(
                             entry.path(),
                             path -> new Pending(
-                                    entry.value(), definitionOf(entry).nameText()));
+                                    entry.value(), definitionOf(source).nameText()));
                     if (first.startValue().equals(after.value())) {
                         pending.remove(entry.path());
                     }
                 }
-                SettingId id = idOf(entry.path());
-                log.info("Server config " + entry.path() + " changed from \"" + entry.value() + "\" to \""
-                        + after.value() + "\"");
-                publisher.publish(new ServerConfigChanged(id, entry.value(), after.value()));
+                log.info((source.world().map(world -> "World " + world + " ").orElse("Server config ")) + entry.path()
+                        + " changed from \"" + entry.value() + "\" to \"" + after.value() + "\"");
+                publisher.publish(new ServerConfigChanged(source.id(), entry.value(), after.value()));
             }
-            return snapshotOf(after);
+            return snapshotOf(new Source(source.id(), after, source.world()));
         });
     }
 
     public synchronized void checkOutsideChanges() {
         boolean first = lastSeen.isEmpty();
-        for (ConfigEntry entry : server.entries()) {
+        for (Source source : sources()) {
+            ConfigEntry entry = source.entry();
             if (entry.access() == SettingAccess.READ_ONLY) {
                 continue;
             }
-            String before = lastSeen.put(entry.path(), entry.value());
+            String before = lastSeen.put(source.id().toString(), entry.value());
             if (!first && before != null && !before.equals(entry.value())) {
-                log.info("Server config " + entry.path() + " changed outside ControlCore from \"" + before + "\" to \""
-                        + entry.value() + "\"");
+                log.info(source.id() + " changed outside ControlCore from \"" + before + "\" to \"" + entry.value()
+                        + "\"");
                 ChangeContext.fromOutside(
-                        () -> publisher.publish(new ServerConfigChanged(idOf(entry.path()), before, entry.value())));
+                        () -> publisher.publish(new ServerConfigChanged(source.id(), before, entry.value())));
             }
         }
     }
 
-    private Result<ConfigEntry> find(SettingId id) {
-        for (ConfigEntry entry : server.entries()) {
-            if (idOf(entry.path()).equals(id)) {
-                return Result.success(entry);
+    private Result<Source> find(SettingId id) {
+        if (owns(id)) {
+            for (Source source : sources()) {
+                if (source.id().equals(id)) {
+                    return Result.success(source);
+                }
             }
         }
         return Result.failure(Error.notFound(
@@ -170,15 +250,17 @@ public final class ServerConfigEditor implements SettingsEditor {
                         .with("id", id)));
     }
 
-    static SettingSnapshot snapshotOf(ConfigEntry entry) {
-        SettingDefinition<?> definition = definitionOf(entry);
+    private static SettingSnapshot snapshotOf(Source source) {
+        ConfigEntry entry = source.entry();
+        SettingDefinition<?> definition = definitionOf(source);
         boolean overridden =
                 entry.defaultValue().map(value -> !value.equals(entry.value())).orElse(true);
         return new SettingSnapshot(definition, entry.value(), overridden, entry.access());
     }
 
-    static SettingDefinition<?> definitionOf(ConfigEntry entry) {
-        SettingId id = idOf(entry.path());
+    private static SettingDefinition<?> definitionOf(Source source) {
+        ConfigEntry entry = source.entry();
+        SettingId id = source.id();
         String fallback = entry.defaultValue().orElse(entry.value());
         SettingDefinition<?> definition = switch (entry.kind()) {
             case TEXT -> server(id, SettingType.text(MAX_TEXT), fallback);
@@ -195,9 +277,26 @@ public final class ServerConfigEditor implements SettingsEditor {
                 server(id, SettingType.integer(entry.min(), entry.max()), clamp(fallback, entry.min(), entry.max()));
         };
         return definition
-                .named(Text.key("controlcore.config.key." + id.key(), entry.name()))
-                .describedAs(describe(entry))
-                .inCategory(Text.key("controlcore.config.section." + Text.slug(entry.section()), entry.section()));
+                .named(
+                        source.world().isPresent()
+                                ? Text.key("controlcore.world.key." + Text.slug(entry.path()), entry.name())
+                                : Text.key("controlcore.config.key." + id.key(), entry.name()))
+                .describedAs(
+                        source.world().isPresent()
+                                ? Text.key("controlcore.world.desc." + Text.slug(entry.path()), entry.description())
+                                : describe(entry))
+                .inCategory(
+                        source.world().isPresent()
+                                ? Text.key(
+                                                "controlcore.world.section."
+                                                        + Text.slug(entry.section()
+                                                                .substring(entry.section()
+                                                                                .indexOf(" · ")
+                                                                        + 3)),
+                                                entry.section())
+                                        .with("world", source.world().get())
+                                : Text.key(
+                                        "controlcore.config.section." + Text.slug(entry.section()), entry.section()));
     }
 
     private static <T> SettingDefinition<T> server(SettingId id, SettingType<T> type, T defaultValue) {

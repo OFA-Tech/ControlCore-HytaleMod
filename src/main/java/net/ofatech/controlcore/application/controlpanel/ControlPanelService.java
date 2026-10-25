@@ -186,7 +186,8 @@ public final class ControlPanelService implements ControlPanelApi {
                                 ? Optional.of(snapshots.viewedBy(player, nameOf(player)))
                                 : Optional.empty(),
                         nodes.hasOwn(player, InputProbeCommand.PERMISSION) ? Optional.of(probe) : Optional.empty(),
-                        focus));
+                        focus,
+                        serverConfig.worldNames()));
     }
 
     private String nameOf(PlayerId player) {
