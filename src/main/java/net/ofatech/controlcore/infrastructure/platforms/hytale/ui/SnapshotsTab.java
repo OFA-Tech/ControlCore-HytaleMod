@@ -18,7 +18,7 @@ import net.ofatech.controlcore.domain.result.Result;
 
 final class SnapshotsTab {
 
-    static final int LIST_HEIGHT = 290;
+    static final int LIST_HEIGHT = 440;
     static final int PREVIEW_HEIGHT = 224;
 
     private static final String PART = "SnapshotPart";

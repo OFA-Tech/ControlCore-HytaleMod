@@ -58,7 +58,7 @@ $C.@PageOverlay {
   LayoutMode: Middle;
 
   Group {
-    Anchor: (Width: 1120);
+    Anchor: (Width: 1320);
     LayoutMode: Top;
     Background: #2c4252;
     Padding: (Full: 1);
@@ -92,7 +92,7 @@ $C.@PageOverlay {
 
           Group #ServerTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 150, Right: 4);
+            Anchor: (Width: 178, Right: 4);
 
             Group #ServerTabEdge {
               Anchor: (Height: 3);
@@ -109,7 +109,7 @@ $C.@PageOverlay {
 
           Group #SettingsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 150, Right: 4);
+            Anchor: (Width: 178, Right: 4);
 
             Group #SettingsTabEdge {
               Anchor: (Height: 3);
@@ -126,7 +126,7 @@ $C.@PageOverlay {
 
           Group #PlayerTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 150, Right: 4);
+            Anchor: (Width: 178, Right: 4);
 
             Group #PlayerTabEdge {
               Anchor: (Height: 3);
@@ -143,7 +143,7 @@ $C.@PageOverlay {
 
           Group #KeymapTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 150, Right: 4);
+            Anchor: (Width: 178, Right: 4);
 
             Group #KeymapTabEdge {
               Anchor: (Height: 3);
@@ -160,7 +160,7 @@ $C.@PageOverlay {
 
           Group #ModsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 150, Right: 4);
+            Anchor: (Width: 178, Right: 4);
 
             Group #ModsTabEdge {
               Anchor: (Height: 3);
@@ -177,7 +177,7 @@ $C.@PageOverlay {
 
           Group #PermissionsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 150, Right: 4);
+            Anchor: (Width: 178, Right: 4);
 
             Group #PermissionsTabEdge {
               Anchor: (Height: 3);
@@ -194,7 +194,7 @@ $C.@PageOverlay {
 
           Group #HistoryTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 150);
+            Anchor: (Width: 178);
 
             Group #HistoryTabEdge {
               Anchor: (Height: 3);
@@ -319,7 +319,7 @@ $C.@PageOverlay {
             Group #ServerList {
               LayoutMode: TopScrolling;
               ScrollbarStyle: $C.@DefaultScrollbarStyle;
-              Anchor: (Height: 430);
+              Anchor: (Height: 580);
               Padding: (Right: 10);
             }
             }
@@ -378,7 +378,7 @@ $C.@PageOverlay {
               Group #BanList {
                 LayoutMode: TopScrolling;
                 ScrollbarStyle: $C.@DefaultScrollbarStyle;
-                Anchor: (Height: 290);
+                Anchor: (Height: 440);
                 Padding: (Right: 10);
               }
             }
@@ -420,7 +420,7 @@ $C.@PageOverlay {
             Group #SettingsList {
               LayoutMode: TopScrolling;
               ScrollbarStyle: $C.@DefaultScrollbarStyle;
-              Anchor: (Height: 430);
+              Anchor: (Height: 580);
               Padding: (Right: 10);
             }
           }
@@ -461,7 +461,7 @@ $C.@PageOverlay {
             Group #PlayerList {
               LayoutMode: TopScrolling;
               ScrollbarStyle: $C.@DefaultScrollbarStyle;
-              Anchor: (Height: 430);
+              Anchor: (Height: 580);
               Padding: (Right: 10);
             }
           }
@@ -588,7 +588,7 @@ $C.@PageOverlay {
               Group #ServerKeymapList {
                 LayoutMode: TopScrolling;
                 ScrollbarStyle: $C.@DefaultScrollbarStyle;
-                Anchor: (Height: 344);
+                Anchor: (Height: 494);
                 Padding: (Right: 10);
               }
 
@@ -650,7 +650,7 @@ $C.@PageOverlay {
               Group #KeymapList {
                 LayoutMode: TopScrolling;
                 ScrollbarStyle: $C.@DefaultScrollbarStyle;
-                Anchor: (Height: 430);
+                Anchor: (Height: 580);
                 Padding: (Right: 10);
               }
             }
@@ -688,7 +688,7 @@ $C.@PageOverlay {
             Group #ModsList {
               LayoutMode: TopScrolling;
               ScrollbarStyle: $C.@DefaultScrollbarStyle;
-              Anchor: (Height: 430);
+              Anchor: (Height: 580);
               Padding: (Right: 10);
             }
           }
@@ -729,7 +729,7 @@ $C.@PageOverlay {
             Group #PermissionList {
               LayoutMode: TopScrolling;
               ScrollbarStyle: $C.@DefaultScrollbarStyle;
-              Anchor: (Height: 430);
+              Anchor: (Height: 580);
               Padding: (Right: 10);
             }
           }
@@ -792,7 +792,7 @@ $C.@PageOverlay {
               Group #HistoryList {
                 LayoutMode: TopScrolling;
                 ScrollbarStyle: $C.@DefaultScrollbarStyle;
-                Anchor: (Height: 430);
+                Anchor: (Height: 580);
                 Padding: (Right: 10);
               }
             }
@@ -968,7 +968,7 @@ $C.@PageOverlay {
               Group #SnapshotList {
                 LayoutMode: TopScrolling;
                 ScrollbarStyle: $C.@DefaultScrollbarStyle;
-                Anchor: (Height: 290);
+                Anchor: (Height: 440);
                 Padding: (Right: 10);
               }
             }

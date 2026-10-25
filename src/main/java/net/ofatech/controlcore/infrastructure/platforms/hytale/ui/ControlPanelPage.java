@@ -383,7 +383,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 "#HistoryModeChanges.Style", Value.ref(LAYOUT, showingSnapshots ? "SegmentStyle" : "SegmentOnStyle"));
         commands.set(
                 "#HistoryModeSnapshots.Style", Value.ref(LAYOUT, showingSnapshots ? "SegmentOnStyle" : "SegmentStyle"));
-        commands.setObject("#HistoryList.Anchor", height(both ? 388 : 430));
+        commands.setObject("#HistoryList.Anchor", height(both ? 538 : 580));
     }
 
     private void buildServerMode(UICommandBuilder commands, UIEventBuilder events) {
@@ -399,7 +399,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                         .toList());
         commands.set("#ServerWorld.Value", world);
         if (!worlds.isEmpty() || bansTab.isPresent()) {
-            commands.setObject("#ServerList.Anchor", height(390));
+            commands.setObject("#ServerList.Anchor", height(540));
         }
         events.addEventBinding(
                 CustomUIEventBindingType.Activating,
@@ -1211,11 +1211,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
     private void listHeights(UICommandBuilder commands) {
         boolean admin = bindForm.isPresent();
-        int server = 386
+        int server = 536
                 - (probe.isPresent() ? 42 : 0)
                 - (bindForm.map(KeyBindForm::isOpen).orElse(false) ? 112 : 0);
         commands.setObject("#ServerKeymapList.Anchor", height(server));
-        commands.setObject("#KeymapList.Anchor", height(admin ? 388 : 430));
+        commands.setObject("#KeymapList.Anchor", height(admin ? 538 : 580));
     }
 
     private static Anchor height(int pixels) {
