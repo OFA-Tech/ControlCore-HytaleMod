@@ -13,6 +13,7 @@ ControlCore keeps its data in `mods/OFATech_ControlCore/`. Back up this folder b
 | `CustomKeyBinds.json` | binds admins created with `/cc-keybind-add` |
 | `SettingPermissions.json` | admins' `/cc-perm` rules |
 | `snapshots/<name>.json` | snapshots; copy one to another server's folder to restore it there |
+| `AutomationRules.json` | automation rules |
 | `ActiveProfile.json` | which profile was applied last |
 | `diagnostics/report-<date>-<time>.txt` | reports written by the Health tab or `/cc-diagnostics` |
 | `history/<year>-<month>.jsonl` | the change history, one change per line; months older than `controlcore:history-days` are deleted |

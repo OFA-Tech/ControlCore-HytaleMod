@@ -279,6 +279,12 @@ ControlCore calls `onShow` when the player joins (if visible), when they turn it
 ends; `onHide` the other way round. Don't show the HUD yourself on join. `.hiddenByDefault()` makes it opt-in;
 `huds().isVisible(player, id)` tells you the current state.
 
+## Notifications, scheduler, sessions and automation (API 2.1.0)
+
+`api.notifications()`, `api.scheduler()`, `api.sessions()` and `api.actions()`: see the wiki page
+[Automation API](https://github.com/OFA-Tech/ControlCore-HytaleMod/wiki/Automation-API). Mods built against 2.0.0
+keep working; use `>=0.16.0` in your manifest when you call these.
+
 ## Using it from another mod
 
 1. **Dependency.** Releases are published to GitHub Packages. GitHub asks for a login even for public
