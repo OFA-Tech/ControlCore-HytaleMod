@@ -71,8 +71,13 @@ Group {
     }
 
     Label #Name {
-      FlexWeight: 1;
+      Anchor: (Width: 260);
       Style: (...$C.@DefaultLabelStyle, FontSize: 15, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center);
+    }
+
+    Label #Uuid {
+      FlexWeight: 1;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #5f7383, VerticalAlignment: Center);
     }
 
     Label #Expired {

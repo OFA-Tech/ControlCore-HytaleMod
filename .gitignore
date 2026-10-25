@@ -46,3 +46,5 @@ src/main/resources/WorldSettings.json
 src/main/resources/WorldSettings.json.tmp
 src/main/resources/history/
 src/main/resources/snapshots/
+src/main/resources/PlayerNames.json
+src/main/resources/PlayerNames.json.tmp

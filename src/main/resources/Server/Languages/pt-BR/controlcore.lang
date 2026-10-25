@@ -682,3 +682,4 @@ panel.history.filter.bans = Banimentos
 settings.player_heads.name = Mostrar cabeças dos jogadores
 settings.player_heads.desc = Mostra a cabeça de cada jogador na lista de banimentos. As imagens vêm do hyvatar.io, que recebe os nomes dos jogadores; desligue para mostrar só as iniciais.
 settings.category.bans = Banimentos
+panel.bans.unknown_name = Buscando nome...

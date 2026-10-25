@@ -682,3 +682,4 @@ panel.history.filter.bans = Bans
 settings.player_heads.name = Show player heads
 settings.player_heads.desc = Shows each player's head in the Bans list. The pictures come from hyvatar.io, which gets the player names; turn off to show only initials.
 settings.category.bans = Bans
+panel.bans.unknown_name = Looking up name...

@@ -8,6 +8,7 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.domain.model.bans.BansView;
@@ -75,7 +76,10 @@ final class BansTab {
             BansView.Entry entry = entries.get(index);
             String row = LIST + "[" + index + "]";
             commands.append(LIST, ROW);
-            commands.set(row + " #Name.Text", entry.name());
+            commands.set(
+                    row + " #Name.Text",
+                    entry.name().isEmpty() ? tr.t("controlcore.panel.bans.unknown_name") : entry.name());
+            commands.set(row + " #Uuid.Text", entry.id());
             commands.set(row + " #Initial.Text", entry.initial());
             int colour = entry.colour(AVATAR_COLOURS);
             for (int shade = 0; shade < AVATAR_COLOURS; shade++) {
@@ -83,19 +87,23 @@ final class BansTab {
             }
             commands.set(row + " #Details.Text", entry.details());
             commands.set(row + " #Expired.Visible", !entry.active());
-            if (heads) {
-                PlayerHeads.show(
-                        host.viewer(),
-                        entry.name(),
-                        texture -> host.later(() -> {
+            if (entry.name().isEmpty()) {
+                view.resolve(entry.id())
+                        .thenAccept(found -> found.ifPresent(name -> host.later(() -> {
                             if (built != generation) {
                                 return;
                             }
                             UICommandBuilder update = new UICommandBuilder();
-                            update.set(row + " #Head.Background", texture);
-                            update.set(row + " #Head.Visible", true);
+                            update.set(row + " #Name.Text", name);
+                            update.set(
+                                    row + " #Initial.Text", name.substring(0, 1).toUpperCase(Locale.ROOT));
                             host.send(update);
-                        }));
+                            if (heads) {
+                                showHead(row, name, built);
+                            }
+                        })));
+            } else if (heads) {
+                showHead(row, entry.name(), built);
             }
             events.addEventBinding(
                     CustomUIEventBindingType.Activating,
@@ -104,6 +112,21 @@ final class BansTab {
         }
         footer.ifPresent(text -> commands.set("#FooterStatus.Text", text));
         footer = Optional.empty();
+    }
+
+    private void showHead(String row, String name, int built) {
+        PlayerHeads.show(
+                host.viewer(),
+                name,
+                texture -> host.later(() -> {
+                    if (built != generation) {
+                        return;
+                    }
+                    UICommandBuilder update = new UICommandBuilder();
+                    update.set(row + " #Head.Background", texture);
+                    update.set(row + " #Head.Visible", true);
+                    host.send(update);
+                }));
     }
 
     boolean handle(PanelAction action) {

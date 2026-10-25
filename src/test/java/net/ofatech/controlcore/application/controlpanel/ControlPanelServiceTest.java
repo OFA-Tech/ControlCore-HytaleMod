@@ -38,6 +38,7 @@ import net.ofatech.controlcore.fakes.FakeCustomKeyBindStore;
 import net.ofatech.controlcore.fakes.FakeKeyBindStore;
 import net.ofatech.controlcore.fakes.FakeModCatalog;
 import net.ofatech.controlcore.fakes.FakePlayerData;
+import net.ofatech.controlcore.fakes.FakePlayerNameStore;
 import net.ofatech.controlcore.fakes.FakePlayers;
 import net.ofatech.controlcore.fakes.FakeServerConfiguration;
 import net.ofatech.controlcore.fakes.FakeSettingPermissionStore;
@@ -103,7 +104,8 @@ class ControlPanelServiceTest {
                 (player, node) -> true,
                 TestTexts.of(registry, players),
                 new FakeClock(),
-                registry);
+                registry,
+                new FakePlayerNameStore());
         var history = new HistoryEditor(
                 changes,
                 registry,

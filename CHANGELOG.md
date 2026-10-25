@@ -24,6 +24,7 @@
   `/cc-unban <player>`. Bans and unbans are recorded in History and can be rolled back; bans made with Hytale's own
   `/ban` and `/unban` are recorded too.
 - New setting **Show player heads** (`controlcore:player-heads`, on): the heads come from hyvatar.io, which gets the player names; off shows only initials.
+- Banned players are listed with their name and UUID. Names are saved in `PlayerNames.json` when someone joins, is banned or is looked up, so they survive restarts; a name not known yet is looked up while the list is open.
 - History has two more filters: **Worlds** and **Bans** (config.json no longer lists world changes).
 
 ### Fixed

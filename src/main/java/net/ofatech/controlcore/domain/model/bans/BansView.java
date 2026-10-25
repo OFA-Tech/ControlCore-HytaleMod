@@ -2,6 +2,7 @@ package net.ofatech.controlcore.domain.model.bans;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -10,7 +11,8 @@ public interface BansView {
     record Entry(String id, String name, String details, boolean active) {
 
         public String initial() {
-            return name.isEmpty() ? "?" : name.substring(0, 1).toUpperCase(Locale.ROOT);
+            String shown = name.isEmpty() ? id : name;
+            return shown.isEmpty() ? "?" : shown.substring(0, 1).toUpperCase(Locale.ROOT);
         }
 
         public int colour(int colours) {
@@ -23,6 +25,8 @@ public interface BansView {
     List<Entry> list();
 
     boolean showHeads();
+
+    CompletableFuture<Optional<String>> resolve(String id);
 
     List<Length> lengths();
 

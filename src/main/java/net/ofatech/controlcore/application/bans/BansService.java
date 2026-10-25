@@ -29,6 +29,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
+import net.ofatech.controlcore.domain.ports.config.PlayerNameStore;
 import net.ofatech.controlcore.domain.ports.game.Bans;
 import net.ofatech.controlcore.domain.ports.game.Bans.Ban;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
@@ -57,6 +58,7 @@ public final class BansService {
     private final Map<PlayerId, String> lastSeen = new ConcurrentHashMap<>();
     private volatile boolean seen;
     private final Setting<Boolean> heads;
+    private final PlayerNameStore saved;
 
     public BansService(
             Bans bans,
@@ -65,8 +67,11 @@ public final class BansService {
             Permissions permissions,
             Texts texts,
             Clock clock,
-            SettingsApi settings) {
+            SettingsApi settings,
+            PlayerNameStore saved) {
         this.bans = bans;
+        this.saved = saved;
+        this.names.putAll(saved.all());
         this.heads = settings.register(SettingDefinition.server("controlcore", "player-heads", SettingType.bool(), true)
                         .named(Text.key("controlcore.settings.player_heads.name", "Show player heads"))
                         .describedAs(Text.key(
@@ -89,7 +94,23 @@ public final class BansService {
     public void remember(PlayerId id, String name) {
         if (name != null && !name.isBlank()) {
             names.put(id, name);
+            saved.put(id, name);
         }
+    }
+
+    public Optional<String> knownName(PlayerId id) {
+        return Optional.ofNullable(names.get(id));
+    }
+
+    public CompletableFuture<Optional<String>> resolve(PlayerId id) {
+        String known = names.get(id);
+        if (known != null) {
+            return CompletableFuture.completedFuture(Optional.of(known));
+        }
+        return bans.nameOf(id).thenApply(found -> {
+            found.ifPresent(name -> remember(id, name));
+            return found;
+        });
     }
 
     public String name(PlayerId id) {
@@ -98,7 +119,7 @@ public final class BansService {
             return known;
         }
         if (asked.add(id)) {
-            bans.nameOf(id).thenAccept(found -> found.ifPresent(name -> remember(id, name)));
+            resolve(id);
         }
         return id.value().toString();
     }
@@ -328,10 +349,19 @@ public final class BansService {
                 return all().stream()
                         .map(ban -> new Entry(
                                 ban.target().value().toString(),
-                                name(ban.target()),
+                                knownName(ban.target()).orElse(""),
                                 details(ban, tr),
                                 ban.inEffect(now)))
                         .toList();
+            }
+
+            @Override
+            public CompletableFuture<Optional<String>> resolve(String id) {
+                try {
+                    return BansService.this.resolve(PlayerId.of(UUID.fromString(id)));
+                } catch (IllegalArgumentException e) {
+                    return CompletableFuture.completedFuture(Optional.empty());
+                }
             }
 
             @Override
