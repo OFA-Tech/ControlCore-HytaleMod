@@ -42,3 +42,7 @@ out/
 Thumbs.db
 src/main/resources/SettingPermissions.json
 src/main/resources/SettingPermissions.json.tmp
+src/main/resources/WorldSettings.json
+src/main/resources/WorldSettings.json.tmp
+src/main/resources/history/
+src/main/resources/snapshots/

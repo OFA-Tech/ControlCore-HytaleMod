@@ -88,7 +88,8 @@ tasks.withType<Javadoc>().configureEach {
 val runtimeDataFiles = listOf("Settings.json", "Settings.json.bak", "players.json", "players.json.tmp",
     "SettingValues.json", "SettingValues.json.tmp", "KeyBinds.json", "KeyBinds.json.tmp",
     "CustomKeyBinds.json", "CustomKeyBinds.json.tmp",
-    "SettingPermissions.json", "SettingPermissions.json.tmp")
+    "SettingPermissions.json", "SettingPermissions.json.tmp",
+    "WorldSettings.json", "WorldSettings.json.tmp", "history/**", "snapshots/**")
 
 tasks.processResources {
     exclude(runtimeDataFiles)
