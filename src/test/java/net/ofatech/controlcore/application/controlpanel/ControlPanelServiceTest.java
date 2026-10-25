@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
+import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.event.DomainEventBus;
 import net.ofatech.controlcore.application.history.ChangeHistory;
 import net.ofatech.controlcore.application.history.ChangeRecorder;
@@ -26,6 +27,7 @@ import net.ofatech.controlcore.domain.model.ServerSettings;
 import net.ofatech.controlcore.domain.model.settings.PermissionsView;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
+import net.ofatech.controlcore.domain.ports.game.Bans;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
 import net.ofatech.controlcore.domain.ports.game.Worlds;
 import net.ofatech.controlcore.domain.result.ErrorType;
@@ -93,15 +95,19 @@ class ControlPanelServiceTest {
         var serverConfig = new ServerConfigEditor(server, Worlds.NONE, bus, bus, log);
         var mods =
                 new ModsEditor(new FakeModCatalog(), registry, keyRegistry, modNames, policy, log, ChangeRecorder.NONE);
+        var changes = new ChangeHistory(new FakeChangeLogStore(), new FakeClock());
+        var bans = new BansService(
+                Bans.NONE, changes, policy, (player, node) -> true, TestTexts.of(registry, players), new FakeClock());
         var history = new HistoryEditor(
-                new ChangeHistory(new FakeChangeLogStore(), new FakeClock()),
+                changes,
                 registry,
                 serverConfig,
                 keyRegistry,
                 policy,
                 mods,
                 (player, node) -> true,
-                TestTexts.of(registry, players));
+                TestTexts.of(registry, players),
+                bans);
         var snapshots = new SnapshotService(
                 new FakeSnapshotStore(),
                 registry,
@@ -125,6 +131,7 @@ class ControlPanelServiceTest {
                 builtIn,
                 registry,
                 serverConfig,
+                bans,
                 new KeymapsEditor(keyRegistry, TestTexts.of(registry, players), modNames),
                 policy,
                 TestTexts.of(registry, players),

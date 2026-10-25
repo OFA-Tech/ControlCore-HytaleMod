@@ -262,6 +262,12 @@ $C.@PageOverlay {
               TextButton #ServerModeWorlds {
                 Text: %controlcore.ui.server.modeWorlds;
                 Style: @SegmentStyle;
+                Anchor: (Width: 180, Right: 2);
+              }
+
+              TextButton #ServerModeBans {
+                Text: %controlcore.ui.server.modeBans;
+                Style: @SegmentStyle;
                 Anchor: (Width: 180, Right: 12);
               }
 
@@ -283,6 +289,9 @@ $C.@PageOverlay {
               Visible: false;
               Anchor: (Bottom: 8);
             }
+
+            Group #ServerRows {
+            LayoutMode: Top;
 
             Group {
               LayoutMode: Left;
@@ -312,6 +321,66 @@ $C.@PageOverlay {
               ScrollbarStyle: $C.@DefaultScrollbarStyle;
               Anchor: (Height: 430);
               Padding: (Right: 10);
+            }
+            }
+
+            Group #BansPanel {
+              LayoutMode: Top;
+              Visible: false;
+
+              Label {
+                Text: %controlcore.ui.bans.intro;
+                Style: @NoteStyle;
+                Anchor: (Bottom: 8);
+              }
+
+              Group {
+                LayoutMode: Top;
+                Anchor: (Bottom: 10);
+                Background: #182a37;
+                Padding: (Full: 10);
+
+                Label {
+                  Text: %controlcore.ui.bans.title;
+                  Style: @SubsectionTitleStyle;
+                  Anchor: (Height: 20, Bottom: 6);
+                }
+
+                Group {
+                  LayoutMode: Left;
+                  Anchor: (Height: 38);
+
+                  $C.@TextField #BanPlayer {
+                    Anchor: (Width: 220, Right: 6);
+                  }
+
+                  $C.@DropdownBox #BanLength {
+                    Anchor: (Width: 170, Right: 6);
+                  }
+
+                  $C.@TextField #BanReason {
+                    FlexWeight: 1;
+                  }
+
+                  $C.@SmallSecondaryTextButton #BanAdd {
+                    @Text = %controlcore.ui.bans.add;
+                    Anchor: (Width: 130, Height: 34, Left: 6);
+                  }
+                }
+              }
+
+              Label #BansEmpty {
+                Text: %controlcore.ui.bans.empty;
+                Style: @NoteStyle;
+                Visible: false;
+              }
+
+              Group #BanList {
+                LayoutMode: TopScrolling;
+                ScrollbarStyle: $C.@DefaultScrollbarStyle;
+                Anchor: (Height: 290);
+                Padding: (Right: 10);
+              }
             }
           }
 

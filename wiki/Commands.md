@@ -29,6 +29,15 @@ Ids look like `mod:key`, for example `controlcore:welcome-message`. The server's
 for example `server:motd` or `server:connection-timeouts.play-timeout`; `/cc-set` says when a key only applies after a
 restart, and read-only keys can't be changed.
 
+Bans (admins or `ofatech.controlcore.bans`):
+
+```
+/cc-bans                               list the bans
+/cc-ban Griefer 7d griefing at spawn   ban for 7 days; length is permanent or a number with m, h, d or w
+/cc-ban 3a030bb2-... permanent -       ban by UUID, no reason
+/cc-unban Griefer                      lift a ban
+```
+
 World settings are `world:<world>.<key>`, for example `world:default.is-pvp-enabled` or `world:default.tps`.
 
 ```

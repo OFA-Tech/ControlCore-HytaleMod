@@ -23,7 +23,8 @@ public record ChangeRecord(
         SERVER_KEYS,
         CUSTOM_BIND,
         PERMISSION,
-        MOD
+        MOD,
+        BAN
     }
 
     public enum Source {

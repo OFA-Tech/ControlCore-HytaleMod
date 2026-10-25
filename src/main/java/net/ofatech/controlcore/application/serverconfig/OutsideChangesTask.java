@@ -2,6 +2,7 @@ package net.ofatech.controlcore.application.serverconfig;
 
 import com.google.auto.service.AutoService;
 import java.time.Duration;
+import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.component.ModTask;
 import net.ofatech.controlcore.application.component.TaskSchedule;
 
@@ -9,9 +10,11 @@ import net.ofatech.controlcore.application.component.TaskSchedule;
 public final class OutsideChangesTask implements ModTask {
 
     private final ServerConfigEditor serverConfig;
+    private final BansService bans;
 
-    public OutsideChangesTask(ServerConfigEditor serverConfig) {
+    public OutsideChangesTask(ServerConfigEditor serverConfig, BansService bans) {
         this.serverConfig = serverConfig;
+        this.bans = bans;
     }
 
     @Override
@@ -22,5 +25,6 @@ public final class OutsideChangesTask implements ModTask {
     @Override
     public void run() {
         serverConfig.checkOutsideChanges();
+        bans.checkOutsideChanges();
     }
 }

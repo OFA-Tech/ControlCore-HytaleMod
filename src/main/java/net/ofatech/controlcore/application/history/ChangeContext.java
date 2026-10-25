@@ -49,6 +49,10 @@ public final class ChangeContext {
         });
     }
 
+    public static <T> T as(Attribution attribution, Supplier<T> work) {
+        return run(attribution, work);
+    }
+
     public static <T> T restoringSnapshot(Actor actor, Supplier<T> work) {
         return run(new Attribution(actor, Source.SNAPSHOT, 0), work);
     }

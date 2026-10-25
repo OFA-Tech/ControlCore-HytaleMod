@@ -68,6 +68,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private static final String LEGEND_ALL = "#LegendAll";
     private static final String SERVER_MODE_CONFIG = "ServerMode:Config";
     private static final String SERVER_MODE_WORLDS = "ServerMode:Worlds";
+    private static final String SERVER_MODE_BANS = "ServerMode:Bans";
     private static final String SERVER_WORLD = "ServerWorld";
 
     private enum Tab {
@@ -148,6 +149,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private Tab selected;
     private final List<String> worlds;
     private boolean showingWorlds;
+    private boolean showingBans;
+    private final Optional<BansTab> bansTab;
     private boolean replied;
     private String world;
     private boolean editingServerKeys = true;
@@ -173,6 +176,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 ? content.snapshots().map(view -> new SnapshotsTab(view, tr, hooks))
                 : Optional.empty();
         this.showingSnapshots = historyTab.isEmpty();
+        this.bansTab = shownSections.includeServerSettings()
+                ? content.bans().map(view -> new BansTab(view, tr, hooks))
+                : Optional.empty();
         this.probe = manageKeys ? content.debug() : Optional.empty();
         this.viewerId = PlayerId.of(player.getUuid());
         this.viewerName = player.getUsername();
@@ -262,6 +268,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         });
         historyTab.ifPresent(tab -> tab.build(commands, events));
         snapshotsTab.ifPresent(tab -> tab.build(commands, events));
+        bansTab.ifPresent(tab -> tab.build(commands, events));
         events.addEventBinding(
                 CustomUIEventBindingType.Activating,
                 "#HistoryModeChanges",
@@ -374,16 +381,23 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
     private void buildServerMode(UICommandBuilder commands, UIEventBuilder events) {
         commands.set(
-                "#ServerModeButtons.Visible", sections.containsKey(PanelSection.SERVER_CONFIG) && !worlds.isEmpty());
+                "#ServerModeButtons.Visible",
+                sections.containsKey(PanelSection.SERVER_CONFIG) && (!worlds.isEmpty() || bansTab.isPresent()));
+        commands.set("#ServerModeWorlds.Visible", !worlds.isEmpty());
+        commands.set("#ServerModeBans.Visible", bansTab.isPresent());
         commands.set(
                 "#ServerWorld.Entries",
                 worlds.stream()
                         .map(name -> new DropdownEntryInfo(LocalizableString.fromString(name), name))
                         .toList());
         commands.set("#ServerWorld.Value", world);
-        if (!worlds.isEmpty()) {
+        if (!worlds.isEmpty() || bansTab.isPresent()) {
             commands.setObject("#ServerList.Anchor", height(390));
         }
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating,
+                "#ServerModeBans",
+                EventData.of(PanelAction.KEY, SERVER_MODE_BANS));
         events.addEventBinding(
                 CustomUIEventBindingType.Activating,
                 "#ServerModeConfig",
@@ -400,11 +414,15 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     }
 
     private void showServerMode(UICommandBuilder commands) {
-        commands.set("#ServerModeConfig.Style", Value.ref(LAYOUT, showingWorlds ? "SegmentStyle" : "SegmentOnStyle"));
+        boolean config = !showingWorlds && !showingBans;
+        commands.set("#ServerModeConfig.Style", Value.ref(LAYOUT, config ? "SegmentOnStyle" : "SegmentStyle"));
         commands.set("#ServerModeWorlds.Style", Value.ref(LAYOUT, showingWorlds ? "SegmentOnStyle" : "SegmentStyle"));
+        commands.set("#ServerModeBans.Style", Value.ref(LAYOUT, showingBans ? "SegmentOnStyle" : "SegmentStyle"));
         commands.set("#ServerWorld.Visible", showingWorlds);
-        commands.set("#ServerIntro.Visible", !showingWorlds);
+        commands.set("#ServerIntro.Visible", config);
         commands.set("#WorldsIntro.Visible", showingWorlds);
+        commands.set("#ServerRows.Visible", !showingBans);
+        commands.set("#BansPanel.Visible", showingBans);
     }
 
     private void refreshServerScope() {
@@ -500,7 +518,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
     private Optional<PanelSection> currentSection() {
         PanelSection key = switch (selected) {
-            case SERVER -> PanelSection.SERVER_CONFIG;
+            case SERVER -> showingBans ? null : PanelSection.SERVER_CONFIG;
             case SETTINGS -> PanelSection.SETTINGS;
             case PLAYER -> PanelSection.PREFS;
             case KEYMAP ->
@@ -753,7 +771,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 || modsTab.handle(action)
                 || permissionsTab.map(tab -> tab.handle(action)).orElse(false)
                 || historyTab.map(tab -> tab.handle(action)).orElse(false)
-                || snapshotsTab.map(tab -> tab.handle(action)).orElse(false)) {
+                || snapshotsTab.map(tab -> tab.handle(action)).orElse(false)
+                || bansTab.map(tab -> tab.handle(action)).orElse(false)) {
             return;
         }
         if (CLOSE.equals(name)) {
@@ -764,8 +783,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             UICommandBuilder update = new UICommandBuilder();
             showHistoryMode(update);
             sendUpdate(update, false);
-        } else if (SERVER_MODE_CONFIG.equals(name) || SERVER_MODE_WORLDS.equals(name)) {
+        } else if (SERVER_MODE_CONFIG.equals(name)
+                || SERVER_MODE_WORLDS.equals(name)
+                || SERVER_MODE_BANS.equals(name)) {
             showingWorlds = SERVER_MODE_WORLDS.equals(name) && !worlds.isEmpty();
+            showingBans = SERVER_MODE_BANS.equals(name) && bansTab.isPresent();
             refreshServerScope();
         } else if (SERVER_WORLD.equals(name)) {
             if (action.value != null && worlds.contains(action.value)) {
@@ -1315,7 +1337,21 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     }
 
     private final class Hooks
-            implements ModsTab.Host, KeyBindForm.Host, PermissionsTab.Host, HistoryTab.Host, SnapshotsTab.Host {
+            implements ModsTab.Host,
+                    KeyBindForm.Host,
+                    PermissionsTab.Host,
+                    HistoryTab.Host,
+                    SnapshotsTab.Host,
+                    BansTab.Host {
+
+        @Override
+        public void later(Runnable work) {
+            Ref<EntityStore> ref = playerRef.getReference();
+            if (ref == null || !ref.isValid()) {
+                return;
+            }
+            ref.getStore().getExternalData().getWorld().execute(work);
+        }
 
         @Override
         public void rebuild() {

@@ -7,6 +7,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import net.ofatech.controlcore.api.SettingsApi;
+import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.application.mods.ModsEditor;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
@@ -39,6 +40,7 @@ public final class HistoryEditor {
     private final ModsEditor mods;
     private final Permissions permissions;
     private final Texts texts;
+    private final BansService bans;
 
     public HistoryEditor(
             ChangeHistory history,
@@ -48,7 +50,8 @@ public final class HistoryEditor {
             SettingPermissionPolicy policy,
             ModsEditor mods,
             Permissions permissions,
-            Texts texts) {
+            Texts texts,
+            BansService bans) {
         this.history = history;
         this.settings = settings;
         this.serverConfig = serverConfig;
@@ -57,6 +60,7 @@ public final class HistoryEditor {
         this.mods = mods;
         this.permissions = permissions;
         this.texts = texts;
+        this.bans = bans;
     }
 
     public boolean maySee(Optional<PlayerId> viewer) {
@@ -160,6 +164,7 @@ public final class HistoryEditor {
                     return policy.replaceRule(record.target(), rule.view(), rule.edit());
                 });
             case MOD -> mods.viewedBy(who).setEnabled(record.target(), Boolean.parseBoolean(old));
+            case BAN -> admin(who).flatMap(ok -> bans.restore(record.target(), old, who));
         };
     }
 
@@ -218,6 +223,7 @@ public final class HistoryEditor {
             case CUSTOM_BIND ->
                 tr.t("controlcore.history.what.custom_bind", "name", target.substring(target.indexOf(':') + 1));
             case PERMISSION -> tr.t("controlcore.history.what.permission", "target", permissionTarget(target, tr));
+            case BAN -> bans.what(target, tr);
             case MOD ->
                 mods.viewedBy(Optional.empty()).list().stream()
                         .filter(entry -> entry.mod().id().equalsIgnoreCase(target))
@@ -255,6 +261,7 @@ public final class HistoryEditor {
             }
             case MOD ->
                 tr.t(Boolean.parseBoolean(value) ? "controlcore.history.value.on" : "controlcore.history.value.off");
+            case BAN -> bans.shown(value, tr);
             default -> value.isEmpty() ? tr.t("controlcore.history.value.empty") : value;
         };
     }

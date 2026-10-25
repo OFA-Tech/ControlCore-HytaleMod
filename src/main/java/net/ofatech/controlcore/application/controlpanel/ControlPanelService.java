@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import net.ofatech.controlcore.api.ControlPanelApi;
 import net.ofatech.controlcore.api.SettingsApi;
+import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.history.HistoryEditor;
 import net.ofatech.controlcore.application.keymaps.InputProbeCommand;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
@@ -39,6 +40,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final ControlPanelView view;
     private final SettingsApi registry;
     private final ServerConfigEditor serverConfig;
+    private final BansService bans;
     private final KeymapsEditor keymaps;
     private final SettingPermissionPolicy permissions;
     private final Texts texts;
@@ -56,6 +58,7 @@ public final class ControlPanelService implements ControlPanelApi {
             ControlPanelView view,
             SettingsApi registry,
             ServerConfigEditor serverConfig,
+            BansService bans,
             KeymapsEditor keymaps,
             SettingPermissionPolicy permissions,
             Texts texts,
@@ -71,6 +74,7 @@ public final class ControlPanelService implements ControlPanelApi {
         this.view = view;
         this.registry = registry;
         this.serverConfig = serverConfig;
+        this.bans = bans;
         this.keymaps = keymaps;
         this.permissions = permissions;
         this.texts = texts;
@@ -187,7 +191,8 @@ public final class ControlPanelService implements ControlPanelApi {
                                 : Optional.empty(),
                         nodes.hasOwn(player, InputProbeCommand.PERMISSION) ? Optional.of(probe) : Optional.empty(),
                         focus,
-                        serverConfig.worldNames()));
+                        serverConfig.worldNames(),
+                        bans.mayManage(Optional.of(player)) ? Optional.of(bans.viewedBy(player)) : Optional.empty()));
     }
 
     private String nameOf(PlayerId player) {

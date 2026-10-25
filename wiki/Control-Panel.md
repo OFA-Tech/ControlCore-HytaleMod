@@ -58,6 +58,14 @@ They come from the world's own `universe/worlds/<world>/config.json` and apply a
 - **Movement:** player speed and jump strength for this world, in %; 0 uses the server-wide value from Mod Settings.
 - **Advanced (read-only):** seed, gameplay config, delete when removed.
 
+#### Bans
+
+The **Bans** switch lists every ban in `bans.json`: the player, when and by whom, how long (permanent, until a date,
+or expired) and the reason. **Unban** lifts a ban (press it twice). The form on top bans a player by name or UUID,
+even when they are offline, permanently or for 1 hour, 1 day, 7 days or 30 days, with an optional reason; an online
+player is kicked at once. Admins have it; give `ofatech.controlcore.bans` to let others manage bans. Bans made with
+Hytale's own `/ban` and `/unban` appear here too, and every ban and unban is in History.
+
 World ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`, so `/cc-get`, `/cc-set`,
 permissions, History and snapshots work on them like on `config.json` keys.
 

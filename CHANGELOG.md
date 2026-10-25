@@ -17,8 +17,16 @@
 - World changes are recorded in **History** (also when made with Hytale's own `/world` commands) and snapshots have a
   new **Worlds** part (`--parts=worlds`).
 - A key bind without a key now says so: "It has no key yet, so it never runs".
+- **Bans** (Server Configs -> Bans, admins or `ofatech.controlcore.bans`): the list from `bans.json` with who banned
+  whom, when, for how long and why, an **Unban** button (press twice), and a form to ban a player by name or UUID,
+  online or not, permanently or for 1 hour, 1 day, 7 days or 30 days, with a reason. Commands: `/cc-bans`,
+  `/cc-ban <player> <length> <reason>` (length like `permanent`, `30m`, `12h`, `7d`, `2w`; reason `-` for none) and
+  `/cc-unban <player>`. Bans and unbans are recorded in History and can be rolled back; bans made with Hytale's own
+  `/ban` and `/unban` are recorded too.
+- History has two more filters: **Worlds** and **Bans** (config.json no longer lists world changes).
 
 ### Fixed
+- Pressing the tab that is already open left the game on "Loading..."; every click now gets an answer.
 - The dev server's change history was shipped inside the 0.13.0 jar (`history/2026-10.jsonl`, harmless test entries);
   runtime folders are now kept out of the jar.
 
