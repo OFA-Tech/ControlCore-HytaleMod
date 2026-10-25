@@ -3,9 +3,13 @@ package net.ofatech.controlcore.infrastructure.platforms.hytale.server;
 import com.hypixel.hytale.server.core.NameMatching;
 import com.hypixel.hytale.server.core.auth.ProfileServiceClient;
 import com.hypixel.hytale.server.core.auth.ServerAuthManager;
+import com.hypixel.hytale.server.core.console.ConsoleSender;
+import com.hypixel.hytale.server.core.entity.nameplate.Nameplate;
 import com.hypixel.hytale.server.core.modules.accesscontrol.AccessControlModule;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
+import com.hypixel.hytale.server.core.universe.playerdata.PlayerStorage;
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,7 +32,9 @@ public final class HytaleBans implements Bans {
             return AccessControlModule.get().getBanProvider().getBans().stream()
                     .map(ban -> new Ban(
                             PlayerId.of(ban.getTarget()),
-                            Optional.ofNullable(ban.getBy()).map(PlayerId::of),
+                            Optional.ofNullable(ban.getBy())
+                                    .filter(by -> !by.equals(ConsoleSender.INSTANCE.getUuid()))
+                                    .map(PlayerId::of),
                             ban.getTimestamp(),
                             Optional.ofNullable(ban.getExpiresOn()),
                             ban.getReason()))
@@ -44,7 +50,7 @@ public final class HytaleBans implements Bans {
         return AccessControlModule.get()
                 .ban(new com.hypixel.hytale.server.core.modules.accesscontrol.ban.Ban(
                         ban.target().value(),
-                        ban.by().map(PlayerId::value).orElse(null),
+                        ban.by().map(PlayerId::value).orElse(ConsoleSender.INSTANCE.getUuid()),
                         ban.at(),
                         ban.expires().orElse(null),
                         ban.reason()));
@@ -93,6 +99,33 @@ public final class HytaleBans implements Bans {
         if (online != null) {
             return CompletableFuture.completedFuture(Optional.of(online.getUsername()));
         }
+        return savedName(id)
+                .thenCompose(saved -> saved.isPresent() ? CompletableFuture.completedFuture(saved) : accountName(id));
+    }
+
+    private static CompletableFuture<Optional<String>> savedName(PlayerId id) {
+        try {
+            PlayerStorage storage = Universe.get().getPlayerStorage();
+            if (storage == null || !storage.getPlayers().contains(id.value())) {
+                return CompletableFuture.completedFuture(Optional.empty());
+            }
+            return storage.load(id.value()).handle((holder, failure) -> {
+                if (failure != null || holder == null) {
+                    return Optional.<String>empty();
+                }
+                Nameplate nameplate = holder.getComponent(Nameplate.getComponentType());
+                return nameplate == null
+                                || nameplate.getText() == null
+                                || nameplate.getText().isBlank()
+                        ? Optional.<String>empty()
+                        : Optional.of(nameplate.getText());
+            });
+        } catch (IOException | RuntimeException e) {
+            return CompletableFuture.completedFuture(Optional.empty());
+        }
+    }
+
+    private static CompletableFuture<Optional<String>> accountName(PlayerId id) {
         Optional<ProfileServiceClient> client = client();
         String token = token();
         if (client.isEmpty() || token == null) {

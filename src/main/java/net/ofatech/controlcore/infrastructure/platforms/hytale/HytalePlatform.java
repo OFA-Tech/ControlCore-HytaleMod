@@ -6,7 +6,6 @@ import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
 import net.ofatech.controlcore.domain.ports.config.ChangeLogStore;
 import net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.KeyBindStore;
-import net.ofatech.controlcore.domain.ports.config.PlayerNameStore;
 import net.ofatech.controlcore.domain.ports.config.SettingPermissionStore;
 import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
@@ -38,7 +37,6 @@ import net.ofatech.controlcore.infrastructure.persistence.JsonCustomKeyBindStore
 import net.ofatech.controlcore.infrastructure.persistence.JsonKeyBindStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonLinesChangeLog;
 import net.ofatech.controlcore.infrastructure.persistence.JsonPlayerDataStore;
-import net.ofatech.controlcore.infrastructure.persistence.JsonPlayerNameStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonSettingPermissionStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonSettingStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonSnapshotStore;
@@ -123,9 +121,6 @@ public final class HytalePlatform implements Platform {
         binder.bind(
                 CustomKeyBindStore.class,
                 new JsonCustomKeyBindStore(plugin.getDataDirectory().resolve("CustomKeyBinds.json"), log));
-        binder.bind(
-                PlayerNameStore.class,
-                new JsonPlayerNameStore(plugin.getDataDirectory().resolve("PlayerNames.json"), log));
         binder.bind(
                 SnapshotStore.class,
                 new JsonSnapshotStore(plugin.getDataDirectory().resolve("snapshots"), log));

@@ -29,7 +29,6 @@ import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
-import net.ofatech.controlcore.domain.ports.config.PlayerNameStore;
 import net.ofatech.controlcore.domain.ports.game.Bans;
 import net.ofatech.controlcore.domain.ports.game.Bans.Ban;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
@@ -58,7 +57,6 @@ public final class BansService {
     private final Map<PlayerId, String> lastSeen = new ConcurrentHashMap<>();
     private volatile boolean seen;
     private final Setting<Boolean> heads;
-    private final PlayerNameStore saved;
 
     public BansService(
             Bans bans,
@@ -67,11 +65,8 @@ public final class BansService {
             Permissions permissions,
             Texts texts,
             Clock clock,
-            SettingsApi settings,
-            PlayerNameStore saved) {
+            SettingsApi settings) {
         this.bans = bans;
-        this.saved = saved;
-        this.names.putAll(saved.all());
         this.heads = settings.register(SettingDefinition.server("controlcore", "player-heads", SettingType.bool(), true)
                         .named(Text.key("controlcore.settings.player_heads.name", "Show player heads"))
                         .describedAs(Text.key(
@@ -94,7 +89,6 @@ public final class BansService {
     public void remember(PlayerId id, String name) {
         if (name != null && !name.isBlank()) {
             names.put(id, name);
-            saved.put(id, name);
         }
     }
 
