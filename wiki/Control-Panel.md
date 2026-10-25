@@ -147,6 +147,39 @@ are not recorded.
 - Restoring mod settings only touches the mods the snapshot holds; players' preferences only when it holds them.
 - **Delete** asks for a second click.
 - Snapshots are files in `mods/OFATech_ControlCore/snapshots/`; copy one to another server to restore it there.
+- **Use as profile** turns a snapshot into a profile (see below); snapshots used as profiles can't be deleted until
+  you remove them from the profiles.
+- **Delete all snapshots** (press twice) deletes every snapshot that is not a profile.
+- In **Changes**, the dropdown next to **Clear** deletes changes older than 7, 30 or 90 days, or all of them (press
+  twice, admins only).
+
+### Profiles
+
+**History** -> **Profiles**: whole setups you switch to.
+
+- Built in: **Vanilla** (every `config.json` key, world setting and mod setting back to its default), **PvP** (every
+  world: PvP, fall damage and compass on), **Creative / Build** (Creative game mode, PvP and fall damage off, time
+  paused, no NPC spawning) and **Event / Lobby** (PvP and fall damage off, no NPC spawning, time paused, player speed
+  120 %). Built-in profiles only touch the values they name.
+- Your own: any snapshot marked **Use as profile**.
+- **Switch to...** shows every value that would change; **Save current state, then switch** saves the current state
+  as `before-<name>` and applies the profile.
+- The line at the top shows the active profile and how many values changed since it was applied.
+
+### Health
+
+Admins see how the server is doing: Hytale, ControlCore and Java versions, uptime, players, memory and CPU; every
+world's players, loaded chunks, TPS target and tick time, with a warning when a world runs behind; mods that failed
+to load; and ControlCore's latest warnings and errors. **Refresh** reads it again. **Write report** saves a text file
+in `mods/OFATech_ControlCore/diagnostics/` with passwords, tokens and IP addresses removed, ready to attach to a bug
+report. `/cc-diagnostics` does the same from chat or the console.
+
+## Restore defaults
+
+Every tab that edits values has **Restore defaults** at the end of its search line. It puts the rows currently shown
+back to their default, so search for a mod (or click a legend line) first to narrow it. Read-only rows are skipped.
+Press it twice; on server-wide tabs (Server Configs and Worlds, Mod Settings, Keymaps -> Server defaults, Permissions)
+a `before-defaults` snapshot is saved first, so History -> Snapshots can undo it. Every reset is recorded in History.
 
 ## Search
 

@@ -69,6 +69,7 @@ Also in the panel's **History** tab.
 |---|---|---|
 | `/cc-history [--filter=text]` | admins or `ofatech.controlcore.history` | the latest 10 changes, optionally only those whose name, who or value contains the filter |
 | `/cc-rollback <number>` | admins or `ofatech.controlcore.history.rollback` | put back the value change `#number` replaced |
+| `/cc-history-clear <days\|all>` | admins | delete changes older than a number of days (`30` or `30d`), or all of them |
 
 ## Snapshots
 
@@ -82,6 +83,9 @@ Also in the panel: **History** → **Snapshots**. All need admins or `ofatech.co
 | `/cc-snapshot-restore <name>` | restore it |
 | `/cc-snapshot-restore-safe <name>` | save the current state as `before-<name>`, then restore it |
 | `/cc-snapshot-delete <name>` | delete it |
+| `/cc-snapshots-clear` | delete every snapshot that is not used as a profile |
+| `/cc-profiles` | list the profiles and show which one is active |
+| `/cc-profile <id>` | switch to a profile: `@vanilla`, `@pvp`, `@creative`, `@event` or a snapshot marked as profile (saves `before-<name>` first) |
 
 ```
 /cc-snapshot-save pvp-weekend --parts=config+settings+keys
@@ -89,6 +93,12 @@ Also in the panel: **History** → **Snapshots**. All need admins or `ofatech.co
 /cc-snapshot-diff pvp-weekend
 /cc-snapshot-restore-safe pvp-weekend
 ```
+
+## Diagnostics
+
+| Command | Who | Does |
+|---|---|---|
+| `/cc-diagnostics` | admins | show the server's health and write a report to `diagnostics/` without passwords, tokens or IP addresses |
 
 ## Key binds
 

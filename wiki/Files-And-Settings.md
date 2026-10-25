@@ -13,6 +13,8 @@ ControlCore keeps its data in `mods/OFATech_ControlCore/`. Back up this folder b
 | `CustomKeyBinds.json` | binds admins created with `/cc-keybind-add` |
 | `SettingPermissions.json` | admins' `/cc-perm` rules |
 | `snapshots/<name>.json` | snapshots; copy one to another server's folder to restore it there |
+| `ActiveProfile.json` | which profile was applied last |
+| `diagnostics/report-<date>-<time>.txt` | reports written by the Health tab or `/cc-diagnostics` |
 | `history/<year>-<month>.jsonl` | the change history, one change per line; months older than `controlcore:history-days` are deleted |
 
 The Server Configs tab writes to Hytale's own `config.json` in the server folder, and its Worlds view to each

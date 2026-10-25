@@ -56,7 +56,12 @@ a value changes elsewhere. Tabs:
   rule that decides it today. The same rules as `/cc-perm`.
 - **History** (admins): every server-wide change with who, when and from where, and **Roll back** to undo one.
   The same as `/cc-history` and `/cc-rollback`. Its **Snapshots** view saves the whole setup (or parts of it) under a
-  name, shows what restoring would change, and restores it; snapshot files can be copied between servers.
+  name, shows what restoring would change, and restores it; snapshot files can be copied between servers. Its
+  **Profiles** view switches between whole setups (built in: Vanilla, PvP, Creative / Build, Event / Lobby, or any
+  snapshot). Old changes and snapshots can be cleared.
+- **Health** (admins): versions, uptime, memory, CPU, every world's TPS and tick time, failed mods and recent errors,
+  and a shareable report without secrets (`/cc-diagnostics`).
+- Every editing tab has **Restore defaults** for the rows shown.
 
 Every row shows its state (changed, default, not saved, error, needs a restart, locked); a Legend counts and
 filters them, errors appear under their row and Undo puts back a change. Every list has a search box with a field

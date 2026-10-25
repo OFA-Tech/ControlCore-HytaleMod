@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Added
+- **Profiles** (History -> **Profiles**): whole setups you switch to. Four are built in: **Vanilla** (every
+  `config.json` key, world setting and mod setting back to its default), **PvP**, **Creative / Build** and
+  **Event / Lobby**. Any snapshot can be marked **Use as profile**. Switching shows what will change first and saves
+  the current state as `before-<name>`; the panel shows the active profile and how many values changed since it was
+  applied. Commands: `/cc-profiles` and `/cc-profile <id>` (`@vanilla`, `@pvp`, `@creative`, `@event` or a
+  snapshot's name).
+- **Health tab** (8th tab, admins): Hytale, ControlCore and Java versions, uptime, players, memory, CPU, every
+  world's players, chunks, TPS target and tick time (with a warning when a world runs behind), mods that failed to
+  load and ControlCore's latest warnings and errors. **Write report** and `/cc-diagnostics` save a text file in
+  `diagnostics/` with passwords, tokens and IP addresses removed, for bug reports.
+- **Restore defaults** on every tab that edits values (Server Configs and Worlds, Mod Settings, Player Prefs, both
+  Keymaps views, Permissions): puts the rows shown back to their default, so a search or legend filter narrows it,
+  for example to one mod. Press twice; on server-wide tabs a `before-defaults` snapshot is saved first.
+- **Clearing old data:** History -> Changes can delete changes older than 7, 30 or 90 days, or all of them
+  (`/cc-history-clear <days|all>`); Snapshots has **Delete all snapshots**, which keeps snapshots used as profiles
+  (`/cc-snapshots-clear`). Both ask for a second click and are for admins only.
+
 ## 0.14.0 - 2026-10-25
 
 Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.4. The API for other mods
