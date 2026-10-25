@@ -29,8 +29,11 @@ Ids look like `mod:key`, for example `controlcore:welcome-message`. The server's
 for example `server:motd` or `server:connection-timeouts.play-timeout`; `/cc-set` says when a key only applies after a
 restart, and read-only keys can't be changed.
 
+World settings are `world:<world>.<key>`, for example `world:default.is-pvp-enabled` or `world:default.tps`.
+
 ```
 /cc-set server:motd Have fun!
+/cc-set world:default.is-pvp-enabled true
 /cc-set controlcore:welcome-message Welcome, {player}!
 /cc-set controlcore:welcome-message-color #55ff55
 /cc-set controlcore:mods-hidden SomeMod, OtherMod
@@ -64,7 +67,7 @@ Also in the panel: **History** → **Snapshots**. All need admins or `ofatech.co
 
 | Command | Does |
 |---|---|
-| `/cc-snapshot-save <name> [--parts=...]` | save a snapshot (replaces one with the same name). `--parts=` is `all` (default: everything except players) or parts joined with `+`: `config`, `settings`, `settings:<mod>/<mod>`, `keys`, `permissions`, `mods`, `players` |
+| `/cc-snapshot-save <name> [--parts=...]` | save a snapshot (replaces one with the same name). `--parts=` is `all` (default: everything except players) or parts joined with `+`: `config`, `worlds`, `settings`, `settings:<mod>/<mod>`, `keys`, `permissions`, `mods`, `players` |
 | `/cc-snapshots` | list the snapshots |
 | `/cc-snapshot-diff <name>` | what restoring would change, without changing anything |
 | `/cc-snapshot-restore <name>` | restore it |

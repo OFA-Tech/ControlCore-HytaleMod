@@ -45,6 +45,22 @@ World map, …).
 
 Changes are saved to `config.json` immediately, with Hytale's own checks (a value out of range is refused).
 
+#### Worlds
+
+The **config.json | Worlds** switch at the top shows one world's settings instead; pick the world in the dropdown.
+They come from the world's own `universe/worlds/<world>/config.json` and apply at once:
+
+- **Gameplay:** PvP, fall damage, time paused, compass updates, objective markers, game mode.
+- **NPCs:** NPC spawning, spawn markers, freeze all NPCs.
+- **Performance:** a status line (players, loaded chunks, TPS), ticking, block ticking, unload unused chunks and
+  **ticks per second** (1-120, default 30; lower saves CPU, kept after a restart).
+- **Saving:** save players, save chunks, save new chunks.
+- **Movement:** player speed and jump strength for this world, in %; 0 uses the server-wide value from Mod Settings.
+- **Advanced (read-only):** seed, gameplay config, delete when removed.
+
+World ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`, so `/cc-get`, `/cc-set`,
+permissions, History and snapshots work on them like on `config.json` keys.
+
 ### Mod Settings
 
 Every server setting that mods registered with ControlCore, under `<mod name>: <category>` headings. Each row has the
