@@ -6,6 +6,11 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import net.ofatech.controlcore.application.automation.ActionRegistry;
+import net.ofatech.controlcore.application.automation.AutomationService;
+import net.ofatech.controlcore.application.automation.AutomationSettings;
+import net.ofatech.controlcore.application.automation.NotificationService;
+import net.ofatech.controlcore.application.automation.SessionService;
 import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.diagnostics.DiagnosticsService;
 import net.ofatech.controlcore.application.event.DomainEventBus;
@@ -36,11 +41,13 @@ import net.ofatech.controlcore.domain.ports.game.Worlds;
 import net.ofatech.controlcore.domain.result.ErrorType;
 import net.ofatech.controlcore.domain.result.Result;
 import net.ofatech.controlcore.fakes.FakeActiveProfileStore;
+import net.ofatech.controlcore.fakes.FakeAutomationRuleStore;
 import net.ofatech.controlcore.fakes.FakeChangeLogStore;
 import net.ofatech.controlcore.fakes.FakeClock;
 import net.ofatech.controlcore.fakes.FakeCustomKeyBindStore;
 import net.ofatech.controlcore.fakes.FakeKeyBindStore;
 import net.ofatech.controlcore.fakes.FakeKeyGameActionStore;
+import net.ofatech.controlcore.fakes.FakeMessenger;
 import net.ofatech.controlcore.fakes.FakeModCatalog;
 import net.ofatech.controlcore.fakes.FakePlayerData;
 import net.ofatech.controlcore.fakes.FakePlayers;
@@ -51,6 +58,7 @@ import net.ofatech.controlcore.fakes.FakeSettingPermissionStore;
 import net.ofatech.controlcore.fakes.FakeSettingStore;
 import net.ofatech.controlcore.fakes.FakeSettings;
 import net.ofatech.controlcore.fakes.FakeSnapshotStore;
+import net.ofatech.controlcore.fakes.RecordingCommandRunner;
 import net.ofatech.controlcore.fakes.RecordingControlPanelView;
 import net.ofatech.controlcore.fakes.RecordingLog;
 import net.ofatech.controlcore.fakes.TestTexts;
@@ -139,6 +147,25 @@ class ControlPanelServiceTest {
                 TestTexts.of(registry, players),
                 new FakeClock(),
                 log);
+        var profiles = new ProfileService(
+                snapshots, serverConfig, new FakeActiveProfileStore(), TestTexts.of(registry, players), log);
+        var automation = new AutomationService(
+                new FakeAutomationRuleStore(),
+                new AutomationSettings(registry),
+                new ActionRegistry(),
+                new SessionService(new FakePlayerData(), players, new FakeClock()),
+                new NotificationService(new FakeMessenger(), players, policy),
+                new RecordingCommandRunner(),
+                profiles,
+                registry,
+                serverConfig,
+                policy,
+                (player, node) -> true,
+                players,
+                new FakeServerHealth(),
+                new FakeClock(),
+                TestTexts.of(registry, players),
+                log);
         return new ControlPanelService(
                 new ControlPanelSettings(registry, settings),
                 players,
@@ -156,8 +183,7 @@ class ControlPanelServiceTest {
                 (player, node) -> !node.equals("debug") || debugAllowed,
                 history,
                 snapshots,
-                new ProfileService(
-                        snapshots, serverConfig, new FakeActiveProfileStore(), TestTexts.of(registry, players), log),
+                profiles,
                 new DiagnosticsService(
                         new FakeServerHealth(),
                         List::of,
@@ -166,7 +192,8 @@ class ControlPanelServiceTest {
                         policy,
                         TestTexts.of(registry, players),
                         new FakeClock(),
-                        log));
+                        log),
+                automation);
     }
 
     @Test

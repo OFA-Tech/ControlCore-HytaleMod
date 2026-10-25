@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import net.ofatech.controlcore.api.ControlPanelApi;
 import net.ofatech.controlcore.api.SettingsApi;
+import net.ofatech.controlcore.application.automation.AutomationService;
 import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.diagnostics.DiagnosticsService;
 import net.ofatech.controlcore.application.history.HistoryEditor;
@@ -54,6 +55,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final SnapshotService snapshots;
     private final ProfileService profiles;
     private final DiagnosticsService diagnostics;
+    private final AutomationService automation;
 
     public ControlPanelService(
             ControlPanelSettings settings,
@@ -73,7 +75,8 @@ public final class ControlPanelService implements ControlPanelApi {
             HistoryEditor history,
             SnapshotService snapshots,
             ProfileService profiles,
-            DiagnosticsService diagnostics) {
+            DiagnosticsService diagnostics,
+            AutomationService automation) {
         this.settings = settings;
         this.players = players;
         this.server = server;
@@ -92,6 +95,7 @@ public final class ControlPanelService implements ControlPanelApi {
         this.snapshots = snapshots;
         this.profiles = profiles;
         this.diagnostics = diagnostics;
+        this.automation = automation;
     }
 
     public boolean mayOpenAdminPanel(PlayerId player) {
@@ -206,6 +210,9 @@ public final class ControlPanelService implements ControlPanelApi {
                                 : Optional.empty(),
                         diagnostics.maySee(Optional.of(player))
                                 ? Optional.of(diagnostics.viewedBy(player))
+                                : Optional.empty(),
+                        automation.mayManage(Optional.of(player))
+                                ? players.find(player).map(automation::viewedBy)
                                 : Optional.empty()));
     }
 

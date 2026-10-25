@@ -4,6 +4,7 @@ import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
 import net.ofatech.controlcore.domain.ports.config.ActiveProfileStore;
+import net.ofatech.controlcore.domain.ports.config.AutomationRuleStore;
 import net.ofatech.controlcore.domain.ports.config.ChangeLogStore;
 import net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.KeyBindStore;
@@ -40,6 +41,7 @@ import net.ofatech.controlcore.domain.ports.system.Translations;
 import net.ofatech.controlcore.infrastructure.i18n.BundledTranslations;
 import net.ofatech.controlcore.infrastructure.persistence.FileReportWriter;
 import net.ofatech.controlcore.infrastructure.persistence.JsonActiveProfileStore;
+import net.ofatech.controlcore.infrastructure.persistence.JsonAutomationRuleStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonCustomKeyBindStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonKeyBindStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonKeyGameActionStore;
@@ -141,6 +143,9 @@ public final class HytalePlatform implements Platform {
         binder.bind(
                 KeyGameActionStore.class,
                 new JsonKeyGameActionStore(plugin.getDataDirectory().resolve("KeyGameActions.json"), log));
+        binder.bind(
+                AutomationRuleStore.class,
+                new JsonAutomationRuleStore(plugin.getDataDirectory().resolve("AutomationRules.json"), log));
         binder.bind(
                 ActiveProfileStore.class,
                 new JsonActiveProfileStore(plugin.getDataDirectory().resolve("ActiveProfile.json"), log));

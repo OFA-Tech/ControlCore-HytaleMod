@@ -11,6 +11,7 @@ import net.ofatech.controlcore.domain.model.hud.HudPart;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
 import net.ofatech.controlcore.domain.ports.config.ActiveProfileStore;
+import net.ofatech.controlcore.domain.ports.config.AutomationRuleStore;
 import net.ofatech.controlcore.domain.ports.config.ChangeLogStore;
 import net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.KeyBindStore;
@@ -67,6 +68,7 @@ public final class FakePlatform implements Platform {
     public final FakeCustomKeyBindStore customKeyBinds = new FakeCustomKeyBindStore();
     public final FakeKeyGameActionStore keyGameActions = new FakeKeyGameActionStore();
     public final FakeActiveProfileStore activeProfile = new FakeActiveProfileStore();
+    public final FakeAutomationRuleStore automationRules = new FakeAutomationRuleStore();
     public final FakeServerHealth health = new FakeServerHealth();
     public final FakeReportWriter reports = new FakeReportWriter();
     public final List<RecentProblems.Problem> problems = new java.util.concurrent.CopyOnWriteArrayList<>();
@@ -121,6 +123,7 @@ public final class FakePlatform implements Platform {
         binder.bind(ChangeLogStore.class, changeLog);
         binder.bind(SnapshotStore.class, snapshots);
         binder.bind(ActiveProfileStore.class, activeProfile);
+        binder.bind(AutomationRuleStore.class, automationRules);
         binder.bind(Worlds.class, worlds);
         binder.bind(PlayerTuning.class, tuning);
         binder.bind(Bans.class, bans);

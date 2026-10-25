@@ -33,7 +33,8 @@ public record ChangeRecord(
         API,
         ROLLBACK,
         SNAPSHOT,
-        OUTSIDE
+        OUTSIDE,
+        AUTOMATION
     }
 
     public record Actor(Optional<PlayerId> player, String name) {

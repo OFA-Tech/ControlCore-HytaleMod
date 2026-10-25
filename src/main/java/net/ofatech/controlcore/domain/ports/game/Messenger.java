@@ -11,4 +11,12 @@ public interface Messenger {
     }
 
     void broadcast(String text);
+
+    default void title(PlayerId player, String title, String subtitle) {
+        send(player, subtitle.isBlank() ? title : title + " - " + subtitle);
+    }
+
+    default void titleAll(String title, String subtitle) {
+        broadcast(subtitle.isBlank() ? title : title + " - " + subtitle);
+    }
 }

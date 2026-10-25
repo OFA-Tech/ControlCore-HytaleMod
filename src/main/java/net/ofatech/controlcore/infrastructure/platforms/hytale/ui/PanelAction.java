@@ -74,6 +74,56 @@ final class PanelAction {
                     (action, value) -> action.match = value,
                     action -> action.match)
             .add()
+            .append(
+                    new KeyedCodec<>("@RuleName", Codec.STRING),
+                    (action, value) -> action.rule.put("Name", value),
+                    action -> action.rule.get("Name"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleTrigger", Codec.STRING),
+                    (action, value) -> action.rule.put("Trigger", value),
+                    action -> action.rule.get("Trigger"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleTriggerValue", Codec.STRING),
+                    (action, value) -> action.rule.put("TriggerValue", value),
+                    action -> action.rule.get("TriggerValue"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleCondition", Codec.STRING),
+                    (action, value) -> action.rule.put("Condition", value),
+                    action -> action.rule.get("Condition"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleConditionValue", Codec.STRING),
+                    (action, value) -> action.rule.put("ConditionValue", value),
+                    action -> action.rule.get("ConditionValue"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleAction", Codec.STRING),
+                    (action, value) -> action.rule.put("Action", value),
+                    action -> action.rule.get("Action"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleActionValue", Codec.STRING),
+                    (action, value) -> action.rule.put("ActionValue", value),
+                    action -> action.rule.get("ActionValue"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleAction2", Codec.STRING),
+                    (action, value) -> action.rule.put("Action2", value),
+                    action -> action.rule.get("Action2"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleAction2Value", Codec.STRING),
+                    (action, value) -> action.rule.put("Action2Value", value),
+                    action -> action.rule.get("Action2Value"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleCooldown", Codec.STRING),
+                    (action, value) -> action.rule.put("Cooldown", value),
+                    action -> action.rule.get("Cooldown"))
+            .add()
             .build();
 
     String name;
@@ -89,6 +139,16 @@ final class PanelAction {
     String bindKeys;
     String filter;
     String match;
+    final java.util.Map<String, String> rule = new java.util.HashMap<>();
+
+    static String ruleKey(String field) {
+        return "@Rule" + field;
+    }
+
+    String rule(String field) {
+        String value = rule.get(field);
+        return value == null ? "" : value;
+    }
 
     String name() {
         return name != null ? name : "";

@@ -14,8 +14,8 @@ $C = "../../Common.ui";
 @BannerStyle = (FontSize: 14, TextColor: #e9e4d6, VerticalAlignment: Center, Wrap: true);
 @FooterStyle = (FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center);
 
-@TabLabel = (FontSize: 14, TextColor: #9fb0bd, VerticalAlignment: Center, HorizontalAlignment: Center);
-@TabLabelOn = (FontSize: 14, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center, HorizontalAlignment: Center);
+@TabLabel = (FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center, HorizontalAlignment: Center);
+@TabLabelOn = (FontSize: 13, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center, HorizontalAlignment: Center);
 
 @TabStyle = TextButtonStyle(
   Default: (Background: #162733, LabelStyle: @TabLabel),
@@ -94,7 +94,7 @@ $C.@PageOverlay {
 
           Group #ServerTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 157, Right: 4);
+            Anchor: (Width: 139, Right: 4);
 
             Group #ServerTabEdge {
               Anchor: (Height: 3);
@@ -111,7 +111,7 @@ $C.@PageOverlay {
 
           Group #SettingsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 157, Right: 4);
+            Anchor: (Width: 139, Right: 4);
 
             Group #SettingsTabEdge {
               Anchor: (Height: 3);
@@ -128,7 +128,7 @@ $C.@PageOverlay {
 
           Group #PlayerTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 157, Right: 4);
+            Anchor: (Width: 139, Right: 4);
 
             Group #PlayerTabEdge {
               Anchor: (Height: 3);
@@ -145,7 +145,7 @@ $C.@PageOverlay {
 
           Group #KeymapTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 157, Right: 4);
+            Anchor: (Width: 139, Right: 4);
 
             Group #KeymapTabEdge {
               Anchor: (Height: 3);
@@ -162,7 +162,7 @@ $C.@PageOverlay {
 
           Group #ModsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 157, Right: 4);
+            Anchor: (Width: 139, Right: 4);
 
             Group #ModsTabEdge {
               Anchor: (Height: 3);
@@ -179,7 +179,7 @@ $C.@PageOverlay {
 
           Group #PermissionsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 157, Right: 4);
+            Anchor: (Width: 139, Right: 4);
 
             Group #PermissionsTabEdge {
               Anchor: (Height: 3);
@@ -196,7 +196,7 @@ $C.@PageOverlay {
 
           Group #HistoryTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 157, Right: 4);
+            Anchor: (Width: 139, Right: 4);
 
             Group #HistoryTabEdge {
               Anchor: (Height: 3);
@@ -212,7 +212,7 @@ $C.@PageOverlay {
           }
         Group #HealthTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 157);
+            Anchor: (Width: 139, Right: 4);
 
             Group #HealthTabEdge {
               Anchor: (Height: 3);
@@ -222,6 +222,22 @@ $C.@PageOverlay {
 
             TextButton #HealthTabButton {
               Text: %controlcore.ui.tabs.health;
+              Style: @TabStyle;
+              Anchor: (Height: 35);
+            }
+          }
+        Group #AutomationTabSlot {
+            LayoutMode: Top;
+            Anchor: (Width: 139);
+
+            Group #AutomationTabEdge {
+              Anchor: (Height: 3);
+              Background: #e8a93b;
+              Visible: false;
+            }
+
+            TextButton #AutomationTabButton {
+              Text: %controlcore.ui.tabs.automation;
               Style: @TabStyle;
               Anchor: (Height: 35);
             }
@@ -1152,6 +1168,187 @@ $C.@PageOverlay {
               LayoutMode: TopScrolling;
               ScrollbarStyle: $C.@DefaultScrollbarStyle;
               Anchor: (Height: 620);
+              Padding: (Right: 10);
+            }
+          }
+          Group #AutomationTab {
+            LayoutMode: Top;
+            Visible: false;
+
+            Group {
+              LayoutMode: Left;
+              Anchor: (Bottom: 8);
+
+              Label {
+                Text: %controlcore.ui.automation.intro;
+                Style: @NoteStyle;
+                FlexWeight: 1;
+              }
+
+              $C.@SmallSecondaryTextButton #RuleNew {
+                @Text = %controlcore.ui.automation.new;
+                Anchor: (Width: 170, Height: 32, Left: 10);
+              }
+            }
+
+            Group #AutomationOff {
+              LayoutMode: Left;
+              Visible: false;
+              Anchor: (Height: 32, Bottom: 8);
+              Background: #1b2f44;
+              Padding: (Horizontal: 10);
+
+              Label #AutomationOffText {
+                Style: @BannerStyle;
+                FlexWeight: 1;
+              }
+            }
+
+            Group #RuleForm {
+              LayoutMode: Top;
+              Visible: false;
+              Anchor: (Bottom: 10);
+              Background: #182a37;
+              Padding: (Full: 10);
+
+              Label #RuleFormTitle {
+                Style: @SubsectionTitleStyle;
+                Anchor: (Height: 20, Bottom: 6);
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 36, Bottom: 6);
+
+                Label {
+                  Text: %controlcore.ui.automation.name;
+                  Style: (...@NoteStyle, VerticalAlignment: Center);
+                  Anchor: (Width: 90);
+                }
+
+                $C.@TextField #RuleName {
+                  Anchor: (Width: 260, Right: 16);
+                }
+
+                Label {
+                  Text: %controlcore.ui.automation.cooldown;
+                  Style: (...@NoteStyle, VerticalAlignment: Center);
+                  Anchor: (Width: 150);
+                }
+
+                $C.@TextField #RuleCooldown {
+                  Anchor: (Width: 100);
+                }
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 36, Bottom: 6);
+
+                Label {
+                  Text: %controlcore.ui.automation.when;
+                  Style: (...@NoteStyle, VerticalAlignment: Center);
+                  Anchor: (Width: 90);
+                }
+
+                $C.@DropdownBox #RuleTrigger {
+                  Anchor: (Width: 340, Right: 6);
+                }
+
+                $C.@TextField #RuleTriggerValue {
+                  FlexWeight: 1;
+                }
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 36, Bottom: 6);
+
+                Label {
+                  Text: %controlcore.ui.automation.if;
+                  Style: (...@NoteStyle, VerticalAlignment: Center);
+                  Anchor: (Width: 90);
+                }
+
+                $C.@DropdownBox #RuleCondition {
+                  Anchor: (Width: 340, Right: 6);
+                }
+
+                $C.@TextField #RuleConditionValue {
+                  FlexWeight: 1;
+                }
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 36, Bottom: 6);
+
+                Label {
+                  Text: %controlcore.ui.automation.then;
+                  Style: (...@NoteStyle, VerticalAlignment: Center);
+                  Anchor: (Width: 90);
+                }
+
+                $C.@DropdownBox #RuleAction {
+                  Anchor: (Width: 340, Right: 6);
+                }
+
+                $C.@TextField #RuleActionValue {
+                  FlexWeight: 1;
+                }
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 36, Bottom: 6);
+
+                Label {
+                  Text: %controlcore.ui.automation.and;
+                  Style: (...@NoteStyle, VerticalAlignment: Center);
+                  Anchor: (Width: 90);
+                }
+
+                $C.@DropdownBox #RuleAction2 {
+                  Anchor: (Width: 340, Right: 6);
+                }
+
+                $C.@TextField #RuleAction2Value {
+                  FlexWeight: 1;
+                }
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 34);
+
+                Label {
+                  Text: %controlcore.ui.automation.placeholders;
+                  Style: (...@NoteStyle, VerticalAlignment: Center);
+                  FlexWeight: 1;
+                }
+
+                $C.@SmallSecondaryTextButton #RuleSave {
+                  @Text = %controlcore.ui.automation.save;
+                  Anchor: (Width: 170, Height: 32, Left: 10);
+                }
+
+                $C.@SmallTertiaryTextButton #RuleFormClose {
+                  @Text = %controlcore.ui.automation.close;
+                  Anchor: (Width: 140, Height: 32, Left: 6);
+                }
+              }
+            }
+
+            Label #RuleEmpty {
+              Text: %controlcore.ui.automation.empty;
+              Style: @NoteStyle;
+              Visible: false;
+            }
+
+            Group #RuleList {
+              LayoutMode: TopScrolling;
+              ScrollbarStyle: $C.@DefaultScrollbarStyle;
+              Anchor: (Height: 560);
               Padding: (Right: 10);
             }
           }

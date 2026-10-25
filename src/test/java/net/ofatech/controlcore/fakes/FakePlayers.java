@@ -26,6 +26,10 @@ public final class FakePlayers implements Players {
         return player;
     }
 
+    public void leave(PlayerInfo player) {
+        online.remove(player.id());
+    }
+
     @Override
     public Optional<PlayerInfo> find(PlayerId id) {
         return Optional.ofNullable(online.get(id));
