@@ -115,6 +115,7 @@ class ControlPanelRuntimeTest extends RuntimeTestBase {
                         "controlcore:keys-keep-game-action",
                         "controlcore:welcome-message",
                         "controlcore:welcome-message-color",
+                        "controlcore:player-heads",
                         "controlcore:mods-hidden",
                         "controlcore:player-jump",
                         "controlcore:player-speed",

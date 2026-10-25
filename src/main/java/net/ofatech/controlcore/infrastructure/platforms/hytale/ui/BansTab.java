@@ -6,6 +6,7 @@ import com.hypixel.hytale.server.core.ui.LocalizableString;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
+import com.hypixel.hytale.server.core.universe.PlayerRef;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -27,6 +28,8 @@ final class BansTab {
         void send(UICommandBuilder update);
 
         void later(Runnable work);
+
+        PlayerRef viewer();
     }
 
     private final BansView view;
@@ -37,6 +40,7 @@ final class BansTab {
     private String reason = "";
     private Optional<String> armedUnban = Optional.empty();
     private Optional<String> footer = Optional.empty();
+    private int generation;
 
     BansTab(BansView view, Translator tr, Host host) {
         this.view = view;
@@ -65,6 +69,8 @@ final class BansTab {
                         .append(PanelAction.MATCH, "#BanReason.Value"));
         List<BansView.Entry> entries = view.list();
         commands.set("#BansEmpty.Visible", entries.isEmpty());
+        int built = ++generation;
+        boolean heads = view.showHeads();
         for (int index = 0; index < entries.size(); index++) {
             BansView.Entry entry = entries.get(index);
             String row = LIST + "[" + index + "]";
@@ -77,6 +83,20 @@ final class BansTab {
             }
             commands.set(row + " #Details.Text", entry.details());
             commands.set(row + " #Expired.Visible", !entry.active());
+            if (heads) {
+                PlayerHeads.show(
+                        host.viewer(),
+                        entry.name(),
+                        texture -> host.later(() -> {
+                            if (built != generation) {
+                                return;
+                            }
+                            UICommandBuilder update = new UICommandBuilder();
+                            update.set(row + " #Head.Background", texture);
+                            update.set(row + " #Head.Visible", true);
+                            host.send(update);
+                        }));
+            }
             events.addEventBinding(
                     CustomUIEventBindingType.Activating,
                     row + " #Unban",

@@ -679,3 +679,6 @@ history.value.banned = baneado, {length}
 history.value.banned_reason = baneado, {length}: {reason}
 panel.history.filter.worlds = Mundos
 panel.history.filter.bans = Baneos
+settings.player_heads.name = Mostrar cabezas de jugadores
+settings.player_heads.desc = Muestra la cabeza de cada jugador en la lista de baneos. Las imágenes vienen de hyvatar.io, que recibe los nombres de los jugadores; desactívalo para ver solo las iniciales.
+settings.category.bans = Baneos

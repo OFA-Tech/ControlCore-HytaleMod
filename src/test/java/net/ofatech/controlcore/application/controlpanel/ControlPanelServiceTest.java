@@ -97,7 +97,13 @@ class ControlPanelServiceTest {
                 new ModsEditor(new FakeModCatalog(), registry, keyRegistry, modNames, policy, log, ChangeRecorder.NONE);
         var changes = new ChangeHistory(new FakeChangeLogStore(), new FakeClock());
         var bans = new BansService(
-                Bans.NONE, changes, policy, (player, node) -> true, TestTexts.of(registry, players), new FakeClock());
+                Bans.NONE,
+                changes,
+                policy,
+                (player, node) -> true,
+                TestTexts.of(registry, players),
+                new FakeClock(),
+                registry);
         var history = new HistoryEditor(
                 changes,
                 registry,

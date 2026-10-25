@@ -16,6 +16,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.ofatech.controlcore.api.Setting;
+import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.history.ChangeContext;
 import net.ofatech.controlcore.application.history.ChangeHistory;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
@@ -23,6 +25,8 @@ import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.bans.BansView;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
+import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
+import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.game.Bans;
@@ -52,6 +56,7 @@ public final class BansService {
     private final Set<PlayerId> asked = ConcurrentHashMap.newKeySet();
     private final Map<PlayerId, String> lastSeen = new ConcurrentHashMap<>();
     private volatile boolean seen;
+    private final Setting<Boolean> heads;
 
     public BansService(
             Bans bans,
@@ -59,8 +64,17 @@ public final class BansService {
             SettingPermissionPolicy policy,
             Permissions permissions,
             Texts texts,
-            Clock clock) {
+            Clock clock,
+            SettingsApi settings) {
         this.bans = bans;
+        this.heads = settings.register(SettingDefinition.server("controlcore", "player-heads", SettingType.bool(), true)
+                        .named(Text.key("controlcore.settings.player_heads.name", "Show player heads"))
+                        .describedAs(Text.key(
+                                "controlcore.settings.player_heads.desc",
+                                "Shows each player's head in the Bans list. The pictures come from hyvatar.io, which"
+                                        + " gets the player names; turn off to show only initials."))
+                        .inCategory(Text.key("controlcore.settings.category.bans", "Bans")))
+                .value();
         this.history = history;
         this.policy = policy;
         this.permissions = permissions;
@@ -318,6 +332,11 @@ public final class BansService {
                                 details(ban, tr),
                                 ban.inEffect(now)))
                         .toList();
+            }
+
+            @Override
+            public boolean showHeads() {
+                return heads.get();
             }
 
             @Override

@@ -59,6 +59,11 @@ Group {
         Visible: false;
       }
 
+      Group #Head {
+        Anchor: (Full: 0);
+        Visible: false;
+      }
+
       Label #Initial {
         Anchor: (Full: 0);
         Style: (...$C.@DefaultLabelStyle, FontSize: 18, TextColor: #f2efe6, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center);

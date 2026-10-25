@@ -18,11 +18,12 @@
   new **Worlds** part (`--parts=worlds`).
 - A key bind without a key now says so: "It has no key yet, so it never runs".
 - **Bans** (Server Configs -> Bans, admins or `ofatech.controlcore.bans`): the list from `bans.json` with who banned
-  whom (with a coloured initial for each player), when, for how long and why, an **Unban** button (press twice), and a form to ban a player by name or UUID,
+  whom (with each player's head, or a coloured initial until it loads), when, for how long and why, an **Unban** button (press twice), and a form to ban a player by name or UUID,
   online or not (it must be a real Hytale account), permanently or for 1 hour, 1 day, 7 days or 30 days, with a reason. Commands: `/cc-bans`,
   `/cc-ban <player> <length> <reason>` (length like `permanent`, `30m`, `12h`, `7d`, `2w`; reason `-` for none) and
   `/cc-unban <player>`. Bans and unbans are recorded in History and can be rolled back; bans made with Hytale's own
   `/ban` and `/unban` are recorded too.
+- New setting **Show player heads** (`controlcore:player-heads`, on): the heads come from hyvatar.io, which gets the player names; off shows only initials.
 - History has two more filters: **Worlds** and **Bans** (config.json no longer lists world changes).
 
 ### Fixed

@@ -1345,6 +1345,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                     BansTab.Host {
 
         @Override
+        public PlayerRef viewer() {
+            return playerRef;
+        }
+
+        @Override
         public void later(Runnable work) {
             Ref<EntityStore> ref = playerRef.getReference();
             if (ref == null || !ref.isValid()) {

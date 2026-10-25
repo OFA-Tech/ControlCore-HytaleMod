@@ -22,6 +22,8 @@ public interface BansView {
 
     List<Entry> list();
 
+    boolean showHeads();
+
     List<Length> lengths();
 
     CompletableFuture<Result<String>> ban(String player, String length, String reason);
