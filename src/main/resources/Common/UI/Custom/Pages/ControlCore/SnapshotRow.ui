@@ -18,6 +18,11 @@ Group {
       Style: (...$C.@DefaultLabelStyle, FontSize: 15, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center);
     }
 
+    $C.@SmallTertiaryTextButton #Profile {
+      @Text = %controlcore.ui.snapshots.makeProfile;
+      Anchor: (Width: 190, Height: 32, Left: 8);
+    }
+
     $C.@SmallSecondaryTextButton #Preview {
       @Text = %controlcore.ui.snapshots.preview;
       Anchor: (Width: 170, Height: 32, Left: 8);

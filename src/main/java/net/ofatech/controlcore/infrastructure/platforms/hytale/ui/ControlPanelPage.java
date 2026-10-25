@@ -15,6 +15,7 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -47,6 +48,8 @@ import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSearch;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
+import net.ofatech.controlcore.domain.model.snapshot.Snapshot;
+import net.ofatech.controlcore.domain.model.snapshot.SnapshotsView;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
@@ -62,6 +65,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private static final String HISTORY_LINK = "HistoryOf";
     private static final String HISTORY_MODE_CHANGES = "HistoryModeChanges";
     private static final String HISTORY_MODE_SNAPSHOTS = "HistoryModeSnapshots";
+    private static final String HISTORY_MODE_PROFILES = "HistoryModeProfiles";
+    private static final String RESTORE_DEFAULTS = "RestoreDefaults";
     private static final String SEARCH = "Search";
     private static final String KEYMAP_MODE_SERVER = "KeymapMode:Server";
     private static final String KEYMAP_MODE_MINE = "KeymapMode:Mine";
@@ -82,7 +87,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         KEYMAP(ControlPanelTab.KEYMAPS, "#KeymapTab", "#KeymapTabButton"),
         MODS(ControlPanelTab.MODS, "#ModsTab", "#ModsTabButton"),
         PERMISSIONS(ControlPanelTab.PERMISSIONS, "#PermissionsTab", "#PermissionsTabButton"),
-        HISTORY(ControlPanelTab.HISTORY, "#HistoryTab", "#HistoryTabButton");
+        HISTORY(ControlPanelTab.HISTORY, "#HistoryTab", "#HistoryTabButton"),
+        HEALTH(ControlPanelTab.HEALTH, "#HealthTab", "#HealthTabButton");
 
         private final ControlPanelTab tab;
         private final String group;
@@ -113,7 +119,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
         boolean shownFor(ControlPanelRequest request) {
             return switch (this) {
-                case SERVER, SETTINGS, PERMISSIONS, HISTORY -> request.includeServerSettings();
+                case SERVER, SETTINGS, PERMISSIONS, HISTORY, HEALTH -> request.includeServerSettings();
                 case PLAYER -> request.includePlayerPreferences();
                 case KEYMAP -> request.includeRegisteredActions();
                 case MODS -> true;
@@ -146,7 +152,18 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private final Optional<PermissionsTab> permissionsTab;
     private final Optional<HistoryTab> historyTab;
     private final Optional<SnapshotsTab> snapshotsTab;
-    private boolean showingSnapshots;
+    private final Optional<ProfilesTab> profilesTab;
+    private final Optional<HealthTab> healthTab;
+    private final Optional<SnapshotsView> snapshotsView;
+    private HistoryMode historyMode = HistoryMode.CHANGES;
+    private Optional<PanelSection> armedDefaults = Optional.empty();
+
+    private enum HistoryMode {
+        CHANGES,
+        SNAPSHOTS,
+        PROFILES
+    }
+
     private final Optional<InputProbe> probe;
     private final PlayerId viewerId;
     private final String viewerName;
@@ -181,7 +198,14 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         this.snapshotsTab = shownSections.includeServerSettings()
                 ? content.snapshots().map(view -> new SnapshotsTab(view, tr, hooks))
                 : Optional.empty();
-        this.showingSnapshots = historyTab.isEmpty();
+        this.profilesTab = shownSections.includeServerSettings()
+                ? content.profiles().map(view -> new ProfilesTab(view, tr, hooks))
+                : Optional.empty();
+        this.healthTab = shownSections.includeServerSettings()
+                ? content.diagnostics().map(view -> new HealthTab(view, tr, hooks))
+                : Optional.empty();
+        this.snapshotsView = shownSections.includeServerSettings() ? content.snapshots() : Optional.empty();
+        this.historyMode = historyTab.isPresent() ? HistoryMode.CHANGES : HistoryMode.SNAPSHOTS;
         this.bansTab = shownSections.includeServerSettings()
                 ? content.bans().map(view -> new BansTab(view, tr, hooks))
                 : Optional.empty();
@@ -195,7 +219,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         for (Tab tab : Tab.values()) {
             if (tab.shownFor(shownSections)
                     && (tab != Tab.PERMISSIONS || permissionsTab.isPresent())
-                    && (tab != Tab.HISTORY || historyTab.isPresent() || snapshotsTab.isPresent())) {
+                    && (tab != Tab.HISTORY || historyTab.isPresent() || snapshotsTab.isPresent())
+                    && (tab != Tab.HEALTH || healthTab.isPresent())) {
                 tabs.add(tab);
             }
         }
@@ -274,7 +299,14 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         });
         historyTab.ifPresent(tab -> tab.build(commands, events));
         snapshotsTab.ifPresent(tab -> tab.build(commands, events));
+        profilesTab.ifPresent(tab -> tab.build(commands, events));
+        healthTab.ifPresent(tab -> tab.build(commands, events));
         bansTab.ifPresent(tab -> tab.build(commands, events));
+        armedDefaults = Optional.empty();
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating,
+                "#HistoryModeProfiles",
+                EventData.of(PanelAction.KEY, HISTORY_MODE_PROFILES));
         events.addEventBinding(
                 CustomUIEventBindingType.Activating,
                 "#HistoryModeChanges",
@@ -377,15 +409,25 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     }
 
     private void showHistoryMode(UICommandBuilder commands) {
-        boolean both = historyTab.isPresent() && snapshotsTab.isPresent();
-        commands.set("#HistoryModeButtons.Visible", both);
-        commands.set("#HistoryChanges.Visible", !showingSnapshots);
-        commands.set("#SnapshotsPanel.Visible", showingSnapshots);
-        commands.set(
-                "#HistoryModeChanges.Style", Value.ref(LAYOUT, showingSnapshots ? "SegmentStyle" : "SegmentOnStyle"));
-        commands.set(
-                "#HistoryModeSnapshots.Style", Value.ref(LAYOUT, showingSnapshots ? "SegmentOnStyle" : "SegmentStyle"));
-        commands.setObject("#HistoryList.Anchor", height(both ? 538 : 580));
+        int modes = (historyTab.isPresent() ? 1 : 0)
+                + (snapshotsTab.isPresent() ? 1 : 0)
+                + (profilesTab.isPresent() ? 1 : 0);
+        boolean several = modes > 1;
+        commands.set("#HistoryModeButtons.Visible", several);
+        commands.set("#HistoryModeChanges.Visible", historyTab.isPresent());
+        commands.set("#HistoryModeSnapshots.Visible", snapshotsTab.isPresent());
+        commands.set("#HistoryModeProfiles.Visible", profilesTab.isPresent());
+        commands.set("#HistoryChanges.Visible", historyMode == HistoryMode.CHANGES);
+        commands.set("#SnapshotsPanel.Visible", historyMode == HistoryMode.SNAPSHOTS);
+        commands.set("#ProfilesPanel.Visible", historyMode == HistoryMode.PROFILES);
+        commands.set("#HistoryModeChanges.Style", segment(historyMode == HistoryMode.CHANGES));
+        commands.set("#HistoryModeSnapshots.Style", segment(historyMode == HistoryMode.SNAPSHOTS));
+        commands.set("#HistoryModeProfiles.Style", segment(historyMode == HistoryMode.PROFILES));
+        commands.setObject("#HistoryList.Anchor", height(several ? 538 : 580));
+    }
+
+    private static Value<String> segment(boolean on) {
+        return Value.ref(LAYOUT, on ? "SegmentOnStyle" : "SegmentStyle");
     }
 
     private void buildServerMode(UICommandBuilder commands, UIEventBuilder events) {
@@ -471,7 +513,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
         HistoryTab tab = historyTab.get();
         selected = Tab.HISTORY;
-        showingSnapshots = false;
+        historyMode = HistoryMode.CHANGES;
         if (tab.stale()) {
             rebuild();
         }
@@ -534,7 +576,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             case PLAYER -> PanelSection.PREFS;
             case KEYMAP ->
                 editingServerKeys && bindForm.isPresent() ? PanelSection.SERVER_KEYMAPS : PanelSection.KEYMAPS;
-            case MODS, PERMISSIONS, HISTORY -> null;
+            case MODS, PERMISSIONS, HISTORY, HEALTH -> null;
         };
         return key != null && sections.containsKey(key) ? Optional.of(key) : Optional.empty();
     }
@@ -754,6 +796,113 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         events.addEventBinding(CustomUIEventBindingType.ValueChanged, key.search, search);
         events.addEventBinding(CustomUIEventBindingType.ValueChanged, filter, search);
         events.addEventBinding(CustomUIEventBindingType.ValueChanged, match, search);
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating,
+                key.search + "Defaults",
+                new EventData().append(PanelAction.KEY, RESTORE_DEFAULTS).append(PanelAction.SECTION, key.name()));
+    }
+
+    private void restoreDefaults(String sectionName) {
+        Optional<PanelSection> found = Arrays.stream(PanelSection.values())
+                .filter(candidate -> candidate.name().equals(sectionName))
+                .findFirst();
+        if (found.isEmpty()) {
+            return;
+        }
+        PanelSection key = found.get();
+        boolean permissions = key == PanelSection.PERMISSIONS;
+        if (permissions && permissionsTab.isEmpty()) {
+            return;
+        }
+        List<SettingSnapshot> rows = permissions ? List.of() : resettable(key);
+        int count = permissions ? permissionsTab.get().ruledShown() : rows.size();
+        UICommandBuilder update = new UICommandBuilder();
+        if (count == 0) {
+            armedDefaults = Optional.empty();
+            footer(update, tr.t("controlcore.panel.defaults.nothing"));
+            sendUpdate(update, false);
+            return;
+        }
+        boolean serverWide = key != PanelSection.PREFS && key != PanelSection.KEYMAPS;
+        if (armedDefaults.filter(key::equals).isEmpty()) {
+            armedDefaults = Optional.of(key);
+            footer(
+                    update,
+                    tr.t(
+                            serverWide && snapshotsView.isPresent()
+                                    ? "controlcore.panel.defaults.confirm_safe"
+                                    : "controlcore.panel.defaults.confirm",
+                            "count",
+                            count));
+            update.set(key.search + "Defaults.Text", tr.t("controlcore.panel.confirm"));
+            sendUpdate(update, false);
+            return;
+        }
+        armedDefaults = Optional.empty();
+        String safety = "";
+        if (serverWide && snapshotsView.isPresent()) {
+            Result<String> saved = snapshotsView.get().saveBefore("defaults", defaultsParts(key));
+            if (saved.isFailure()) {
+                footer(update, tr.error(saved.error()));
+                sendUpdate(update, false);
+                return;
+            }
+            safety = " " + tr.t("controlcore.snapshots.safety_saved", "name", saved.value());
+        }
+        int done = 0;
+        if (permissions) {
+            done = permissionsTab.get().restoreShown();
+        } else {
+            SettingsSection section = sections.get(key);
+            for (SettingSnapshot row : rows) {
+                if (section.reset(row.id().toString()).isSuccess()) {
+                    done++;
+                }
+            }
+        }
+        rebuild();
+        UICommandBuilder after = new UICommandBuilder();
+        footer(after, tr.t("controlcore.panel.defaults.done", "count", done) + safety);
+        showRestartNotice(after);
+        sendUpdate(after, false);
+    }
+
+    private static Set<Snapshot.Part> defaultsParts(PanelSection key) {
+        return switch (key) {
+            case SERVER_CONFIG -> EnumSet.of(Snapshot.Part.CONFIG, Snapshot.Part.WORLDS);
+            case SERVER_KEYMAPS -> EnumSet.of(Snapshot.Part.KEYS);
+            case PERMISSIONS -> EnumSet.of(Snapshot.Part.PERMISSIONS);
+            default -> EnumSet.of(Snapshot.Part.SETTINGS);
+        };
+    }
+
+    private List<SettingSnapshot> resettable(PanelSection key) {
+        SettingsSection section = sections.get(key);
+        if (section == null) {
+            return List.of();
+        }
+        SettingSearch search = searches.getOrDefault(key, SettingSearch.ALL);
+        SettingRows.State legend = legendFilters.get(key);
+        List<SettingSnapshot> found = new ArrayList<>();
+        for (SettingsSection.Entry entry : built.getOrDefault(key, List.of())) {
+            if (!(entry instanceof SettingsSection.Row row) || row.kind() == SettingsSection.Kind.INFO) {
+                continue;
+            }
+            SettingSnapshot snapshot = latest.getOrDefault(shownKey(key, row.id()), row.snapshot());
+            if (!inScope(key, row.id())
+                    || !matchesSearch(section, search, snapshot)
+                    || (legend != null && state(key, snapshot) != legend)) {
+                continue;
+            }
+            if (snapshot.overridden() && snapshot.access() != SettingAccess.READ_ONLY) {
+                found.add(snapshot);
+            }
+            row.color()
+                    .map(color -> latest.getOrDefault(shownKey(key, color.id()), color))
+                    .filter(color -> color.overridden() && color.access() != SettingAccess.READ_ONLY)
+                    .ifPresent(found::add);
+        }
+        return found;
     }
 
     private DropdownEntryInfo dropdownEntry(String keyPrefix, String option, String value) {
@@ -802,14 +951,25 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 || permissionsTab.map(tab -> tab.handle(action)).orElse(false)
                 || historyTab.map(tab -> tab.handle(action)).orElse(false)
                 || snapshotsTab.map(tab -> tab.handle(action)).orElse(false)
+                || profilesTab.map(tab -> tab.handle(action)).orElse(false)
+                || healthTab.map(tab -> tab.handle(action)).orElse(false)
                 || bansTab.map(tab -> tab.handle(action)).orElse(false)) {
             return;
         }
         if (CLOSE.equals(name)) {
             close();
-        } else if (HISTORY_MODE_CHANGES.equals(name) || HISTORY_MODE_SNAPSHOTS.equals(name)) {
-            showingSnapshots =
-                    snapshotsTab.isPresent() && (HISTORY_MODE_SNAPSHOTS.equals(name) || historyTab.isEmpty());
+        } else if (RESTORE_DEFAULTS.equals(name)) {
+            restoreDefaults(action.section);
+        } else if (HISTORY_MODE_CHANGES.equals(name)
+                || HISTORY_MODE_SNAPSHOTS.equals(name)
+                || HISTORY_MODE_PROFILES.equals(name)) {
+            if (HISTORY_MODE_PROFILES.equals(name) && profilesTab.isPresent()) {
+                historyMode = HistoryMode.PROFILES;
+            } else if (HISTORY_MODE_SNAPSHOTS.equals(name) && snapshotsTab.isPresent()) {
+                historyMode = HistoryMode.SNAPSHOTS;
+            } else if (historyTab.isPresent()) {
+                historyMode = HistoryMode.CHANGES;
+            }
             UICommandBuilder update = new UICommandBuilder();
             showHistoryMode(update);
             sendUpdate(update, false);
@@ -1408,6 +1568,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                     PermissionsTab.Host,
                     HistoryTab.Host,
                     SnapshotsTab.Host,
+                    ProfilesTab.Host,
+                    HealthTab.Host,
                     BansTab.Host {
 
         @Override

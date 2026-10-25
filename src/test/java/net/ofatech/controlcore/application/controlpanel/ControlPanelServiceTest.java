@@ -3,9 +3,11 @@ package net.ofatech.controlcore.application.controlpanel;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import net.ofatech.controlcore.application.bans.BansService;
+import net.ofatech.controlcore.application.diagnostics.DiagnosticsService;
 import net.ofatech.controlcore.application.event.DomainEventBus;
 import net.ofatech.controlcore.application.history.ChangeHistory;
 import net.ofatech.controlcore.application.history.ChangeRecorder;
@@ -18,6 +20,7 @@ import net.ofatech.controlcore.application.settings.ModNames;
 import net.ofatech.controlcore.application.settings.PermissionsEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
+import net.ofatech.controlcore.application.snapshot.ProfileService;
 import net.ofatech.controlcore.application.snapshot.SnapshotService;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.ModSettings;
@@ -32,6 +35,7 @@ import net.ofatech.controlcore.domain.ports.game.InputProbe;
 import net.ofatech.controlcore.domain.ports.game.Worlds;
 import net.ofatech.controlcore.domain.result.ErrorType;
 import net.ofatech.controlcore.domain.result.Result;
+import net.ofatech.controlcore.fakes.FakeActiveProfileStore;
 import net.ofatech.controlcore.fakes.FakeChangeLogStore;
 import net.ofatech.controlcore.fakes.FakeClock;
 import net.ofatech.controlcore.fakes.FakeCustomKeyBindStore;
@@ -40,7 +44,9 @@ import net.ofatech.controlcore.fakes.FakeKeyGameActionStore;
 import net.ofatech.controlcore.fakes.FakeModCatalog;
 import net.ofatech.controlcore.fakes.FakePlayerData;
 import net.ofatech.controlcore.fakes.FakePlayers;
+import net.ofatech.controlcore.fakes.FakeReportWriter;
 import net.ofatech.controlcore.fakes.FakeServerConfiguration;
+import net.ofatech.controlcore.fakes.FakeServerHealth;
 import net.ofatech.controlcore.fakes.FakeSettingPermissionStore;
 import net.ofatech.controlcore.fakes.FakeSettingStore;
 import net.ofatech.controlcore.fakes.FakeSettings;
@@ -115,7 +121,8 @@ class ControlPanelServiceTest {
                 mods,
                 (player, node) -> true,
                 TestTexts.of(registry, players),
-                bans);
+                bans,
+                new FakeClock());
         var snapshots = new SnapshotService(
                 new FakeSnapshotStore(),
                 registry,
@@ -148,7 +155,18 @@ class ControlPanelServiceTest {
                 probe,
                 (player, node) -> !node.equals("debug") || debugAllowed,
                 history,
-                snapshots);
+                snapshots,
+                new ProfileService(
+                        snapshots, serverConfig, new FakeActiveProfileStore(), TestTexts.of(registry, players), log),
+                new DiagnosticsService(
+                        new FakeServerHealth(),
+                        List::of,
+                        new FakeReportWriter(),
+                        mods,
+                        policy,
+                        TestTexts.of(registry, players),
+                        new FakeClock(),
+                        log));
     }
 
     @Test

@@ -65,6 +65,11 @@ public final class ChangeHistory implements ChangeRecorder {
         store.append(record);
     }
 
+    public synchronized int clearBefore(Instant before) {
+        records.removeIf(record -> record.at().isBefore(before));
+        return store.deleteRecordsBefore(before);
+    }
+
     public synchronized List<ChangeRecord> newestFirst() {
         return List.copyOf(records);
     }

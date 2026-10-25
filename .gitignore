@@ -21,6 +21,9 @@ src/main/resources/CustomKeyBinds.json
 src/main/resources/CustomKeyBinds.json.tmp
 src/main/resources/KeyGameActions.json
 src/main/resources/KeyGameActions.json.tmp
+src/main/resources/ActiveProfile.json
+src/main/resources/ActiveProfile.json.tmp
+src/main/resources/diagnostics/
 
 ### IntelliJ IDEA ###
 .idea/

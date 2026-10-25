@@ -131,7 +131,11 @@ public final class SnapshotService {
             public List<Entry> list() {
                 return store.all().stream()
                         .map(snapshot -> new Entry(
-                                snapshot.name(), when(snapshot), snapshot.createdBy(), partsText(snapshot, tr)))
+                                snapshot.name(),
+                                when(snapshot),
+                                snapshot.createdBy(),
+                                partsText(snapshot, tr),
+                                snapshot.profile()))
                         .toList();
             }
 
@@ -163,7 +167,59 @@ public final class SnapshotService {
                         .delete(snapshotName, who)
                         .map(deleted -> tr.t("controlcore.snapshots.deleted", "name", deleted));
             }
+
+            @Override
+            public Result<String> setProfile(String snapshotName, boolean profile) {
+                return SnapshotService.this
+                        .setProfile(snapshotName, profile, who)
+                        .map(saved -> tr.t(
+                                profile ? "controlcore.profiles.marked" : "controlcore.profiles.unmarked",
+                                "name",
+                                saved.name()));
+            }
+
+            @Override
+            public Result<String> deleteAll() {
+                return SnapshotService.this
+                        .deleteAll(who)
+                        .map(count -> tr.t("controlcore.snapshots.deleted_all", "count", count));
+            }
+
+            @Override
+            public Result<String> saveBefore(String base, Set<Part> parts) {
+                return SnapshotService.this
+                        .saveBefore(base, parts, Set.of(), who, actor)
+                        .map(Snapshot::name);
+            }
         };
+    }
+
+    public Result<Snapshot> setProfile(String rawName, boolean profile, Optional<PlayerId> who) {
+        Result<Boolean> allowed = allowed(who);
+        if (allowed.isFailure()) {
+            return Result.failure(allowed.error());
+        }
+        return find(rawName).flatMap(snapshot -> store.save(snapshot.asProfile(profile)));
+    }
+
+    public Result<Integer> deleteAll(Optional<PlayerId> who) {
+        Result<Boolean> allowed = allowed(who);
+        if (allowed.isFailure()) {
+            return Result.failure(allowed.error());
+        }
+        int deleted = 0;
+        for (Snapshot snapshot : store.all()) {
+            if (!snapshot.profile() && store.delete(snapshot.name())) {
+                deleted++;
+            }
+        }
+        log.info("Deleted " + deleted + " snapshot(s); profiles were kept");
+        return Result.success(deleted);
+    }
+
+    public Result<Snapshot> saveBefore(
+            String base, Set<Part> parts, Set<String> onlyMods, Optional<PlayerId> who, Actor actor) {
+        return save(safetyName(base), parts, onlyMods, who, actor);
     }
 
     public Result<Snapshot> save(
@@ -224,15 +280,23 @@ public final class SnapshotService {
             return Result.failure(planned.error());
         }
         Plan plan = planned.value();
+        return apply(plan, snapshotFirst ? Optional.of(plan.snapshot().name()) : Optional.empty(), who, actor, tr);
+    }
+
+    public Result<String> apply(
+            Plan plan, Optional<String> saveFirstAs, Optional<PlayerId> who, Actor actor, Translator tr) {
         String safety = "";
-        if (snapshotFirst) {
-            String safetyName = safetyName(plan.snapshot().name());
-            Result<Snapshot> saved =
-                    save(safetyName, plan.snapshot().parts(), plan.snapshot().mods(), who, actor);
+        if (saveFirstAs.isPresent()) {
+            Result<Snapshot> saved = saveBefore(
+                    saveFirstAs.get(), plan.snapshot().parts(), plan.snapshot().mods(), who, actor);
             if (saved.isFailure()) {
                 return Result.failure(saved.error());
             }
-            safety = " " + tr.t("controlcore.snapshots.safety_saved", "name", safetyName);
+            safety = " "
+                    + tr.t(
+                            "controlcore.snapshots.safety_saved",
+                            "name",
+                            saved.value().name());
         }
         List<String> failures = new ArrayList<>();
         int applied = ChangeContext.restoringSnapshot(actor, () -> {
@@ -323,6 +387,49 @@ public final class SnapshotService {
                                 "Snapshots.Unknown",
                                 Text.key("controlcore.errors.snapshots.unknown", "There is no snapshot {name}.")
                                         .with("name", name)))));
+    }
+
+    public Plan defaultsPlan(Snapshot label, Translator tr) {
+        List<Change> changes = new ArrayList<>();
+        int skipped = 0;
+        if (label.has(Part.CONFIG) || label.has(Part.WORLDS)) {
+            for (SettingSnapshot current : serverConfig.snapshot(SettingScope.SERVER, Optional.empty())) {
+                Part part = ServerConfigEditor.isWorld(current.id()) ? Part.WORLDS : Part.CONFIG;
+                if (!label.has(part) || current.access() == SettingAccess.READ_ONLY || !current.overridden()) {
+                    continue;
+                }
+                if (!serverConfig.hasDefault(current.id())) {
+                    skipped++;
+                    continue;
+                }
+                String id = current.id().toString();
+                changes.add(new Change(
+                        history.what(Kind.SERVER_CONFIG, id, tr),
+                        shown(current.value(), tr),
+                        tr.t(
+                                "controlcore.snapshots.value.default",
+                                "value",
+                                current.definition().formattedDefault()),
+                        () -> serverConfig.reset(current.id(), Optional.empty())));
+            }
+        }
+        if (label.has(Part.SETTINGS)) {
+            for (SettingSnapshot current : settings.snapshot(SettingScope.SERVER, Optional.empty())) {
+                if (!current.overridden()) {
+                    continue;
+                }
+                String id = current.id().toString();
+                changes.add(new Change(
+                        history.what(Kind.SETTING, id, tr),
+                        shown(current.value(), tr),
+                        tr.t(
+                                "controlcore.snapshots.value.default",
+                                "value",
+                                current.definition().formattedDefault()),
+                        () -> settings.reset(current.id(), Optional.empty())));
+            }
+        }
+        return new Plan(label, changes, skipped);
     }
 
     private Result<Boolean> allowed(Optional<PlayerId> who) {
@@ -427,7 +534,9 @@ public final class SnapshotService {
                 binds,
                 rules,
                 enabled,
-                playerValues);
+                playerValues,
+                false,
+                false);
     }
 
     Plan differences(Snapshot snapshot, Translator tr) {
@@ -454,7 +563,22 @@ public final class SnapshotService {
                 }
             });
         }
-        if (snapshot.has(Part.SETTINGS)) {
+        if (snapshot.has(Part.SETTINGS) && snapshot.partial()) {
+            snapshot.settings().forEach((id, target) -> {
+                Result<SettingSnapshot> current =
+                        SettingId.parse(id).flatMap(parsed -> settings.read(parsed, Optional.empty()));
+                if (current.isFailure()) {
+                    skipped[0]++;
+                } else if (!current.value().value().equals(target)) {
+                    SettingId parsed = current.value().id();
+                    changes.add(new Change(
+                            history.what(Kind.SETTING, id, tr),
+                            shown(current.value().value(), tr),
+                            shown(target, tr),
+                            () -> settings.write(parsed, Optional.empty(), target)));
+                }
+            });
+        } else if (snapshot.has(Part.SETTINGS)) {
             Set<String> known = new LinkedHashSet<>();
             for (SettingSnapshot current : settings.snapshot(SettingScope.SERVER, Optional.empty())) {
                 String id = current.id().toString();

@@ -1,6 +1,8 @@
 package net.ofatech.controlcore.domain.model.history;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -30,4 +32,8 @@ public interface HistoryView {
     boolean canRollback();
 
     Result<String> rollback(long id);
+
+    boolean canClear();
+
+    Result<String> clear(Optional<Duration> olderThan);
 }

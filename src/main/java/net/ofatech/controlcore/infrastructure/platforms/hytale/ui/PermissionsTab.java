@@ -106,6 +106,25 @@ final class PermissionsTab {
         return true;
     }
 
+    int ruledShown() {
+        return (int)
+                entries.stream().filter(entry -> matches(entry) && ruled(entry)).count();
+    }
+
+    int restoreShown() {
+        int done = 0;
+        for (PermissionsView.Entry entry : List.copyOf(entries)) {
+            if (matches(entry) && ruled(entry) && view.reset(entry.target()).isSuccess()) {
+                done++;
+            }
+        }
+        return done;
+    }
+
+    private static boolean ruled(PermissionsView.Entry entry) {
+        return !entry.view().isBlank() || !entry.edit().isBlank();
+    }
+
     void search(SettingSearch current, UICommandBuilder commands) {
         search = current;
         applySearch(commands, true);

@@ -1,0 +1,21 @@
+$C = "../../Common.ui";
+
+Group {
+  LayoutMode: Left;
+  Anchor: (Height: 30);
+
+  Group #State {
+    Anchor: (Width: 18, Height: 18, Top: 6, Right: 10);
+    Background: "Icons/Default.png";
+  }
+
+  Label #Label {
+    Anchor: (Width: 300, Right: 10);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #9fb0bd, RenderBold: true, VerticalAlignment: Center);
+  }
+
+  Label #Value {
+    FlexWeight: 1;
+    Style: (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #e9e4d6, VerticalAlignment: Center);
+  }
+}

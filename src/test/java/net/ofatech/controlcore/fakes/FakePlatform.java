@@ -1,6 +1,7 @@
 package net.ofatech.controlcore.fakes;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -9,10 +10,12 @@ import net.ofatech.controlcore.domain.model.ServerSettings;
 import net.ofatech.controlcore.domain.model.hud.HudPart;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
+import net.ofatech.controlcore.domain.ports.config.ActiveProfileStore;
 import net.ofatech.controlcore.domain.ports.config.ChangeLogStore;
 import net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.KeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.KeyGameActionStore;
+import net.ofatech.controlcore.domain.ports.config.ReportWriter;
 import net.ofatech.controlcore.domain.ports.config.SettingPermissionStore;
 import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
@@ -38,6 +41,8 @@ import net.ofatech.controlcore.domain.ports.platform.Platform;
 import net.ofatech.controlcore.domain.ports.platform.PortBinder;
 import net.ofatech.controlcore.domain.ports.system.Clock;
 import net.ofatech.controlcore.domain.ports.system.Log;
+import net.ofatech.controlcore.domain.ports.system.RecentProblems;
+import net.ofatech.controlcore.domain.ports.system.ServerHealth;
 import net.ofatech.controlcore.domain.ports.system.Translations;
 import net.ofatech.controlcore.domain.result.Result;
 import net.ofatech.controlcore.infrastructure.i18n.BundledTranslations;
@@ -61,6 +66,10 @@ public final class FakePlatform implements Platform {
     public final FakeKeyBindStore keyBinds = new FakeKeyBindStore();
     public final FakeCustomKeyBindStore customKeyBinds = new FakeCustomKeyBindStore();
     public final FakeKeyGameActionStore keyGameActions = new FakeKeyGameActionStore();
+    public final FakeActiveProfileStore activeProfile = new FakeActiveProfileStore();
+    public final FakeServerHealth health = new FakeServerHealth();
+    public final FakeReportWriter reports = new FakeReportWriter();
+    public final List<RecentProblems.Problem> problems = new java.util.concurrent.CopyOnWriteArrayList<>();
     public final FakeSettingPermissionStore settingPermissions = new FakeSettingPermissionStore();
     public final FakeChangeLogStore changeLog = new FakeChangeLogStore();
     public final FakeSnapshotStore snapshots = new FakeSnapshotStore();
@@ -86,6 +95,9 @@ public final class FakePlatform implements Platform {
     @Override
     public void bind(PortBinder binder) {
         binder.bind(Log.class, log);
+        binder.bind(RecentProblems.class, () -> problems);
+        binder.bind(ServerHealth.class, health);
+        binder.bind(ReportWriter.class, reports);
         binder.bind(Clock.class, clock);
         binder.bind(SettingsProvider.class, settings);
         binder.bind(Players.class, players);
@@ -108,6 +120,7 @@ public final class FakePlatform implements Platform {
         binder.bind(SettingPermissionStore.class, settingPermissions);
         binder.bind(ChangeLogStore.class, changeLog);
         binder.bind(SnapshotStore.class, snapshots);
+        binder.bind(ActiveProfileStore.class, activeProfile);
         binder.bind(Worlds.class, worlds);
         binder.bind(PlayerTuning.class, tuning);
         binder.bind(Bans.class, bans);

@@ -6,9 +6,11 @@ import com.hypixel.hytale.server.core.ui.LocalizableString;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord;
 import net.ofatech.controlcore.domain.model.history.HistoryView;
@@ -21,6 +23,8 @@ final class HistoryTab {
 
     private static final String SEARCH = "HistorySearch";
     private static final String ROLLBACK = "HistoryRollback";
+    private static final String CLEAR = "HistoryClear";
+    private static final List<String> AGES = List.of("7", "30", "90", "all");
     private static final String ROW = "Pages/ControlCore/HistoryRow.ui";
     private static final String LIST = "#HistoryList";
     private static final String ICONS = "Pages/ControlCore/Icons/";
@@ -75,6 +79,8 @@ final class HistoryTab {
     private String query = "";
     private Filter filter = Filter.ALL;
     private Set<String> targets;
+    private String clearAge = "90";
+    private String armedClear;
 
     HistoryTab(HistoryView view, Translator tr, Host host) {
         this.view = view;
@@ -105,6 +111,22 @@ final class HistoryTab {
                 .append(PanelAction.FILTER, "#HistoryFilter.Value");
         events.addEventBinding(CustomUIEventBindingType.ValueChanged, "#HistorySearch", search);
         events.addEventBinding(CustomUIEventBindingType.ValueChanged, "#HistoryFilter", search);
+        commands.set("#HistoryClearAge.Visible", view.canClear());
+        commands.set("#HistoryClear.Visible", view.canClear());
+        if (view.canClear()) {
+            commands.set(
+                    "#HistoryClearAge.Entries",
+                    AGES.stream()
+                            .map(age -> new DropdownEntryInfo(
+                                    LocalizableString.fromString(tr.t("controlcore.panel.history.clear_age." + age)),
+                                    age))
+                            .toList());
+            commands.set("#HistoryClearAge.Value", clearAge);
+            events.addEventBinding(
+                    CustomUIEventBindingType.Activating,
+                    "#HistoryClear",
+                    new EventData().append(PanelAction.KEY, CLEAR).append(PanelAction.VALUE, "#HistoryClearAge.Value"));
+        }
         commands.set("#HistoryEmpty.Visible", entries.isEmpty());
         for (int index = 0; index < entries.size(); index++) {
             HistoryView.Entry entry = entries.get(index);
@@ -160,11 +182,39 @@ final class HistoryTab {
                 host.send(update);
             }
             case ROLLBACK -> rollback(action.id);
+            case CLEAR -> clear(action.value);
             default -> {
                 return false;
             }
         }
         return true;
+    }
+
+    private void clear(String age) {
+        String chosen = age != null && AGES.contains(age) ? age : clearAge;
+        UICommandBuilder update = new UICommandBuilder();
+        if (!chosen.equals(armedClear)) {
+            armedClear = chosen;
+            clearAge = chosen;
+            update.set(
+                    "#FooterStatus.Text",
+                    tr.t(
+                            "controlcore.panel.history.confirm_clear",
+                            "what",
+                            tr.t("controlcore.panel.history.clear_age." + chosen)));
+            update.set("#HistoryClear.Text", tr.t("controlcore.panel.confirm"));
+            host.send(update);
+            return;
+        }
+        armedClear = null;
+        Optional<Duration> olderThan =
+                chosen.equals("all") ? Optional.empty() : Optional.of(Duration.ofDays(Integer.parseInt(chosen)));
+        Result<String> result = view.clear(olderThan);
+        if (result.isSuccess()) {
+            host.rebuild();
+        }
+        update.set("#FooterStatus.Text", result.isSuccess() ? result.value() : tr.error(result.error()));
+        host.send(update);
     }
 
     private void rollback(String id) {

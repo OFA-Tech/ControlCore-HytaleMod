@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.YearMonth;
@@ -79,6 +80,50 @@ public final class JsonLinesChangeLog implements ChangeLogStore {
                 }
             }
         }
+    }
+
+    @Override
+    public synchronized int deleteRecordsBefore(Instant before) {
+        int removed = 0;
+        for (Path file : files()) {
+            List<String> lines;
+            try {
+                lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+            } catch (IOException e) {
+                log.error("Could not read change history " + file, e);
+                continue;
+            }
+            List<String> kept = new ArrayList<>();
+            for (String text : lines) {
+                if (text.isBlank()) {
+                    continue;
+                }
+                Instant at = null;
+                try {
+                    Line line = GSON.fromJson(text, Line.class);
+                    at = line == null || line.at == null ? null : Instant.parse(line.at);
+                } catch (JsonParseException | DateTimeParseException e) {
+                    at = null;
+                }
+                if (at != null && at.isBefore(before)) {
+                    removed++;
+                } else {
+                    kept.add(text);
+                }
+            }
+            try {
+                if (kept.isEmpty()) {
+                    Files.deleteIfExists(file);
+                } else if (kept.size() != lines.size()) {
+                    Path temp = file.resolveSibling(file.getFileName() + ".tmp");
+                    Files.write(temp, kept, StandardCharsets.UTF_8);
+                    Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+                }
+            } catch (IOException e) {
+                log.error("Could not clear change history in " + file, e);
+            }
+        }
+        return removed;
     }
 
     private void readInto(Path file, Instant from, List<ChangeRecord> records) {

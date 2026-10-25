@@ -11,4 +11,6 @@ public interface ChangeLogStore {
     void append(ChangeRecord record);
 
     void deleteBefore(Instant before);
+
+    int deleteRecordsBefore(Instant before);
 }

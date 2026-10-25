@@ -11,7 +11,8 @@ public enum ControlPanelTab {
     KEYMAPS("Keymaps"),
     MODS("Mods"),
     PERMISSIONS("Permissions"),
-    HISTORY("History");
+    HISTORY("History"),
+    HEALTH("Health");
 
     private final String label;
 

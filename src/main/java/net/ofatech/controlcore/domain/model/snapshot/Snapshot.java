@@ -28,7 +28,9 @@ public record Snapshot(
         List<CustomKeyBind> customBinds,
         Map<String, SettingPermission> permissions,
         Map<String, Boolean> modsEnabled,
-        Map<String, Map<String, String>> players) {
+        Map<String, Map<String, String>> players,
+        boolean profile,
+        boolean partial) {
 
     public enum Part {
         CONFIG,
@@ -69,6 +71,24 @@ public record Snapshot(
 
     public boolean has(Part part) {
         return parts.contains(part);
+    }
+
+    public Snapshot asProfile(boolean isProfile) {
+        return new Snapshot(
+                name,
+                createdAt,
+                createdBy,
+                parts,
+                mods,
+                config,
+                settings,
+                serverKeys,
+                customBinds,
+                permissions,
+                modsEnabled,
+                players,
+                isProfile,
+                partial);
     }
 
     public static Result<String> validName(String text) {

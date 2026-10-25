@@ -1,5 +1,7 @@
 package net.ofatech.controlcore.application.history;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -22,6 +24,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
+import net.ofatech.controlcore.domain.ports.system.Clock;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -41,6 +44,7 @@ public final class HistoryEditor {
     private final Permissions permissions;
     private final Texts texts;
     private final BansService bans;
+    private final Clock clock;
 
     public HistoryEditor(
             ChangeHistory history,
@@ -51,7 +55,8 @@ public final class HistoryEditor {
             ModsEditor mods,
             Permissions permissions,
             Texts texts,
-            BansService bans) {
+            BansService bans,
+            Clock clock) {
         this.history = history;
         this.settings = settings;
         this.serverConfig = serverConfig;
@@ -61,6 +66,7 @@ public final class HistoryEditor {
         this.permissions = permissions;
         this.texts = texts;
         this.bans = bans;
+        this.clock = clock;
     }
 
     public boolean maySee(Optional<PlayerId> viewer) {
@@ -101,7 +107,34 @@ public final class HistoryEditor {
             public Result<String> rollback(long id) {
                 return HistoryEditor.this.rollback(id, who, Actor.player(viewer, name), tr);
             }
+
+            @Override
+            public boolean canClear() {
+                return mayClear(who);
+            }
+
+            @Override
+            public Result<String> clear(Optional<Duration> olderThan) {
+                return HistoryEditor.this.clear(olderThan, who, tr);
+            }
         };
+    }
+
+    public boolean mayClear(Optional<PlayerId> viewer) {
+        return viewer.isEmpty() || policy.isAdmin(viewer.get());
+    }
+
+    public Result<String> clear(Optional<Duration> olderThan, Optional<PlayerId> who, Translator tr) {
+        if (!mayClear(who)) {
+            return Result.failure(Error.forbidden(
+                    "History.ClearForbidden",
+                    Text.key("controlcore.errors.history.clear_forbidden", "Only admins can clear the history.")));
+        }
+        Instant before = olderThan.map(age -> clock.now().minus(age)).orElse(Instant.MAX);
+        int removed = history.clearBefore(before);
+        return Result.success(olderThan
+                .map(age -> tr.t("controlcore.history.cleared_older", "count", removed, "days", age.toDays()))
+                .orElseGet(() -> tr.t("controlcore.history.cleared_all", "count", removed)));
     }
 
     public List<HistoryView.Entry> entries(Translator tr, Optional<PlayerId> viewer) {
