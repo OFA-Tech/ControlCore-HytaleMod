@@ -37,6 +37,8 @@ import net.ofatech.controlcore.domain.model.ControlPanelContent;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.ControlPanelTab;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
+import net.ofatech.controlcore.domain.model.keys.GameActionMode;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
@@ -119,6 +121,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
     private final Log log;
     private final Translator tr;
+    private final CustomKeyBindEditor customKeyBinds;
     private final Supplier<List<Text>> pendingRestart;
     private final Set<Tab> tabs = EnumSet.noneOf(Tab.class);
     private final Map<PanelSection, SettingsSection> sections = new EnumMap<>(PanelSection.class);
@@ -163,6 +166,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         Hooks hooks = new Hooks();
         this.modsTab = new ModsTab(content.mods(), tr, hooks);
         ControlPanelRequest shownSections = request.isEmpty() ? ControlPanelRequest.PLAYER_PREFERENCES : request;
+        this.customKeyBinds = content.customKeyBinds();
         boolean manageKeys = content.manageKeys() && shownSections.includeRegisteredActions();
         this.bindForm =
                 manageKeys ? Optional.of(new KeyBindForm(content.customKeyBinds(), tr, hooks)) : Optional.empty();
@@ -342,7 +346,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                     boolean customBind = bindForm.isPresent()
                             && key == PanelSection.SERVER_KEYMAPS
                             && CUSTOM_NAMESPACE.equals(row.id().namespace());
-                    SettingRows.build(key, section, row, element, customBind, commands, events);
+                    Optional<GameActionMode> gameAction = bindForm.isPresent() && key == PanelSection.SERVER_KEYMAPS
+                            ? Optional.of(customKeyBinds.gameAction(row.id()))
+                            : Optional.empty();
+                    SettingRows.build(key, section, row, element, customBind, gameAction, commands, events);
                     showHistoryLink(key, element, row.id(), commands, events);
                     if (SettingRows.canUndo(row)) {
                         undoRows.add(shownKey(key, row.id()));
@@ -910,6 +917,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 undoChange(key, section, action);
                 return;
             }
+            case SettingRows.PICK_GAME_ACTION -> {
+                pickGameAction(key, action);
+                return;
+            }
             case SettingRows.PICK_KEYS -> {
                 SettingSnapshot current = latestOf(key, action.id);
                 if (current == null) {
@@ -1311,6 +1322,38 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private void remember(PanelSection key, SettingSnapshot snapshot) {
         shown.put(shownKey(key, snapshot.id()), snapshot.value());
         latest.put(shownKey(key, snapshot.id()), snapshot);
+    }
+
+    private void pickGameAction(PanelSection key, PanelAction action) {
+        UICommandBuilder update = new UICommandBuilder();
+        Result<SettingId> id = SettingId.parse(action.id == null ? "" : action.id);
+        Integer index = indexOf(key, action.id);
+        if (id.isSuccess()) {
+            Optional<GameActionMode> wanted = GameActionMode.parse(action.value);
+            Result<GameActionMode> saved =
+                    wanted.isPresent() ? customKeyBinds.setGameAction(id.value(), wanted.get()) : null;
+            if (saved != null && saved.isSuccess()) {
+                SettingSnapshot row = latestOf(key, action.id);
+                footer(
+                        update,
+                        tr.t(
+                                "controlcore.keys.game_action.saved",
+                                "name",
+                                row == null
+                                        ? action.id
+                                        : tr.translate(row.definition().nameText()),
+                                "mode",
+                                SettingRows.gameActionLabel(tr, saved.value())));
+            } else if (saved != null) {
+                footer(update, tr.error(saved.error()));
+            }
+            if (index != null) {
+                update.set(
+                        key.row(index) + " #GameAction.Value",
+                        customKeyBinds.gameAction(id.value()).id());
+            }
+        }
+        sendUpdate(update, false);
     }
 
     private SettingSnapshot latestOf(PanelSection key, String idText) {

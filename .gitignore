@@ -19,6 +19,8 @@ src/main/resources/KeyBinds.json
 src/main/resources/KeyBinds.json.tmp
 src/main/resources/CustomKeyBinds.json
 src/main/resources/CustomKeyBinds.json.tmp
+src/main/resources/KeyGameActions.json
+src/main/resources/KeyGameActions.json.tmp
 
 ### IntelliJ IDEA ###
 .idea/

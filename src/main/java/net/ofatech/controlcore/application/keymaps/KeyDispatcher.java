@@ -57,10 +57,18 @@ public final class KeyDispatcher implements PlayerInput.Listener {
         boolean block = false;
         for (KeyAction action : best) {
             if (fire(action, player)) {
-                block |= action.blocksGameAction();
+                block |= cancelsGameAction(action);
             }
         }
-        return block && !keepGameActions && !signal.isHotbar();
+        return block && !signal.isHotbar();
+    }
+
+    private boolean cancelsGameAction(KeyAction action) {
+        return switch (keymaps.gameAction(action.id())) {
+            case KEEP -> false;
+            case REPLACE -> true;
+            case SERVER_SETTING -> action.blocksGameAction() && !keepGameActions;
+        };
     }
 
     public void keepGameActions(boolean keep) {

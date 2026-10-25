@@ -12,6 +12,7 @@ import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
 import net.ofatech.controlcore.domain.ports.config.ChangeLogStore;
 import net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.KeyBindStore;
+import net.ofatech.controlcore.domain.ports.config.KeyGameActionStore;
 import net.ofatech.controlcore.domain.ports.config.SettingPermissionStore;
 import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
@@ -59,6 +60,7 @@ public final class FakePlatform implements Platform {
     public final RecordingCommandRunner commandRunner = new RecordingCommandRunner();
     public final FakeKeyBindStore keyBinds = new FakeKeyBindStore();
     public final FakeCustomKeyBindStore customKeyBinds = new FakeCustomKeyBindStore();
+    public final FakeKeyGameActionStore keyGameActions = new FakeKeyGameActionStore();
     public final FakeSettingPermissionStore settingPermissions = new FakeSettingPermissionStore();
     public final FakeChangeLogStore changeLog = new FakeChangeLogStore();
     public final FakeSnapshotStore snapshots = new FakeSnapshotStore();
@@ -102,6 +104,7 @@ public final class FakePlatform implements Platform {
         binder.bind(CommandRunner.class, commandRunner);
         binder.bind(KeyBindStore.class, keyBinds);
         binder.bind(CustomKeyBindStore.class, customKeyBinds);
+        binder.bind(KeyGameActionStore.class, keyGameActions);
         binder.bind(SettingPermissionStore.class, settingPermissions);
         binder.bind(ChangeLogStore.class, changeLog);
         binder.bind(SnapshotStore.class, snapshots);

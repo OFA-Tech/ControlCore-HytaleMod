@@ -17,6 +17,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.fakes.FakeCustomKeyBindStore;
 import net.ofatech.controlcore.fakes.FakeKeyBindStore;
+import net.ofatech.controlcore.fakes.FakeKeyGameActionStore;
 import net.ofatech.controlcore.fakes.FakePlayerData;
 import net.ofatech.controlcore.fakes.RecordingLog;
 import net.ofatech.controlcore.fakes.TestTexts;
@@ -30,6 +31,7 @@ class KeymapsEditorTest {
     private final KeymapRegistry keymaps = new KeymapRegistry(
             new FakeKeyBindStore(),
             new FakeCustomKeyBindStore(),
+            new FakeKeyGameActionStore(),
             new FakePlayerData(),
             (player, node) -> true,
             new RecordingLog(),

@@ -36,6 +36,7 @@ import net.ofatech.controlcore.fakes.FakeChangeLogStore;
 import net.ofatech.controlcore.fakes.FakeClock;
 import net.ofatech.controlcore.fakes.FakeCustomKeyBindStore;
 import net.ofatech.controlcore.fakes.FakeKeyBindStore;
+import net.ofatech.controlcore.fakes.FakeKeyGameActionStore;
 import net.ofatech.controlcore.fakes.FakeModCatalog;
 import net.ofatech.controlcore.fakes.FakePlayerData;
 import net.ofatech.controlcore.fakes.FakePlayers;
@@ -86,6 +87,7 @@ class ControlPanelServiceTest {
         var keyRegistry = new KeymapRegistry(
                 new FakeKeyBindStore(),
                 new FakeCustomKeyBindStore(),
+                new FakeKeyGameActionStore(),
                 new FakePlayerData(),
                 (player, node) -> true,
                 log,

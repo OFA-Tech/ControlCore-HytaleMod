@@ -57,6 +57,11 @@ Group {
       Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #9fb0bd, Wrap: true);
     }
 
+    $C.@DropdownBox #GameAction {
+      Anchor: (Width: 250, Height: 30, Left: 8);
+      Visible: false;
+    }
+
     Group #BindButtons {
       LayoutMode: Left;
       Visible: false;

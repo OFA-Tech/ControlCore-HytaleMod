@@ -29,6 +29,7 @@
 
 ### Fixed
 - Bans made from the console are written the way Hytale's own `/ban` writes them (with the console as the banner), so Hytale reads them after a restart.
+- **Game action per key action:** in Keymaps → Server defaults each action has a dropdown, *Game action: server setting / keep / replace*. *Keep* and *Replace* win over the server-wide "Bound keys keep their game action" setting for that action. Also `/cc-key-game-action <id> <server|keep|replace>`; saved in `KeyGameActions.json`.
 - Pressing the tab that is already open left the game on "Loading..."; every click now gets an answer.
 - The dev server's change history was shipped inside the 0.13.0 jar (`history/2026-10.jsonl`, harmless test entries);
   runtime folders are now kept out of the jar.

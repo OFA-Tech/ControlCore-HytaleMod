@@ -99,6 +99,7 @@ Also in the panel: **History** → **Snapshots**. All need admins or `ofatech.co
 | `/cc-bind-reset <id>` | any player | go back to the server's keys |
 | `/cc-bind-server <id> <keys>` | `ofatech.controlcore.settings` | change the server's keys for everyone who has not chosen their own |
 | `/cc-bind-server-reset <id>` | `ofatech.controlcore.settings` | go back to the mod's default keys |
+| `/cc-key-game-action <id> <server\|keep\|replace>` | `ofatech.controlcore.settings` | whether this action keeps the key's game action (`server` follows the server setting) |
 | `/cc-keybind-add <name> <keys> <command>` | `ofatech.controlcore.settings` | create `custom:<name>`, run as the player who presses it |
 | `/cc-keybind-add-server <name> <keys> <command>` | `ofatech.controlcore.settings` | create `custom:<name>`, run as the server console |
 | `/cc-keybind-remove <name>` | `ofatech.controlcore.settings` | delete a bind admins created |

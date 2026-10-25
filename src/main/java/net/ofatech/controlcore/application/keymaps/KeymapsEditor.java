@@ -11,6 +11,7 @@ import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBind;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
+import net.ofatech.controlcore.domain.model.keys.GameActionMode;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
 import net.ofatech.controlcore.domain.model.keys.KeyBinds;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
@@ -175,5 +176,15 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
             }
         }
         return text.toString();
+    }
+
+    @Override
+    public GameActionMode gameAction(SettingId action) {
+        return keymaps.gameAction(action);
+    }
+
+    @Override
+    public Result<GameActionMode> setGameAction(SettingId action, GameActionMode mode) {
+        return keymaps.setGameAction(action, mode);
     }
 }
