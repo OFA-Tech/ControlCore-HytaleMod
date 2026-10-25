@@ -176,7 +176,7 @@ public final class BansService {
                     }
                     String after = encode(ban);
                     lastSeen.put(target, after);
-                    history.record(Kind.BAN, TARGET + target.value(), before, after, false);
+                    history.record(Kind.BAN, target(target), before, after, false);
                     return Result.success(tr.t(
                             "controlcore.bans.banned",
                             "player",
@@ -205,7 +205,7 @@ public final class BansService {
                     "Bans.Failed", Text.key("controlcore.errors.bans.failed", "The ban list could not be changed.")));
         }
         lastSeen.remove(ban.target());
-        history.record(Kind.BAN, TARGET + ban.target().value(), encode(ban), "", false);
+        history.record(Kind.BAN, target(ban.target()), encode(ban), "", false);
         return Result.success(tr.t("controlcore.bans.unbanned", "player", name(ban.target())));
     }
 
@@ -260,17 +260,35 @@ public final class BansService {
         for (PlayerId id : changed) {
             String before = lastSeen.getOrDefault(id, "");
             String after = now.getOrDefault(id, "");
-            ChangeContext.fromOutside(() -> history.record(Kind.BAN, TARGET + id.value(), before, after, false));
+            Runnable record =
+                    () -> ChangeContext.fromOutside(() -> history.record(Kind.BAN, target(id), before, after, false));
+            if (names.containsKey(id)) {
+                record.run();
+            } else {
+                bans.nameOf(id).whenComplete((found, failure) -> {
+                    if (found != null) {
+                        found.ifPresent(name -> remember(id, name));
+                    }
+                    record.run();
+                });
+            }
         }
         lastSeen.clear();
         lastSeen.putAll(now);
     }
 
     public String what(String target, Translator tr) {
-        return tr.t(
-                "controlcore.history.what.ban",
-                "player",
-                idOf(target).map(this::name).orElse(target));
+        String text = target.startsWith(TARGET) ? target.substring(TARGET.length()) : target;
+        int split = text.indexOf(':');
+        String player = split >= 0 && split + 1 < text.length()
+                ? text.substring(split + 1)
+                : idOf(target).map(this::name).orElse(text);
+        return tr.t("controlcore.history.what.ban", "player", player);
+    }
+
+    private String target(PlayerId id) {
+        String known = names.get(id);
+        return TARGET + id.value() + (known == null ? "" : ":" + known);
     }
 
     public String shown(String value, Translator tr) {
@@ -358,6 +376,8 @@ public final class BansService {
 
     private static Optional<PlayerId> idOf(String target) {
         String text = target.startsWith(TARGET) ? target.substring(TARGET.length()) : target;
+        int split = text.indexOf(':');
+        text = split >= 0 ? text.substring(0, split) : text;
         try {
             return Optional.of(PlayerId.of(UUID.fromString(text)));
         } catch (IllegalArgumentException e) {

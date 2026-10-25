@@ -70,17 +70,20 @@ public final class HytaleBans implements Bans {
         Optional<ProfileServiceClient> client = client();
         String token = token();
         if (client.isEmpty() || token == null) {
-            return CompletableFuture.completedFuture(id.map(uuid -> new Profile(PlayerId.of(uuid), "")));
+            return CompletableFuture.completedFuture(Optional.empty());
         }
         CompletableFuture<ProfileServiceClient.PublicGameProfile> found = id.isPresent()
                 ? client.get().getProfileByUuidAsync(id.get(), token)
                 : client.get().getProfileByUsernameAsync(text, token);
         return found.handle((profile, failure) -> {
-            if (failure != null || profile == null || profile.getUuid() == null) {
-                return id.map(uuid -> new Profile(PlayerId.of(uuid), ""));
+            if (failure != null
+                    || profile == null
+                    || profile.getUuid() == null
+                    || profile.getUsername() == null
+                    || profile.getUsername().isBlank()) {
+                return Optional.<Profile>empty();
             }
-            return Optional.of(new Profile(
-                    PlayerId.of(profile.getUuid()), profile.getUsername() == null ? "" : profile.getUsername()));
+            return Optional.of(new Profile(PlayerId.of(profile.getUuid()), profile.getUsername()));
         });
     }
 

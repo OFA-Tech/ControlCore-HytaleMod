@@ -30,6 +30,7 @@ class BansRuntimeTest extends RuntimeTestBase {
         ChangeRecord record = platform.changeLog.records.getLast();
         assertThat(record.kind()).isEqualTo(ChangeRecord.Kind.BAN);
         assertThat(record.oldValue()).isEmpty();
+        assertThat(record.target()).endsWith(":Griefer");
 
         platform.commands.run("cc-unban", admin, Map.of("player", "Griefer"));
         assertThat(platform.bans.bans).isEmpty();

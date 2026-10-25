@@ -1,12 +1,22 @@
 package net.ofatech.controlcore.domain.model.bans;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import net.ofatech.controlcore.domain.result.Result;
 
 public interface BansView {
 
-    record Entry(String id, String name, String details, boolean active) {}
+    record Entry(String id, String name, String details, boolean active) {
+
+        public String initial() {
+            return name.isEmpty() ? "?" : name.substring(0, 1).toUpperCase(Locale.ROOT);
+        }
+
+        public int colour(int colours) {
+            return Math.floorMod(id.hashCode(), colours);
+        }
+    }
 
     record Length(String id, String label) {}
 

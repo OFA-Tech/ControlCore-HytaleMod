@@ -6,11 +6,63 @@ Group {
 
   Group {
     LayoutMode: Left;
-    Anchor: (Height: 32);
+    Anchor: (Height: 40);
 
-    Group {
-      Anchor: (Width: 18, Height: 18, Top: 7, Right: 10);
-      Background: "Icons/Locked.png";
+    Group #AvatarBox {
+      Anchor: (Width: 36, Height: 36, Top: 2, Right: 12);
+
+      Group #Avatar0 {
+        Anchor: (Full: 0);
+        Background: #2f5d8a;
+        Visible: true;
+      }
+
+      Group #Avatar1 {
+        Anchor: (Full: 0);
+        Background: #3f6e3c;
+        Visible: false;
+      }
+
+      Group #Avatar2 {
+        Anchor: (Full: 0);
+        Background: #6b5422;
+        Visible: false;
+      }
+
+      Group #Avatar3 {
+        Anchor: (Full: 0);
+        Background: #7a3e5c;
+        Visible: false;
+      }
+
+      Group #Avatar4 {
+        Anchor: (Full: 0);
+        Background: #2a6b6b;
+        Visible: false;
+      }
+
+      Group #Avatar5 {
+        Anchor: (Full: 0);
+        Background: #5a4a8a;
+        Visible: false;
+      }
+
+      Group #Avatar6 {
+        Anchor: (Full: 0);
+        Background: #8a5a2f;
+        Visible: false;
+      }
+
+      Group #Avatar7 {
+        Anchor: (Full: 0);
+        Background: #4a5866;
+        Visible: false;
+      }
+
+      Label #Initial {
+        Anchor: (Full: 0);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 18, TextColor: #f2efe6, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center);
+      }
     }
 
     Label #Name {
@@ -21,7 +73,7 @@ Group {
     Label #Expired {
       Text: %controlcore.ui.bans.expired;
       Visible: false;
-      Anchor: (Height: 22, Top: 5, Right: 8);
+      Anchor: (Height: 22, Top: 9, Right: 8);
       Padding: (Horizontal: 8);
       Background: #4a5866;
       Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
@@ -29,12 +81,12 @@ Group {
 
     $C.@SmallTertiaryTextButton #Unban {
       @Text = %controlcore.ui.bans.unban;
-      Anchor: (Width: 150, Height: 32, Left: 6);
+      Anchor: (Width: 150, Height: 32, Top: 4, Left: 6);
     }
   }
 
   Label #Details {
-    Anchor: (Left: 28, Top: 3);
+    Anchor: (Left: 48, Top: 1);
     Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #9fb0bd, Wrap: true);
   }
 

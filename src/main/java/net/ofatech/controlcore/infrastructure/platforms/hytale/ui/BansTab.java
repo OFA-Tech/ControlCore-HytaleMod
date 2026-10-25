@@ -19,6 +19,7 @@ final class BansTab {
     private static final String UNBAN = "BanRemove";
     private static final String ROW = "Pages/ControlCore/BanRow.ui";
     private static final String LIST = "#BanList";
+    private static final int AVATAR_COLOURS = 8;
 
     interface Host {
         void rebuild();
@@ -69,6 +70,11 @@ final class BansTab {
             String row = LIST + "[" + index + "]";
             commands.append(LIST, ROW);
             commands.set(row + " #Name.Text", entry.name());
+            commands.set(row + " #Initial.Text", entry.initial());
+            int colour = entry.colour(AVATAR_COLOURS);
+            for (int shade = 0; shade < AVATAR_COLOURS; shade++) {
+                commands.set(row + " #Avatar" + shade + ".Visible", shade == colour);
+            }
             commands.set(row + " #Details.Text", entry.details());
             commands.set(row + " #Expired.Visible", !entry.active());
             events.addEventBinding(
