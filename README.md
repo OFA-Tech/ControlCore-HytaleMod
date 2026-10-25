@@ -42,7 +42,8 @@ a value changes elsewhere. Tabs:
 
 - **Server Configs**: every key of the server's `config.json`, read from Hytale's own config definition. Keys the
   server uses while running apply at once, others are saved and apply after a restart (a reminder lists them),
-  internal ones (password, storage) are read-only.
+  internal ones (password, storage) are read-only. A **Worlds** switch shows each world's settings (PvP, fall
+  damage, NPC spawning, ticking, TPS, game mode, speed and jump) with a live status line.
 - **Mod Settings** and **Player Prefs**: every registered setting, with the editor its type needs: text field,
   check box, dropdown, slider plus field for numbers with a range, colour picker, item list. A text setting can
   show its colour in the same row.

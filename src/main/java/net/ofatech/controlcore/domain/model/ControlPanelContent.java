@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import net.ofatech.controlcore.domain.guard.Guard;
+import net.ofatech.controlcore.domain.model.bans.BansView;
 import net.ofatech.controlcore.domain.model.history.HistoryView;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
@@ -29,7 +30,9 @@ public record ControlPanelContent(
         Optional<HistoryView> history,
         Optional<SnapshotsView> snapshots,
         Optional<InputProbe> debug,
-        Optional<String> focus) {
+        Optional<String> focus,
+        List<String> worlds,
+        Optional<BansView> bans) {
 
     public ControlPanelContent {
         Guard.notNull(server, "server");
@@ -46,5 +49,7 @@ public record ControlPanelContent(
         Guard.notNull(snapshots, "snapshots");
         Guard.notNull(debug, "debug");
         Guard.notNull(focus, "focus");
+        worlds = List.copyOf(worlds);
+        Guard.notNull(bans, "bans");
     }
 }

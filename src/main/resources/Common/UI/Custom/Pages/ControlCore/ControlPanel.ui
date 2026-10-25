@@ -58,7 +58,7 @@ $C.@PageOverlay {
   LayoutMode: Middle;
 
   Group {
-    Anchor: (Width: 1120);
+    Anchor: (Width: 1320);
     LayoutMode: Top;
     Background: #2c4252;
     Padding: (Full: 1);
@@ -92,7 +92,7 @@ $C.@PageOverlay {
 
           Group #ServerTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 150, Right: 4);
+            Anchor: (Width: 178, Right: 4);
 
             Group #ServerTabEdge {
               Anchor: (Height: 3);
@@ -109,7 +109,7 @@ $C.@PageOverlay {
 
           Group #SettingsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 150, Right: 4);
+            Anchor: (Width: 178, Right: 4);
 
             Group #SettingsTabEdge {
               Anchor: (Height: 3);
@@ -126,7 +126,7 @@ $C.@PageOverlay {
 
           Group #PlayerTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 150, Right: 4);
+            Anchor: (Width: 178, Right: 4);
 
             Group #PlayerTabEdge {
               Anchor: (Height: 3);
@@ -143,7 +143,7 @@ $C.@PageOverlay {
 
           Group #KeymapTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 150, Right: 4);
+            Anchor: (Width: 178, Right: 4);
 
             Group #KeymapTabEdge {
               Anchor: (Height: 3);
@@ -160,7 +160,7 @@ $C.@PageOverlay {
 
           Group #ModsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 150, Right: 4);
+            Anchor: (Width: 178, Right: 4);
 
             Group #ModsTabEdge {
               Anchor: (Height: 3);
@@ -177,7 +177,7 @@ $C.@PageOverlay {
 
           Group #PermissionsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 150, Right: 4);
+            Anchor: (Width: 178, Right: 4);
 
             Group #PermissionsTabEdge {
               Anchor: (Height: 3);
@@ -194,7 +194,7 @@ $C.@PageOverlay {
 
           Group #HistoryTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 150);
+            Anchor: (Width: 178);
 
             Group #HistoryTabEdge {
               Anchor: (Height: 3);
@@ -248,11 +248,50 @@ $C.@PageOverlay {
           Group #ServerTab {
             LayoutMode: Top;
 
-            Label {
+            Group #ServerModeButtons {
+              LayoutMode: Left;
+              Visible: false;
+              Anchor: (Height: 32, Bottom: 8);
+
+              TextButton #ServerModeConfig {
+                Text: %controlcore.ui.server.modeConfig;
+                Style: @SegmentStyle;
+                Anchor: (Width: 180, Right: 2);
+              }
+
+              TextButton #ServerModeWorlds {
+                Text: %controlcore.ui.server.modeWorlds;
+                Style: @SegmentStyle;
+                Anchor: (Width: 180, Right: 2);
+              }
+
+              TextButton #ServerModeBans {
+                Text: %controlcore.ui.server.modeBans;
+                Style: @SegmentStyle;
+                Anchor: (Width: 180, Right: 12);
+              }
+
+              $C.@DropdownBox #ServerWorld {
+                Visible: false;
+                Anchor: (Width: 220);
+              }
+            }
+
+            Label #ServerIntro {
               Text: %controlcore.ui.server.intro;
               Style: @NoteStyle;
               Anchor: (Bottom: 8);
             }
+
+            Label #WorldsIntro {
+              Text: %controlcore.ui.server.worldsIntro;
+              Style: @NoteStyle;
+              Visible: false;
+              Anchor: (Bottom: 8);
+            }
+
+            Group #ServerRows {
+            LayoutMode: Top;
 
             Group {
               LayoutMode: Left;
@@ -280,8 +319,68 @@ $C.@PageOverlay {
             Group #ServerList {
               LayoutMode: TopScrolling;
               ScrollbarStyle: $C.@DefaultScrollbarStyle;
-              Anchor: (Height: 430);
+              Anchor: (Height: 580);
               Padding: (Right: 10);
+            }
+            }
+
+            Group #BansPanel {
+              LayoutMode: Top;
+              Visible: false;
+
+              Label {
+                Text: %controlcore.ui.bans.intro;
+                Style: @NoteStyle;
+                Anchor: (Bottom: 8);
+              }
+
+              Group {
+                LayoutMode: Top;
+                Anchor: (Bottom: 10);
+                Background: #182a37;
+                Padding: (Full: 10);
+
+                Label {
+                  Text: %controlcore.ui.bans.title;
+                  Style: @SubsectionTitleStyle;
+                  Anchor: (Height: 20, Bottom: 6);
+                }
+
+                Group {
+                  LayoutMode: Left;
+                  Anchor: (Height: 38);
+
+                  $C.@TextField #BanPlayer {
+                    Anchor: (Width: 220, Right: 6);
+                  }
+
+                  $C.@DropdownBox #BanLength {
+                    Anchor: (Width: 170, Right: 6);
+                  }
+
+                  $C.@TextField #BanReason {
+                    FlexWeight: 1;
+                  }
+
+                  $C.@SmallSecondaryTextButton #BanAdd {
+                    @Text = %controlcore.ui.bans.add;
+                    Anchor: (Width: 130, Height: 34, Left: 6);
+                  }
+                }
+              }
+
+              Label #BansEmpty {
+                Text: %controlcore.ui.bans.empty;
+                Style: @NoteStyle;
+                Visible: false;
+              }
+
+              Group #BanList {
+                LayoutMode: TopScrolling;
+                ScrollbarStyle: $C.@DefaultScrollbarStyle;
+                Anchor: (Height: 440);
+                Padding: (Right: 10);
+              }
             }
           }
 
@@ -321,7 +420,7 @@ $C.@PageOverlay {
             Group #SettingsList {
               LayoutMode: TopScrolling;
               ScrollbarStyle: $C.@DefaultScrollbarStyle;
-              Anchor: (Height: 430);
+              Anchor: (Height: 580);
               Padding: (Right: 10);
             }
           }
@@ -362,7 +461,7 @@ $C.@PageOverlay {
             Group #PlayerList {
               LayoutMode: TopScrolling;
               ScrollbarStyle: $C.@DefaultScrollbarStyle;
-              Anchor: (Height: 430);
+              Anchor: (Height: 580);
               Padding: (Right: 10);
             }
           }
@@ -489,7 +588,7 @@ $C.@PageOverlay {
               Group #ServerKeymapList {
                 LayoutMode: TopScrolling;
                 ScrollbarStyle: $C.@DefaultScrollbarStyle;
-                Anchor: (Height: 344);
+                Anchor: (Height: 494);
                 Padding: (Right: 10);
               }
 
@@ -551,7 +650,7 @@ $C.@PageOverlay {
               Group #KeymapList {
                 LayoutMode: TopScrolling;
                 ScrollbarStyle: $C.@DefaultScrollbarStyle;
-                Anchor: (Height: 430);
+                Anchor: (Height: 580);
                 Padding: (Right: 10);
               }
             }
@@ -589,7 +688,7 @@ $C.@PageOverlay {
             Group #ModsList {
               LayoutMode: TopScrolling;
               ScrollbarStyle: $C.@DefaultScrollbarStyle;
-              Anchor: (Height: 430);
+              Anchor: (Height: 580);
               Padding: (Right: 10);
             }
           }
@@ -630,7 +729,7 @@ $C.@PageOverlay {
             Group #PermissionList {
               LayoutMode: TopScrolling;
               ScrollbarStyle: $C.@DefaultScrollbarStyle;
-              Anchor: (Height: 430);
+              Anchor: (Height: 580);
               Padding: (Right: 10);
             }
           }
@@ -693,7 +792,7 @@ $C.@PageOverlay {
               Group #HistoryList {
                 LayoutMode: TopScrolling;
                 ScrollbarStyle: $C.@DefaultScrollbarStyle;
-                Anchor: (Height: 430);
+                Anchor: (Height: 580);
                 Padding: (Right: 10);
               }
             }
@@ -753,7 +852,16 @@ $C.@PageOverlay {
                   Label {
                     Text: %controlcore.ui.snapshots.partConfig;
                     Style: (...@NoteStyle, VerticalAlignment: Center);
-                    Anchor: (Height: 26, Width: 110, Right: 6);
+                    Anchor: (Height: 26, Width: 100, Right: 6);
+                  }
+                  $C.@CheckBox #SnapPartWorlds {
+                    Anchor: (Width: 26, Height: 26, Right: 6);
+                  }
+
+                  Label {
+                    Text: %controlcore.ui.snapshots.partWorlds;
+                    Style: (...@NoteStyle, VerticalAlignment: Center);
+                    Anchor: (Height: 26, Width: 80, Right: 6);
                   }
                   $C.@CheckBox #SnapPartSettings {
                     Anchor: (Width: 26, Height: 26, Right: 6);
@@ -762,7 +870,7 @@ $C.@PageOverlay {
                   Label {
                     Text: %controlcore.ui.snapshots.partSettings;
                     Style: (...@NoteStyle, VerticalAlignment: Center);
-                    Anchor: (Height: 26, Width: 120, Right: 6);
+                    Anchor: (Height: 26, Width: 110, Right: 6);
                   }
                   $C.@CheckBox #SnapPartKeys {
                     Anchor: (Width: 26, Height: 26, Right: 6);
@@ -771,7 +879,7 @@ $C.@PageOverlay {
                   Label {
                     Text: %controlcore.ui.snapshots.partKeys;
                     Style: (...@NoteStyle, VerticalAlignment: Center);
-                    Anchor: (Height: 26, Width: 130, Right: 6);
+                    Anchor: (Height: 26, Width: 120, Right: 6);
                   }
                   $C.@CheckBox #SnapPartPermissions {
                     Anchor: (Width: 26, Height: 26, Right: 6);
@@ -780,7 +888,7 @@ $C.@PageOverlay {
                   Label {
                     Text: %controlcore.ui.snapshots.partPermissions;
                     Style: (...@NoteStyle, VerticalAlignment: Center);
-                    Anchor: (Height: 26, Width: 120, Right: 6);
+                    Anchor: (Height: 26, Width: 110, Right: 6);
                   }
                   $C.@CheckBox #SnapPartMods {
                     Anchor: (Width: 26, Height: 26, Right: 6);
@@ -789,7 +897,7 @@ $C.@PageOverlay {
                   Label {
                     Text: %controlcore.ui.snapshots.partMods;
                     Style: (...@NoteStyle, VerticalAlignment: Center);
-                    Anchor: (Height: 26, Width: 100, Right: 6);
+                    Anchor: (Height: 26, Width: 95, Right: 6);
                   }
                   $C.@CheckBox #SnapPartPlayers {
                     Anchor: (Width: 26, Height: 26, Right: 6);
@@ -798,7 +906,7 @@ $C.@PageOverlay {
                   Label {
                     Text: %controlcore.ui.snapshots.partPlayers;
                     Style: (...@NoteStyle, VerticalAlignment: Center);
-                    Anchor: (Height: 26, Width: 150, Right: 6);
+                    Anchor: (Height: 26, Width: 135, Right: 6);
                   }
                 }
               }
@@ -860,7 +968,7 @@ $C.@PageOverlay {
               Group #SnapshotList {
                 LayoutMode: TopScrolling;
                 ScrollbarStyle: $C.@DefaultScrollbarStyle;
-                Anchor: (Height: 290);
+                Anchor: (Height: 440);
                 Padding: (Right: 10);
               }
             }

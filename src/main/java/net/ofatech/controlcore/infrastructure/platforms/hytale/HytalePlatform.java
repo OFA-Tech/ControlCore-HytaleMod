@@ -6,11 +6,13 @@ import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
 import net.ofatech.controlcore.domain.ports.config.ChangeLogStore;
 import net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.KeyBindStore;
+import net.ofatech.controlcore.domain.ports.config.KeyGameActionStore;
 import net.ofatech.controlcore.domain.ports.config.SettingPermissionStore;
 import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 import net.ofatech.controlcore.domain.ports.config.SnapshotStore;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
+import net.ofatech.controlcore.domain.ports.game.Bans;
 import net.ofatech.controlcore.domain.ports.game.CommandRunner;
 import net.ofatech.controlcore.domain.ports.game.EmptyHandInput;
 import net.ofatech.controlcore.domain.ports.game.HudDisplay;
@@ -19,9 +21,11 @@ import net.ofatech.controlcore.domain.ports.game.Messenger;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
 import net.ofatech.controlcore.domain.ports.game.PlayerData;
 import net.ofatech.controlcore.domain.ports.game.PlayerInput;
+import net.ofatech.controlcore.domain.ports.game.PlayerTuning;
 import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.game.Scheduler;
 import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
+import net.ofatech.controlcore.domain.ports.game.Worlds;
 import net.ofatech.controlcore.domain.ports.mods.ModCatalog;
 import net.ofatech.controlcore.domain.ports.mods.ModLookup;
 import net.ofatech.controlcore.domain.ports.platform.Platform;
@@ -32,6 +36,7 @@ import net.ofatech.controlcore.domain.ports.system.Translations;
 import net.ofatech.controlcore.infrastructure.i18n.BundledTranslations;
 import net.ofatech.controlcore.infrastructure.persistence.JsonCustomKeyBindStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonKeyBindStore;
+import net.ofatech.controlcore.infrastructure.persistence.JsonKeyGameActionStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonLinesChangeLog;
 import net.ofatech.controlcore.infrastructure.persistence.JsonPlayerDataStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonSettingPermissionStore;
@@ -51,8 +56,11 @@ import net.ofatech.controlcore.infrastructure.platforms.hytale.mods.HytaleModLoo
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytaleHudDisplay;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytaleMessenger;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytalePermissions;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytalePlayerTuning;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytalePlayers;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.server.HytaleBans;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.server.HytaleServerConfiguration;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.server.HytaleWorlds;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.ui.HytaleControlPanelView;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.world.HytaleScheduler;
 import net.ofatech.controlcore.infrastructure.system.SystemClock;
@@ -94,6 +102,12 @@ public final class HytalePlatform implements Platform {
         binder.bind(ModLookup.class, new HytaleModLookup());
         HytaleServerConfiguration serverConfiguration = new HytaleServerConfiguration(log);
         binder.bind(ServerConfiguration.class, serverConfiguration);
+        binder.bind(
+                Worlds.class,
+                new HytaleWorlds(
+                        new JsonSettingStore(plugin.getDataDirectory().resolve("WorldSettings.json"), log), log));
+        binder.bind(PlayerTuning.class, new HytalePlayerTuning(log));
+        binder.bind(Bans.class, new HytaleBans(log));
         binder.bind(ModCatalog.class, new HytaleModCatalog(serverConfiguration, log));
         binder.bind(ControlPanelView.class, new HytaleControlPanelView(log));
         binder.bind(HudDisplay.class, new HytaleHudDisplay(log));
@@ -109,6 +123,9 @@ public final class HytalePlatform implements Platform {
         binder.bind(
                 CustomKeyBindStore.class,
                 new JsonCustomKeyBindStore(plugin.getDataDirectory().resolve("CustomKeyBinds.json"), log));
+        binder.bind(
+                KeyGameActionStore.class,
+                new JsonKeyGameActionStore(plugin.getDataDirectory().resolve("KeyGameActions.json"), log));
         binder.bind(
                 SnapshotStore.class,
                 new JsonSnapshotStore(plugin.getDataDirectory().resolve("snapshots"), log));

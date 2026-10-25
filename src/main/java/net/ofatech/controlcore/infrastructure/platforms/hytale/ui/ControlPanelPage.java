@@ -30,12 +30,15 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import net.ofatech.controlcore.application.history.ChangeContext;
+import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.ControlPanelContent;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.ControlPanelTab;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
+import net.ofatech.controlcore.domain.model.keys.GameActionMode;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
@@ -65,6 +68,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private static final String KEY_TEST = "KeyTest";
     private static final String LEGEND_PREFIX = "Legend:";
     private static final String LEGEND_ALL = "#LegendAll";
+    private static final String SERVER_MODE_CONFIG = "ServerMode:Config";
+    private static final String SERVER_MODE_WORLDS = "ServerMode:Worlds";
+    private static final String SERVER_MODE_BANS = "ServerMode:Bans";
+    private static final String SERVER_WORLD = "ServerWorld";
 
     private enum Tab {
         SERVER(ControlPanelTab.SERVER_CONFIGS, "#ServerTab", "#ServerTabButton"),
@@ -114,6 +121,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
     private final Log log;
     private final Translator tr;
+    private final CustomKeyBindEditor customKeyBinds;
     private final Supplier<List<Text>> pendingRestart;
     private final Set<Tab> tabs = EnumSet.noneOf(Tab.class);
     private final Map<PanelSection, SettingsSection> sections = new EnumMap<>(PanelSection.class);
@@ -142,6 +150,12 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private final String viewerName;
 
     private Tab selected;
+    private final List<String> worlds;
+    private boolean showingWorlds;
+    private boolean showingBans;
+    private final Optional<BansTab> bansTab;
+    private boolean replied;
+    private String world;
     private boolean editingServerKeys = true;
 
     ControlPanelPage(PlayerRef player, ControlPanelRequest request, ControlPanelContent content, Log log) {
@@ -152,6 +166,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         Hooks hooks = new Hooks();
         this.modsTab = new ModsTab(content.mods(), tr, hooks);
         ControlPanelRequest shownSections = request.isEmpty() ? ControlPanelRequest.PLAYER_PREFERENCES : request;
+        this.customKeyBinds = content.customKeyBinds();
         boolean manageKeys = content.manageKeys() && shownSections.includeRegisteredActions();
         this.bindForm =
                 manageKeys ? Optional.of(new KeyBindForm(content.customKeyBinds(), tr, hooks)) : Optional.empty();
@@ -165,9 +180,16 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 ? content.snapshots().map(view -> new SnapshotsTab(view, tr, hooks))
                 : Optional.empty();
         this.showingSnapshots = historyTab.isEmpty();
+        this.bansTab = shownSections.includeServerSettings()
+                ? content.bans().map(view -> new BansTab(view, tr, hooks))
+                : Optional.empty();
         this.probe = manageKeys ? content.debug() : Optional.empty();
         this.viewerId = PlayerId.of(player.getUuid());
         this.viewerName = player.getUsername();
+        this.worlds = content.worlds();
+        this.world = worlds.contains("default")
+                ? "default"
+                : worlds.stream().findFirst().orElse("");
         for (Tab tab : Tab.values()) {
             if (tab.shownFor(shownSections)
                     && (tab != Tab.PERMISSIONS || permissionsTab.isPresent())
@@ -250,6 +272,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         });
         historyTab.ifPresent(tab -> tab.build(commands, events));
         snapshotsTab.ifPresent(tab -> tab.build(commands, events));
+        bansTab.ifPresent(tab -> tab.build(commands, events));
         events.addEventBinding(
                 CustomUIEventBindingType.Activating,
                 "#HistoryModeChanges",
@@ -259,6 +282,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 "#HistoryModeSnapshots",
                 EventData.of(PanelAction.KEY, HISTORY_MODE_SNAPSHOTS));
         showHistoryMode(commands);
+        buildServerMode(commands, events);
         buildDebugTools(commands, events);
         commands.set("#TabButtons.Visible", tabs.size() > 1);
         bindForm.ifPresent(form -> {
@@ -322,7 +346,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                     boolean customBind = bindForm.isPresent()
                             && key == PanelSection.SERVER_KEYMAPS
                             && CUSTOM_NAMESPACE.equals(row.id().namespace());
-                    SettingRows.build(key, section, row, element, customBind, commands, events);
+                    Optional<GameActionMode> gameAction = bindForm.isPresent() && key == PanelSection.SERVER_KEYMAPS
+                            ? Optional.of(customKeyBinds.gameAction(row.id()))
+                            : Optional.empty();
+                    SettingRows.build(key, section, row, element, customBind, gameAction, commands, events);
                     showHistoryLink(key, element, row.id(), commands, events);
                     if (SettingRows.canUndo(row)) {
                         undoRows.add(shownKey(key, row.id()));
@@ -356,7 +383,84 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 "#HistoryModeChanges.Style", Value.ref(LAYOUT, showingSnapshots ? "SegmentStyle" : "SegmentOnStyle"));
         commands.set(
                 "#HistoryModeSnapshots.Style", Value.ref(LAYOUT, showingSnapshots ? "SegmentOnStyle" : "SegmentStyle"));
-        commands.setObject("#HistoryList.Anchor", height(both ? 388 : 430));
+        commands.setObject("#HistoryList.Anchor", height(both ? 538 : 580));
+    }
+
+    private void buildServerMode(UICommandBuilder commands, UIEventBuilder events) {
+        commands.set(
+                "#ServerModeButtons.Visible",
+                sections.containsKey(PanelSection.SERVER_CONFIG) && (!worlds.isEmpty() || bansTab.isPresent()));
+        commands.set("#ServerModeWorlds.Visible", !worlds.isEmpty());
+        commands.set("#ServerModeBans.Visible", bansTab.isPresent());
+        commands.set(
+                "#ServerWorld.Entries",
+                worlds.stream()
+                        .map(name -> new DropdownEntryInfo(LocalizableString.fromString(name), name))
+                        .toList());
+        commands.set("#ServerWorld.Value", world);
+        if (!worlds.isEmpty() || bansTab.isPresent()) {
+            commands.setObject("#ServerList.Anchor", height(540));
+        }
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating,
+                "#ServerModeBans",
+                EventData.of(PanelAction.KEY, SERVER_MODE_BANS));
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating,
+                "#ServerModeConfig",
+                EventData.of(PanelAction.KEY, SERVER_MODE_CONFIG));
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating,
+                "#ServerModeWorlds",
+                EventData.of(PanelAction.KEY, SERVER_MODE_WORLDS));
+        events.addEventBinding(
+                CustomUIEventBindingType.ValueChanged,
+                "#ServerWorld",
+                new EventData().append(PanelAction.KEY, SERVER_WORLD).append(PanelAction.VALUE, "#ServerWorld.Value"));
+        showServerMode(commands);
+    }
+
+    private void showServerMode(UICommandBuilder commands) {
+        boolean config = !showingWorlds && !showingBans;
+        commands.set("#ServerModeConfig.Style", Value.ref(LAYOUT, config ? "SegmentOnStyle" : "SegmentStyle"));
+        commands.set("#ServerModeWorlds.Style", Value.ref(LAYOUT, showingWorlds ? "SegmentOnStyle" : "SegmentStyle"));
+        commands.set("#ServerModeBans.Style", Value.ref(LAYOUT, showingBans ? "SegmentOnStyle" : "SegmentStyle"));
+        commands.set("#ServerWorld.Visible", showingWorlds);
+        commands.set("#ServerIntro.Visible", config);
+        commands.set("#WorldsIntro.Visible", showingWorlds);
+        commands.set("#ServerRows.Visible", !showingBans);
+        commands.set("#BansPanel.Visible", showingBans);
+    }
+
+    private void refreshServerScope() {
+        UICommandBuilder update = new UICommandBuilder();
+        showServerMode(update);
+        SettingsSection section = sections.get(PanelSection.SERVER_CONFIG);
+        if (section != null) {
+            applySearch(PanelSection.SERVER_CONFIG, section, update, true);
+        }
+        showLegend(update);
+        sendUpdate(update, false);
+    }
+
+    private boolean inScope(PanelSection key, SettingId id) {
+        if (key != PanelSection.SERVER_CONFIG) {
+            return true;
+        }
+        if (!showingWorlds) {
+            return !ServerConfigEditor.isWorld(id);
+        }
+        return ServerConfigEditor.isWorld(id) && id.key().startsWith(ServerConfigEditor.worldPrefix(world));
+    }
+
+    private boolean headingInScope(PanelSection key, List<SettingsSection.Entry> entries, int heading) {
+        for (int index = heading + 1; index < entries.size(); index++) {
+            if (entries.get(index) instanceof SettingsSection.Row row) {
+                return inScope(key, row.id());
+            }
+            return false;
+        }
+        return false;
     }
 
     private void showHistoryOf(String target) {
@@ -384,7 +488,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             }
             count++;
         }
-        return tr.t("controlcore.panel.heading_count", "count", count);
+        return count == 1
+                ? tr.t("controlcore.panel.heading_count_one")
+                : tr.t("controlcore.panel.heading_count", "count", count);
     }
 
     private SettingRows.State state(PanelSection key, SettingSnapshot snapshot) {
@@ -421,7 +527,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
     private Optional<PanelSection> currentSection() {
         PanelSection key = switch (selected) {
-            case SERVER -> PanelSection.SERVER_CONFIG;
+            case SERVER -> showingBans ? null : PanelSection.SERVER_CONFIG;
             case SETTINGS -> PanelSection.SETTINGS;
             case PLAYER -> PanelSection.PREFS;
             case KEYMAP ->
@@ -445,7 +551,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         for (SettingsSection.Entry entry : built.getOrDefault(key, List.of())) {
             if (entry instanceof SettingsSection.Row row) {
                 SettingSnapshot snapshot = latest.getOrDefault(shownKey(key, row.id()), row.snapshot());
-                if (matchesSearch(section, search, snapshot)) {
+                if (inScope(key, row.id()) && matchesSearch(section, search, snapshot)) {
                     total++;
                     counts.merge(state(key, snapshot), 1, Integer::sum);
                 }
@@ -643,7 +749,29 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     @Override
     public void handleDataEvent(
             @Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull PanelAction action) {
+        replied = false;
         ChangeContext.fromPanel(viewerId, viewerName, () -> handle(action));
+        if (!replied) {
+            sendUpdate(new UICommandBuilder(), false);
+        }
+    }
+
+    @Override
+    protected void sendUpdate(UICommandBuilder commands, boolean clear) {
+        replied = true;
+        super.sendUpdate(commands, clear);
+    }
+
+    @Override
+    protected void sendUpdate(UICommandBuilder commands, UIEventBuilder events, boolean clear) {
+        replied = true;
+        super.sendUpdate(commands, events, clear);
+    }
+
+    @Override
+    protected void rebuild() {
+        replied = true;
+        super.rebuild();
     }
 
     private void handle(PanelAction action) {
@@ -652,7 +780,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 || modsTab.handle(action)
                 || permissionsTab.map(tab -> tab.handle(action)).orElse(false)
                 || historyTab.map(tab -> tab.handle(action)).orElse(false)
-                || snapshotsTab.map(tab -> tab.handle(action)).orElse(false)) {
+                || snapshotsTab.map(tab -> tab.handle(action)).orElse(false)
+                || bansTab.map(tab -> tab.handle(action)).orElse(false)) {
             return;
         }
         if (CLOSE.equals(name)) {
@@ -663,6 +792,17 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             UICommandBuilder update = new UICommandBuilder();
             showHistoryMode(update);
             sendUpdate(update, false);
+        } else if (SERVER_MODE_CONFIG.equals(name)
+                || SERVER_MODE_WORLDS.equals(name)
+                || SERVER_MODE_BANS.equals(name)) {
+            showingWorlds = SERVER_MODE_WORLDS.equals(name) && !worlds.isEmpty();
+            showingBans = SERVER_MODE_BANS.equals(name) && bansTab.isPresent();
+            refreshServerScope();
+        } else if (SERVER_WORLD.equals(name)) {
+            if (action.value != null && worlds.contains(action.value)) {
+                world = action.value;
+            }
+            refreshServerScope();
         } else if (HISTORY_LINK.equals(name)) {
             showHistoryOf(action.id);
         } else if (PROBE_TOGGLE.equals(name) || KEY_TEST.equals(name)) {
@@ -775,6 +915,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             }
             case SettingRows.UNDO -> {
                 undoChange(key, section, action);
+                return;
+            }
+            case SettingRows.PICK_GAME_ACTION -> {
+                pickGameAction(key, action);
                 return;
             }
             case SettingRows.PICK_KEYS -> {
@@ -1067,11 +1211,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
     private void listHeights(UICommandBuilder commands) {
         boolean admin = bindForm.isPresent();
-        int server = 386
+        int server = 536
                 - (probe.isPresent() ? 42 : 0)
                 - (bindForm.map(KeyBindForm::isOpen).orElse(false) ? 112 : 0);
         commands.setObject("#ServerKeymapList.Anchor", height(server));
-        commands.setObject("#KeymapList.Anchor", height(admin ? 388 : 430));
+        commands.setObject("#KeymapList.Anchor", height(admin ? 538 : 580));
     }
 
     private static Anchor height(int pixels) {
@@ -1093,12 +1237,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             switch (entries.get(index)) {
                 case SettingsSection.Heading ignored -> {
                     heading = index;
-                    visible[index] = !filtered;
+                    visible[index] = !filtered && headingInScope(key, entries, index);
                 }
                 case SettingsSection.Row row -> {
                     rows++;
                     SettingSnapshot snapshot = latest.getOrDefault(shownKey(key, row.id()), row.snapshot());
-                    visible[index] = matchesSearch(section, search, snapshot)
+                    visible[index] = inScope(key, row.id())
+                            && matchesSearch(section, search, snapshot)
                             && (legend == null || state(key, snapshot) == legend);
                     if (visible[index]) {
                         matching++;
@@ -1179,6 +1324,38 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         latest.put(shownKey(key, snapshot.id()), snapshot);
     }
 
+    private void pickGameAction(PanelSection key, PanelAction action) {
+        UICommandBuilder update = new UICommandBuilder();
+        Result<SettingId> id = SettingId.parse(action.id == null ? "" : action.id);
+        Integer index = indexOf(key, action.id);
+        if (id.isSuccess()) {
+            Optional<GameActionMode> wanted = GameActionMode.parse(action.value);
+            Result<GameActionMode> saved =
+                    wanted.isPresent() ? customKeyBinds.setGameAction(id.value(), wanted.get()) : null;
+            if (saved != null && saved.isSuccess()) {
+                SettingSnapshot row = latestOf(key, action.id);
+                footer(
+                        update,
+                        tr.t(
+                                "controlcore.keys.game_action.saved",
+                                "name",
+                                row == null
+                                        ? action.id
+                                        : tr.translate(row.definition().nameText()),
+                                "mode",
+                                SettingRows.gameActionLabel(tr, saved.value())));
+            } else if (saved != null) {
+                footer(update, tr.error(saved.error()));
+            }
+            if (index != null) {
+                update.set(
+                        key.row(index) + " #GameAction.Value",
+                        customKeyBinds.gameAction(id.value()).id());
+            }
+        }
+        sendUpdate(update, false);
+    }
+
     private SettingSnapshot latestOf(PanelSection key, String idText) {
         return SettingId.parse(idText == null ? "" : idText)
                 .map(id -> latest.get(shownKey(key, id)))
@@ -1205,7 +1382,26 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     }
 
     private final class Hooks
-            implements ModsTab.Host, KeyBindForm.Host, PermissionsTab.Host, HistoryTab.Host, SnapshotsTab.Host {
+            implements ModsTab.Host,
+                    KeyBindForm.Host,
+                    PermissionsTab.Host,
+                    HistoryTab.Host,
+                    SnapshotsTab.Host,
+                    BansTab.Host {
+
+        @Override
+        public PlayerRef viewer() {
+            return playerRef;
+        }
+
+        @Override
+        public void later(Runnable work) {
+            Ref<EntityStore> ref = playerRef.getReference();
+            if (ref == null || !ref.isValid()) {
+                return;
+            }
+            ref.getStore().getExternalData().getWorld().execute(work);
+        }
 
         @Override
         public void rebuild() {

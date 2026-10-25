@@ -66,6 +66,10 @@ door and runs its binds. The server setting **Bound keys keep their game action*
 (`controlcore:keys-keep-game-action`) turned off makes binds replace the key's action instead, unless the mod keeps
 it. Hotbar changes are never cancelled.
 
+Admins can choose this for one action too: in Keymaps → **Server defaults** each action has a dropdown **Game action:
+server setting / keep / replace** (or `/cc-key-game-action <id> <server|keep|replace>`). *Keep* and *Replace* win over
+the server setting and over the mod's own choice; *server setting* follows the server-wide switch.
+
 ## Admins' command binds
 
 Create a bind that runs any command:

@@ -29,10 +29,12 @@ final class HistoryTab {
         ALL(null),
         SETTINGS(ChangeRecord.Kind.SETTING),
         CONFIG(ChangeRecord.Kind.SERVER_CONFIG),
+        WORLDS(ChangeRecord.Kind.SERVER_CONFIG),
         KEYS(ChangeRecord.Kind.SERVER_KEYS),
         BINDS(ChangeRecord.Kind.CUSTOM_BIND),
         PERMISSIONS(ChangeRecord.Kind.PERMISSION),
-        MODS(ChangeRecord.Kind.MOD);
+        MODS(ChangeRecord.Kind.MOD),
+        BANS(ChangeRecord.Kind.BAN);
 
         private final ChangeRecord.Kind kind;
 
@@ -48,7 +50,11 @@ final class HistoryTab {
         }
 
         boolean accepts(HistoryView.Entry entry) {
-            return kind == null || entry.kind() == kind;
+            if (kind == null || entry.kind() != kind) {
+                return kind == null;
+            }
+            boolean world = entry.target().startsWith("world:");
+            return this == WORLDS ? world : this != CONFIG || !world;
         }
     }
 

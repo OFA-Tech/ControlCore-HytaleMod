@@ -29,8 +29,20 @@ Ids look like `mod:key`, for example `controlcore:welcome-message`. The server's
 for example `server:motd` or `server:connection-timeouts.play-timeout`; `/cc-set` says when a key only applies after a
 restart, and read-only keys can't be changed.
 
+Bans (admins or `ofatech.controlcore.bans`):
+
+```
+/cc-bans                               list the bans
+/cc-ban Griefer 7d griefing at spawn   ban for 7 days; length is permanent or a number with m, h, d or w
+/cc-ban 3a030bb2-... permanent -       ban by UUID, no reason
+/cc-unban Griefer                      lift a ban
+```
+
+World settings are `world:<world>.<key>`, for example `world:default.is-pvp-enabled` or `world:default.tps`.
+
 ```
 /cc-set server:motd Have fun!
+/cc-set world:default.is-pvp-enabled true
 /cc-set controlcore:welcome-message Welcome, {player}!
 /cc-set controlcore:welcome-message-color #55ff55
 /cc-set controlcore:mods-hidden SomeMod, OtherMod
@@ -64,7 +76,7 @@ Also in the panel: **History** → **Snapshots**. All need admins or `ofatech.co
 
 | Command | Does |
 |---|---|
-| `/cc-snapshot-save <name> [--parts=...]` | save a snapshot (replaces one with the same name). `--parts=` is `all` (default: everything except players) or parts joined with `+`: `config`, `settings`, `settings:<mod>/<mod>`, `keys`, `permissions`, `mods`, `players` |
+| `/cc-snapshot-save <name> [--parts=...]` | save a snapshot (replaces one with the same name). `--parts=` is `all` (default: everything except players) or parts joined with `+`: `config`, `worlds`, `settings`, `settings:<mod>/<mod>`, `keys`, `permissions`, `mods`, `players` |
 | `/cc-snapshots` | list the snapshots |
 | `/cc-snapshot-diff <name>` | what restoring would change, without changing anything |
 | `/cc-snapshot-restore <name>` | restore it |
@@ -87,6 +99,7 @@ Also in the panel: **History** → **Snapshots**. All need admins or `ofatech.co
 | `/cc-bind-reset <id>` | any player | go back to the server's keys |
 | `/cc-bind-server <id> <keys>` | `ofatech.controlcore.settings` | change the server's keys for everyone who has not chosen their own |
 | `/cc-bind-server-reset <id>` | `ofatech.controlcore.settings` | go back to the mod's default keys |
+| `/cc-key-game-action <id> <server\|keep\|replace>` | `ofatech.controlcore.settings` | whether this action keeps the key's game action (`server` follows the server setting) |
 | `/cc-keybind-add <name> <keys> <command>` | `ofatech.controlcore.settings` | create `custom:<name>`, run as the player who presses it |
 | `/cc-keybind-add-server <name> <keys> <command>` | `ofatech.controlcore.settings` | create `custom:<name>`, run as the server console |
 | `/cc-keybind-remove <name>` | `ofatech.controlcore.settings` | delete a bind admins created |

@@ -32,6 +32,7 @@ public record Snapshot(
 
     public enum Part {
         CONFIG,
+        WORLDS,
         SETTINGS,
         KEYS,
         PERMISSIONS,

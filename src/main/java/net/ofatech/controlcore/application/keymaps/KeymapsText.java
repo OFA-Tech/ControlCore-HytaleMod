@@ -14,6 +14,9 @@ public final class KeymapsText {
 
     public static String problems(Translator tr, KeyBinds binds) {
         List<String> problems = new ArrayList<>();
+        if (binds.combos().isEmpty()) {
+            problems.add(tr.t("controlcore.keys.no_key"));
+        }
         for (KeyCombo combo : binds.combos()) {
             Result<?> trigger = combo.trigger();
             if (trigger.isFailure()) {

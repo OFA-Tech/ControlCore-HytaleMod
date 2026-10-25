@@ -45,6 +45,30 @@ World map, …).
 
 Changes are saved to `config.json` immediately, with Hytale's own checks (a value out of range is refused).
 
+#### Worlds
+
+The **config.json | Worlds** switch at the top shows one world's settings instead; pick the world in the dropdown.
+They come from the world's own `universe/worlds/<world>/config.json` and apply at once:
+
+- **Gameplay:** PvP, fall damage, time paused, compass updates, objective markers, game mode.
+- **NPCs:** NPC spawning, spawn markers, freeze all NPCs.
+- **Performance:** a status line (players, loaded chunks, TPS), ticking, block ticking, unload unused chunks and
+  **ticks per second** (1-120, default 30; lower saves CPU, kept after a restart).
+- **Saving:** save players, save chunks, save new chunks.
+- **Movement:** player speed and jump strength for this world, in %; 0 uses the server-wide value from Mod Settings.
+- **Advanced (read-only):** seed, gameplay config, delete when removed.
+
+#### Bans
+
+The **Bans** switch lists every ban in `bans.json`: the player, when and by whom, how long (permanent, until a date,
+or expired) and the reason. **Unban** lifts a ban (press it twice). The form on top bans a player by name or UUID,
+even when they are offline, permanently or for 1 hour, 1 day, 7 days or 30 days, with an optional reason; an online
+player is kicked at once. Admins have it; give `ofatech.controlcore.bans` to let others manage bans. Bans made with
+Hytale's own `/ban` and `/unban` appear here too, and every ban and unban is in History.
+
+World ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`, so `/cc-get`, `/cc-set`,
+permissions, History and snapshots work on them like on `config.json` keys.
+
 ### Mod Settings
 
 Every server setting that mods registered with ControlCore, under `<mod name>: <category>` headings. Each row has the

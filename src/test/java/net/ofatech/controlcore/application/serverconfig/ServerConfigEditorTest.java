@@ -17,6 +17,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
+import net.ofatech.controlcore.domain.ports.game.Worlds;
 import net.ofatech.controlcore.fakes.FakeServerConfiguration;
 import net.ofatech.controlcore.fakes.RecordingLog;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,7 @@ class ServerConfigEditorTest {
             new ServerSettings("My Server", "Hello", false, 20, 12, Duration.ofSeconds(90)));
     private final RecordingLog log = new RecordingLog();
     private final DomainEventBus bus = new DomainEventBus(log);
-    private final ServerConfigEditor editor = new ServerConfigEditor(server, bus, bus, log);
+    private final ServerConfigEditor editor = new ServerConfigEditor(server, Worlds.NONE, bus, bus, log);
 
     @Test
     void keysBecomeSettingIds() {

@@ -17,6 +17,7 @@ import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBind;
+import net.ofatech.controlcore.domain.model.keys.GameActionMode;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
 import net.ofatech.controlcore.domain.model.keys.KeyBinds;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
@@ -24,6 +25,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.KeyBindStore;
+import net.ofatech.controlcore.domain.ports.config.KeyGameActionStore;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
 import net.ofatech.controlcore.domain.ports.game.PlayerData;
 import net.ofatech.controlcore.domain.ports.system.Log;
@@ -39,6 +41,7 @@ public final class KeymapRegistry implements KeymapsApi {
 
     private final KeyBindStore serverBinds;
     private final CustomKeyBindStore customBinds;
+    private final KeyGameActionStore gameActions;
     private final PlayerData playerData;
     private final Permissions permissions;
     private final Log log;
@@ -49,12 +52,14 @@ public final class KeymapRegistry implements KeymapsApi {
     public KeymapRegistry(
             KeyBindStore serverBinds,
             CustomKeyBindStore customBinds,
+            KeyGameActionStore gameActions,
             PlayerData playerData,
             Permissions permissions,
             Log log,
             ChangeRecorder history) {
         this.serverBinds = serverBinds;
         this.customBinds = customBinds;
+        this.gameActions = gameActions;
         this.playerData = playerData;
         this.permissions = permissions;
         this.log = log;
@@ -171,6 +176,22 @@ public final class KeymapRegistry implements KeymapsApi {
         });
     }
 
+    public GameActionMode gameAction(SettingId id) {
+        return gameActions.get(id).orElse(GameActionMode.SERVER_SETTING);
+    }
+
+    public Result<GameActionMode> setGameAction(SettingId id, GameActionMode mode) {
+        return known(id).map(action -> {
+            if (mode == GameActionMode.SERVER_SETTING) {
+                gameActions.remove(id);
+            } else {
+                gameActions.put(id, mode);
+            }
+            gameActions.flush();
+            return mode;
+        });
+    }
+
     public void loadCustom() {
         for (CustomKeyBind bind : customBinds.all()) {
             customAction(bind.name(), bind.keys(), bind.command(), bind.runAsServer())
@@ -207,6 +228,8 @@ public final class KeymapRegistry implements KeymapsApi {
             customBinds.remove(action.id().key());
             serverBinds.remove(action.id());
             serverBinds.flush();
+            gameActions.remove(action.id());
+            gameActions.flush();
             history.record(Kind.CUSTOM_BIND, action.id().toString(), before, "", false);
             return action;
         });

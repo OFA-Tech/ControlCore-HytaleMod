@@ -18,7 +18,7 @@ import net.ofatech.controlcore.domain.result.Result;
 
 final class SnapshotsTab {
 
-    static final int LIST_HEIGHT = 290;
+    static final int LIST_HEIGHT = 440;
     static final int PREVIEW_HEIGHT = 224;
 
     private static final String PART = "SnapshotPart";
@@ -45,7 +45,8 @@ final class SnapshotsTab {
     private final SnapshotsView view;
     private final Translator tr;
     private final Host host;
-    private final Set<Part> parts = EnumSet.of(Part.CONFIG, Part.SETTINGS, Part.KEYS, Part.PERMISSIONS, Part.MODS);
+    private final Set<Part> parts =
+            EnumSet.of(Part.CONFIG, Part.WORLDS, Part.SETTINGS, Part.KEYS, Part.PERMISSIONS, Part.MODS);
     private String name = "";
     private String mod = ALL_MODS;
     private Optional<String> previewing = Optional.empty();

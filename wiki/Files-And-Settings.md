@@ -15,7 +15,9 @@ ControlCore keeps its data in `mods/OFATech_ControlCore/`. Back up this folder b
 | `snapshots/<name>.json` | snapshots; copy one to another server's folder to restore it there |
 | `history/<year>-<month>.jsonl` | the change history, one change per line; months older than `controlcore:history-days` are deleted |
 
-The Server Configs tab writes to Hytale's own `config.json` in the server folder.
+The Server Configs tab writes to Hytale's own `config.json` in the server folder, and its Worlds view to each
+world's `universe/worlds/<world>/config.json`. A world's TPS and speed/jump overrides are kept in
+`WorldSettings.json`.
 
 Edit these files only while the server is stopped; while it runs, use the panel or the commands. A saved value that
 no longer fits (for example after a mod narrowed a range) falls back to the default, with one warning in the log.
@@ -33,6 +35,11 @@ no longer fits (for example after a mod narrowed a range) falls back to the defa
 | `controlcore:mods-hidden` | empty | mods players don't see in the Mods tab |
 | `controlcore:history-days` | `90` | how many days the change history keeps (1 to 3650) |
 | `controlcore:keys-keep-game-action` | `true` | bound keys also do their normal game action (see [Key binds](Key-Binds)) |
+| `controlcore:pause-empty-worlds` | `false` | worlds nobody is in stop updating and resume when a player arrives |
+| `controlcore:chunk-sections-per-second` | `0` | most chunk sections sent to each player per second; 0 keeps Hytale's limit |
+| `controlcore:chunk-sections-per-tick` | `0` | most chunk sections sent to each player per tick; 0 keeps Hytale's limit |
+| `controlcore:player-speed` | `100` | movement speed of every player in % (10 to 500); a world can override it |
+| `controlcore:player-jump` | `100` | jump strength of every player in % (10 to 500); a world can override it |
 | `controlcore:hud-rule.<part>` | Players choose | rule for each HUD part (see [HUD](HUD)) |
 
 ### Each player

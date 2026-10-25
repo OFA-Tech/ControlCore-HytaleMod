@@ -91,7 +91,7 @@ class ModRuntimeTest extends RuntimeTestBase {
 
         assertThat(platform.scheduler.entries)
                 .extracting(entry -> entry.period)
-                .containsExactlyInAnyOrder(Duration.ofMinutes(5), Duration.ofSeconds(5));
+                .containsExactlyInAnyOrder(Duration.ofMinutes(5), Duration.ofSeconds(5), Duration.ofSeconds(10));
         platform.scheduler.runAll();
         assertThat(platform.playerData.flushes).isEqualTo(1);
 

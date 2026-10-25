@@ -19,6 +19,8 @@ src/main/resources/KeyBinds.json
 src/main/resources/KeyBinds.json.tmp
 src/main/resources/CustomKeyBinds.json
 src/main/resources/CustomKeyBinds.json.tmp
+src/main/resources/KeyGameActions.json
+src/main/resources/KeyGameActions.json.tmp
 
 ### IntelliJ IDEA ###
 .idea/
@@ -42,3 +44,7 @@ out/
 Thumbs.db
 src/main/resources/SettingPermissions.json
 src/main/resources/SettingPermissions.json.tmp
+src/main/resources/WorldSettings.json
+src/main/resources/WorldSettings.json.tmp
+src/main/resources/history/
+src/main/resources/snapshots/

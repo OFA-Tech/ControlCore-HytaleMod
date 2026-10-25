@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+### Added
+- **Worlds in Server Configs:** a **config.json | Worlds** switch and a world dropdown. Each world has its own
+  settings, applied at once: PvP, fall damage, time paused, compass, objective markers, NPC spawning, spawn markers,
+  freeze all NPCs, ticking, block ticking, unloading chunks, saving players and chunks, and game mode. Seed, gameplay
+  config and storage are shown read-only. A **Status** line shows players, loaded chunks and TPS. Ids are
+  `world:<world>.<key>`, for example `/cc-set world:default.is-pvp-enabled true`.
+- **Performance:** ticks per second per world (kept after a restart), chunk loading limits per player
+  (`controlcore:chunk-sections-per-second`, `controlcore:chunk-sections-per-tick`, 0 keeps Hytale's limits) and
+  **Pause empty worlds** (`controlcore:pause-empty-worlds`, off by default): worlds nobody is in stop updating and
+  resume when a player arrives.
+- **Player speed and jump:** `controlcore:player-speed` and `controlcore:player-jump` (10-500 %, default 100), with an
+  optional override per world. Re-applied on join, world change and game-mode change.
+- World changes are recorded in **History** (also when made with Hytale's own `/world` commands) and snapshots have a
+  new **Worlds** part (`--parts=worlds`).
+- A key bind without a key now says so: "It has no key yet, so it never runs".
+- **Bans** (Server Configs -> Bans, admins or `ofatech.controlcore.bans`): the list from `bans.json` with who banned
+  whom (with each player's head, or a coloured initial until it loads), when, for how long and why, an **Unban** button (press twice), and a form to ban a player by name or UUID,
+  online or not (it must be a real Hytale account), permanently or for 1 hour, 1 day, 7 days or 30 days, with a reason. Commands: `/cc-bans`,
+  `/cc-ban <player> <length> <reason>` (length like `permanent`, `30m`, `12h`, `7d`, `2w`; reason `-` for none) and
+  `/cc-unban <player>`. Bans and unbans are recorded in History and can be rolled back; bans made with Hytale's own
+  `/ban` and `/unban` are recorded too.
+- New setting **Show player heads** (`controlcore:player-heads`, on): the heads come from hyvatar.io, which gets the player names; off shows only initials.
+- Banned players are listed with their name and UUID. The name comes from Hytale itself: the player if online, else Hytale's own save of that player (`universe/players`), else Hytale's account service, the same lookup Hytale's `/ban` uses.
+- History has two more filters: **Worlds** and **Bans** (config.json no longer lists world changes).
+
+### Fixed
+- Bans made from the console are written the way Hytale's own `/ban` writes them (with the console as the banner), so Hytale reads them after a restart.
+- **Game action per key action:** in Keymaps → Server defaults each action has a dropdown, *Game action: server setting / keep / replace*. *Keep* and *Replace* win over the server-wide "Bound keys keep their game action" setting for that action. Also `/cc-key-game-action <id> <server|keep|replace>`; saved in `KeyGameActions.json`.
+- Pressing the tab that is already open left the game on "Loading..."; every click now gets an answer.
+- The dev server's change history was shipped inside the 0.13.0 jar (`history/2026-10.jsonl`, harmless test entries);
+  runtime folders are now kept out of the jar.
+
 ## 0.13.0 - 2026-10-24
 
 Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.4. The API for other mods

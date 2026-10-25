@@ -6,8 +6,11 @@ import com.hypixel.hytale.server.core.ui.LocalizableString;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
+import net.ofatech.controlcore.domain.model.keys.GameActionMode;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.text.Translator;
 
@@ -40,6 +43,7 @@ final class SettingRows {
     private static final String INFO_ROW = "Pages/ControlCore/SettingInfoRow.ui";
     private static final String KEY_ROW = "Pages/ControlCore/SettingKeyRow.ui";
     static final String PICK_KEYS = "PickKeys";
+    static final String PICK_GAME_ACTION = "PickGameAction";
 
     private SettingRows() {}
 
@@ -108,6 +112,7 @@ final class SettingRows {
             SettingsSection.Row row,
             String element,
             boolean customBind,
+            Optional<GameActionMode> gameAction,
             UICommandBuilder commands,
             UIEventBuilder events) {
         SettingSnapshot snapshot = row.snapshot();
@@ -125,6 +130,21 @@ final class SettingRows {
                             element + " #Remove",
                             event(KeyBindForm.REMOVE, key, id));
                 }
+                gameAction.ifPresent(mode -> {
+                    Translator tr = section.translator();
+                    commands.set(element + " #GameAction.Visible", true);
+                    commands.set(
+                            element + " #GameAction.Entries",
+                            Arrays.stream(GameActionMode.values())
+                                    .map(option -> new DropdownEntryInfo(
+                                            LocalizableString.fromString(gameActionLabel(tr, option)), option.id()))
+                                    .toList());
+                    commands.set(element + " #GameAction.Value", mode.id());
+                    events.addEventBinding(
+                            CustomUIEventBindingType.ValueChanged,
+                            element + " #GameAction",
+                            event(PICK_GAME_ACTION, key, id).append(PanelAction.VALUE, element + " #GameAction.Value"));
+                });
                 for (String part : List.of(" #Hold", " #Key")) {
                     events.addEventBinding(
                             CustomUIEventBindingType.ValueChanged,
@@ -275,6 +295,10 @@ final class SettingRows {
             case TOGGLE -> commands.set(input + ".Value", Boolean.parseBoolean(snapshot.value()));
             case INFO -> commands.set(element + " #Value.Text", section.shownValue(snapshot));
         }
+    }
+
+    static String gameActionLabel(Translator tr, GameActionMode mode) {
+        return tr.t("controlcore.keys.game_action." + mode.id());
     }
 
     static void showPicker(String element, SettingSnapshot color, UICommandBuilder commands) {

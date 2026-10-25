@@ -4,10 +4,12 @@ import com.hypixel.hytale.component.ComponentRegistryProxy;
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.event.EventRegistry;
+import com.hypixel.hytale.server.core.event.events.player.AddPlayerToWorldEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerDisconnectEvent;
 import com.hypixel.hytale.server.core.event.events.player.PlayerReadyEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import net.ofatech.controlcore.domain.event.PlayerEnteredWorld;
 import net.ofatech.controlcore.domain.event.PlayerJoined;
 import net.ofatech.controlcore.domain.event.PlayerLeft;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
@@ -30,6 +32,7 @@ public final class HytaleGameEvents {
         registry.registerGlobal(PlayerReadyEvent.class, (PlayerReadyEvent event) -> onReady(event));
         registry.register(PlayerDisconnectEvent.class, (PlayerDisconnectEvent event) -> onDisconnect(event));
         entities.registerSystem(new GameModeChangeSystem(publisher));
+        registry.registerGlobal(AddPlayerToWorldEvent.class, (AddPlayerToWorldEvent event) -> onEnterWorld(event));
     }
 
     private void onReady(PlayerReadyEvent event) {
@@ -41,6 +44,17 @@ public final class HytaleGameEvents {
         PlayerRef ref = store.getComponent(entity, PlayerRef.getComponentType());
         if (ref != null) {
             publisher.publish(new PlayerJoined(Ids.player(ref)));
+        }
+    }
+
+    private void onEnterWorld(AddPlayerToWorldEvent event) {
+        if (event.getHolder() == null || event.getWorld() == null) {
+            return;
+        }
+        PlayerRef ref = event.getHolder().getComponent(PlayerRef.getComponentType());
+        if (ref != null) {
+            publisher.publish(
+                    new PlayerEnteredWorld(Ids.player(ref), event.getWorld().getName()));
         }
     }
 

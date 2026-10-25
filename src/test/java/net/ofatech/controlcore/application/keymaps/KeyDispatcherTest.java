@@ -12,6 +12,7 @@ import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBind;
 import net.ofatech.controlcore.domain.model.keys.GameAction;
+import net.ofatech.controlcore.domain.model.keys.GameActionMode;
 import net.ofatech.controlcore.domain.model.keys.Key;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
 import net.ofatech.controlcore.domain.model.keys.KeySignal;
@@ -19,6 +20,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.fakes.FakeClock;
 import net.ofatech.controlcore.fakes.FakeCustomKeyBindStore;
 import net.ofatech.controlcore.fakes.FakeKeyBindStore;
+import net.ofatech.controlcore.fakes.FakeKeyGameActionStore;
 import net.ofatech.controlcore.fakes.FakePlayerData;
 import net.ofatech.controlcore.fakes.FakePlayerInput;
 import net.ofatech.controlcore.fakes.FakePlayers;
@@ -36,10 +38,12 @@ class KeyDispatcherTest {
     private final RecordingCommandRunner runner = new RecordingCommandRunner();
     private final FakePlayerInput input = new FakePlayerInput();
     private final FakeCustomKeyBindStore customBinds = new FakeCustomKeyBindStore();
+    private final FakeKeyGameActionStore gameActions = new FakeKeyGameActionStore();
     private final Set<String> denied = new HashSet<>();
     private final KeymapRegistry keymaps = new KeymapRegistry(
             serverBinds,
             customBinds,
+            gameActions,
             new FakePlayerData(),
             (player, node) -> !denied.contains(node),
             new RecordingLog(),
@@ -72,6 +76,24 @@ class KeyDispatcherTest {
 
         assertThat(cancelled).isFalse();
         assertThat(commands()).containsExactly("home Caio");
+    }
+
+    @Test
+    void aBindsOwnChoiceWinsOverTheServerSetting() {
+        SettingId home = SettingId.of("homes:home");
+
+        keymaps.setGameAction(home, GameActionMode.KEEP);
+        assertThat(input.press(caio, KeySignal.USE)).isFalse();
+
+        clock.now = clock.now.plus(Duration.ofSeconds(1));
+        dispatcher.keepGameActions(true);
+        keymaps.setGameAction(home, GameActionMode.REPLACE);
+        assertThat(input.press(caio, KeySignal.USE)).isTrue();
+
+        clock.now = clock.now.plus(Duration.ofSeconds(1));
+        keymaps.setGameAction(home, GameActionMode.SERVER_SETTING);
+        assertThat(input.press(caio, KeySignal.USE)).isFalse();
+        assertThat(gameActions.values).isEmpty();
     }
 
     @Test
@@ -196,6 +218,7 @@ class KeyDispatcherTest {
         var reloaded = new KeymapRegistry(
                 serverBinds,
                 customBinds,
+                gameActions,
                 new FakePlayerData(),
                 (player, node) -> true,
                 new RecordingLog(),
