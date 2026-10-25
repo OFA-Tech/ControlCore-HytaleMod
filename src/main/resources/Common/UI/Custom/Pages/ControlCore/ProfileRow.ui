@@ -1,0 +1,60 @@
+$C = "../../Common.ui";
+
+Group {
+  LayoutMode: Top;
+  Padding: (Top: 8, Bottom: 0);
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Height: 32);
+
+    Group #State {
+      Anchor: (Width: 18, Height: 18, Top: 7, Right: 10);
+      Background: "Icons/Default.png";
+    }
+
+    Label #Name {
+      Anchor: (Width: 260);
+      Style: (...$C.@DefaultLabelStyle, FontSize: 15, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center);
+    }
+
+    Label #Badge {
+      Anchor: (Height: 22, Top: 5, Left: 6);
+      Padding: (Horizontal: 6);
+      Background: #6b5422;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2d69a, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+    }
+
+    Label #ActiveBadge {
+      Anchor: (Height: 22, Top: 5, Left: 6);
+      Padding: (Horizontal: 6);
+      Background: #3f6e3c;
+      Visible: false;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+    }
+
+    Group {
+      FlexWeight: 1;
+    }
+
+    $C.@SmallSecondaryTextButton #Switch {
+      @Text = %controlcore.ui.profiles.preview;
+      Anchor: (Width: 170, Height: 32, Left: 8);
+    }
+
+    $C.@SmallTertiaryTextButton #Unmark {
+      @Text = %controlcore.ui.profiles.unmark;
+      Anchor: (Width: 200, Height: 32, Left: 6);
+    }
+  }
+
+  Label #Details {
+    Anchor: (Left: 28, Top: 3);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #9fb0bd, Wrap: true);
+  }
+
+  Group {
+    Anchor: (Height: 1, Top: 9);
+    Background: #263c4c;
+  }
+}

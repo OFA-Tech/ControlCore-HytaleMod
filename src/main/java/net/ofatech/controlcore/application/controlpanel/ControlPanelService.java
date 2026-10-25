@@ -7,6 +7,7 @@ import java.util.Optional;
 import net.ofatech.controlcore.api.ControlPanelApi;
 import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.bans.BansService;
+import net.ofatech.controlcore.application.diagnostics.DiagnosticsService;
 import net.ofatech.controlcore.application.history.HistoryEditor;
 import net.ofatech.controlcore.application.keymaps.InputProbeCommand;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
@@ -15,6 +16,7 @@ import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.application.settings.PermissionsEditor;
 import net.ofatech.controlcore.application.settings.PermittedSettingsEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
+import net.ofatech.controlcore.application.snapshot.ProfileService;
 import net.ofatech.controlcore.application.snapshot.SnapshotService;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.ControlPanelContent;
@@ -50,6 +52,8 @@ public final class ControlPanelService implements ControlPanelApi {
     private final Permissions nodes;
     private final HistoryEditor history;
     private final SnapshotService snapshots;
+    private final ProfileService profiles;
+    private final DiagnosticsService diagnostics;
 
     public ControlPanelService(
             ControlPanelSettings settings,
@@ -67,7 +71,9 @@ public final class ControlPanelService implements ControlPanelApi {
             InputProbe probe,
             Permissions nodes,
             HistoryEditor history,
-            SnapshotService snapshots) {
+            SnapshotService snapshots,
+            ProfileService profiles,
+            DiagnosticsService diagnostics) {
         this.settings = settings;
         this.players = players;
         this.server = server;
@@ -84,6 +90,8 @@ public final class ControlPanelService implements ControlPanelApi {
         this.nodes = nodes;
         this.history = history;
         this.snapshots = snapshots;
+        this.profiles = profiles;
+        this.diagnostics = diagnostics;
     }
 
     public boolean mayOpenAdminPanel(PlayerId player) {
@@ -192,7 +200,13 @@ public final class ControlPanelService implements ControlPanelApi {
                         nodes.hasOwn(player, InputProbeCommand.PERMISSION) ? Optional.of(probe) : Optional.empty(),
                         focus,
                         serverConfig.worldNames(),
-                        bans.mayManage(Optional.of(player)) ? Optional.of(bans.viewedBy(player)) : Optional.empty()));
+                        bans.mayManage(Optional.of(player)) ? Optional.of(bans.viewedBy(player)) : Optional.empty(),
+                        snapshots.mayUse(Optional.of(player))
+                                ? Optional.of(profiles.viewedBy(player, nameOf(player)))
+                                : Optional.empty(),
+                        diagnostics.maySee(Optional.of(player))
+                                ? Optional.of(diagnostics.viewedBy(player))
+                                : Optional.empty()));
     }
 
     private String nameOf(PlayerId player) {

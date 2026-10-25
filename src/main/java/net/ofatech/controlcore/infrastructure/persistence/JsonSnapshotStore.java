@@ -128,6 +128,8 @@ public final class JsonSnapshotStore implements SnapshotStore {
         private Map<String, Rule> permissions;
         private Map<String, Boolean> modsEnabled;
         private Map<String, Map<String, String>> players;
+        private boolean profile;
+        private boolean partial;
 
         static FileForm of(Snapshot snapshot) {
             FileForm form = new FileForm();
@@ -149,6 +151,8 @@ public final class JsonSnapshotStore implements SnapshotStore {
             form.modsEnabled = new TreeMap<>(snapshot.modsEnabled());
             form.players = new TreeMap<>();
             snapshot.players().forEach((player, values) -> form.players.put(player, sorted(values)));
+            form.profile = snapshot.profile();
+            form.partial = snapshot.partial();
             return form;
         }
 
@@ -174,7 +178,9 @@ public final class JsonSnapshotStore implements SnapshotStore {
                     customBinds,
                     rules,
                     modsEnabled,
-                    players);
+                    players,
+                    profile,
+                    partial);
         }
 
         private static Map<String, String> sorted(Map<String, String> values) {

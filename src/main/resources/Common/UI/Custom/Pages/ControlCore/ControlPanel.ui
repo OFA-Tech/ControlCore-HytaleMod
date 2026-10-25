@@ -5,6 +5,8 @@ $C = "../../Common.ui";
 @RowLabelStyle = (...$C.@DefaultLabelStyle, RenderBold: true, VerticalAlignment: Center);
 @RowValueStyle = (...$C.@DefaultLabelStyle, VerticalAlignment: Center, Wrap: true);
 @StatusStyle = (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #e8a93b, Wrap: true);
+@HealthValueStyle = (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #e9e4d6, VerticalAlignment: Center);
+@HealthWarnStyle = (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #e88a72, RenderBold: true, VerticalAlignment: Center);
 @CountStyle = (FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center, HorizontalAlignment: End);
 
 @TitleStyle = (FontSize: 18, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center);
@@ -92,7 +94,7 @@ $C.@PageOverlay {
 
           Group #ServerTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 178, Right: 4);
+            Anchor: (Width: 157, Right: 4);
 
             Group #ServerTabEdge {
               Anchor: (Height: 3);
@@ -109,7 +111,7 @@ $C.@PageOverlay {
 
           Group #SettingsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 178, Right: 4);
+            Anchor: (Width: 157, Right: 4);
 
             Group #SettingsTabEdge {
               Anchor: (Height: 3);
@@ -126,7 +128,7 @@ $C.@PageOverlay {
 
           Group #PlayerTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 178, Right: 4);
+            Anchor: (Width: 157, Right: 4);
 
             Group #PlayerTabEdge {
               Anchor: (Height: 3);
@@ -143,7 +145,7 @@ $C.@PageOverlay {
 
           Group #KeymapTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 178, Right: 4);
+            Anchor: (Width: 157, Right: 4);
 
             Group #KeymapTabEdge {
               Anchor: (Height: 3);
@@ -160,7 +162,7 @@ $C.@PageOverlay {
 
           Group #ModsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 178, Right: 4);
+            Anchor: (Width: 157, Right: 4);
 
             Group #ModsTabEdge {
               Anchor: (Height: 3);
@@ -177,7 +179,7 @@ $C.@PageOverlay {
 
           Group #PermissionsTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 178, Right: 4);
+            Anchor: (Width: 157, Right: 4);
 
             Group #PermissionsTabEdge {
               Anchor: (Height: 3);
@@ -194,7 +196,7 @@ $C.@PageOverlay {
 
           Group #HistoryTabSlot {
             LayoutMode: Top;
-            Anchor: (Width: 178);
+            Anchor: (Width: 157, Right: 4);
 
             Group #HistoryTabEdge {
               Anchor: (Height: 3);
@@ -204,6 +206,22 @@ $C.@PageOverlay {
 
             TextButton #HistoryTabButton {
               Text: %controlcore.ui.tabs.history;
+              Style: @TabStyle;
+              Anchor: (Height: 35);
+            }
+          }
+        Group #HealthTabSlot {
+            LayoutMode: Top;
+            Anchor: (Width: 157);
+
+            Group #HealthTabEdge {
+              Anchor: (Height: 3);
+              Background: #e8a93b;
+              Visible: false;
+            }
+
+            TextButton #HealthTabButton {
+              Text: %controlcore.ui.tabs.health;
               Style: @TabStyle;
               Anchor: (Height: 35);
             }
@@ -313,6 +331,11 @@ $C.@PageOverlay {
                 Style: @CountStyle;
                 Anchor: (Width: 120, Left: 10);
               }
+
+              $C.@SmallTertiaryTextButton #ServerSearchDefaults {
+                @Text = %controlcore.ui.restoreDefaults;
+                Anchor: (Width: 190, Height: 32, Left: 6);
+              }
             }
 
 
@@ -414,6 +437,11 @@ $C.@PageOverlay {
                 Style: @CountStyle;
                 Anchor: (Width: 120, Left: 10);
               }
+
+              $C.@SmallTertiaryTextButton #SettingsSearchDefaults {
+                @Text = %controlcore.ui.restoreDefaults;
+                Anchor: (Width: 190, Height: 32, Left: 6);
+              }
             }
 
 
@@ -454,6 +482,11 @@ $C.@PageOverlay {
               Label #PlayerStatus {
                 Style: @CountStyle;
                 Anchor: (Width: 120, Left: 10);
+              }
+
+              $C.@SmallTertiaryTextButton #PlayerSearchDefaults {
+                @Text = %controlcore.ui.restoreDefaults;
+                Anchor: (Width: 190, Height: 32, Left: 6);
               }
             }
 
@@ -582,6 +615,11 @@ $C.@PageOverlay {
                   Style: @CountStyle;
                   Anchor: (Width: 120, Left: 10);
                 }
+
+                $C.@SmallTertiaryTextButton #ServerKeymapSearchDefaults {
+                  @Text = %controlcore.ui.restoreDefaults;
+                  Anchor: (Width: 190, Height: 32, Left: 6);
+                }
               }
 
 
@@ -643,6 +681,11 @@ $C.@PageOverlay {
                 Label #KeymapStatus {
                   Style: @CountStyle;
                   Anchor: (Width: 120, Left: 10);
+                }
+
+                $C.@SmallTertiaryTextButton #KeymapSearchDefaults {
+                  @Text = %controlcore.ui.restoreDefaults;
+                  Anchor: (Width: 190, Height: 32, Left: 6);
                 }
               }
 
@@ -723,6 +766,11 @@ $C.@PageOverlay {
                 Style: @CountStyle;
                 Anchor: (Width: 120, Left: 10);
               }
+
+              $C.@SmallTertiaryTextButton #PermissionSearchDefaults {
+                @Text = %controlcore.ui.restoreDefaults;
+                Anchor: (Width: 190, Height: 32, Left: 6);
+              }
             }
 
 
@@ -752,6 +800,12 @@ $C.@PageOverlay {
               TextButton #HistoryModeSnapshots {
                 Text: %controlcore.ui.history.modeSnapshots;
                 Style: @SegmentStyle;
+                Anchor: (Width: 180, Right: 2);
+              }
+
+              TextButton #HistoryModeProfiles {
+                Text: %controlcore.ui.history.modeProfiles;
+                Style: @SegmentStyle;
                 Anchor: (Width: 180);
               }
             }
@@ -779,7 +833,16 @@ $C.@PageOverlay {
 
                 Label #HistoryStatus {
                   Style: @CountStyle;
-                  Anchor: (Width: 220, Left: 10);
+                  Anchor: (Width: 200, Left: 10);
+                }
+
+                $C.@DropdownBox #HistoryClearAge {
+                  Anchor: (Width: 190, Left: 10);
+                }
+
+                $C.@SmallTertiaryTextButton #HistoryClear {
+                  @Text = %controlcore.ui.history.clear;
+                  Anchor: (Width: 120, Height: 32, Left: 6);
                 }
               }
 
@@ -801,10 +864,20 @@ $C.@PageOverlay {
               LayoutMode: Top;
               Visible: false;
 
-              Label {
-                Text: %controlcore.ui.snapshots.intro;
-                Style: @NoteStyle;
+              Group {
+                LayoutMode: Left;
                 Anchor: (Bottom: 8);
+
+                Label {
+                  Text: %controlcore.ui.snapshots.intro;
+                  Style: @NoteStyle;
+                  FlexWeight: 1;
+                }
+
+                $C.@SmallTertiaryTextButton #SnapshotsDeleteAll {
+                  @Text = %controlcore.ui.snapshots.deleteAll;
+                  Anchor: (Width: 220, Height: 30, Left: 10);
+                }
               }
 
               Group #SnapshotForm {
@@ -971,6 +1044,115 @@ $C.@PageOverlay {
                 Anchor: (Height: 440);
                 Padding: (Right: 10);
               }
+            }
+            Group #ProfilesPanel {
+              LayoutMode: Top;
+              Visible: false;
+
+              Label {
+                Text: %controlcore.ui.profiles.intro;
+                Style: @NoteStyle;
+                Anchor: (Bottom: 8);
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 36, Bottom: 10);
+                Background: #182a37;
+                Padding: (Horizontal: 10);
+
+                Group {
+                  Anchor: (Width: 4, Right: 10);
+                  Background: #e8a93b;
+                }
+
+                Label #ProfileActive {
+                  Style: @BannerStyle;
+                  FlexWeight: 1;
+                }
+              }
+
+              Group #ProfilePreview {
+                LayoutMode: Top;
+                Visible: false;
+                Anchor: (Bottom: 10);
+                Background: #13202a;
+                Padding: (Full: 10);
+
+                Label #ProfilePreviewTitle {
+                  Style: @SubsectionTitleStyle;
+                  Anchor: (Height: 20, Bottom: 6);
+                }
+
+                Group {
+                  LayoutMode: TopScrolling;
+                  ScrollbarStyle: $C.@DefaultScrollbarStyle;
+                  Anchor: (Height: 150);
+                  Padding: (Right: 10);
+
+                  Label #ProfilePreviewText {
+                    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #c9c3b3, Wrap: true);
+                  }
+                }
+
+                Group {
+                  LayoutMode: Left;
+                  Anchor: (Height: 34, Top: 8);
+
+                  $C.@SmallSecondaryTextButton #ProfileSwitch {
+                    @Text = %controlcore.ui.profiles.switch;
+                    Anchor: (Width: 330, Height: 32, Right: 6);
+                  }
+
+                  Group {
+                    FlexWeight: 1;
+                  }
+
+                  $C.@SmallTertiaryTextButton #ProfilePreviewClose {
+                    @Text = %controlcore.ui.snapshots.cancel;
+                    Anchor: (Width: 140, Height: 32);
+                  }
+                }
+              }
+
+              Group #ProfileList {
+                LayoutMode: TopScrolling;
+                ScrollbarStyle: $C.@DefaultScrollbarStyle;
+                Anchor: (Height: 470);
+                Padding: (Right: 10);
+              }
+            }
+          }
+          Group #HealthTab {
+            LayoutMode: Top;
+            Visible: false;
+
+            Group {
+              LayoutMode: Left;
+              Anchor: (Height: 34, Bottom: 8);
+
+              Label {
+                Text: %controlcore.ui.health.intro;
+                Style: @NoteStyle;
+                FlexWeight: 1;
+              }
+
+              $C.@SmallTertiaryTextButton #HealthRefresh {
+                @Text = %controlcore.ui.health.refresh;
+                Anchor: (Width: 130, Height: 32, Left: 10);
+              }
+
+              $C.@SmallSecondaryTextButton #HealthReport {
+                @Text = %controlcore.ui.health.report;
+                Anchor: (Width: 200, Height: 32, Left: 6);
+              }
+            }
+
+            Group #HealthList {
+              LayoutMode: TopScrolling;
+              ScrollbarStyle: $C.@DefaultScrollbarStyle;
+              Anchor: (Height: 620);
+              Padding: (Right: 10);
             }
           }
           }

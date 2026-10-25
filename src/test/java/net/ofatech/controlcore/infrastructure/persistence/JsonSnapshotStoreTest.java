@@ -37,7 +37,9 @@ class JsonSnapshotStoreTest {
                 List.of(new CustomKeyBind("warp", "CTRL + R", "warp spawn", true)),
                 Map.of("setting:server:motd", SettingPermission.of("staff.view", "staff.edit")),
                 Map.of("Test:Mod", false),
-                Map.of("3a030bb2-462f-4acd-93e2-7d2f76cbba79", Map.of("keybind:controlcore:open-preferences", "F")));
+                Map.of("3a030bb2-462f-4acd-93e2-7d2f76cbba79", Map.of("keybind:controlcore:open-preferences", "F")),
+                true,
+                false);
 
         store.save(snapshot);
         Files.copy(folder.resolve("pvp.json"), folder.resolve("copied.json"));

@@ -7,7 +7,7 @@ import net.ofatech.controlcore.domain.result.Result;
 
 public interface SnapshotsView {
 
-    record Entry(String name, String when, String who, String parts) {}
+    record Entry(String name, String when, String who, String parts, boolean profile) {}
 
     record ModChoice(String id, String name) {}
 
@@ -24,4 +24,10 @@ public interface SnapshotsView {
     Result<String> restore(String name, boolean snapshotFirst);
 
     Result<String> delete(String name);
+
+    Result<String> setProfile(String name, boolean profile);
+
+    Result<String> deleteAll();
+
+    Result<String> saveBefore(String base, Set<Snapshot.Part> parts);
 }

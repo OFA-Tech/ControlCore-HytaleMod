@@ -172,6 +172,10 @@ public final class ServerConfigEditor implements SettingsEditor {
                                 .with("name", source.entry().name())))));
     }
 
+    public boolean hasDefault(SettingId id) {
+        return find(id).map(source -> source.entry().defaultValue().isPresent()).orElse(false);
+    }
+
     public List<Text> pendingRestart() {
         return pending.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey())

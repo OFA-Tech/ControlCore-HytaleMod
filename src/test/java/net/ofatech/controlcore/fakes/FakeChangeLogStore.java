@@ -24,4 +24,11 @@ public final class FakeChangeLogStore implements ChangeLogStore {
     public void deleteBefore(Instant before) {
         records.removeIf(record -> record.at().isBefore(before));
     }
+
+    @Override
+    public int deleteRecordsBefore(Instant before) {
+        int size = records.size();
+        records.removeIf(record -> record.at().isBefore(before));
+        return size - records.size();
+    }
 }

@@ -3,10 +3,12 @@ package net.ofatech.controlcore.infrastructure.platforms.hytale;
 import com.hypixel.hytale.server.core.plugin.JavaPlugin;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
+import net.ofatech.controlcore.domain.ports.config.ActiveProfileStore;
 import net.ofatech.controlcore.domain.ports.config.ChangeLogStore;
 import net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.KeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.KeyGameActionStore;
+import net.ofatech.controlcore.domain.ports.config.ReportWriter;
 import net.ofatech.controlcore.domain.ports.config.SettingPermissionStore;
 import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
@@ -32,8 +34,12 @@ import net.ofatech.controlcore.domain.ports.platform.Platform;
 import net.ofatech.controlcore.domain.ports.platform.PortBinder;
 import net.ofatech.controlcore.domain.ports.system.Clock;
 import net.ofatech.controlcore.domain.ports.system.Log;
+import net.ofatech.controlcore.domain.ports.system.RecentProblems;
+import net.ofatech.controlcore.domain.ports.system.ServerHealth;
 import net.ofatech.controlcore.domain.ports.system.Translations;
 import net.ofatech.controlcore.infrastructure.i18n.BundledTranslations;
+import net.ofatech.controlcore.infrastructure.persistence.FileReportWriter;
+import net.ofatech.controlcore.infrastructure.persistence.JsonActiveProfileStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonCustomKeyBindStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonKeyBindStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonKeyGameActionStore;
@@ -60,6 +66,7 @@ import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytalePlay
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytalePlayers;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.server.HytaleBans;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.server.HytaleServerConfiguration;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.server.HytaleServerHealth;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.server.HytaleWorlds;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.ui.HytaleControlPanelView;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.world.HytaleScheduler;
@@ -80,9 +87,17 @@ public final class HytalePlatform implements Platform {
 
     @Override
     public void bind(PortBinder binder) {
-        Log log = new HytaleLog(plugin.getLogger());
+        HytaleLog log = new HytaleLog(plugin.getLogger());
         HytalePlayers players = new HytalePlayers();
         binder.bind(Log.class, log);
+        binder.bind(RecentProblems.class, log);
+        binder.bind(ServerHealth.class, new HytaleServerHealth());
+        binder.bind(
+                ReportWriter.class,
+                new FileReportWriter(
+                        plugin.getDataDirectory().resolve("diagnostics"),
+                        "mods/" + plugin.getDataDirectory().getFileName() + "/diagnostics",
+                        log));
         binder.bind(Clock.class, new SystemClock());
         binder.bind(SettingsProvider.class, new HytaleSettingsProvider(plugin.getDataDirectory(), log));
         binder.bind(Players.class, players);
@@ -126,6 +141,9 @@ public final class HytalePlatform implements Platform {
         binder.bind(
                 KeyGameActionStore.class,
                 new JsonKeyGameActionStore(plugin.getDataDirectory().resolve("KeyGameActions.json"), log));
+        binder.bind(
+                ActiveProfileStore.class,
+                new JsonActiveProfileStore(plugin.getDataDirectory().resolve("ActiveProfile.json"), log));
         binder.bind(
                 SnapshotStore.class,
                 new JsonSnapshotStore(plugin.getDataDirectory().resolve("snapshots"), log));

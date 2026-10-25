@@ -28,6 +28,8 @@ final class SnapshotsTab {
     private static final String RESTORE = "SnapshotRestore";
     private static final String RESTORE_SAFE = "SnapshotRestoreSafe";
     private static final String CLOSE_PREVIEW = "SnapshotPreviewClose";
+    private static final String PROFILE = "SnapshotProfile";
+    private static final String DELETE_ALL = "SnapshotDeleteAll";
     private static final String ALL_MODS = "*";
     private static final String ROW = "Pages/ControlCore/SnapshotRow.ui";
     private static final String LIST = "#SnapshotList";
@@ -51,6 +53,7 @@ final class SnapshotsTab {
     private String mod = ALL_MODS;
     private Optional<String> previewing = Optional.empty();
     private Optional<String> armedDelete = Optional.empty();
+    private boolean armedDeleteAll;
 
     SnapshotsTab(SnapshotsView view, Translator tr, Host host) {
         this.view = view;
@@ -96,6 +99,9 @@ final class SnapshotsTab {
                 CustomUIEventBindingType.Activating,
                 "#SnapshotPreviewClose",
                 EventData.of(PanelAction.KEY, CLOSE_PREVIEW));
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating, "#SnapshotsDeleteAll", EventData.of(PanelAction.KEY, DELETE_ALL));
+        armedDeleteAll = false;
         List<SnapshotsView.Entry> entries = view.list();
         commands.set("#SnapshotsEmpty.Visible", entries.isEmpty());
         for (int index = 0; index < entries.size(); index++) {
@@ -121,6 +127,20 @@ final class SnapshotsTab {
                     CustomUIEventBindingType.Activating,
                     row + " #Delete",
                     new EventData().append(PanelAction.KEY, DELETE).append(PanelAction.ID, entry.name()));
+            commands.set(
+                    row + " #Profile.Text",
+                    tr.t(
+                            entry.profile()
+                                    ? "controlcore.panel.snapshots.is_profile"
+                                    : "controlcore.panel.snapshots.make_profile"));
+            commands.set(row + " #Delete.Visible", !entry.profile());
+            events.addEventBinding(
+                    CustomUIEventBindingType.Activating,
+                    row + " #Profile",
+                    new EventData()
+                            .append(PanelAction.KEY, PROFILE)
+                            .append(PanelAction.ID, entry.name())
+                            .append(PanelAction.ITEM, Boolean.toString(!entry.profile())));
         }
         Optional<String> open = previewing;
         previewing = Optional.empty();
@@ -153,6 +173,18 @@ final class SnapshotsTab {
             }
             case RESTORE, RESTORE_SAFE -> restore(RESTORE_SAFE.equals(action.name()));
             case DELETE -> delete(action.id);
+            case PROFILE -> {
+                if (action.id == null) {
+                    host.send(new UICommandBuilder());
+                } else {
+                    Result<String> result = view.setProfile(action.id, Boolean.parseBoolean(action.item));
+                    if (result.isSuccess()) {
+                        host.rebuild();
+                    }
+                    footer(result);
+                }
+            }
+            case DELETE_ALL -> deleteAll();
             default -> {
                 return false;
             }
@@ -178,6 +210,24 @@ final class SnapshotsTab {
             return;
         }
         Result<String> result = view.restore(previewing.get(), saveFirst);
+        if (result.isSuccess()) {
+            previewing = Optional.empty();
+            host.rebuild();
+        }
+        footer(result);
+    }
+
+    private void deleteAll() {
+        if (!armedDeleteAll) {
+            armedDeleteAll = true;
+            UICommandBuilder update = new UICommandBuilder();
+            update.set("#FooterStatus.Text", tr.t("controlcore.panel.snapshots.confirm_delete_all"));
+            update.set("#SnapshotsDeleteAll.Text", tr.t("controlcore.panel.confirm"));
+            host.send(update);
+            return;
+        }
+        armedDeleteAll = false;
+        Result<String> result = view.deleteAll();
         if (result.isSuccess()) {
             previewing = Optional.empty();
             host.rebuild();
