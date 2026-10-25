@@ -148,6 +148,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private Tab selected;
     private final List<String> worlds;
     private boolean showingWorlds;
+    private boolean replied;
     private String world;
     private boolean editingServerKeys = true;
 
@@ -721,7 +722,29 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     @Override
     public void handleDataEvent(
             @Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull PanelAction action) {
+        replied = false;
         ChangeContext.fromPanel(viewerId, viewerName, () -> handle(action));
+        if (!replied) {
+            sendUpdate(new UICommandBuilder(), false);
+        }
+    }
+
+    @Override
+    protected void sendUpdate(UICommandBuilder commands, boolean clear) {
+        replied = true;
+        super.sendUpdate(commands, clear);
+    }
+
+    @Override
+    protected void sendUpdate(UICommandBuilder commands, UIEventBuilder events, boolean clear) {
+        replied = true;
+        super.sendUpdate(commands, events, clear);
+    }
+
+    @Override
+    protected void rebuild() {
+        replied = true;
+        super.rebuild();
     }
 
     private void handle(PanelAction action) {
