@@ -31,8 +31,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly("net.ofatech:controlcore:0.13.0")
-    vineImplementation("net.ofatech:controlcore:0.13.0") // load it in your dev server (runServer)
+    compileOnly("net.ofatech:controlcore:0.14.0")
+    vineImplementation("net.ofatech:controlcore:0.14.0") // load it in your dev server (runServer)
 }
 ```
 

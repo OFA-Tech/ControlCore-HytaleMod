@@ -25,7 +25,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -704,6 +706,25 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             showState(key, index, after, update);
         }
         showLegend(update);
+        if (key == PanelSection.SERVER_CONFIG && ServerConfigEditor.isWorld(after.id())) {
+            refreshWorldStatus(after.id());
+        }
+    }
+
+    private void refreshWorldStatus(SettingId changed) {
+        String path = changed.key();
+        int dot = path.indexOf('.');
+        SettingsSection section = sections.get(PanelSection.SERVER_CONFIG);
+        Ref<EntityStore> ref = playerRef.getReference();
+        if (dot < 0 || section == null || ref == null || !ref.isValid()) {
+            return;
+        }
+        SettingId status = new SettingId(ServerConfigEditor.WORLD_NAMESPACE, path.substring(0, dot + 1) + "status");
+        Store<EntityStore> store = ref.getStore();
+        CompletableFuture.delayedExecutor(500, TimeUnit.MILLISECONDS)
+                .execute(() -> store.getExternalData()
+                        .getWorld()
+                        .execute(() -> refresh(ref, store, PanelSection.SERVER_CONFIG, section, status)));
     }
 
     private void buildSearch(PanelSection key, UICommandBuilder commands, UIEventBuilder events) {

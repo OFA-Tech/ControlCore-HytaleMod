@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.14.0 - 2026-10-25
+
+Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.4. The API for other mods
+is unchanged (**2.0.0**); mods built for 0.10.0 keep working. Nothing on disk needs migrating; new files
+(`KeyGameActions.json`) are created on first use.
+
 ### Added
 - **Worlds in Server Configs:** a **config.json | Worlds** switch and a world dropdown. Each world has its own
   settings, applied at once: PvP, fall damage, time paused, compass, objective markers, NPC spawning, spawn markers,
@@ -26,10 +32,18 @@
 - New setting **Show player heads** (`controlcore:player-heads`, on): the heads come from hyvatar.io, which gets the player names; off shows only initials.
 - Banned players are listed with their name and UUID. The name comes from Hytale itself: the player if online, else Hytale's own save of that player (`universe/players`), else Hytale's account service, the same lookup Hytale's `/ban` uses.
 - History has two more filters: **Worlds** and **Bans** (config.json no longer lists world changes).
+- **Game action per key action:** in Keymaps → Server defaults each action has a dropdown, *Game action: server setting / keep / replace*. *Keep* and *Replace* win over the server-wide "Bound keys keep their game action" setting for that action. Also `/cc-key-game-action <id> <server|keep|replace>`; saved in `KeyGameActions.json`.
+
+### Changed
+- The control panel is bigger: 1320 wide instead of 1120, every list 150 px taller, wider tabs.
+- Ticks per second explains that the game keeps its normal speed; lower values update in bigger steps and use
+  less CPU.
 
 ### Fixed
+- The world's **Status** line updates right after a world setting such as Ticks per second is saved.
+- Snapshot lists showed `controlcore.snapshots.part.worlds` instead of "worlds".
+- Headings with one row say "1 setting" instead of "1 settings".
 - Bans made from the console are written the way Hytale's own `/ban` writes them (with the console as the banner), so Hytale reads them after a restart.
-- **Game action per key action:** in Keymaps → Server defaults each action has a dropdown, *Game action: server setting / keep / replace*. *Keep* and *Replace* win over the server-wide "Bound keys keep their game action" setting for that action. Also `/cc-key-game-action <id> <server|keep|replace>`; saved in `KeyGameActions.json`.
 - Pressing the tab that is already open left the game on "Loading..."; every click now gets an answer.
 - The dev server's change history was shipped inside the 0.13.0 jar (`history/2026-10.jsonl`, harmless test entries);
   runtime folders are now kept out of the jar.
