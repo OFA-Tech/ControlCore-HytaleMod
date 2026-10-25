@@ -10,6 +10,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import net.ofatech.controlcore.domain.model.serverconfig.ConfigEntry;
@@ -149,6 +151,7 @@ public final class HytaleWorlds implements Worlds {
 
     private final SettingStore extras;
     private final Log log;
+    private final Set<String> tpsApplied = ConcurrentHashMap.newKeySet();
 
     public HytaleWorlds(SettingStore extras, Log log) {
         this.extras = extras;
@@ -261,7 +264,8 @@ public final class HytaleWorlds implements Worlds {
                 if (tps < 1 || tps > MAX_TPS) {
                     return invalid(path, value);
                 }
-                world.setTps(tps);
+                world.execute(() -> world.setTps(tps));
+                tpsApplied.add(name);
                 if (tps == TickingThread.TPS) {
                     extras.remove(extraId(name, TPS));
                 } else {
@@ -293,6 +297,7 @@ public final class HytaleWorlds implements Worlds {
         }
         return entries(name).stream()
                 .filter(entry -> entry.path().equals(path))
+                .map(entry -> path.equals(TPS) ? withValue(entry, text) : entry)
                 .findFirst()
                 .<Result<ConfigEntry>>map(Result::success)
                 .orElseGet(() -> invalid(path, value));
@@ -322,17 +327,35 @@ public final class HytaleWorlds implements Worlds {
     @Override
     public void applySaved() {
         for (World world : Universe.get().getWorlds().values()) {
+            if (!tpsApplied.add(world.getName())) {
+                continue;
+            }
             extras.get(extraId(world.getName(), TPS)).ifPresent(text -> {
                 try {
                     int tps = Integer.parseInt(text);
                     if (tps >= 1 && tps <= MAX_TPS && world.getTps() != tps) {
-                        world.setTps(tps);
+                        world.execute(() -> world.setTps(tps));
                     }
                 } catch (NumberFormatException e) {
                     log.warn("Ignored the saved TPS \"" + text + "\" of world " + world.getName());
                 }
             });
         }
+    }
+
+    private static ConfigEntry withValue(ConfigEntry entry, String value) {
+        return new ConfigEntry(
+                entry.path(),
+                entry.section(),
+                entry.name(),
+                entry.description(),
+                entry.kind(),
+                entry.options(),
+                entry.min(),
+                entry.max(),
+                value,
+                entry.defaultValue(),
+                entry.access());
     }
 
     private ConfigEntry percent(String world, String path, String name, String description) {

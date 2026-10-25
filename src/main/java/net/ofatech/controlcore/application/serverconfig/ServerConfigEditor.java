@@ -282,7 +282,7 @@ public final class ServerConfigEditor implements SettingsEditor {
                                 ? Text.key("controlcore.world.key." + Text.slug(entry.path()), entry.name())
                                 : Text.key("controlcore.config.key." + id.key(), entry.name()))
                 .describedAs(
-                        source.world().isPresent()
+                        source.world().isPresent() && !entry.description().isBlank()
                                 ? Text.key("controlcore.world.desc." + Text.slug(entry.path()), entry.description())
                                 : describe(entry))
                 .inCategory(
