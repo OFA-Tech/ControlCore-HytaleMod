@@ -297,8 +297,8 @@ ends; `onHide` the other way round. Don't show the HUD yourself on join. `.hidde
        }
    }
    dependencies {
-       compileOnly("net.ofatech:controlcore:0.14.0")
-       vineImplementation("net.ofatech:controlcore:0.14.0") // run it in your dev server (not vineMod: see docs/platforms.md)
+       compileOnly("net.ofatech:controlcore:0.15.0")
+       vineImplementation("net.ofatech:controlcore:0.15.0") // run it in your dev server (not vineMod: see docs/platforms.md)
    }
    ```
 2. **Manifest.** Use `manifest_dependencies = OFATech:ControlCore=>=0.10.0`, or

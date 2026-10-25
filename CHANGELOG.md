@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.15.0 - 2026-10-25
+
+Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.4. The API for other mods
+is unchanged (**2.0.0**); mods built for 0.10.0 keep working. No migration needed; new files (`ActiveProfile.json`,
+`diagnostics/`) are created when first used.
+
 ### Added
 - **Profiles** (History -> **Profiles**): whole setups you switch to. Four are built in: **Vanilla** (every
   `config.json` key, world setting and mod setting back to its default), **PvP**, **Creative / Build** and
