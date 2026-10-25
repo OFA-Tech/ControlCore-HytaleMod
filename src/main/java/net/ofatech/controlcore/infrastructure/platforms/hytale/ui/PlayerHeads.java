@@ -36,7 +36,9 @@ final class PlayerHeads {
     private static final HttpClient HTTP =
             HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     private static final Map<String, Picture> PICTURES = new ConcurrentHashMap<>();
-    private static final Map<UUID, Map<String, Integer>> SLOTS_BY_VIEWER = new ConcurrentHashMap<>();
+    private static final Map<UUID, Session> SESSIONS = new ConcurrentHashMap<>();
+
+    private record Session(Object connection, Map<String, Integer> slots) {}
 
     private record Picture(Optional<byte[]> png, long until) {}
 
@@ -62,7 +64,7 @@ final class PlayerHeads {
     }
 
     static void forget(UUID viewer) {
-        SLOTS_BY_VIEWER.remove(viewer);
+        SESSIONS.remove(viewer);
     }
 
     static void show(PlayerRef viewer, String name, Consumer<String> ready) {
@@ -77,7 +79,7 @@ final class PlayerHeads {
             }
             Integer slot;
             boolean send;
-            Map<String, Integer> slots = slotsOf(viewer.getUuid());
+            Map<String, Integer> slots = slotsOf(viewer);
             synchronized (slots) {
                 slot = slots.get(key);
                 send = slot == null;
@@ -95,8 +97,14 @@ final class PlayerHeads {
         });
     }
 
-    private static Map<String, Integer> slotsOf(UUID viewer) {
-        return SLOTS_BY_VIEWER.computeIfAbsent(viewer, ignored -> new LinkedHashMap<>());
+    private static Map<String, Integer> slotsOf(PlayerRef viewer) {
+        Object connection = viewer.getPacketHandler();
+        return SESSIONS.compute(
+                        viewer.getUuid(),
+                        (id, session) -> session != null && session.connection() == connection
+                                ? session
+                                : new Session(connection, new LinkedHashMap<>()))
+                .slots();
     }
 
     private static int freeSlot(Map<String, Integer> slots) {
