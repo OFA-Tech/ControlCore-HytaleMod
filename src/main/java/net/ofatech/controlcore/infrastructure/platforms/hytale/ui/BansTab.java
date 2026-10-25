@@ -125,6 +125,10 @@ final class BansTab {
                     UICommandBuilder update = new UICommandBuilder();
                     update.set(row + " #Head.Background", texture);
                     update.set(row + " #Head.Visible", true);
+                    update.set(row + " #Initial.Visible", false);
+                    for (int shade = 0; shade < AVATAR_COLOURS; shade++) {
+                        update.set(row + " #Avatar" + shade + ".Visible", false);
+                    }
                     host.send(update);
                 }));
     }
