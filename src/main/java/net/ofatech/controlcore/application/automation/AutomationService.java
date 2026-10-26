@@ -8,6 +8,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -30,6 +31,7 @@ import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.automation.ActionKind;
 import net.ofatech.controlcore.domain.model.automation.AutomationView;
 import net.ofatech.controlcore.domain.model.automation.ConditionKind;
+import net.ofatech.controlcore.domain.model.automation.CronExpression;
 import net.ofatech.controlcore.domain.model.automation.Rule;
 import net.ofatech.controlcore.domain.model.automation.Trigger;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Actor;
@@ -53,6 +55,7 @@ public final class AutomationService {
     static final int MAX_NAME = 40;
     static final int MAX_TEXT = 256;
     static final int MAX_COOLDOWN = 86_400;
+    public static final int MAX_ACTIONS = 8;
 
     private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("H:mm");
     private static final DateTimeFormatter WHEN = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -85,6 +88,7 @@ public final class AutomationService {
     private final Map<String, Instant> lastRun = new ConcurrentHashMap<>();
     private final Map<String, Instant> timerStart = new ConcurrentHashMap<>();
     private final Map<String, LocalDate> dailyDone = new ConcurrentHashMap<>();
+    private final Map<String, LocalDateTime> cronDone = new ConcurrentHashMap<>();
     private final Set<String> below = ConcurrentHashMap.newKeySet();
     private int previousOnline = -1;
 
@@ -192,6 +196,14 @@ public final class AutomationService {
                                 dailyDone.computeIfAbsent(rule.id(), id -> passed ? today : today.minusDays(1));
                         if (passed && done.isBefore(today)) {
                             dailyDone.put(rule.id(), today);
+                            run(rule, Fired.none(), false);
+                        }
+                    });
+                case CRON ->
+                    CronExpression.parse(rule.triggerValue()).ifPresent(cron -> {
+                        LocalDateTime minute = local.truncatedTo(ChronoUnit.MINUTES);
+                        if (cron.matches(minute) && !minute.equals(cronDone.get(rule.id()))) {
+                            cronDone.put(rule.id(), minute);
                             run(rule, Fired.none(), false);
                         }
                     });
@@ -485,11 +497,14 @@ public final class AutomationService {
         List<AutomationView.Entry> entries = new ArrayList<>();
         for (Rule rule : store.all()) {
             Instant last = lastRun.get(rule.id());
+            String next = nextRun(rule)
+                    .map(time -> " · " + tr.t("controlcore.automation.next_run", "when", WHEN.format(time)))
+                    .orElse("");
             entries.add(new AutomationView.Entry(
                     rule.id(),
                     rule.name(),
                     rule.enabled(),
-                    summary(rule, tr),
+                    summary(rule, tr) + next,
                     last == null
                             ? tr.t("controlcore.automation.never_ran")
                             : tr.t(
@@ -498,6 +513,22 @@ public final class AutomationService {
                                     WHEN.format(LocalDateTime.ofInstant(last, ZoneId.systemDefault())))));
         }
         return entries;
+    }
+
+    Optional<LocalDateTime> nextRun(Rule rule) {
+        if (!rule.enabled()) {
+            return Optional.empty();
+        }
+        LocalDateTime now = LocalDateTime.ofInstant(clock.now(), ZoneId.systemDefault());
+        return switch (rule.trigger()) {
+            case CRON -> CronExpression.parse(rule.triggerValue()).flatMap(cron -> cron.next(now));
+            case DAILY_AT ->
+                clockTime(rule.triggerValue()).map(time -> {
+                    LocalDateTime today = now.toLocalDate().atTime(time);
+                    return today.isAfter(now) ? today : today.plusDays(1);
+                });
+            default -> Optional.empty();
+        };
     }
 
     public static String summary(Rule rule, Translator tr) {
@@ -547,18 +578,17 @@ public final class AutomationService {
 
     static AutomationView.Form form(Rule rule) {
         Optional<Rule.Condition> condition = rule.conditions().stream().findFirst();
-        Optional<Rule.Action> first = rule.actions().stream().findFirst();
-        Optional<Rule.Action> second = rule.actions().stream().skip(1).findFirst();
+        List<AutomationView.Step> steps = new ArrayList<>();
+        for (Rule.Action action : rule.actions()) {
+            steps.add(new AutomationView.Step(action.kind().id(), action.value()));
+        }
         return new AutomationView.Form(
                 rule.name(),
                 rule.trigger().id(),
                 rule.triggerValue(),
                 condition.map(c -> c.kind().id()).orElse("none"),
                 condition.map(Rule.Condition::value).orElse(""),
-                first.map(a -> a.kind().id()).orElse("message-all"),
-                first.map(Rule.Action::value).orElse(""),
-                second.map(a -> a.kind().id()).orElse("none"),
-                second.map(Rule.Action::value).orElse(""),
+                steps,
                 Integer.toString(rule.cooldownSeconds()));
     }
 
@@ -592,6 +622,7 @@ public final class AutomationService {
         store.saveAll(rules);
         timerStart.remove(rule.id());
         dailyDone.remove(rule.id());
+        cronDone.remove(rule.id());
         log.info("Automation rule saved: " + rule.name() + " (" + summary(rule, texts.forServer()) + ")");
         return Result.success(tr.t("controlcore.automation.saved", "name", rule.name()));
     }
@@ -630,18 +661,38 @@ public final class AutomationService {
             conditions.add(new Rule.Condition(condition.get(), value));
         }
         List<Rule.Action> actionList = new ArrayList<>();
-        for (String[] pair : List.of(
-                new String[] {form.action(), form.actionValue()}, new String[] {form.action2(), form.action2Value()})) {
-            Optional<ActionKind> kind = ActionKind.of(pair[0]);
+        for (AutomationView.Step step : form.actions()) {
+            Optional<ActionKind> kind = ActionKind.of(step.kind());
             if (kind.isEmpty()) {
                 continue;
             }
-            String value = pair[1] == null ? "" : pair[1].strip();
+            String value = step.value() == null ? "" : step.value().strip();
             Result<Boolean> ok = checkAction(kind.get(), value);
             if (ok.isFailure()) {
                 return Result.failure(ok.error());
             }
+            if (kind.get().needsPlayer() && !trigger.get().playerBased() && trigger.get() != Trigger.MOD_TRIGGER) {
+                Translator tr = texts.forServer();
+                return failure(
+                        "Automation.NeedsPlayer",
+                        Text.key(
+                                        "controlcore.errors.automation.needs_player",
+                                        "\"{action}\" needs a player, but \"{trigger}\" has none. Use a message or title for everyone, or a player trigger.")
+                                .with(
+                                        "action",
+                                                tr.t("controlcore.automation.action."
+                                                        + kind.get().id()),
+                                        "trigger",
+                                                tr.t("controlcore.automation.trigger."
+                                                        + trigger.get().id())));
+            }
             actionList.add(new Rule.Action(kind.get(), value));
+        }
+        if (actionList.size() > MAX_ACTIONS) {
+            return failure(
+                    "Automation.TooManyActions",
+                    Text.key("controlcore.errors.automation.too_many_actions", "A rule can do at most {max} things.")
+                            .with("max", MAX_ACTIONS));
         }
         if (actionList.isEmpty()) {
             return failure(
@@ -676,6 +727,7 @@ public final class AutomationService {
         boolean ok = switch (trigger) {
             case EVERY_MINUTES -> minutes(value).isPresent();
             case DAILY_AT -> clockTime(value).isPresent();
+            case CRON -> CronExpression.parse(value).isPresent();
             case TPS_BELOW -> number(value, 1, 60).isPresent();
             case ONLINE_REACHES -> number(value, 1, 100_000).isPresent();
             case MOD_TRIGGER -> value.matches("[a-z0-9][a-z0-9_-]*:[a-z0-9][a-z0-9_-]*");

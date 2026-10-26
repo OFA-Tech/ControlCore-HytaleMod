@@ -8,7 +8,9 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import net.ofatech.controlcore.application.automation.AutomationService;
 import net.ofatech.controlcore.domain.model.automation.ActionKind;
 import net.ofatech.controlcore.domain.model.automation.AutomationView;
 import net.ofatech.controlcore.domain.model.automation.ConditionKind;
@@ -19,7 +21,8 @@ import net.ofatech.controlcore.domain.result.Result;
 final class AutomationTab {
 
     static final int LIST_HEIGHT = 560;
-    static final int FORM_HEIGHT = 300;
+    private static final int FORM_BASE = 300;
+    private static final int STEP_HEIGHT = 42;
 
     private static final String NEW = "RuleNew";
     private static final String SAVE = "RuleSave";
@@ -29,20 +32,16 @@ final class AutomationTab {
     private static final String EDIT = "RuleEdit";
     private static final String REMOVE = "RuleRemove";
     private static final String PICKED = "RulePicked";
+    private static final String ADD_STEP = "RuleStepAdd";
+    private static final String STEP_UP = "RuleStepUp";
+    private static final String STEP_DOWN = "RuleStepDown";
+    private static final String STEP_REMOVE = "RuleStepRemove";
     private static final String LIST = "#RuleList";
+    private static final String STEPS = "#RuleActions";
     private static final String ROW = "Pages/ControlCore/RuleRow.ui";
+    private static final String STEP_ROW = "Pages/ControlCore/RuleActionRow.ui";
     private static final String ICONS = "Pages/ControlCore/Icons/";
-    private static final String[] FIELDS = {
-        "Name",
-        "Trigger",
-        "TriggerValue",
-        "Condition",
-        "ConditionValue",
-        "Action",
-        "ActionValue",
-        "Action2",
-        "Action2Value",
-        "Cooldown"
+    private static final String[] FIELDS = {"Name", "Trigger", "TriggerValue", "Condition", "ConditionValue", "Cooldown"
     };
 
     interface Host {
@@ -74,17 +73,12 @@ final class AutomationTab {
         commands.set("#AutomationOffText.Text", tr.t("controlcore.panel.automation.globally_off"));
         commands.set("#RuleTrigger.Entries", options("trigger", ids(Trigger.values()), false));
         commands.set("#RuleCondition.Entries", options("condition", ids(ConditionKind.values()), true));
-        commands.set("#RuleAction.Entries", options("action", ids(ActionKind.values()), false));
-        commands.set("#RuleAction2.Entries", options("action", ids(ActionKind.values()), true));
         events.addEventBinding(CustomUIEventBindingType.Activating, "#RuleNew", EventData.of(PanelAction.KEY, NEW));
         events.addEventBinding(
                 CustomUIEventBindingType.Activating, "#RuleFormClose", EventData.of(PanelAction.KEY, CLOSE));
-        EventData save = new EventData().append(PanelAction.KEY, SAVE);
-        for (String field : FIELDS) {
-            save.append(PanelAction.ruleKey(field), "#Rule" + field + ".Value");
-        }
-        events.addEventBinding(CustomUIEventBindingType.Activating, "#RuleSave", save);
-        for (String dropdown : List.of("Trigger", "Condition", "Action", "Action2")) {
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#RuleSave", capture(SAVE, -1));
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#RuleActionAdd", capture(ADD_STEP, -1));
+        for (String dropdown : List.of("Trigger", "Condition")) {
             events.addEventBinding(
                     CustomUIEventBindingType.ValueChanged,
                     "#Rule" + dropdown,
@@ -93,6 +87,7 @@ final class AutomationTab {
                             .append(PanelAction.ITEM, dropdown)
                             .append(PanelAction.VALUE, "#Rule" + dropdown + ".Value"));
         }
+        buildSteps(commands, events);
         List<AutomationView.Entry> entries = view.list();
         commands.set("#RuleEmpty.Visible", entries.isEmpty());
         for (int index = 0; index < entries.size(); index++) {
@@ -125,15 +120,62 @@ final class AutomationTab {
         showForm(commands);
     }
 
+    private void buildSteps(UICommandBuilder commands, UIEventBuilder events) {
+        List<DropdownEntryInfo> kinds = options("action", ids(ActionKind.values()), false);
+        List<AutomationView.Step> steps = draft.actions();
+        for (int index = 0; index < steps.size(); index++) {
+            AutomationView.Step step = steps.get(index);
+            String row = STEPS + "[" + index + "]";
+            commands.append(STEPS, STEP_ROW);
+            commands.set(
+                    row + " #Number.Text",
+                    index == 0
+                            ? tr.t("controlcore.panel.automation.step_first")
+                            : tr.t("controlcore.panel.automation.step", "number", index + 1));
+            commands.set(row + " #Kind.Entries", kinds);
+            commands.set(row + " #Kind.Value", step.kind());
+            commands.set(row + " #Value.Value", step.value());
+            commands.set(row + " #Value.PlaceholderText", view.hint("action", step.kind()));
+            commands.set(row + " #Up.Visible", index > 0);
+            commands.set(row + " #Down.Visible", index < steps.size() - 1);
+            commands.set(row + " #Remove.Visible", steps.size() > 1);
+            events.addEventBinding(
+                    CustomUIEventBindingType.ValueChanged,
+                    row + " #Kind",
+                    new EventData()
+                            .append(PanelAction.KEY, PICKED)
+                            .append(PanelAction.ITEM, Integer.toString(index))
+                            .append(PanelAction.VALUE, row + " #Kind.Value"));
+            events.addEventBinding(CustomUIEventBindingType.Activating, row + " #Up", capture(STEP_UP, index));
+            events.addEventBinding(CustomUIEventBindingType.Activating, row + " #Down", capture(STEP_DOWN, index));
+            events.addEventBinding(CustomUIEventBindingType.Activating, row + " #Remove", capture(STEP_REMOVE, index));
+        }
+        commands.set("#RuleActionAdd.Visible", steps.size() < AutomationService.MAX_ACTIONS);
+    }
+
+    private EventData capture(String key, int index) {
+        EventData data = new EventData().append(PanelAction.KEY, key);
+        if (index >= 0) {
+            data.append(PanelAction.ID, Integer.toString(index));
+        }
+        for (String field : FIELDS) {
+            data.append(PanelAction.ruleKey(field), "#Rule" + field + ".Value");
+        }
+        for (int i = 0; i < draft.actions().size(); i++) {
+            String row = STEPS + "[" + i + "]";
+            data.append(PanelAction.ruleKey("A" + i + "Kind"), row + " #Kind.Value");
+            data.append(PanelAction.ruleKey("A" + i + "Value"), row + " #Value.Value");
+        }
+        return data;
+    }
+
     boolean handle(PanelAction action) {
         switch (action.name()) {
             case NEW -> {
                 editing = Optional.empty();
                 draft = blank();
                 formOpen = true;
-                UICommandBuilder update = new UICommandBuilder();
-                showForm(update);
-                host.send(update);
+                host.rebuild();
             }
             case CLOSE -> {
                 formOpen = false;
@@ -143,26 +185,17 @@ final class AutomationTab {
             }
             case EDIT -> {
                 Optional<AutomationView.Form> form = view.form(action.id);
-                UICommandBuilder update = new UICommandBuilder();
                 if (form.isPresent()) {
                     editing = Optional.of(action.id);
                     draft = form.get();
                     formOpen = true;
-                    showForm(update);
+                    host.rebuild();
+                } else {
+                    host.send(new UICommandBuilder());
                 }
-                host.send(update);
             }
-            case PICKED -> {
-                UICommandBuilder update = new UICommandBuilder();
-                String field = action.item == null ? "" : action.item;
-                String value = action.value == null ? "" : action.value;
-                String kind = field.equals("Trigger") ? "trigger" : field.equals("Condition") ? "condition" : "action";
-                update.set("#Rule" + field + "Value.PlaceholderText", view.hint(kind, value));
-                update.set(
-                        "#Rule" + field + "Value.Visible",
-                        !view.hint(kind, value).isEmpty() || !kind.equals("trigger"));
-                host.send(update);
-            }
+            case PICKED -> picked(action);
+            case ADD_STEP, STEP_UP, STEP_DOWN, STEP_REMOVE -> changeSteps(action);
             case SAVE -> save(action);
             case TOGGLE -> refreshAfter(view.toggle(action.id));
             case TEST -> footer(view.test(action.id));
@@ -174,18 +207,53 @@ final class AutomationTab {
         return true;
     }
 
+    private void picked(PanelAction action) {
+        UICommandBuilder update = new UICommandBuilder();
+        String item = action.item == null ? "" : action.item;
+        String value = action.value == null ? "" : action.value;
+        if (item.matches("\\d+")) {
+            update.set(STEPS + "[" + item + "] #Value.PlaceholderText", view.hint("action", value));
+        } else {
+            String kind = item.equals("Trigger") ? "trigger" : "condition";
+            String hint = view.hint(kind, value);
+            update.set("#Rule" + item + "Value.PlaceholderText", hint);
+            update.set("#Rule" + item + "Value.Visible", !hint.isEmpty());
+        }
+        host.send(update);
+    }
+
+    private void changeSteps(PanelAction action) {
+        draft = captured(action);
+        List<AutomationView.Step> steps = new ArrayList<>(draft.actions());
+        int index = action.id != null && action.id.matches("\\d+") ? Integer.parseInt(action.id) : -1;
+        switch (action.name()) {
+            case ADD_STEP -> {
+                if (steps.size() < AutomationService.MAX_ACTIONS) {
+                    steps.add(new AutomationView.Step("message-all", ""));
+                }
+            }
+            case STEP_UP -> {
+                if (index > 0 && index < steps.size()) {
+                    steps.add(index - 1, steps.remove(index));
+                }
+            }
+            case STEP_DOWN -> {
+                if (index >= 0 && index < steps.size() - 1) {
+                    steps.add(index + 1, steps.remove(index));
+                }
+            }
+            default -> {
+                if (index >= 0 && index < steps.size() && steps.size() > 1) {
+                    steps.remove(index);
+                }
+            }
+        }
+        draft = withSteps(draft, steps);
+        host.rebuild();
+    }
+
     private void save(PanelAction action) {
-        AutomationView.Form form = new AutomationView.Form(
-                action.rule("Name"),
-                action.rule("Trigger"),
-                action.rule("TriggerValue"),
-                action.rule("Condition"),
-                action.rule("ConditionValue"),
-                action.rule("Action"),
-                action.rule("ActionValue"),
-                action.rule("Action2"),
-                action.rule("Action2Value"),
-                action.rule("Cooldown"));
+        AutomationView.Form form = captured(action);
         draft = form;
         Result<String> result = view.save(editing, form);
         if (result.isSuccess()) {
@@ -195,6 +263,23 @@ final class AutomationTab {
             host.rebuild();
         }
         footer(result);
+    }
+
+    private AutomationView.Form captured(PanelAction action) {
+        List<AutomationView.Step> steps = new ArrayList<>();
+        for (int i = 0; i < draft.actions().size(); i++) {
+            String kind = action.rule("A" + i + "Kind");
+            steps.add(new AutomationView.Step(
+                    kind.isEmpty() ? draft.actions().get(i).kind() : kind, action.rule("A" + i + "Value")));
+        }
+        return new AutomationView.Form(
+                action.rule("Name"),
+                action.rule("Trigger"),
+                action.rule("TriggerValue"),
+                action.rule("Condition"),
+                action.rule("ConditionValue"),
+                steps,
+                action.rule("Cooldown"));
     }
 
     private void remove(String id) {
@@ -242,25 +327,20 @@ final class AutomationTab {
             commands.set("#RuleTriggerValue.Value", draft.triggerValue());
             commands.set("#RuleCondition.Value", draft.condition());
             commands.set("#RuleConditionValue.Value", draft.conditionValue());
-            commands.set("#RuleAction.Value", draft.action());
-            commands.set("#RuleActionValue.Value", draft.actionValue());
-            commands.set("#RuleAction2.Value", draft.action2());
-            commands.set("#RuleAction2Value.Value", draft.action2Value());
             commands.set("#RuleCooldown.Value", draft.cooldown());
             commands.set("#RuleCooldown.PlaceholderText", tr.t("controlcore.panel.automation.cooldown_hint"));
             commands.set("#RuleName.PlaceholderText", tr.t("controlcore.panel.automation.name_hint"));
             hints(commands, "Trigger", "trigger", draft.trigger());
             hints(commands, "Condition", "condition", draft.condition());
-            hints(commands, "Action", "action", draft.action());
-            hints(commands, "Action2", "action", draft.action2());
         }
-        host.resize(LIST, formOpen ? LIST_HEIGHT - FORM_HEIGHT : LIST_HEIGHT, commands);
+        int form = FORM_BASE + STEP_HEIGHT * draft.actions().size();
+        host.resize(LIST, formOpen ? Math.max(120, LIST_HEIGHT - form) : LIST_HEIGHT, commands);
     }
 
     private void hints(UICommandBuilder commands, String field, String kind, String value) {
         String hint = view.hint(kind, value);
         commands.set("#Rule" + field + "Value.PlaceholderText", hint);
-        commands.set("#Rule" + field + "Value.Visible", !hint.isEmpty() || !kind.equals("trigger"));
+        commands.set("#Rule" + field + "Value.Visible", !hint.isEmpty());
     }
 
     private List<DropdownEntryInfo> options(String kind, List<String> ids, boolean withNone) {
@@ -279,12 +359,24 @@ final class AutomationTab {
     private static List<String> ids(Enum<?>[] values) {
         List<String> ids = new ArrayList<>();
         for (Enum<?> value : values) {
-            ids.add(value.name().toLowerCase(java.util.Locale.ROOT).replace('_', '-'));
+            ids.add(value.name().toLowerCase(Locale.ROOT).replace('_', '-'));
         }
         return ids;
     }
 
+    private static AutomationView.Form withSteps(AutomationView.Form form, List<AutomationView.Step> steps) {
+        return new AutomationView.Form(
+                form.name(),
+                form.trigger(),
+                form.triggerValue(),
+                form.condition(),
+                form.conditionValue(),
+                steps,
+                form.cooldown());
+    }
+
     private static AutomationView.Form blank() {
-        return new AutomationView.Form("", "join", "", "none", "", "message-player", "", "none", "", "");
+        return new AutomationView.Form(
+                "", "join", "", "none", "", List.of(new AutomationView.Step("message-player", "")), "");
     }
 }

@@ -10,6 +10,7 @@ public enum Trigger {
     WORLD_ENTER(Value.OPTIONAL, 0, true),
     EVERY_MINUTES(Value.REQUIRED, 0, false),
     DAILY_AT(Value.REQUIRED, 0, false),
+    CRON(Value.REQUIRED, 0, false),
     TPS_BELOW(Value.REQUIRED, 300, false),
     ONLINE_REACHES(Value.REQUIRED, 60, false),
     SERVER_EMPTY(Value.NONE, 60, false),

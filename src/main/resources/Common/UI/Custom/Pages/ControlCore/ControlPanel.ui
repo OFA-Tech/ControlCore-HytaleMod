@@ -1281,7 +1281,7 @@ $C.@PageOverlay {
 
               Group {
                 LayoutMode: Left;
-                Anchor: (Height: 36, Bottom: 6);
+                Anchor: (Height: 22, Bottom: 4);
 
                 Label {
                   Text: %controlcore.ui.automation.then;
@@ -1289,31 +1289,28 @@ $C.@PageOverlay {
                   Anchor: (Width: 90);
                 }
 
-                $C.@DropdownBox #RuleAction {
-                  Anchor: (Width: 340, Right: 6);
-                }
-
-                $C.@TextField #RuleActionValue {
+                Label {
+                  Text: %controlcore.ui.automation.order;
+                  Style: (...@NoteStyle, VerticalAlignment: Center);
                   FlexWeight: 1;
                 }
               }
 
+              Group #RuleActions {
+                LayoutMode: Top;
+              }
+
               Group {
                 LayoutMode: Left;
-                Anchor: (Height: 36, Bottom: 6);
+                Anchor: (Height: 34, Bottom: 6);
 
-                Label {
-                  Text: %controlcore.ui.automation.and;
-                  Style: (...@NoteStyle, VerticalAlignment: Center);
+                Group {
                   Anchor: (Width: 90);
                 }
 
-                $C.@DropdownBox #RuleAction2 {
-                  Anchor: (Width: 340, Right: 6);
-                }
-
-                $C.@TextField #RuleAction2Value {
-                  FlexWeight: 1;
+                $C.@SmallTertiaryTextButton #RuleActionAdd {
+                  @Text = %controlcore.ui.automation.addAction;
+                  Anchor: (Width: 190, Height: 32);
                 }
               }
 

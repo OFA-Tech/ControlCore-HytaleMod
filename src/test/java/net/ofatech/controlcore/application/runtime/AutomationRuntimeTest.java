@@ -173,6 +173,49 @@ class AutomationRuntimeTest extends RuntimeTestBase {
     }
 
     @Test
+    void cronRulesRunOncePerMatchingMinuteAndKeepActionOrder() {
+        save(form(
+                "Cron",
+                "cron",
+                "*/5 * * * *",
+                "none",
+                "",
+                "message-all",
+                "first",
+                "message-all",
+                "second",
+                "message-admins",
+                "third",
+                ""));
+        assertThat(platform.automationRules.rules.getFirst().actions())
+                .extracting(action -> action.value())
+                .containsExactly("first", "second", "third");
+
+        platform.clock.now = java.time.Instant.parse("2026-10-18T12:05:00Z");
+        platform.scheduler.runAll();
+        platform.scheduler.runAll();
+        platform.clock.now = java.time.Instant.parse("2026-10-18T12:06:00Z");
+        platform.scheduler.runAll();
+
+        assertThat(platform.messenger.broadcasts).containsExactly("first", "second");
+        assertThat(view().list().getFirst().summary()).contains(":10");
+    }
+
+    @Test
+    void playerActionsNeedAPlayerTrigger() {
+        var refused = view().save(
+                        Optional.empty(), form("Timer", "every-minutes", "30", "none", "", "message-player", "hi", ""));
+
+        assertThat(refused.error().code()).isEqualTo("Automation.NeedsPlayer");
+        assertThat(view().save(
+                                Optional.empty(),
+                                form("Bad cron", "cron", "61 * * * *", "none", "", "message-all", "x", ""))
+                        .error()
+                        .code())
+                .isEqualTo("Automation.InvalidTriggerValue");
+    }
+
+    @Test
     void theGlobalSwitchStopsEverything() {
         save(form("Ping", "join", "", "none", "", "message-all", "ping", "none", "", ""));
         run("cc-set", Map.of("id", "controlcore:automation-enabled", "value", "false"));
@@ -194,8 +237,11 @@ class AutomationRuntimeTest extends RuntimeTestBase {
 
     private static AutomationView.Form form(String... values) {
         List<String> v = List.of(values);
-        return new AutomationView.Form(
-                v.get(0), v.get(1), v.get(2), v.get(3), v.get(4), v.get(5), v.get(6), v.get(7), v.get(8), v.get(9));
+        List<AutomationView.Step> steps = new java.util.ArrayList<>();
+        for (int i = 5; i + 1 < v.size() - 1; i += 2) {
+            steps.add(new AutomationView.Step(v.get(i), v.get(i + 1)));
+        }
+        return new AutomationView.Form(v.get(0), v.get(1), v.get(2), v.get(3), v.get(4), steps, v.getLast());
     }
 
     private Result<Reply> run(String command, Map<String, Object> args) {

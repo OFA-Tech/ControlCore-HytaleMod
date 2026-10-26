@@ -13,7 +13,7 @@ Press **+ New rule** and fill in:
 | Name | shown in the list; the id is made from it (`Welcome new players` -> `welcome-new-players`) |
 | When | the trigger, plus its value when it needs one |
 | If | an optional condition and its value |
-| Then / And also | one or two actions and their values |
+| Then | a list of actions, run from top to bottom: **+ Add action** adds one (up to 8), **Up** and **Down** change the order, **-** removes one |
 | Cooldown | seconds before the same rule can run again (for the same player); empty uses the trigger's default |
 
 The value field shows what it expects for the option you picked.
@@ -28,6 +28,7 @@ The value field shows what it expects for the option you picked.
 | A player enters a world | world name, empty for any |
 | Every X minutes | 1 to 1440 |
 | Every day at | `20:00` (the server's clock) |
+| A schedule (cron) | five fields: minute hour day month weekday (see below) |
 | A world's TPS drops below | 1 to 60; fires once when it drops, again only after it recovered (default cooldown 300 s) |
 | Players online reaches | a number; fires when the count reaches it |
 | The server becomes empty | - |
@@ -57,12 +58,28 @@ The value field shows what it expects for the option you picked.
 Placeholders work in every value: `{player}`, `{world}`, `{online}`, `{max}`, `{tps}`, `{time}`, `{rule}`, plus
 `{setting}`, `{old}` and `{value}` for "A setting changes" and whatever a mod's trigger adds.
 
-Actions that need a player (message the player, title for the player, command as the player) are skipped for
-triggers without one, such as timers.
+Actions that need a player (message the player, title for the player, command as the player) only work with
+player triggers (joins, leaves, enters a world) or a mod's trigger; saving such a rule with a timer is refused.
+
+### Cron schedules
+
+`minute hour day-of-month month day-of-week`, on the server's clock:
+
+| Field | Values |
+|---|---|
+| minute | 0-59 |
+| hour | 0-23 |
+| day of month | 1-31 |
+| month | 1-12 or `JAN`-`DEC` |
+| day of week | 0-7 (0 and 7 are Sunday) or `SUN`-`SAT` |
+
+Each field takes `*` (any), a number, a range `1-5`, a list `1,15`, or a step `*/15` or `8-18/2`. When both day
+fields are set, either one matching is enough. Examples: `*/15 * * * *` every 15 minutes, `0 20 * * FRI` Fridays at
+20:00, `30 8 * * MON-FRI` weekdays at 8:30, `0 0 1 * *` the first of every month. The rule list shows the next run.
 
 ## Managing rules
 
-Each rule shows what it does and when it last ran, with **Turn off/on**, **Test** (runs it once now, ignoring its
+Each rule shows what it does, when it last ran and (for schedules) when it runs next, with **Turn off/on**, **Test** (runs it once now, ignoring its
 trigger, condition and cooldown), **Edit** and **Remove** (press twice). The server setting **Automation rules run**
 (`controlcore:automation-enabled`, Mod Settings -> ControlCore: Automation) stops every rule at once.
 

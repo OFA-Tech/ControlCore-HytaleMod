@@ -1,0 +1,34 @@
+$C = "../../Common.ui";
+
+Group {
+  LayoutMode: Left;
+  Anchor: (Height: 36, Bottom: 6);
+
+  Label #Number {
+    Anchor: (Width: 90);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center);
+  }
+
+  $C.@DropdownBox #Kind {
+    Anchor: (Width: 340, Right: 6);
+  }
+
+  $C.@TextField #Value {
+    FlexWeight: 1;
+  }
+
+  $C.@SmallTertiaryTextButton #Up {
+    @Text = %controlcore.ui.automation.up;
+    Anchor: (Width: 96, Height: 32, Left: 6);
+  }
+
+  $C.@SmallTertiaryTextButton #Down {
+    @Text = %controlcore.ui.automation.down;
+    Anchor: (Width: 96, Height: 32, Left: 6);
+  }
+
+  $C.@SmallTertiaryTextButton #Remove {
+    @Text = %controlcore.ui.automation.minus;
+    Anchor: (Width: 44, Height: 32, Left: 6);
+  }
+}

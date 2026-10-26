@@ -8,17 +8,21 @@ public interface AutomationView {
 
     record Entry(String id, String name, boolean enabled, String summary, String lastRun) {}
 
+    record Step(String kind, String value) {}
+
     record Form(
             String name,
             String trigger,
             String triggerValue,
             String condition,
             String conditionValue,
-            String action,
-            String actionValue,
-            String action2,
-            String action2Value,
-            String cooldown) {}
+            List<Step> actions,
+            String cooldown) {
+
+        public Form {
+            actions = List.copyOf(actions);
+        }
+    }
 
     List<Entry> list();
 

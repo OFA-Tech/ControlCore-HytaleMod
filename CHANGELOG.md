@@ -8,11 +8,14 @@
   online reach a number; the server becomes empty; a setting changes; or a mod's trigger fires. **If** (optional) the
   player has or lacks a permission, is in a world, players online are between two numbers, or the time is between
   two times. **Then** message the player, everyone or admins; show a title; run a command as the server or the
-  player; switch to a profile; change a setting; or run a mod's action. Two actions per rule, placeholders
+  player; switch to a profile; change a setting; or run a mod's action. Up to 8 actions per rule, run in the order
+  you set with **+ Add action**, **Up**, **Down** and **-**. **Cron schedules** (`0 20 * * FRI`) with the next run
+  shown in the list. Placeholders
   (`{player}`, `{world}`, `{online}`, `{max}`, `{tps}`, `{time}`, `{rule}`), a cooldown, an on/off switch per rule,
   **Test** to run it once, and **Remove** with a second click. Changes rules make are recorded in History as
   "automation". Commands: `/cc-rules`, `/cc-rule-toggle`, `/cc-rule-test`, `/cc-rule-remove`. The server setting
   `controlcore:automation-enabled` stops every rule at once.
+- A rule that messages "the player" can't be saved with a trigger that has no player (a timer, for example).
 - **API 2.1.0 for mods:** `api.notifications()` (messages, titles, admins), `api.scheduler()` (later, every, daily at
   a time), `api.sessions()` (first join, last seen, playtime, current world) and `api.actions()` (offer actions to
   rules and fire your own triggers). Mods built for 2.0.0 keep working.
