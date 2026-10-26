@@ -94,6 +94,17 @@ Also in the panel: **History** → **Snapshots**. All need admins or `ofatech.co
 /cc-snapshot-restore-safe pvp-weekend
 ```
 
+## Automation
+
+Also in the panel's **Automation** tab (see [Automation](Automation)). Admins only.
+
+| Command | Does |
+|---|---|
+| `/cc-rules` | list the rules, and the actions and triggers mods offer |
+| `/cc-rule-toggle <id>` | turn a rule on or off |
+| `/cc-rule-test <id>` | run a rule once now, ignoring its trigger, condition and cooldown |
+| `/cc-rule-remove <id>` | delete a rule |
+
 ## Diagnostics
 
 | Command | Who | Does |

@@ -62,6 +62,9 @@ a value changes elsewhere. Tabs:
 - **Health** (admins): versions, uptime, memory, CPU, every world's TPS and tick time, failed mods and recent errors,
   and a shareable report without secrets (`/cc-diagnostics`).
 - Every editing tab has **Restore defaults** for the rows shown.
+- **Automation** (admins): rules that run on their own (when a player joins, every X minutes, at a time, when TPS
+  drops, ...; if a permission, world, player count or time matches; then message, show a title, run a command, switch
+  profile or change a setting).
 
 Every row shows its state (changed, default, not saved, error, needs a restart, locked); a Legend counts and
 filters them, errors appear under their row and Undo puts back a change. Every list has a search box with a field

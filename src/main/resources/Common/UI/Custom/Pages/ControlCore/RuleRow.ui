@@ -1,0 +1,72 @@
+$C = "../../Common.ui";
+
+Group {
+  LayoutMode: Top;
+  Padding: (Top: 8, Bottom: 0);
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Height: 32);
+
+    Group #State {
+      Anchor: (Width: 18, Height: 18, Top: 7, Right: 10);
+      Background: "Icons/Changed.png";
+    }
+
+    Label #Name {
+      Anchor: (Width: 300);
+      Style: (...$C.@DefaultLabelStyle, FontSize: 15, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center);
+    }
+
+    Label #OnBadge {
+      Text: %controlcore.ui.automation.on;
+      Anchor: (Height: 22, Top: 5, Left: 6);
+      Padding: (Horizontal: 6);
+      Background: #3f6e3c;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+    }
+
+    Label #OffBadge {
+      Text: %controlcore.ui.automation.off;
+      Anchor: (Height: 22, Top: 5, Left: 6);
+      Padding: (Horizontal: 6);
+      Background: #4a5866;
+      Visible: false;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+    }
+
+    Group {
+      FlexWeight: 1;
+    }
+
+    $C.@SmallTertiaryTextButton #Toggle {
+      @Text = %controlcore.ui.automation.turnOff;
+      Anchor: (Width: 130, Height: 32, Left: 6);
+    }
+
+    $C.@SmallTertiaryTextButton #Test {
+      @Text = %controlcore.ui.automation.test;
+      Anchor: (Width: 110, Height: 32, Left: 6);
+    }
+
+    $C.@SmallTertiaryTextButton #Edit {
+      @Text = %controlcore.ui.automation.edit;
+      Anchor: (Width: 110, Height: 32, Left: 6);
+    }
+
+    $C.@SmallTertiaryTextButton #Remove {
+      @Text = %controlcore.ui.automation.remove;
+      Anchor: (Width: 120, Height: 32, Left: 6);
+    }
+  }
+
+  Label #Details {
+    Anchor: (Left: 28, Top: 3);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #9fb0bd, Wrap: true);
+  }
+
+  Group {
+    Anchor: (Height: 1, Top: 9);
+    Background: #263c4c;
+  }
+}

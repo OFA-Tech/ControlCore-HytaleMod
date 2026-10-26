@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import net.ofatech.controlcore.domain.guard.Guard;
+import net.ofatech.controlcore.domain.model.automation.AutomationView;
 import net.ofatech.controlcore.domain.model.bans.BansView;
 import net.ofatech.controlcore.domain.model.diagnostics.DiagnosticsView;
 import net.ofatech.controlcore.domain.model.history.HistoryView;
@@ -36,7 +37,8 @@ public record ControlPanelContent(
         List<String> worlds,
         Optional<BansView> bans,
         Optional<ProfilesView> profiles,
-        Optional<DiagnosticsView> diagnostics) {
+        Optional<DiagnosticsView> diagnostics,
+        Optional<AutomationView> automation) {
 
     public ControlPanelContent {
         Guard.notNull(server, "server");
@@ -57,5 +59,6 @@ public record ControlPanelContent(
         Guard.notNull(bans, "bans");
         Guard.notNull(profiles, "profiles");
         Guard.notNull(diagnostics, "diagnostics");
+        Guard.notNull(automation, "automation");
     }
 }

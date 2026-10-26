@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface ControlCoreApi {
 
     /** Version of this API contract (semantic versioning), for example {@code "2.0.0"}. */
-    String VERSION = "2.0.0";
+    String VERSION = "2.1.0";
 
     /**
      * Returns the running API; use it when ControlCore is a required dependency.
@@ -81,4 +81,36 @@ public interface ControlCoreApi {
      * @since API 2.0.0
      */
     HudApi huds();
+
+    /**
+     * Chat messages and on-screen titles.
+     *
+     * @return the notifications API
+     * @since API 2.1.0
+     */
+    NotificationsApi notifications();
+
+    /**
+     * Running code later, repeatedly or daily.
+     *
+     * @return the scheduler API
+     * @since API 2.1.0
+     */
+    SchedulerApi scheduler();
+
+    /**
+     * Players' first join, last seen and playtime.
+     *
+     * @return the sessions API
+     * @since API 2.1.0
+     */
+    SessionsApi sessions();
+
+    /**
+     * Actions and triggers for automation rules.
+     *
+     * @return the actions API
+     * @since API 2.1.0
+     */
+    ActionsApi actions();
 }

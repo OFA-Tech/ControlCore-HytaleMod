@@ -11,6 +11,7 @@ public final class FakeMessenger implements Messenger {
 
     public final List<Sent> sent = new CopyOnWriteArrayList<>();
     public final List<String> broadcasts = new CopyOnWriteArrayList<>();
+    public final List<String> titles = new CopyOnWriteArrayList<>();
 
     @Override
     public void send(PlayerId player, String text) {
@@ -20,6 +21,16 @@ public final class FakeMessenger implements Messenger {
     @Override
     public void broadcast(String text) {
         broadcasts.add(text);
+    }
+
+    @Override
+    public void title(PlayerId player, String title, String subtitle) {
+        titles.add((player == null ? "all" : player.toString()) + ": " + title + " | " + subtitle);
+    }
+
+    @Override
+    public void titleAll(String title, String subtitle) {
+        titles.add("all: " + title + " | " + subtitle);
     }
 
     public List<String> textsTo(PlayerId player) {

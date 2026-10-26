@@ -12,7 +12,8 @@ public enum ControlPanelTab {
     MODS("Mods"),
     PERMISSIONS("Permissions"),
     HISTORY("History"),
-    HEALTH("Health");
+    HEALTH("Health"),
+    AUTOMATION("Automation");
 
     private final String label;
 

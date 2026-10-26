@@ -8,6 +8,7 @@
 - [Key binds](Key-Binds)
 - [HUD](HUD)
 - [Mods tab](Mods-Tab)
+- [Automation](Automation)
 - [Files and settings](Files-And-Settings)
 - [Troubleshooting](Troubleshooting)
 
@@ -19,5 +20,6 @@
 - [Settings](Settings-API)
 - [Key actions](Key-Actions-API)
 - [HUD elements](HUD-API)
+- [Automation API](Automation-API)
 - [Translations](Translations-API)
 - [Panel, events, logos](Panel-Events-And-Logos)

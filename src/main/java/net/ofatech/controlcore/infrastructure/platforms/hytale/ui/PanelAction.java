@@ -74,6 +74,116 @@ final class PanelAction {
                     (action, value) -> action.match = value,
                     action -> action.match)
             .add()
+            .append(
+                    new KeyedCodec<>("@RuleName", Codec.STRING),
+                    (action, value) -> action.rule.put("Name", value),
+                    action -> action.rule.get("Name"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleTrigger", Codec.STRING),
+                    (action, value) -> action.rule.put("Trigger", value),
+                    action -> action.rule.get("Trigger"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleTriggerValue", Codec.STRING),
+                    (action, value) -> action.rule.put("TriggerValue", value),
+                    action -> action.rule.get("TriggerValue"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleCondition", Codec.STRING),
+                    (action, value) -> action.rule.put("Condition", value),
+                    action -> action.rule.get("Condition"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleConditionValue", Codec.STRING),
+                    (action, value) -> action.rule.put("ConditionValue", value),
+                    action -> action.rule.get("ConditionValue"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleCooldown", Codec.STRING),
+                    (action, value) -> action.rule.put("Cooldown", value),
+                    action -> action.rule.get("Cooldown"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleA0Kind", Codec.STRING),
+                    (action, value) -> action.rule.put("A0Kind", value),
+                    action -> action.rule.get("A0Kind"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleA0Value", Codec.STRING),
+                    (action, value) -> action.rule.put("A0Value", value),
+                    action -> action.rule.get("A0Value"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleA1Kind", Codec.STRING),
+                    (action, value) -> action.rule.put("A1Kind", value),
+                    action -> action.rule.get("A1Kind"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleA1Value", Codec.STRING),
+                    (action, value) -> action.rule.put("A1Value", value),
+                    action -> action.rule.get("A1Value"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleA2Kind", Codec.STRING),
+                    (action, value) -> action.rule.put("A2Kind", value),
+                    action -> action.rule.get("A2Kind"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleA2Value", Codec.STRING),
+                    (action, value) -> action.rule.put("A2Value", value),
+                    action -> action.rule.get("A2Value"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleA3Kind", Codec.STRING),
+                    (action, value) -> action.rule.put("A3Kind", value),
+                    action -> action.rule.get("A3Kind"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleA3Value", Codec.STRING),
+                    (action, value) -> action.rule.put("A3Value", value),
+                    action -> action.rule.get("A3Value"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleA4Kind", Codec.STRING),
+                    (action, value) -> action.rule.put("A4Kind", value),
+                    action -> action.rule.get("A4Kind"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleA4Value", Codec.STRING),
+                    (action, value) -> action.rule.put("A4Value", value),
+                    action -> action.rule.get("A4Value"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleA5Kind", Codec.STRING),
+                    (action, value) -> action.rule.put("A5Kind", value),
+                    action -> action.rule.get("A5Kind"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleA5Value", Codec.STRING),
+                    (action, value) -> action.rule.put("A5Value", value),
+                    action -> action.rule.get("A5Value"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleA6Kind", Codec.STRING),
+                    (action, value) -> action.rule.put("A6Kind", value),
+                    action -> action.rule.get("A6Kind"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleA6Value", Codec.STRING),
+                    (action, value) -> action.rule.put("A6Value", value),
+                    action -> action.rule.get("A6Value"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleA7Kind", Codec.STRING),
+                    (action, value) -> action.rule.put("A7Kind", value),
+                    action -> action.rule.get("A7Kind"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@RuleA7Value", Codec.STRING),
+                    (action, value) -> action.rule.put("A7Value", value),
+                    action -> action.rule.get("A7Value"))
+            .add()
             .build();
 
     String name;
@@ -89,6 +199,16 @@ final class PanelAction {
     String bindKeys;
     String filter;
     String match;
+    final java.util.Map<String, String> rule = new java.util.HashMap<>();
+
+    static String ruleKey(String field) {
+        return "@Rule" + field;
+    }
+
+    String rule(String field) {
+        String value = rule.get(field);
+        return value == null ? "" : value;
+    }
 
     String name() {
         return name != null ? name : "";

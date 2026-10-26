@@ -87,7 +87,7 @@ tasks.withType<Javadoc>().configureEach {
 // so runtime files written there must never be packaged.
 val runtimeDataFiles = listOf("Settings.json", "Settings.json.bak", "players.json", "players.json.tmp",
     "SettingValues.json", "SettingValues.json.tmp", "KeyBinds.json", "KeyBinds.json.tmp",
-    "CustomKeyBinds.json", "CustomKeyBinds.json.tmp", "KeyGameActions.json", "KeyGameActions.json.tmp", "ActiveProfile.json", "ActiveProfile.json.tmp",
+    "CustomKeyBinds.json", "CustomKeyBinds.json.tmp", "KeyGameActions.json", "KeyGameActions.json.tmp", "ActiveProfile.json", "ActiveProfile.json.tmp", "AutomationRules.json", "AutomationRules.json.tmp",
     "SettingPermissions.json", "SettingPermissions.json.tmp",
     "WorldSettings.json", "WorldSettings.json.tmp", "history/**", "snapshots/**", "diagnostics/**")
 

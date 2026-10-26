@@ -88,7 +88,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         MODS(ControlPanelTab.MODS, "#ModsTab", "#ModsTabButton"),
         PERMISSIONS(ControlPanelTab.PERMISSIONS, "#PermissionsTab", "#PermissionsTabButton"),
         HISTORY(ControlPanelTab.HISTORY, "#HistoryTab", "#HistoryTabButton"),
-        HEALTH(ControlPanelTab.HEALTH, "#HealthTab", "#HealthTabButton");
+        HEALTH(ControlPanelTab.HEALTH, "#HealthTab", "#HealthTabButton"),
+        AUTOMATION(ControlPanelTab.AUTOMATION, "#AutomationTab", "#AutomationTabButton");
 
         private final ControlPanelTab tab;
         private final String group;
@@ -119,7 +120,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
         boolean shownFor(ControlPanelRequest request) {
             return switch (this) {
-                case SERVER, SETTINGS, PERMISSIONS, HISTORY, HEALTH -> request.includeServerSettings();
+                case SERVER, SETTINGS, PERMISSIONS, HISTORY, HEALTH, AUTOMATION -> request.includeServerSettings();
                 case PLAYER -> request.includePlayerPreferences();
                 case KEYMAP -> request.includeRegisteredActions();
                 case MODS -> true;
@@ -154,6 +155,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private final Optional<SnapshotsTab> snapshotsTab;
     private final Optional<ProfilesTab> profilesTab;
     private final Optional<HealthTab> healthTab;
+    private final Optional<AutomationTab> automationTab;
     private final Optional<SnapshotsView> snapshotsView;
     private HistoryMode historyMode = HistoryMode.CHANGES;
     private Optional<PanelSection> armedDefaults = Optional.empty();
@@ -205,6 +207,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 ? content.diagnostics().map(view -> new HealthTab(view, tr, hooks))
                 : Optional.empty();
         this.snapshotsView = shownSections.includeServerSettings() ? content.snapshots() : Optional.empty();
+        this.automationTab = shownSections.includeServerSettings()
+                ? content.automation().map(view -> new AutomationTab(view, tr, hooks))
+                : Optional.empty();
         this.historyMode = historyTab.isPresent() ? HistoryMode.CHANGES : HistoryMode.SNAPSHOTS;
         this.bansTab = shownSections.includeServerSettings()
                 ? content.bans().map(view -> new BansTab(view, tr, hooks))
@@ -220,7 +225,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             if (tab.shownFor(shownSections)
                     && (tab != Tab.PERMISSIONS || permissionsTab.isPresent())
                     && (tab != Tab.HISTORY || historyTab.isPresent() || snapshotsTab.isPresent())
-                    && (tab != Tab.HEALTH || healthTab.isPresent())) {
+                    && (tab != Tab.HEALTH || healthTab.isPresent())
+                    && (tab != Tab.AUTOMATION || automationTab.isPresent())) {
                 tabs.add(tab);
             }
         }
@@ -301,6 +307,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         snapshotsTab.ifPresent(tab -> tab.build(commands, events));
         profilesTab.ifPresent(tab -> tab.build(commands, events));
         healthTab.ifPresent(tab -> tab.build(commands, events));
+        automationTab.ifPresent(tab -> tab.build(commands, events));
         bansTab.ifPresent(tab -> tab.build(commands, events));
         armedDefaults = Optional.empty();
         events.addEventBinding(
@@ -576,7 +583,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             case PLAYER -> PanelSection.PREFS;
             case KEYMAP ->
                 editingServerKeys && bindForm.isPresent() ? PanelSection.SERVER_KEYMAPS : PanelSection.KEYMAPS;
-            case MODS, PERMISSIONS, HISTORY, HEALTH -> null;
+            case MODS, PERMISSIONS, HISTORY, HEALTH, AUTOMATION -> null;
         };
         return key != null && sections.containsKey(key) ? Optional.of(key) : Optional.empty();
     }
@@ -953,6 +960,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 || snapshotsTab.map(tab -> tab.handle(action)).orElse(false)
                 || profilesTab.map(tab -> tab.handle(action)).orElse(false)
                 || healthTab.map(tab -> tab.handle(action)).orElse(false)
+                || automationTab.map(tab -> tab.handle(action)).orElse(false)
                 || bansTab.map(tab -> tab.handle(action)).orElse(false)) {
             return;
         }
@@ -1570,6 +1578,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                     SnapshotsTab.Host,
                     ProfilesTab.Host,
                     HealthTab.Host,
+                    AutomationTab.Host,
                     BansTab.Host {
 
         @Override
