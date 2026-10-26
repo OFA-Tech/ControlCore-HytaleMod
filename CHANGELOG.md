@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.16.0 - 2026-10-25
+
+Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.4. The API for other mods
+is now **2.1.0** (new: notifications, scheduler, sessions, actions); mods built for 2.0.0 keep working. No
+migration needed; `AutomationRules.json` is created when the first rule is saved.
+
 ### Added
 - **Automation tab** (9th tab, admins): rules that run on their own. **When** a player joins, joins for the first
   time, leaves or enters a world; every X minutes; every day at a time; a world's TPS drops below a value; players
