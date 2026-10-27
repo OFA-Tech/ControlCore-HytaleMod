@@ -26,6 +26,7 @@ public record Snapshot(
         Map<String, String> settings,
         Map<String, String> serverKeys,
         List<CustomKeyBind> customBinds,
+        Optional<Map<String, String>> gameActions,
         Map<String, SettingPermission> permissions,
         Map<String, Boolean> modsEnabled,
         Map<String, Map<String, String>> players,
@@ -64,6 +65,7 @@ public record Snapshot(
         settings = settings == null ? Map.of() : Map.copyOf(settings);
         serverKeys = serverKeys == null ? Map.of() : Map.copyOf(serverKeys);
         customBinds = customBinds == null ? List.of() : List.copyOf(customBinds);
+        gameActions = gameActions == null ? Optional.empty() : gameActions.map(Map::copyOf);
         permissions = permissions == null ? Map.of() : Map.copyOf(permissions);
         modsEnabled = modsEnabled == null ? Map.of() : Map.copyOf(modsEnabled);
         players = players == null ? Map.of() : Map.copyOf(players);
@@ -84,6 +86,7 @@ public record Snapshot(
                 settings,
                 serverKeys,
                 customBinds,
+                gameActions,
                 permissions,
                 modsEnabled,
                 players,

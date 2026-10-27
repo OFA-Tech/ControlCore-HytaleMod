@@ -931,3 +931,4 @@ panel.mods.also_changed = {name} y {count} más cambian tras el próximo reinici
 ui.mods.confirmYes = Desactivar todos
 ui.mods.confirmNo = Cancelar
 errors.mods.required = {name} lo usa {other}, que no se puede desactivar aquí.
+history.what.game_action = Acción del juego de {name}

@@ -125,6 +125,7 @@ public final class JsonSnapshotStore implements SnapshotStore {
         private Map<String, String> settings;
         private Map<String, String> serverKeys;
         private List<CustomKeyBind> customBinds;
+        private Map<String, String> gameActions;
         private Map<String, Rule> permissions;
         private Map<String, Boolean> modsEnabled;
         private Map<String, Map<String, String>> players;
@@ -141,6 +142,9 @@ public final class JsonSnapshotStore implements SnapshotStore {
             form.settings = sorted(snapshot.settings());
             form.serverKeys = sorted(snapshot.serverKeys());
             form.customBinds = snapshot.customBinds();
+            form.gameActions = snapshot.gameActions()
+                    .<Map<String, String>>map(TreeMap::new)
+                    .orElse(null);
             form.permissions = new TreeMap<>();
             snapshot.permissions().forEach((target, rule) -> {
                 Rule stored = new Rule();
@@ -176,6 +180,7 @@ public final class JsonSnapshotStore implements SnapshotStore {
                     settings,
                     serverKeys,
                     customBinds,
+                    Optional.ofNullable(gameActions),
                     rules,
                     modsEnabled,
                     players,

@@ -931,3 +931,4 @@ panel.mods.also_changed = {name} and {count} more change after the next restart:
 ui.mods.confirmYes = Turn all off
 ui.mods.confirmNo = Cancel
 errors.mods.required = {name} is needed by {other}, which can't be turned off here.
+history.what.game_action = Game action of {name}

@@ -182,12 +182,16 @@ public final class KeymapRegistry implements KeymapsApi {
 
     public Result<GameActionMode> setGameAction(SettingId id, GameActionMode mode) {
         return known(id).map(action -> {
+            GameActionMode before = gameAction(id);
             if (mode == GameActionMode.SERVER_SETTING) {
                 gameActions.remove(id);
             } else {
                 gameActions.put(id, mode);
             }
             gameActions.flush();
+            if (before != mode) {
+                history.record(Kind.GAME_ACTION, id.toString(), before.id(), mode.id(), false);
+            }
             return mode;
         });
     }

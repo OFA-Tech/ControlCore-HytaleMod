@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBind;
 import net.ofatech.controlcore.domain.model.settings.SettingPermission;
@@ -35,6 +36,7 @@ class JsonSnapshotStoreTest {
                 Map.of("controlcore:welcome-message", "Hi"),
                 Map.of("custom:warp", "CTRL + R"),
                 List.of(new CustomKeyBind("warp", "CTRL + R", "warp spawn", true)),
+                Optional.of(Map.of("custom:warp", "replace")),
                 Map.of("setting:server:motd", SettingPermission.of("staff.view", "staff.edit")),
                 Map.of("Test:Mod", false),
                 Map.of("3a030bb2-462f-4acd-93e2-7d2f76cbba79", Map.of("keybind:controlcore:open-preferences", "F")),

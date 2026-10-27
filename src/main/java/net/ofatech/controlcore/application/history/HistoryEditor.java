@@ -19,6 +19,7 @@ import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Actor;
 import net.ofatech.controlcore.domain.model.history.HistoryView;
+import net.ofatech.controlcore.domain.model.keys.GameActionMode;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.model.text.Text;
@@ -198,6 +199,11 @@ public final class HistoryEditor {
                 });
             case MOD -> mods.viewedBy(who).setEnabled(record.target(), Boolean.parseBoolean(old));
             case BAN -> admin(who).flatMap(ok -> bans.restore(record.target(), old, who));
+            case GAME_ACTION ->
+                admin(who)
+                        .flatMap(ok -> SettingId.parse(record.target()))
+                        .flatMap(id -> keymaps.setGameAction(
+                                id, GameActionMode.parse(old).orElse(GameActionMode.SERVER_SETTING)));
         };
     }
 
@@ -255,6 +261,15 @@ public final class HistoryEditor {
                                 .orElse(target));
             case CUSTOM_BIND ->
                 tr.t("controlcore.history.what.custom_bind", "name", target.substring(target.indexOf(':') + 1));
+            case GAME_ACTION ->
+                tr.t(
+                        "controlcore.history.what.game_action",
+                        "name",
+                        SettingId.parse(target)
+                                .map(id -> keymaps.find(id)
+                                        .map(action -> tr.translate(action.nameText()))
+                                        .orElse(target))
+                                .orElse(target));
             case PERMISSION -> tr.t("controlcore.history.what.permission", "target", permissionTarget(target, tr));
             case BAN -> bans.what(target, tr);
             case MOD ->
@@ -295,6 +310,11 @@ public final class HistoryEditor {
             case MOD ->
                 tr.t(Boolean.parseBoolean(value) ? "controlcore.history.value.on" : "controlcore.history.value.off");
             case BAN -> bans.shown(value, tr);
+            case GAME_ACTION ->
+                tr.t("controlcore.keys.game_action."
+                        + GameActionMode.parse(value)
+                                .orElse(GameActionMode.SERVER_SETTING)
+                                .id());
             default -> value.isEmpty() ? tr.t("controlcore.history.value.empty") : value;
         };
     }

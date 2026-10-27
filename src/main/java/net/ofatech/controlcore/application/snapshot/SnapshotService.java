@@ -30,6 +30,7 @@ import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Actor;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBind;
+import net.ofatech.controlcore.domain.model.keys.GameActionMode;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
@@ -485,6 +486,7 @@ public final class SnapshotService {
                 }
             }
         }
+        Map<String, String> gameActionModes = new TreeMap<>();
         if (parts.contains(Part.KEYS)) {
             for (KeyAction action : keymaps.actions()) {
                 if (keymaps.hasServerKeys(action.id())) {
@@ -494,6 +496,12 @@ public final class SnapshotService {
                 }
             }
             binds.addAll(customBinds.all());
+            for (KeyAction action : keymaps.actions()) {
+                GameActionMode mode = keymaps.gameAction(action.id());
+                if (mode != GameActionMode.SERVER_SETTING) {
+                    gameActionModes.put(action.id().toString(), mode.id());
+                }
+            }
         }
         if (parts.contains(Part.PERMISSIONS)) {
             permissionStore.all().forEach((target, rule) -> {
@@ -532,6 +540,7 @@ public final class SnapshotService {
                 settingValues,
                 serverKeys,
                 binds,
+                parts.contains(Part.KEYS) ? Optional.of(gameActionModes) : Optional.empty(),
                 rules,
                 enabled,
                 playerValues,
@@ -707,6 +716,20 @@ public final class SnapshotService {
                         () -> keymaps.resetServerBind(id)));
             }
         }
+        snapshot.gameActions().ifPresent(modes -> {
+            for (KeyAction action : keymaps.actions()) {
+                GameActionMode now = keymaps.gameAction(action.id());
+                GameActionMode then =
+                        GameActionMode.parse(modes.get(action.id().toString())).orElse(GameActionMode.SERVER_SETTING);
+                if (now != then) {
+                    changes.add(new Change(
+                            history.what(Kind.GAME_ACTION, action.id().toString(), tr),
+                            history.shown(Kind.GAME_ACTION, now.id(), tr),
+                            history.shown(Kind.GAME_ACTION, then.id(), tr),
+                            () -> keymaps.setGameAction(action.id(), then)));
+                }
+            }
+        });
     }
 
     private void playerChanges(Snapshot snapshot, Translator tr, List<Change> changes, int[] skipped) {

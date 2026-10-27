@@ -54,6 +54,9 @@ final class HistoryTab {
         }
 
         boolean accepts(HistoryView.Entry entry) {
+            if (this == KEYS && entry.kind() == ChangeRecord.Kind.GAME_ACTION) {
+                return true;
+            }
             if (kind == null || entry.kind() != kind) {
                 return kind == null;
             }
