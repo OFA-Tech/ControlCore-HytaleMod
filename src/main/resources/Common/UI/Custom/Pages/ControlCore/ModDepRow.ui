@@ -1,0 +1,76 @@
+$C = "../../Common.ui";
+
+@Badge = (FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+@Cell = (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #c9c3b3, VerticalAlignment: Center);
+
+Group {
+  LayoutMode: Left;
+  Anchor: (Height: 32, Bottom: 2);
+  Visible: false;
+
+  Group {
+    Anchor: (Width: 330, Right: 10);
+    LayoutMode: Left;
+
+    $C.@SmallTertiaryTextButton #Open {
+      @Text = %controlcore.ui.mods.info;
+      Anchor: (Width: 320, Height: 28, Top: 2);
+    }
+
+    Label #Name {
+      Visible: false;
+      Anchor: (Width: 320);
+      Style: (...@Cell, TextColor: #e9e4d6, RenderBold: true);
+    }
+  }
+
+  Label #Need {
+    Anchor: (Width: 220, Right: 10);
+    Style: @Cell;
+  }
+
+  Label #Have {
+    Anchor: (Width: 220, Right: 10);
+    Style: (...@Cell, TextColor: #9fb0bd);
+  }
+
+  Label #Ok {
+    Visible: false;
+    Anchor: (Height: 20, Top: 6, Right: 4);
+    Padding: (Horizontal: 7);
+    Background: #3f6e3c;
+    Style: @Badge;
+  }
+
+  Label #Missing {
+    Visible: false;
+    Anchor: (Height: 20, Top: 6, Right: 4);
+    Padding: (Horizontal: 7);
+    Background: #9c4434;
+    Style: @Badge;
+  }
+
+  Label #Off {
+    Visible: false;
+    Anchor: (Height: 20, Top: 6, Right: 4);
+    Padding: (Horizontal: 7);
+    Background: #4a5866;
+    Style: @Badge;
+  }
+
+  Label #Wrong {
+    Visible: false;
+    Anchor: (Height: 20, Top: 6, Right: 4);
+    Padding: (Horizontal: 7);
+    Background: #8a5a1c;
+    Style: @Badge;
+  }
+
+  Label #Absent {
+    Visible: false;
+    Anchor: (Height: 20, Top: 6, Right: 4);
+    Padding: (Horizontal: 7);
+    Background: #1b2c38;
+    Style: (...@Badge, TextColor: #5f7383);
+  }
+}

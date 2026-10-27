@@ -1,0 +1,27 @@
+Group {
+
+  Group #ToastsTopRight {
+    LayoutMode: Top;
+    Anchor: (Top: 110, Right: 24, Width: 380, Height: 220);
+  }
+
+  Group #ToastsTopLeft {
+    LayoutMode: Top;
+    Anchor: (Top: 110, Left: 24, Width: 380, Height: 220);
+  }
+
+  Group #ToastsBottomRight {
+    LayoutMode: Top;
+    Anchor: (Bottom: 170, Right: 24, Width: 380, Height: 220);
+  }
+
+  Group #WarningsUnderCompass {
+    LayoutMode: Top;
+    Anchor: (Top: 78, Width: 640, Height: 120);
+  }
+
+  Group #WarningsBottom {
+    LayoutMode: Top;
+    Anchor: (Bottom: 150, Width: 640, Height: 120);
+  }
+}

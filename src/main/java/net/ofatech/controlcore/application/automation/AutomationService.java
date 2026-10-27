@@ -55,6 +55,22 @@ public final class AutomationService {
     static final int MAX_NAME = 40;
     static final int MAX_TEXT = 256;
     static final int MAX_COOLDOWN = 86_400;
+    static final int TOAST_SECONDS = 6;
+
+    record Leveled(net.ofatech.controlcore.domain.model.hud.ToastLevel level, String text) {
+
+        static Leveled of(String text) {
+            int colon = text.indexOf(':');
+            if (colon > 0) {
+                var level = net.ofatech.controlcore.domain.model.hud.ToastLevel.of(text.substring(0, colon));
+                if (level.isPresent()) {
+                    return new Leveled(level.get(), text.substring(colon + 1).strip());
+                }
+            }
+            return new Leveled(net.ofatech.controlcore.domain.model.hud.ToastLevel.INFO, text.strip());
+        }
+    }
+
     public static final int MAX_ACTIONS = 8;
 
     private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("H:mm");
@@ -151,6 +167,15 @@ public final class AutomationService {
 
     public void onLeave(PlayerInfo player, Optional<String> world) {
         fire(Trigger.LEAVE, Optional.of(player), world, Map.of(), "");
+    }
+
+    public void onCombat(PlayerInfo player, boolean entered) {
+        fire(
+                entered ? Trigger.COMBAT_ENTER : Trigger.COMBAT_LEAVE,
+                Optional.of(player),
+                sessions.world(player.id()),
+                Map.of(),
+                "");
     }
 
     public void onWorld(PlayerInfo player, String world) {
@@ -340,6 +365,36 @@ public final class AutomationService {
                     notifications.titleAll(title, subtitle);
                 } else {
                     notifications.title(player.get(), title, subtitle);
+                }
+            }
+            case TOAST_PLAYER, TOAST_ALL -> {
+                Leveled leveled = Leveled.of(text);
+                int bar = leveled.text().indexOf('|');
+                String title = bar < 0 ? "" : leveled.text().substring(0, bar).strip();
+                String body = (bar < 0 ? leveled.text() : leveled.text().substring(bar + 1)).strip();
+                if (action.kind() == ActionKind.TOAST_ALL) {
+                    notifications.toastAll(title, body, leveled.level(), TOAST_SECONDS);
+                } else {
+                    notifications.toast(player.get(), title, body, leveled.level(), TOAST_SECONDS);
+                }
+            }
+            case WARNING_ALL -> {
+                Leveled leveled = Leveled.of(text);
+                int bar = leveled.text().lastIndexOf('|');
+                String body = leveled.text();
+                int minutes = 0;
+                if (bar >= 0 && leveled.text().substring(bar + 1).strip().matches("\\d{1,4}")) {
+                    minutes = Integer.parseInt(leveled.text().substring(bar + 1).strip());
+                    body = leveled.text().substring(0, bar).strip();
+                }
+                notifications.warningAll(rule.id(), body, leveled.level(), minutes * 60);
+            }
+            case CLEAR_WARNING -> {
+                String target = action.value().strip();
+                if (target.equalsIgnoreCase("all")) {
+                    notifications.warningIds().forEach(notifications::clearWarningAll);
+                } else {
+                    notifications.clearWarningAll(target);
                 }
             }
             case COMMAND_SERVER -> commands.runAsServer(command(text));
@@ -769,6 +824,7 @@ public final class AutomationService {
                                         value.substring(0, value.indexOf('=')).strip())
                                 .isSuccess();
             case MOD_ACTION -> value.matches("[a-z0-9][a-z0-9_-]*:[a-z0-9][a-z0-9_-]*(\\s.*)?");
+            case CLEAR_WARNING -> value.equalsIgnoreCase("all") || value.matches("[a-z0-9][a-z0-9-]*");
             default -> !value.isEmpty() && value.length() <= MAX_TEXT;
         };
         return ok

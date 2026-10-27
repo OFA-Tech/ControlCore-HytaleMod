@@ -26,6 +26,7 @@ The value field shows what it expects for the option you picked.
 | A player joins for the first time | - (counts from when ControlCore 0.16 was installed) |
 | A player leaves | - |
 | A player enters a world | world name, empty for any |
+| A player enters combat / leaves combat | - |
 | Every X minutes | 1 to 1440 |
 | Every day at | `20:00` (the server's clock) |
 | A schedule (cron) | five fields: minute hour day month weekday (see below) |
@@ -50,6 +51,9 @@ The value field shows what it expects for the option you picked.
 |---|---|
 | Message the player / everyone / admins | text |
 | Title for the player / everyone | `Title | subtitle` |
+| Toast for the player / everyone | `title | text`, optionally starting with `success:`, `warning:` or `error:` |
+| Warning bar for everyone | `text | minutes` (no minutes: until removed), optionally starting with `warning:` or `error:` |
+| Remove a warning bar | the id of the rule that showed it, or `all` |
 | Run a command as the server / the player | the command without `/` |
 | Switch to a profile | `@vanilla`, `@pvp`, `@creative`, `@event` or a profile's name |
 | Change a setting | `id=value`, for example `server:motd=Event tonight!` |

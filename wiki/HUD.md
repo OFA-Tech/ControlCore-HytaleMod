@@ -21,6 +21,20 @@ Mods can add their own HUD to the same list (it shows under "<mod name>: HUD").
 `/cc-bind controlcore:toggle-hud alt+3`. It hides the game's HUD and every mod HUD until pressed again or until you
 leave. It has no default key.
 
+## Toasts and warnings
+
+Rules, admins and mods can show **toasts** (small timed messages, up to three stacked) and **warning bars** (for
+example "Restart in 10 minutes", until they expire or are removed). In `/prefs` -> **ControlCore: HUD** each player
+chooses:
+
+| Preference | Choices |
+|---|---|
+| Toasts and warnings | on (default) or off |
+| Toast position | Top right (default), Top left, Bottom right, Hytale notifications |
+| Warning position | Under the compass (default), Above the hotbar |
+
+The colour bar on the left shows the level: blue information, green success, gold warning, red error.
+
 ## Admins
 
 Mod Settings → **ControlCore: HUD** has a rule for each part (`controlcore:hud-rule.<part>`):
@@ -35,6 +49,21 @@ Mod Settings → **ControlCore: HUD** has a rule for each part (`controlcore:hud
 ```
 /cc-set controlcore:hud-rule.compass Always hidden
 ```
+
+### HUD by situation
+
+`controlcore:hud-context-rules` (Mod Settings -> **ControlCore: HUD by situation**) takes one rule per line:
+`<part> <hide|show> <when>`, where *when* is `world:<name>`, `mode:adventure`, `mode:creative`, `combat` or
+`no-combat`. Situation rules win over the rules above and over players' own switches; when several match, the last
+one wins.
+
+```
+compass hide world:lobby
+chat hide combat
+hotbar show mode:creative
+```
+
+Part names are the ones in the table above, written in lower case with dashes (`status-icons`, `kill-feed`, ...).
 
 ## Limits
 

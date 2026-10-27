@@ -1,0 +1,44 @@
+$C = "../../Common.ui";
+
+Group {
+  LayoutMode: Left;
+  Anchor: (Height: 66, Bottom: 6);
+  Background: #13202a;
+
+    Group #BarInfo {
+      Anchor: (Width: 6);
+      Background: #5b8fb9;
+    }
+
+    Group #BarSuccess {
+      Visible: false;
+      Anchor: (Width: 6);
+      Background: #5fa35a;
+    }
+
+    Group #BarWarning {
+      Visible: false;
+      Anchor: (Width: 6);
+      Background: #e8a93b;
+    }
+
+    Group #BarError {
+      Visible: false;
+      Anchor: (Width: 6);
+      Background: #d0563f;
+    }
+
+  Group {
+    LayoutMode: Top;
+    FlexWeight: 1;
+    Padding: (Horizontal: 12, Vertical: 8);
+
+    Label #Title {
+      Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #e9e4d6);
+    }
+
+    Label #Text {
+      Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #c9c3b3, Wrap: true);
+    }
+  }
+}

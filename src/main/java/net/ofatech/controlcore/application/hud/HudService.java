@@ -24,6 +24,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.game.HudDisplay;
+import net.ofatech.controlcore.domain.ports.game.PlayerContext;
 import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Result;
@@ -39,6 +40,7 @@ public final class HudService implements HudApi {
     static final String HIDDEN_UNTIL_CHOSEN = "Hidden until a player turns it on";
     static final String ALWAYS_HIDDEN = "Always hidden";
     static final String ALWAYS_SHOWN = "Always shown";
+    static final String CONTEXT_RULES = "hud-context-rules";
 
     private static final Text CATEGORY = Text.key("controlcore.hud.category", "HUD");
 
@@ -52,12 +54,24 @@ public final class HudService implements HudApi {
     private final Set<PlayerId> hiddenAll = ConcurrentHashMap.newKeySet();
     private final Map<PlayerId, Set<HudPart>> hiddenByUs = new ConcurrentHashMap<>();
     private final Map<PlayerId, Map<SettingId, Boolean>> shownElements = new ConcurrentHashMap<>();
+    private final PlayerContext context;
+    private final Setting<List<String>> contextRules;
 
-    public HudService(SettingsApi settings, HudDisplay display, Players players, Log log) {
+    public HudService(SettingsApi settings, HudDisplay display, Players players, PlayerContext context, Log log) {
         this.settings = settings;
         this.display = display;
         this.players = players;
+        this.context = context;
         this.log = log;
+        this.contextRules = settings.register(SettingDefinition.server(
+                                NAMESPACE, CONTEXT_RULES, SettingType.textList(30, 80), List.<String>of())
+                        .named(Text.key("controlcore.settings.hud_context_rules.name", "HUD by situation"))
+                        .describedAs(Text.key(
+                                "controlcore.settings.hud_context_rules.desc",
+                                "One rule per line: part hide|show when. E.g. compass hide world:lobby, chat hide combat,"
+                                        + " hotbar show mode:creative."))
+                        .inCategory(CATEGORY))
+                .value();
         for (HudPart part : HudPart.values()) {
             preferences.put(
                     part,
@@ -129,6 +143,10 @@ public final class HudService implements HudApi {
         if (hiddenAll.contains(player)) {
             return false;
         }
+        Optional<Boolean> situation = situation(player, part);
+        if (situation.isPresent()) {
+            return situation.get();
+        }
         String rule = rules.get(part).get();
         if (ALWAYS_HIDDEN.equals(rule)) {
             return false;
@@ -164,7 +182,8 @@ public final class HudService implements HudApi {
 
     void onSettingChanged(SettingChanged change) {
         SettingId id = change.id();
-        if (NAMESPACE.equals(id.namespace()) && id.key().startsWith(RULE_PREFIX)) {
+        if (NAMESPACE.equals(id.namespace())
+                && (id.key().startsWith(RULE_PREFIX) || id.key().equals(CONTEXT_RULES))) {
             players.online().forEach(player -> applyParts(player.id()));
         } else if (NAMESPACE.equals(id.namespace()) && id.key().startsWith(PART_PREFIX)) {
             change.player().ifPresent(this::applyParts);
@@ -214,6 +233,30 @@ public final class HudService implements HudApi {
                 log.error("The HUD " + element.id() + " failed to " + (visible ? "show" : "hide"), e);
             }
         }
+    }
+
+    public void contextChanged(PlayerId player) {
+        applyParts(player);
+    }
+
+    public boolean hasSituationRules() {
+        return !contextRules.get().isEmpty();
+    }
+
+    Optional<Boolean> situation(PlayerId player, HudPart part) {
+        List<String> lines = contextRules.get();
+        if (lines.isEmpty()) {
+            return Optional.empty();
+        }
+        PlayerContext.Context now = context.current(player);
+        Optional<Boolean> result = Optional.empty();
+        for (String line : lines) {
+            Optional<ContextRule> rule = ContextRule.parse(line);
+            if (rule.isPresent() && rule.get().part() == part && rule.get().matches(now)) {
+                result = Optional.of(rule.get().show());
+            }
+        }
+        return result;
     }
 
     List<PlayerId> online() {
