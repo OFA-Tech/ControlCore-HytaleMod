@@ -70,6 +70,7 @@ public final class FakePlatform implements Platform {
     public final FakeActiveProfileStore activeProfile = new FakeActiveProfileStore();
     public final FakeAutomationRuleStore automationRules = new FakeAutomationRuleStore();
     public final FakeServerHealth health = new FakeServerHealth();
+    public final FakeOverlayDisplay overlay = new FakeOverlayDisplay();
     public final FakeReportWriter reports = new FakeReportWriter();
     public final List<RecentProblems.Problem> problems = new java.util.concurrent.CopyOnWriteArrayList<>();
     public final FakeSettingPermissionStore settingPermissions = new FakeSettingPermissionStore();
@@ -133,6 +134,7 @@ public final class FakePlatform implements Platform {
             hidden.removeAll(show);
             hidden.addAll(hide);
         });
+        binder.bind(net.ofatech.controlcore.domain.ports.game.OverlayDisplay.class, overlay);
         binder.bind(InputProbe.class, new InputProbe() {
             @Override
             public boolean toggle(PlayerId player) {
