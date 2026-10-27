@@ -172,33 +172,6 @@ final class ModsSection {
                 entry.neededBy().size());
     }
 
-    String needs(ModsView.Entry entry) {
-        ModInfo mod = entry.mod();
-        List<String> required = new ArrayList<>();
-        List<String> optional = new ArrayList<>();
-        for (ModDependency dependency : mod.dependencies()) {
-            if (dependency.hytale() && dependency.status() == ModDependency.Status.OK) {
-                continue;
-            }
-            String text = dependency.id() + (dependency.range().isEmpty() ? "" : " " + dependency.range());
-            (dependency.optional() ? optional : required).add(text);
-        }
-        List<String> parts = new ArrayList<>();
-        if (!required.isEmpty()) {
-            parts.add(tr.t("controlcore.panel.mods.requires", "mods", String.join(", ", required)));
-        }
-        if (!optional.isEmpty()) {
-            parts.add(tr.t("controlcore.panel.mods.optional", "mods", String.join(", ", optional)));
-        }
-        if (!mod.serverVersion().isEmpty()) {
-            parts.add(tr.t("controlcore.panel.mods.hytale_version", "range", mod.serverVersion()));
-        }
-        if (!entry.neededBy().isEmpty()) {
-            parts.add(tr.t("controlcore.panel.mods.needed_by", "mods", String.join(", ", entry.neededBy())));
-        }
-        return String.join(" · ", parts);
-    }
-
     String problems(ModsView.Entry entry) {
         ModInfo mod = entry.mod();
         List<String> lines = new ArrayList<>();

@@ -130,12 +130,6 @@ Group {
         Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #9fb0bd, Wrap: true);
       }
 
-      Label #Needs {
-        Visible: false;
-        Anchor: (Top: 2);
-        Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #9fb0bd, Wrap: true);
-      }
-
       Label #Problem {
         Visible: false;
         Anchor: (Top: 2);
@@ -154,6 +148,11 @@ Group {
         $C.@SmallSecondaryTextButton #Keys {
           @Text = %controlcore.ui.mods.keys;
           Anchor: (Width: 100, Height: 30, Right: 6);
+        }
+
+        $C.@SmallSecondaryTextButton #Info {
+          @Text = %controlcore.ui.mods.info;
+          Anchor: (Width: 130, Height: 30, Right: 6);
         }
 
         $C.@SmallTertiaryTextButton #Config {
