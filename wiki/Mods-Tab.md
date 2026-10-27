@@ -8,8 +8,10 @@ players in `/prefs`.
 - Logo, name, version, description, authors, website and id.
 - Badges: **Code** (blue) or **No code**, **Assets** (green) or **No assets**, and when it applies **Off**,
   **Failed to load**, **On after a restart**, **Off after a restart** and **Hytale**.
-- **Requires / Can use / Hytale:** what the mod needs (from its manifest), what it can optionally use, and which
-  Hytale versions it is made for.
+- **Details** opens a page for the mod: what it **requires**, what it **can use**, which mods it is **needed by**
+  and which **Hytale** versions it is made for, each with the version needed, the version installed and a badge
+  (OK, Missing, Off, Wrong version, Installed, Not installed). Press a mod's name to open its details; **< Back**
+  returns to the list.
 - Problem badges: **Missing N** (a required mod isn't installed or is turned off), **Wrong version** (an installed
   mod, or Hytale itself, doesn't match the version it needs) and **Needed by N** (other mods require it). A red line
   under the mod says exactly what's wrong.
@@ -41,7 +43,7 @@ Search by name, id, author or description. The filter has:
 - **Dependencies are followed:** turning off a mod that others require shows a box at the top of the list ("Turning
   off X also turns off A, B. Turn them all off?") with **Turn all off** and **Cancel**. Turning a mod on offers to
   turn on the mods it requires. Snapshots, profiles and rollbacks follow the same rule.
-- **Config files**: shows the mod's JSON files from its data folder, read-only.
+- **Config files**: opens a page with the mod's JSON files from its data folder, read-only, with **< Back**.
 - **Mods hidden from players** (`controlcore:mods-hidden`, in Mod Settings): mods players don't see in the tab.
 
 ```

@@ -7,10 +7,8 @@ import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import net.ofatech.controlcore.domain.model.mods.ModDependency;
 import net.ofatech.controlcore.domain.model.mods.ModInfo;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
@@ -27,6 +25,7 @@ final class ModsTab {
     private static final String CANCEL = "ModCancel";
     private static final String INFO = "ModInfo";
     private static final String BACK = "ModInfoBack";
+    private static final String CONFIG_BACK = "ModConfigBack";
     private static final String OPEN = "ModInfoOpen";
     private static final String HEADER = "#ModDetailsHeader[0]";
     private static final String DEP_ROW = "Pages/ControlCore/ModDepRow.ui";
@@ -49,7 +48,7 @@ final class ModsTab {
     private final ModsSection mods;
     private final Translator tr;
     private final Host host;
-    private final Set<String> openConfigs = new HashSet<>();
+    private String configOf;
     private Pending pending;
     private String detailsOf;
     private final java.util.Map<String, String> slotTargets = new java.util.HashMap<>();
@@ -137,11 +136,6 @@ final class ModsTab {
         if (entry.manageable()) {
             commands.set(row + " #Enabled.Value", mod.enabledAfterRestart());
         }
-        boolean config = openConfigs.contains(mod.id());
-        commands.set(row + " #ConfigText.Visible", config);
-        if (config) {
-            commands.set(row + " #ConfigText.Text", mods.configText(mod.id()));
-        }
     }
 
     private void buildDetails(UICommandBuilder commands, UIEventBuilder events) {
@@ -168,11 +162,15 @@ final class ModsTab {
             }
         }
         addSlot(commands, events, "#MdHytale", "MdHytale:0", 0);
-        commands.set("#ModsListView.Visible", detailsOf == null);
-        commands.set("#ModDetails.Visible", detailsOf != null);
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating, "#ModConfigBack", EventData.of(PanelAction.KEY, CONFIG_BACK));
         if (detailsOf != null) {
             fillDetails(commands);
         }
+        if (configOf != null && !fillConfig(commands)) {
+            configOf = null;
+        }
+        views(commands);
     }
 
     private void addSlot(UICommandBuilder commands, UIEventBuilder events, String container, String key, int slot) {
@@ -205,8 +203,7 @@ final class ModsTab {
         Optional<ModsView.Entry> found = mods.find(detailsOf);
         if (found.isEmpty()) {
             detailsOf = null;
-            commands.set("#ModsListView.Visible", true);
-            commands.set("#ModDetails.Visible", false);
+            views(commands);
             return;
         }
         ModsView.Entry entry = found.get();
@@ -320,9 +317,9 @@ final class ModsTab {
             return;
         }
         detailsOf = mods.find(modId).get().mod().id();
-        update.set("#ModsListView.Visible", false);
-        update.set("#ModDetails.Visible", true);
+        configOf = null;
         fillDetails(update);
+        views(update);
         host.send(update);
     }
 
@@ -345,8 +342,13 @@ final class ModsTab {
             case BACK -> {
                 detailsOf = null;
                 UICommandBuilder update = new UICommandBuilder();
-                update.set("#ModDetails.Visible", false);
-                update.set("#ModsListView.Visible", true);
+                views(update);
+                host.send(update);
+            }
+            case CONFIG_BACK -> {
+                configOf = null;
+                UICommandBuilder update = new UICommandBuilder();
+                views(update);
                 host.send(update);
             }
             case CONFIRM -> {
@@ -438,13 +440,36 @@ final class ModsTab {
     }
 
     private void toggleConfig(String modId) {
-        if (modId == null || !mods.view().canManage()) {
-            return;
+        UICommandBuilder update = new UICommandBuilder();
+        if (modId != null && mods.view().canManage()) {
+            configOf = mods.find(modId).map(entry -> entry.mod().id()).orElse(null);
+            if (configOf != null && !fillConfig(update)) {
+                configOf = null;
+            }
         }
-        if (!openConfigs.remove(modId)) {
-            openConfigs.add(modId);
+        views(update);
+        host.send(update);
+    }
+
+    private boolean fillConfig(UICommandBuilder commands) {
+        Optional<ModsView.Entry> entry = mods.find(configOf);
+        if (entry.isEmpty()) {
+            return false;
         }
-        host.rebuild();
+        commands.set(
+                "#ModConfigTitle.Text",
+                tr.t(
+                        "controlcore.panel.mods.config_title",
+                        "name",
+                        entry.get().mod().name()));
+        commands.set("#ModConfigText.Text", mods.configText(configOf));
+        return true;
+    }
+
+    private void views(UICommandBuilder commands) {
+        commands.set("#ModConfigView.Visible", configOf != null);
+        commands.set("#ModDetails.Visible", configOf == null && detailsOf != null);
+        commands.set("#ModsListView.Visible", configOf == null && detailsOf == null);
     }
 
     private void ask(String modId, boolean enabled, String item) {

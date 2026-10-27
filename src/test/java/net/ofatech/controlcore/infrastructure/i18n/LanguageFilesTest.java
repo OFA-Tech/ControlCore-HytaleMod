@@ -41,8 +41,11 @@ class LanguageFilesTest {
         Set<String> used = new TreeSet<>();
         collect(Path.of("src/main/java"), ".java", KEY_IN_CODE, used);
         collect(Path.of("src/main/resources/Common/UI/Custom/Pages/ControlCore"), ".ui", UI_KEY, used);
-        used.removeIf(
-                key -> key.endsWith(".") || key.equals("controlcore.tabs") || key.equals("controlcore.hud.rules"));
+        used.removeIf(key -> key.endsWith(".")
+                || key.equals("controlcore.tabs")
+                || key.equals("controlcore.hud.rules")
+                || key.equals("controlcore.notifications.corners")
+                || key.equals("controlcore.notifications.places"));
         assertThat(used).isNotEmpty();
         assertThat(english).containsAll(used);
     }

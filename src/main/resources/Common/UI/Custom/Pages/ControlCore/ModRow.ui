@@ -182,14 +182,6 @@ Group {
     }
   }
 
-  Label #ConfigText {
-    Visible: false;
-    Anchor: (Left: 68, Top: 8);
-    Padding: (Full: 8);
-    Background: #13202a;
-    Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #c9c3b3, Wrap: true);
-  }
-
   Group {
     Anchor: (Height: 1, Top: 10);
     Background: #263c4c;

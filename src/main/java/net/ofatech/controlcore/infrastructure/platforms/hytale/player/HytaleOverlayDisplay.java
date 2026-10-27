@@ -30,12 +30,9 @@ public final class HytaleOverlayDisplay implements OverlayDisplay {
     private static final Map<String, String> CORNERS = Map.of(
             Overlay.TOP_RIGHT, "#ToastsTopRight",
             Overlay.TOP_LEFT, "#ToastsTopLeft",
-            Overlay.BOTTOM_RIGHT, "#ToastsBottomRight",
-            Overlay.BOTTOM_LEFT, "#ToastsBottomLeft");
-    private static final Map<String, String> PLACES = Map.of(
-            Overlay.UNDER_COMPASS, "#WarningsUnderCompass",
-            Overlay.TOP, "#WarningsTop",
-            Overlay.BOTTOM, "#WarningsBottom");
+            Overlay.BOTTOM_RIGHT, "#ToastsBottomRight");
+    private static final Map<String, String> PLACES =
+            Map.of(Overlay.UNDER_COMPASS, "#WarningsUnderCompass", Overlay.BOTTOM, "#WarningsBottom");
     private static final List<String> LEVELS = List.of("Info", "Success", "Warning", "Error");
 
     private final Log log;

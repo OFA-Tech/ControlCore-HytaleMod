@@ -8,6 +8,8 @@ public enum Trigger {
     FIRST_JOIN(Value.NONE, 0, true),
     LEAVE(Value.NONE, 0, true),
     WORLD_ENTER(Value.OPTIONAL, 0, true),
+    COMBAT_ENTER(Value.NONE, 0, true),
+    COMBAT_LEAVE(Value.NONE, 0, true),
     EVERY_MINUTES(Value.REQUIRED, 0, false),
     DAILY_AT(Value.REQUIRED, 0, false),
     CRON(Value.REQUIRED, 0, false),

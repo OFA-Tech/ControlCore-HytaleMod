@@ -9,10 +9,8 @@ public record Overlay(List<Line> toasts, String toastCorner, List<Line> warnings
     public static final String TOP_RIGHT = "top-right";
     public static final String TOP_LEFT = "top-left";
     public static final String BOTTOM_RIGHT = "bottom-right";
-    public static final String BOTTOM_LEFT = "bottom-left";
     public static final String HYTALE = "hytale";
     public static final String UNDER_COMPASS = "under-compass";
-    public static final String TOP = "top";
     public static final String BOTTOM = "bottom";
 
     public Overlay {

@@ -786,6 +786,38 @@ $C.@PageOverlay {
             }
             }
 
+          Group #ModConfigView {
+            LayoutMode: Top;
+            Visible: false;
+
+            Group {
+              LayoutMode: Left;
+              Anchor: (Height: 34, Bottom: 6);
+
+              $C.@SmallTertiaryTextButton #ModConfigBack {
+                @Text = %controlcore.ui.mods.back;
+                Anchor: (Width: 140, Height: 32, Right: 10);
+              }
+
+              Label #ModConfigTitle {
+                Style: (...@NoteStyle, VerticalAlignment: Center);
+              }
+            }
+
+            Group {
+              LayoutMode: TopScrolling;
+              ScrollbarStyle: $C.@DefaultScrollbarStyle;
+              Anchor: (Height: 560);
+              Padding: (Right: 10);
+
+              Label #ModConfigText {
+                Padding: (Full: 12);
+                Background: #13202a;
+                Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #c9c3b3, Wrap: true);
+              }
+            }
+          }
+
           Group #ModDetails {
             LayoutMode: Top;
             Visible: false;

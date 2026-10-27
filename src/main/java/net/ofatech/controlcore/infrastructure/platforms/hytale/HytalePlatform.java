@@ -23,6 +23,7 @@ import net.ofatech.controlcore.domain.ports.game.InputProbe;
 import net.ofatech.controlcore.domain.ports.game.Messenger;
 import net.ofatech.controlcore.domain.ports.game.OverlayDisplay;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
+import net.ofatech.controlcore.domain.ports.game.PlayerContext;
 import net.ofatech.controlcore.domain.ports.game.PlayerData;
 import net.ofatech.controlcore.domain.ports.game.PlayerInput;
 import net.ofatech.controlcore.domain.ports.game.PlayerTuning;
@@ -66,6 +67,7 @@ import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytaleHudD
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytaleMessenger;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytaleOverlayDisplay;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytalePermissions;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytalePlayerContext;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytalePlayerTuning;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytalePlayers;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.server.HytaleBans;
@@ -131,6 +133,7 @@ public final class HytalePlatform implements Platform {
         binder.bind(ControlPanelView.class, new HytaleControlPanelView(log));
         binder.bind(HudDisplay.class, new HytaleHudDisplay(log));
         binder.bind(OverlayDisplay.class, new HytaleOverlayDisplay(log));
+        binder.bind(PlayerContext.class, new HytalePlayerContext());
         binder.bind(InputProbe.class, new HytaleInputProbe(log));
         binder.bind(PlayerInput.class, new HytalePlayerInput(log));
         binder.bind(

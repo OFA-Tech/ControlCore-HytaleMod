@@ -15,19 +15,9 @@ Group {
     Anchor: (Bottom: 170, Right: 24, Width: 380, Height: 220);
   }
 
-  Group #ToastsBottomLeft {
-    LayoutMode: Top;
-    Anchor: (Bottom: 230, Left: 24, Width: 380, Height: 220);
-  }
-
   Group #WarningsUnderCompass {
     LayoutMode: Top;
     Anchor: (Top: 78, Width: 640, Height: 120);
-  }
-
-  Group #WarningsTop {
-    LayoutMode: Top;
-    Anchor: (Top: 8, Width: 640, Height: 120);
   }
 
   Group #WarningsBottom {

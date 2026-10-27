@@ -279,6 +279,12 @@ ControlCore calls `onShow` when the player joins (if visible), when they turn it
 ends; `onHide` the other way round. Don't show the HUD yourself on join. `.hiddenByDefault()` makes it opt-in;
 `huds().isVisible(player, id)` tells you the current state.
 
+## Toasts and warnings (API 2.2.0)
+
+`notifications()` gained `toast`, `toastAll`, `warning`, `warningAll`, `clearWarning` and `clearWarningAll`, with
+`ToastLevel` (`INFO`, `SUCCESS`, `WARNING`, `ERROR`). Players choose where toasts and warnings appear and can turn
+them off; see the wiki HUD page.
+
 ## Notifications, scheduler, sessions and automation (API 2.1.0)
 
 `api.notifications()`, `api.scheduler()`, `api.sessions()` and `api.actions()`: see the wiki page

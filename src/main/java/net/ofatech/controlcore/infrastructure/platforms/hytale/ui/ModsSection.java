@@ -216,9 +216,9 @@ final class ModsSection {
         if (files.isEmpty()) {
             return tr.t("controlcore.panel.mods.no_config");
         }
-        StringBuilder text = new StringBuilder(tr.t("controlcore.panel.mods.config_read_only"));
+        StringBuilder text = new StringBuilder();
         for (ModCatalog.ConfigFile file : files) {
-            text.append("\n\n").append(file.name()).append(':');
+            text.append(text.isEmpty() ? "" : "\n\n").append(file.name()).append(':');
             for (String line : file.lines()) {
                 text.append("\n  ").append(line);
             }

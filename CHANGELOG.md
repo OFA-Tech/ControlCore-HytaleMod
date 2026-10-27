@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Added
+- **Toasts and warning bars:** small timed messages (up to three stacked) and warning bars such as "Restart in 10
+  minutes". Each player picks the toast corner (top right by default, top left, bottom right, or Hytale's own
+  notifications) and the warning place (under the compass by default, or above the hotbar) in `/prefs`, and can turn
+  them off like any other HUD part. Warnings for everyone also reach players who join later.
+- **HUD by situation:** one rule per line in Mod Settings -> ControlCore: HUD, for example `compass hide world:lobby`,
+  `chat hide combat` or `hotbar show mode:creative`. Rules follow the player's world, game mode and combat state live.
+- **Automation:** new triggers *A player enters combat* / *leaves combat*, and new actions *Toast for the player /
+  everyone*, *Warning bar for everyone* (`text | minutes`) and *Remove a warning bar*. Toasts and warnings accept a
+  level prefix: `success:`, `warning:` or `error:`.
+- **Mods tab:** a **Details** view per mod (what it requires, can use, is needed by, and its Hytale versions, each with
+  a status badge; names open that mod's details) and a **Config files** view, both with **< Back**.
+- **API 2.2.0:** `notifications().toast(...)`, `toastAll(...)`, `warning(...)`, `warningAll(...)`, `clearWarning(...)`
+  and `clearWarningAll(...)`, with `ToastLevel`. Mods built for 2.0.0 and 2.1.0 keep working.
+
+### Changed
+- The Mods list no longer shows requirements as a line of text; they moved to **Details**.
+
 ## 0.17.0 - 2026-10-27
 
 Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.4. API unchanged (2.1.0).

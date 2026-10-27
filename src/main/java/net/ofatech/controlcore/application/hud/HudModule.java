@@ -2,6 +2,7 @@ package net.ofatech.controlcore.application.hud;
 
 import com.google.auto.service.AutoService;
 import net.ofatech.controlcore.api.KeymapsApi;
+import net.ofatech.controlcore.application.automation.NotificationService;
 import net.ofatech.controlcore.application.component.FeatureModule;
 import net.ofatech.controlcore.application.component.ModuleContext;
 import net.ofatech.controlcore.domain.event.SettingChanged;
@@ -16,11 +17,14 @@ public final class HudModule implements FeatureModule {
 
     private final HudService hud;
     private final KeymapsApi keymaps;
+    private final NotificationService notifications;
     private Subscription changes;
+    private Subscription notificationChanges;
 
-    public HudModule(HudService hud, KeymapsApi keymaps) {
+    public HudModule(HudService hud, KeymapsApi keymaps, NotificationService notifications) {
         this.hud = hud;
         this.keymaps = keymaps;
+        this.notifications = notifications;
     }
 
     @Override
@@ -37,6 +41,7 @@ public final class HudModule implements FeatureModule {
     @Override
     public void start(ModuleContext context) {
         changes = context.events().subscribe(SettingChanged.class, hud::onSettingChanged);
+        notificationChanges = context.events().subscribe(SettingChanged.class, notifications::onSettingChanged);
         hud.online().forEach(hud::apply);
     }
 
@@ -44,6 +49,9 @@ public final class HudModule implements FeatureModule {
     public void shutdown() {
         if (changes != null) {
             changes.close();
+        }
+        if (notificationChanges != null) {
+            notificationChanges.close();
         }
     }
 }

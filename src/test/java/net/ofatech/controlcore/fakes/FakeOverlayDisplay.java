@@ -13,10 +13,15 @@ public final class FakeOverlayDisplay implements OverlayDisplay {
 
     public final Map<PlayerId, Overlay> shown = new ConcurrentHashMap<>();
     public final List<String> hytaleToasts = new ArrayList<>();
+    public final List<String> everToasted = new ArrayList<>();
 
     @Override
     public void render(PlayerId player, Overlay overlay) {
         shown.put(player, overlay);
+        overlay.toasts().stream()
+                .map(line -> line.level().id() + ":" + line.text())
+                .filter(text -> !everToasted.contains(text))
+                .forEach(everToasted::add);
     }
 
     @Override

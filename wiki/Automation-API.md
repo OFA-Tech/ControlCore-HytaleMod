@@ -11,6 +11,12 @@ api.notifications().broadcast("Restart in 5 minutes");
 api.notifications().toAdmins("Backup finished");
 api.notifications().title(player, "Welcome!", "Have fun");
 api.notifications().titleAll("Event", "starts now");
+
+// API 2.2.0: toasts and warning bars (players choose where they appear)
+api.notifications().toast(player, "Saved", "Your home was set", ToastLevel.SUCCESS, 6);
+api.notifications().toastAll("", "Backup finished", ToastLevel.INFO, 6);
+api.notifications().warningAll("restart", "Restart in 10 minutes", ToastLevel.WARNING, 600);
+api.notifications().clearWarningAll("restart");
 ```
 
 ## Scheduler
