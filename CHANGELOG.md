@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Added
+- **Mod dependencies in the Mods tab:** each mod shows what it requires, what it can optionally use and which Hytale
+  versions it is made for. Badges **Missing**, **Wrong version** and **Needed by**, a red line explaining the
+  problem, and a **Has problems** filter.
+- **Turning mods off and on follows dependencies:** turning off a mod that others need asks first and turns them off
+  too; turning one on offers to turn on what it needs. Commands, snapshots, profiles and rollbacks do the same.
+- The per-action **game action** choice (server setting / keep / replace) is now recorded in History, can be rolled
+  back, and is saved in snapshots (Keys part).
+
+### Changed
+- The **Bans** list updates by itself while it's open.
+- The world **Status** line is translated.
+- History → Changes: a **Delete:** label before the clear dropdown.
+
 ## 0.16.0 - 2026-10-25
 
 Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.4. The API for other mods
