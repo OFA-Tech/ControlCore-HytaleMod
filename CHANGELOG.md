@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.18.0 - 2026-10-27
+
+Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.4. The API for other mods
+is now **2.2.0** (new: toasts and warning bars); mods built for 2.0.0 and 2.1.0 keep working. No migration needed.
+
 ### Added
 - **Toasts and warning bars:** small timed messages (up to three stacked) and warning bars such as "Restart in 10
   minutes". Each player picks the toast corner (top right by default, top left, bottom right, or Hytale's own
