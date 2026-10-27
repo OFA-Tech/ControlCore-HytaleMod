@@ -883,8 +883,14 @@ $C.@PageOverlay {
                   Anchor: (Width: 200, Left: 10);
                 }
 
+                Label {
+                  Text: %controlcore.ui.history.clearLabel;
+                  Style: (...@NoteStyle, VerticalAlignment: Center);
+                  Anchor: (Left: 14, Right: 6);
+                }
+
                 $C.@DropdownBox #HistoryClearAge {
-                  Anchor: (Width: 190, Left: 10);
+                  Anchor: (Width: 190);
                 }
 
                 $C.@SmallTertiaryTextButton #HistoryClear {

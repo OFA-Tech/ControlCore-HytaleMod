@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.model.serverconfig.WorldStatus;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
@@ -292,7 +293,9 @@ final class SettingsSection {
     }
 
     String shownValue(SettingSnapshot snapshot) {
-        return shown(snapshot.value(), snapshot);
+        return WorldStatus.decode(snapshot.value())
+                .map(status -> status.describe(tr))
+                .orElseGet(() -> shown(snapshot.value(), snapshot));
     }
 
     String changedElsewhere(SettingSnapshot snapshot) {

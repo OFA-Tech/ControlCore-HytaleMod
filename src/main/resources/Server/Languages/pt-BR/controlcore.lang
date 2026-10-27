@@ -932,3 +932,7 @@ ui.mods.confirmYes = Desligar todos
 ui.mods.confirmNo = Cancelar
 errors.mods.required = {name} é usado por {other}, que não pode ser desligado aqui.
 history.what.game_action = Ação do jogo de {name}
+world.status.running = {players} jogador(es), {chunks} chunks carregados, {tps} TPS
+world.status.paused = {players} jogador(es), {chunks} chunks carregados, {tps} TPS, pausado
+world.status.not-ticking = {players} jogador(es), {chunks} chunks carregados, {tps} TPS, sem ticking
+ui.history.clearLabel = Apagar:

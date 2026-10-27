@@ -34,6 +34,11 @@ final class BansTab {
     }
 
     private final BansView view;
+
+    BansView view() {
+        return view;
+    }
+
     private final Translator tr;
     private final Host host;
     private String player = "";

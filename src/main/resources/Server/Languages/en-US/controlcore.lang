@@ -932,3 +932,7 @@ ui.mods.confirmYes = Turn all off
 ui.mods.confirmNo = Cancel
 errors.mods.required = {name} is needed by {other}, which can't be turned off here.
 history.what.game_action = Game action of {name}
+world.status.running = {players} player(s), {chunks} chunks loaded, {tps} TPS
+world.status.paused = {players} player(s), {chunks} chunks loaded, {tps} TPS, paused
+world.status.not-ticking = {players} player(s), {chunks} chunks loaded, {tps} TPS, not ticking
+ui.history.clearLabel = Delete:

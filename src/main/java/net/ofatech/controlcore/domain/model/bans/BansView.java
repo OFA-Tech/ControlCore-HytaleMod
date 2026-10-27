@@ -33,4 +33,6 @@ public interface BansView {
     CompletableFuture<Result<String>> ban(String player, String length, String reason);
 
     Result<String> unban(String id);
+
+    net.ofatech.controlcore.domain.event.Subscription onChange(Runnable listener);
 }
