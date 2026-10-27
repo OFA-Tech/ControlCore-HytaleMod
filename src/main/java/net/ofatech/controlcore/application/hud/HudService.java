@@ -68,8 +68,8 @@ public final class HudService implements HudApi {
                         .named(Text.key("controlcore.settings.hud_context_rules.name", "HUD by situation"))
                         .describedAs(Text.key(
                                 "controlcore.settings.hud_context_rules.desc",
-                                "One rule per line: part, hide or show, and when. Example: compass hide world:lobby,"
-                                        + " chat hide combat, hotbar show mode:creative. Wins over the rules above."))
+                                "One rule per line: part hide|show when. E.g. compass hide world:lobby, chat hide combat,"
+                                        + " hotbar show mode:creative."))
                         .inCategory(CATEGORY))
                 .value();
         for (HudPart part : HudPart.values()) {

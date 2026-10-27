@@ -975,5 +975,5 @@ notifications.places.above_the_hotbar = Above the hotbar
 hud.notifications.name = Toasts and warnings
 hud.notifications.desc = Small timed messages and warning bars from the server and its mods.
 settings.hud_context_rules.name = HUD by situation
-settings.hud_context_rules.desc = One rule per line: part, hide or show, and when. Example: compass hide world:lobby, chat hide combat, hotbar show mode:creative. Wins over the rules above.
+settings.hud_context_rules.desc = One rule per line: part hide|show when. E.g. compass hide world:lobby, chat hide combat, hotbar show mode:creative.
 panel.mods.config_title = Config files of {name} (read-only: edit them while the server is stopped)
