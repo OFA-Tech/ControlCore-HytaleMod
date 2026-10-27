@@ -86,7 +86,7 @@ final class ModsTab {
             showBadges(row, mods.badges(entry), commands);
             commands.set(row + " #Description.Text", mods.description(mod));
             commands.set(row + " #Details.Text", mods.details(mod));
-            String needs = mods.needs(mod);
+            String needs = mods.needs(entry);
             commands.set(row + " #Needs.Visible", !needs.isEmpty());
             commands.set(row + " #Needs.Text", needs);
             String problems = mods.problems(entry);
