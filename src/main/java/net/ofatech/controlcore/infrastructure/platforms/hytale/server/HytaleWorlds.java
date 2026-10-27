@@ -16,6 +16,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import net.ofatech.controlcore.domain.model.serverconfig.ConfigEntry;
 import net.ofatech.controlcore.domain.model.serverconfig.ConfigValueKind;
+import net.ofatech.controlcore.domain.model.serverconfig.WorldStatus;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.text.Text;
@@ -392,9 +393,8 @@ public final class HytaleWorlds implements Worlds {
     private static String status(World world) {
         int players = world.getPlayerCount();
         int chunks = world.getChunkStore().getLoadedChunksCount();
-        String state = !world.isTicking() ? ", not ticking" : world.isPaused() ? ", paused" : "";
-        return players + (players == 1 ? " player, " : " players, ") + chunks + " chunks loaded, " + world.getTps()
-                + " TPS" + state;
+        String state = !world.isTicking() ? "not-ticking" : world.isPaused() ? "paused" : "running";
+        return WorldStatus.encode(players, chunks, world.getTps(), state);
     }
 
     static SettingId extraId(String world, String path) {

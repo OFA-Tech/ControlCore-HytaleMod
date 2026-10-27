@@ -13,6 +13,8 @@ public interface ModsView {
 
     Result<Entry> setEnabled(String modId, boolean enabled);
 
+    List<Entry> alsoChanged(String modId, boolean enabled);
+
     List<ModCatalog.ConfigFile> configFiles(String modId);
 
     record Entry(
@@ -21,5 +23,15 @@ public interface ModsView {
             boolean hasServerSettings,
             boolean hasPreferences,
             boolean hasKeys,
-            boolean manageable) {}
+            boolean manageable,
+            List<String> neededBy) {
+
+        public Entry {
+            neededBy = neededBy == null ? List.of() : List.copyOf(neededBy);
+        }
+
+        public boolean hasProblems() {
+            return !mod.serverVersionOk() || mod.dependencies().stream().anyMatch(ModDependency::problem);
+        }
+    }
 }

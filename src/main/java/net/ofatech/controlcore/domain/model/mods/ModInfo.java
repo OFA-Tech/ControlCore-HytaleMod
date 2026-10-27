@@ -16,7 +16,10 @@ public record ModInfo(
         State state,
         boolean core,
         boolean enabledAfterRestart,
-        Optional<String> logo) {
+        Optional<String> logo,
+        List<ModDependency> dependencies,
+        String serverVersion,
+        boolean serverVersionOk) {
 
     public ModInfo {
         Guard.notBlank(id, "id");
@@ -29,6 +32,83 @@ public record ModInfo(
         Guard.notNull(kind, "kind");
         Guard.notNull(state, "state");
         logo = logo == null ? Optional.empty() : logo;
+        dependencies = dependencies == null ? List.of() : List.copyOf(dependencies);
+        serverVersion = serverVersion == null || serverVersion.strip().equals("*") ? "" : serverVersion.strip();
+    }
+
+    public ModInfo(
+            String id,
+            String name,
+            String group,
+            String version,
+            String description,
+            List<String> authors,
+            String website,
+            Kind kind,
+            State state,
+            boolean core,
+            boolean enabledAfterRestart,
+            Optional<String> logo) {
+        this(
+                id,
+                name,
+                group,
+                version,
+                description,
+                authors,
+                website,
+                kind,
+                state,
+                core,
+                enabledAfterRestart,
+                logo,
+                List.of(),
+                "",
+                true);
+    }
+
+    public ModInfo withEnabledAfterRestart(boolean enabled) {
+        return new ModInfo(
+                id,
+                name,
+                group,
+                version,
+                description,
+                authors,
+                website,
+                kind,
+                state,
+                core,
+                enabled,
+                logo,
+                dependencies,
+                serverVersion,
+                serverVersionOk);
+    }
+
+    public ModInfo withDependencies(List<ModDependency> changed) {
+        return new ModInfo(
+                id,
+                name,
+                group,
+                version,
+                description,
+                authors,
+                website,
+                kind,
+                state,
+                core,
+                enabledAfterRestart,
+                logo,
+                changed,
+                serverVersion,
+                serverVersionOk);
+    }
+
+    public List<ModDependency> required() {
+        return dependencies.stream()
+                .filter(dependency -> !dependency.optional())
+                .toList();
     }
 
     public enum Kind {

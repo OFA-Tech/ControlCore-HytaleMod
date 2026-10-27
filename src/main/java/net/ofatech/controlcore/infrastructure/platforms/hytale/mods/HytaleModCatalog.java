@@ -6,6 +6,9 @@ import com.hypixel.hytale.assetstore.AssetPack;
 import com.hypixel.hytale.common.plugin.AuthorInfo;
 import com.hypixel.hytale.common.plugin.PluginIdentifier;
 import com.hypixel.hytale.common.plugin.PluginManifest;
+import com.hypixel.hytale.common.semver.Semver;
+import com.hypixel.hytale.common.semver.SemverRange;
+import com.hypixel.hytale.common.util.java.ManifestUtil;
 import com.hypixel.hytale.server.core.HytaleServer;
 import com.hypixel.hytale.server.core.HytaleServerConfig;
 import com.hypixel.hytale.server.core.asset.AssetModule;
@@ -25,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
+import net.ofatech.controlcore.domain.model.mods.ModDependency;
 import net.ofatech.controlcore.domain.model.mods.ModInfo;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.mods.ModCatalog;
@@ -63,15 +67,22 @@ public final class HytaleModCatalog implements ModCatalog {
         loaded.forEach((id, plugin) -> manifests.putIfAbsent(id, plugin.getManifest()));
 
         HytaleServerConfig config = HytaleServer.get().getConfig();
+        Map<String, PluginManifest> installed = new HashMap<>(manifests);
+        packs.forEach((id, pack) -> {
+            if (pack.getManifest() != null) {
+                installed.putIfAbsent(id, pack.getManifest());
+            }
+        });
         List<ModInfo> mods = new ArrayList<>();
         manifests.forEach((id, manifest) -> {
             PluginBase plugin = loaded.get(id);
             ModInfo.Kind kind = packs.containsKey(id) ? ModInfo.Kind.PLUGIN_WITH_ASSETS : ModInfo.Kind.PLUGIN;
-            mods.add(info(id, manifest, kind, state(plugin), config));
+            mods.add(info(id, manifest, kind, state(plugin), config, installed));
         });
         packs.forEach((id, pack) -> {
             if (!manifests.containsKey(id) && pack.getManifest() != null) {
-                mods.add(info(id, pack.getManifest(), ModInfo.Kind.ASSET_PACK, ModInfo.State.ENABLED, config));
+                mods.add(info(
+                        id, pack.getManifest(), ModInfo.Kind.ASSET_PACK, ModInfo.State.ENABLED, config, installed));
             }
         });
         return mods;
@@ -170,7 +181,12 @@ public final class HytaleModCatalog implements ModCatalog {
     }
 
     private static ModInfo info(
-            String id, PluginManifest manifest, ModInfo.Kind kind, ModInfo.State state, HytaleServerConfig config) {
+            String id,
+            PluginManifest manifest,
+            ModInfo.Kind kind,
+            ModInfo.State state,
+            HytaleServerConfig config,
+            Map<String, PluginManifest> installed) {
         String group = nullToEmpty(manifest.getGroup());
         String name = nullToEmpty(manifest.getName());
         boolean core = PluginManifest.CORE_GROUP.equalsIgnoreCase(group);
@@ -199,7 +215,70 @@ public final class HytaleModCatalog implements ModCatalog {
                 state,
                 core,
                 core || enabledAfterRestart(id, manifest, config),
-                logo);
+                logo,
+                dependencies(manifest, installed),
+                manifest.getServerVersion() == null
+                        ? ""
+                        : manifest.getServerVersion().toString(),
+                serverVersionOk(manifest));
+    }
+
+    private static List<ModDependency> dependencies(PluginManifest manifest, Map<String, PluginManifest> installed) {
+        List<ModDependency> dependencies = new ArrayList<>();
+        add(manifest.getDependencies(), false, installed, dependencies);
+        add(manifest.getOptionalDependencies(), true, installed, dependencies);
+        return dependencies;
+    }
+
+    private static void add(
+            Map<PluginIdentifier, SemverRange> declared,
+            boolean optional,
+            Map<String, PluginManifest> installed,
+            List<ModDependency> into) {
+        if (declared == null) {
+            return;
+        }
+        declared.forEach((id, range) -> {
+            String key = id.toString();
+            PluginManifest found = installed.get(key);
+            if (found == null) {
+                for (Map.Entry<String, PluginManifest> entry : installed.entrySet()) {
+                    if (entry.getKey().equalsIgnoreCase(key)) {
+                        found = entry.getValue();
+                    }
+                }
+            }
+            ModDependency.Status status;
+            if (found == null) {
+                status = ModDependency.Status.MISSING;
+            } else if (range != null && found.getVersion() != null && !satisfies(found.getVersion(), range)) {
+                status = ModDependency.Status.WRONG_VERSION;
+            } else {
+                status = ModDependency.Status.OK;
+            }
+            into.add(new ModDependency(key, range == null ? "" : range.toString(), optional, status));
+        });
+    }
+
+    private static boolean satisfies(Semver version, SemverRange range) {
+        try {
+            return range.satisfies(version);
+        } catch (RuntimeException e) {
+            return true;
+        }
+    }
+
+    private static boolean serverVersionOk(PluginManifest manifest) {
+        SemverRange range = manifest.getServerVersion();
+        String running = ManifestUtil.getVersion();
+        if (range == null || running == null || running.isBlank()) {
+            return true;
+        }
+        try {
+            return range.satisfies(Semver.fromString(running.strip()));
+        } catch (RuntimeException unparsableVersion) {
+            return true;
+        }
     }
 
     private static boolean enabledAfterRestart(String id, PluginManifest manifest, HytaleServerConfig config) {

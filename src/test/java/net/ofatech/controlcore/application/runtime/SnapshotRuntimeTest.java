@@ -27,6 +27,29 @@ class SnapshotRuntimeTest extends RuntimeTestBase {
     }
 
     @Test
+    void gameActionChoicesAreRecordedAndRestored() {
+        String id = "controlcore:open-preferences";
+        assertThat(run("cc-key-game-action", Map.of("id", id, "mode", "keep")).isSuccess())
+                .isTrue();
+        assertThat(platform.changeLog.records.getLast().kind())
+                .isEqualTo(net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind.GAME_ACTION);
+        assertThat(run("cc-snapshot-save", Map.of("name", "modes")).isSuccess()).isTrue();
+        assertThat(platform.snapshots.snapshots.get("modes").gameActions()).contains(Map.of(id, "keep"));
+
+        run("cc-key-game-action", Map.of("id", id, "mode", "replace"));
+        assertThat(reply("cc-snapshot-diff", Map.of("name", "modes")))
+                .contains("replace -> ")
+                .contains("keep");
+        reply("cc-snapshot-restore", Map.of("name", "modes"));
+        assertThat(reply("cc-history", Map.of())).contains("keep");
+
+        long last = platform.changeLog.records.getLast().id();
+        assertThat(run("cc-rollback", Map.of("change", (int) last)).isSuccess()).isTrue();
+        run("cc-snapshot-save", Map.of("name", "after"));
+        assertThat(platform.snapshots.snapshots.get("after").gameActions()).contains(Map.of(id, "replace"));
+    }
+
+    @Test
     void restoringAllPutsEverythingBack() {
         run("cc-set", Map.of("id", WELCOME, "value", "Saved"));
         run("cc-keybind-add", Map.of("name", "warp", "keys", "ctrl+r", "command", "warp spawn"));

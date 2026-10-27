@@ -2,6 +2,7 @@ package net.ofatech.controlcore.application.settings;
 
 import java.util.List;
 import java.util.Locale;
+import net.ofatech.controlcore.domain.model.serverconfig.WorldStatus;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
@@ -97,6 +98,10 @@ public final class SettingsText {
     public static String value(Translator tr, SettingDefinition<?> definition, String value) {
         if (value.isEmpty()) {
             return tr.t("controlcore.settings.empty");
+        }
+        java.util.Optional<String> status = WorldStatus.decode(value).map(found -> found.describe(tr));
+        if (status.isPresent()) {
+            return status.get();
         }
         return definition.type() instanceof SettingType.ChoiceType ? tr.translate(definition.optionText(value)) : value;
     }

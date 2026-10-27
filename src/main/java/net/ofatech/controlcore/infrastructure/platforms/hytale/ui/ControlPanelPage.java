@@ -359,6 +359,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         if (subscriptions.isEmpty()) {
             sections.forEach((key, section) ->
                     subscriptions.add(section.listen(change -> onSettingChanged(key, section, change))));
+            bansTab.ifPresent(tab -> subscriptions.add(tab.view().onChange(this::onBansChanged)));
         }
     }
 
@@ -1316,6 +1317,26 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         } catch (RuntimeException e) {
             log.error("Could not refresh the control panel of " + playerRef.getUsername(), e);
         }
+    }
+
+    private void onBansChanged() {
+        Ref<EntityStore> ref = playerRef.getReference();
+        if (ref == null || !ref.isValid()) {
+            stopListening();
+            return;
+        }
+        Store<EntityStore> store = ref.getStore();
+        store.getExternalData().getWorld().execute(() -> {
+            try {
+                if (!isOpen(ref, store)) {
+                    stopListening();
+                } else if (showingBans) {
+                    rebuild();
+                }
+            } catch (RuntimeException e) {
+                log.error("Could not refresh the bans list of " + playerRef.getUsername(), e);
+            }
+        });
     }
 
     private boolean isOpen(Ref<EntityStore> ref, Store<EntityStore> store) {

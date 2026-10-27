@@ -24,7 +24,8 @@ public record ChangeRecord(
         CUSTOM_BIND,
         PERMISSION,
         MOD,
-        BAN
+        BAN,
+        GAME_ACTION
     }
 
     public enum Source {

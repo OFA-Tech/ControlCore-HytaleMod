@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import net.ofatech.controlcore.domain.model.mods.ModDependency;
 import net.ofatech.controlcore.domain.model.mods.ModInfo;
 import net.ofatech.controlcore.domain.ports.mods.ModCatalog;
 import net.ofatech.controlcore.domain.result.Error;
@@ -15,7 +16,7 @@ public final class FakeModCatalog implements ModCatalog {
     public final List<ModInfo> mods = new CopyOnWriteArrayList<>();
     public final Map<String, List<ConfigFile>> files = new ConcurrentHashMap<>();
 
-    public ModInfo add(String id, boolean core) {
+    public ModInfo add(String id, boolean core, ModDependency... dependencies) {
         String[] parts = id.split(":", 2);
         ModInfo mod = new ModInfo(
                 id,
@@ -29,7 +30,10 @@ public final class FakeModCatalog implements ModCatalog {
                 ModInfo.State.ENABLED,
                 core,
                 true,
-                Optional.empty());
+                Optional.empty(),
+                List.of(dependencies),
+                "",
+                true);
         mods.add(mod);
         return mod;
     }
@@ -44,19 +48,7 @@ public final class FakeModCatalog implements ModCatalog {
         for (int index = 0; index < mods.size(); index++) {
             ModInfo mod = mods.get(index);
             if (mod.id().equals(modId)) {
-                ModInfo changed = new ModInfo(
-                        mod.id(),
-                        mod.name(),
-                        mod.group(),
-                        mod.version(),
-                        mod.description(),
-                        mod.authors(),
-                        mod.website(),
-                        mod.kind(),
-                        mod.state(),
-                        mod.core(),
-                        enabled,
-                        mod.logo());
+                ModInfo changed = mod.withEnabledAfterRestart(enabled);
                 mods.set(index, changed);
                 return Result.success(changed);
             }

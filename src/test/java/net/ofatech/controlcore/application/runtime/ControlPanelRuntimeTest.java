@@ -9,6 +9,8 @@ import net.ofatech.controlcore.api.ControlCoreApi;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.ControlPanelTab;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
+import net.ofatech.controlcore.domain.model.mods.ModDependency;
+import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
@@ -123,6 +125,54 @@ class ControlPanelRuntimeTest extends RuntimeTestBase {
                         "controlcore:chunk-sections-per-second",
                         "controlcore:chunk-sections-per-tick",
                         "controlcore:pause-empty-worlds");
+    }
+
+    @Test
+    void turningModsOnAndOffFollowsTheirDependencies() {
+        platform.modCatalog.add("Acme:Core", false);
+        platform.modCatalog.add(
+                "Acme:Homes",
+                false,
+                new ModDependency("Acme:Core", ">=1.0.0", false, ModDependency.Status.OK),
+                new ModDependency("Acme:Maps", "", true, ModDependency.Status.MISSING));
+        platform.modCatalog.add(
+                "Acme:Warps", false, new ModDependency("Acme:Homes", "", false, ModDependency.Status.OK));
+        platform.modCatalog.add(
+                "Acme:Broken", false, new ModDependency("Other:Lib", ">=2.0.0", false, ModDependency.Status.MISSING));
+        runtime.setup();
+        runtime.start();
+        PlayerInfo admin = platform.players.join("Admin");
+        platform.commands.run(COMMAND, admin, Map.of());
+        var mods = platform.controlPanel.lastContent.mods();
+
+        assertThat(entry(mods, "Acme:Core").neededBy()).containsExactly("Homes");
+        assertThat(entry(mods, "Acme:Homes").hasProblems())
+                .as("optional missing is fine")
+                .isFalse();
+        assertThat(entry(mods, "Acme:Broken").hasProblems()).isTrue();
+        assertThat(mods.alsoChanged("Acme:Core", false))
+                .extracting(e -> e.mod().id())
+                .containsExactlyInAnyOrder("Acme:Homes", "Acme:Warps");
+
+        assertThat(mods.setEnabled("Acme:Core", false).isSuccess()).isTrue();
+        assertThat(entry(mods, "Acme:Warps").mod().enabledAfterRestart()).isFalse();
+        assertThat(platform.changeLog.records).hasSize(3);
+
+        assertThat(mods.alsoChanged("Acme:Warps", true))
+                .extracting(e -> e.mod().id())
+                .containsExactlyInAnyOrder("Acme:Homes", "Acme:Core");
+        assertThat(mods.setEnabled("Acme:Warps", true).isSuccess()).isTrue();
+        assertThat(entry(mods, "Acme:Core").mod().enabledAfterRestart()).isTrue();
+        assertThat(entry(mods, "Acme:Homes").mod().dependencies())
+                .extracting(ModDependency::status)
+                .containsExactly(ModDependency.Status.OK, ModDependency.Status.MISSING);
+    }
+
+    private static ModsView.Entry entry(ModsView mods, String id) {
+        return mods.list().stream()
+                .filter(e -> e.mod().id().equals(id))
+                .findFirst()
+                .orElseThrow();
     }
 
     @Test

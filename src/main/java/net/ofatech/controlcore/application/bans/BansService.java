@@ -82,6 +82,18 @@ public final class BansService {
         this.clock = clock;
     }
 
+    private final java.util.List<Runnable> listeners = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+    private void changed() {
+        for (Runnable listener : listeners) {
+            try {
+                listener.run();
+            } catch (RuntimeException listenerFailed) {
+                listeners.remove(listener);
+            }
+        }
+    }
+
     public boolean mayManage(Optional<PlayerId> who) {
         return who.isEmpty() || policy.isAdmin(who.get()) || permissions.hasOwn(who.get(), NODE);
     }
@@ -206,6 +218,7 @@ public final class BansService {
                     String after = encode(ban);
                     lastSeen.put(target, after);
                     history.record(Kind.BAN, target(target), before, after, false);
+                    changed();
                     return Result.success(tr.t(
                             "controlcore.bans.banned",
                             "player",
@@ -235,6 +248,7 @@ public final class BansService {
         }
         lastSeen.remove(ban.target());
         history.record(Kind.BAN, target(ban.target()), encode(ban), "", false);
+        changed();
         return Result.success(tr.t("controlcore.bans.unbanned", "player", name(ban.target())));
     }
 
@@ -251,6 +265,7 @@ public final class BansService {
             lastSeen.remove(id.get());
             history.record(
                     Kind.BAN, target, find(id.get()).map(BansService::encode).orElse(""), "", false);
+            changed();
             return Result.success(true);
         }
         Ban ban = decode(id.get(), encoded, who, clock.now());
@@ -262,6 +277,7 @@ public final class BansService {
         String after = encode(ban);
         lastSeen.put(id.get(), after);
         history.record(Kind.BAN, target, before, after, false);
+        changed();
         return Result.success(true);
     }
 
@@ -289,8 +305,10 @@ public final class BansService {
         for (PlayerId id : changed) {
             String before = lastSeen.getOrDefault(id, "");
             String after = now.getOrDefault(id, "");
-            Runnable record =
-                    () -> ChangeContext.fromOutside(() -> history.record(Kind.BAN, target(id), before, after, false));
+            Runnable record = () -> {
+                ChangeContext.fromOutside(() -> history.record(Kind.BAN, target(id), before, after, false));
+                changed();
+            };
             if (names.containsKey(id)) {
                 record.run();
             } else {
@@ -373,6 +391,12 @@ public final class BansService {
             @Override
             public CompletableFuture<Result<String>> ban(String player, String length, String reason) {
                 return BansService.this.ban(who, player, length, reason, tr);
+            }
+
+            @Override
+            public net.ofatech.controlcore.domain.event.Subscription onChange(Runnable listener) {
+                listeners.add(listener);
+                return () -> listeners.remove(listener);
             }
 
             @Override
