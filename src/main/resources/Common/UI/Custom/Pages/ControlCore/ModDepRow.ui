@@ -13,6 +13,7 @@ Group {
     LayoutMode: Left;
 
     $C.@SmallTertiaryTextButton #Open {
+      @Text = %controlcore.ui.mods.info;
       Anchor: (Width: 320, Height: 28, Top: 2);
     }
 
