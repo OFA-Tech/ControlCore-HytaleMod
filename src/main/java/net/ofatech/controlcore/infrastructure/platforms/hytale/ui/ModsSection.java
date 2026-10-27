@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import net.ofatech.controlcore.domain.model.mods.ModDependency;
 import net.ofatech.controlcore.domain.model.mods.ModInfo;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.text.Translator;
@@ -16,6 +17,7 @@ final class ModsSection {
         ENABLED,
         DISABLED,
         WITH_SETTINGS,
+        PROBLEMS,
         ASSET_PACKS,
         EVERYTHING;
 
@@ -77,6 +79,7 @@ final class ModsSection {
             case ENABLED -> !mod.core() && mod.running();
             case DISABLED -> !mod.core() && !mod.running();
             case WITH_SETTINGS -> entry.hasServerSettings() || entry.hasPreferences() || entry.hasKeys();
+            case PROBLEMS -> entry.hasProblems();
             case ASSET_PACKS -> mod.hasAssets();
             case EVERYTHING -> true;
         };
@@ -112,7 +115,15 @@ final class ModsSection {
         return mod.version().isEmpty() ? "" : "v" + mod.version();
     }
 
-    record Badges(boolean code, boolean assets, String state, String stateText, boolean hytale) {}
+    record Badges(
+            boolean code,
+            boolean assets,
+            String state,
+            String stateText,
+            boolean hytale,
+            int missing,
+            int wrongVersion,
+            int neededBy) {}
 
     Badges badges(ModsView.Entry entry) {
         ModInfo mod = entry.mod();
@@ -138,7 +149,76 @@ final class ModsSection {
                             ? "controlcore.panel.mods.badge.on_after_restart"
                             : "controlcore.panel.mods.badge.off_after_restart");
         }
-        return new Badges(code, assets, state, stateText, mod.core());
+        int missing = 0;
+        int wrong = 0;
+        for (ModDependency dependency : mod.required()) {
+            switch (dependency.status()) {
+                case MISSING, OFF -> missing++;
+                case WRONG_VERSION -> wrong++;
+                case OK -> {}
+            }
+        }
+        if (!mod.serverVersionOk()) {
+            wrong++;
+        }
+        return new Badges(
+                code,
+                assets,
+                state,
+                stateText,
+                mod.core(),
+                missing,
+                wrong,
+                entry.neededBy().size());
+    }
+
+    String needs(ModInfo mod) {
+        List<String> required = new ArrayList<>();
+        List<String> optional = new ArrayList<>();
+        for (ModDependency dependency : mod.dependencies()) {
+            if (dependency.hytale() && dependency.status() == ModDependency.Status.OK) {
+                continue;
+            }
+            String text = dependency.id() + (dependency.range().isEmpty() ? "" : " " + dependency.range());
+            (dependency.optional() ? optional : required).add(text);
+        }
+        List<String> parts = new ArrayList<>();
+        if (!required.isEmpty()) {
+            parts.add(tr.t("controlcore.panel.mods.requires", "mods", String.join(", ", required)));
+        }
+        if (!optional.isEmpty()) {
+            parts.add(tr.t("controlcore.panel.mods.optional", "mods", String.join(", ", optional)));
+        }
+        if (!mod.serverVersion().isEmpty()) {
+            parts.add(tr.t("controlcore.panel.mods.hytale_version", "range", mod.serverVersion()));
+        }
+        return String.join(" · ", parts);
+    }
+
+    String problems(ModsView.Entry entry) {
+        ModInfo mod = entry.mod();
+        List<String> lines = new ArrayList<>();
+        for (ModDependency dependency : mod.required()) {
+            switch (dependency.status()) {
+                case MISSING -> lines.add(tr.t("controlcore.panel.mods.problem.missing", "id", dependency.id()));
+                case OFF -> lines.add(tr.t("controlcore.panel.mods.problem.off", "id", dependency.id()));
+                case WRONG_VERSION ->
+                    lines.add(tr.t(
+                            "controlcore.panel.mods.problem.version",
+                            "id",
+                            dependency.id(),
+                            "range",
+                            dependency.range()));
+                case OK -> {}
+            }
+        }
+        if (!mod.serverVersionOk()) {
+            lines.add(tr.t("controlcore.panel.mods.problem.hytale", "range", mod.serverVersion()));
+        }
+        if (!entry.neededBy().isEmpty()) {
+            lines.add(tr.t("controlcore.panel.mods.needed_by", "mods", String.join(", ", entry.neededBy())));
+        }
+        return String.join("\n", lines);
     }
 
     String description(ModInfo mod) {

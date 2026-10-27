@@ -87,6 +87,30 @@ Group {
           Style: (...@BadgeOn, TextColor: #a9d1f2);
         }
 
+        Label #BadgeMissing {
+          Visible: false;
+          Anchor: (Height: 20, Top: 1, Left: 6, Right: 4);
+          Padding: (Horizontal: 7);
+          Background: #9c4434;
+          Style: @BadgeOn;
+        }
+
+        Label #BadgeWrongVersion {
+          Visible: false;
+          Anchor: (Height: 20, Top: 1, Left: 6, Right: 4);
+          Padding: (Horizontal: 7);
+          Background: #8a5a1c;
+          Style: @BadgeOn;
+        }
+
+        Label #BadgeNeeded {
+          Visible: false;
+          Anchor: (Height: 20, Top: 1, Left: 6, Right: 4);
+          Padding: (Horizontal: 7);
+          Background: #34495a;
+          Style: (...@BadgeOn, TextColor: #c9d6e0);
+        }
+
         Label #BadgeHytale {
           Visible: false;
           Anchor: (Height: 20, Top: 1, Left: 6, Right: 4);
@@ -104,6 +128,18 @@ Group {
       Label #Details {
         Anchor: (Top: 2);
         Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #9fb0bd, Wrap: true);
+      }
+
+      Label #Needs {
+        Visible: false;
+        Anchor: (Top: 2);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #9fb0bd, Wrap: true);
+      }
+
+      Label #Problem {
+        Visible: false;
+        Anchor: (Top: 2);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #e07a5f, Wrap: true);
       }
 
       Group {

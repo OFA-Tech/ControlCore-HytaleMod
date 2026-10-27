@@ -743,6 +743,37 @@ $C.@PageOverlay {
               }
             }
 
+            Group #ModsConfirm {
+              LayoutMode: Top;
+              Visible: false;
+              Anchor: (Bottom: 8);
+              Background: #3a2a1c;
+              Padding: (Full: 10);
+
+              Label #ModsConfirmText {
+                Style: (...@BannerStyle, Wrap: true);
+                Anchor: (Bottom: 8);
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 32);
+
+                Group {
+                  FlexWeight: 1;
+                }
+
+                $C.@SmallSecondaryTextButton #ModsConfirmYes {
+                  @Text = %controlcore.ui.mods.confirmYes;
+                  Anchor: (Width: 220, Height: 32, Right: 6);
+                }
+
+                $C.@SmallTertiaryTextButton #ModsConfirmNo {
+                  @Text = %controlcore.ui.mods.confirmNo;
+                  Anchor: (Width: 140, Height: 32);
+                }
+              }
+            }
 
             Group #ModsList {
               LayoutMode: TopScrolling;
