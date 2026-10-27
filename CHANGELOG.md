@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.17.0 - 2026-10-27
+
+Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.4. API unchanged (2.1.0).
+No migration needed.
+
 ### Added
 - **Mod dependencies in the Mods tab:** each mod shows what it requires, what it can optionally use and which Hytale
   versions it is made for. Badges **Missing**, **Wrong version** and **Needed by**, a red line explaining the
