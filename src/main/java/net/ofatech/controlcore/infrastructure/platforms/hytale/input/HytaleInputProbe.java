@@ -49,7 +49,19 @@ public final class HytaleInputProbe implements InputProbe, PlayerPacketWatcher {
     @Override
     public synchronized boolean toggle(PlayerId player) {
         if (!registered) {
-            PacketAdapters.registerInbound(this);
+            InboundPacketHooks.add(
+                    (sender, packet) -> {
+                        accept(sender, packet);
+                        return false;
+                    },
+                    log);
+            PacketAdapters.registerInbound((PlayerPacketWatcher) (sender, packet) -> {
+                if (!(packet instanceof SyncInteractionChains
+                        || packet instanceof ClientMovement
+                        || packet instanceof ChatMessage)) {
+                    accept(sender, packet);
+                }
+            });
             registered = true;
         }
         UUID id = player.value();
