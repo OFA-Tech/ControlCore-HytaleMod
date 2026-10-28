@@ -15,7 +15,9 @@ public interface PlayersView {
         OFFLINE,
         BANNED,
         WHITELISTED,
-        OPERATORS;
+        OPERATORS,
+        MUTED,
+        FROZEN;
 
         public String id() {
             return name().toLowerCase(Locale.ROOT);
@@ -60,6 +62,8 @@ public interface PlayersView {
                 case BANNED -> banned;
                 case WHITELISTED -> whitelisted;
                 case OPERATORS -> operator;
+                case MUTED -> muted;
+                case FROZEN -> frozen;
             };
             String wanted = query == null ? "" : query.strip().toLowerCase(Locale.ROOT);
             return kept && (wanted.isEmpty() || name.toLowerCase(Locale.ROOT).contains(wanted) || id.contains(wanted));
@@ -132,7 +136,9 @@ public interface PlayersView {
 
     CompletableFuture<Result<String>> freeze(String player, boolean add);
 
-    CompletableFuture<Details> details(String id);
+    CompletableFuture<Result<String>> apply(PlayerAction action, PlayerAction.Input input);
+
+    CompletableFuture<Result<Details>> details(String id);
 
     Details chat();
 

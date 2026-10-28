@@ -58,7 +58,12 @@ public final class HytaleBans implements Bans {
 
     @Override
     public boolean unban(PlayerId target) {
-        return AccessControlModule.get().unban(target.value());
+        try {
+            return AccessControlModule.get().unban(target.value());
+        } catch (RuntimeException e) {
+            log.error("Could not unban " + target, e);
+            return false;
+        }
     }
 
     @Override

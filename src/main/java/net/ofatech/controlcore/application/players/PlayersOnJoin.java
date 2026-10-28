@@ -21,6 +21,6 @@ public final class PlayersOnJoin implements ModEventHandler<PlayerJoined> {
 
     @Override
     public void handle(PlayerJoined event) {
-        players.changed();
+        players.joined(event.player().id());
     }
 }

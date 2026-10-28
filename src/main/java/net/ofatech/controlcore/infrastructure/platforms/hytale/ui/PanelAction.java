@@ -184,6 +184,36 @@ final class PanelAction {
                     (action, value) -> action.rule.put("A7Value", value),
                     action -> action.rule.get("A7Value"))
             .add()
+            .append(
+                    new KeyedCodec<>("@PlayerKind", Codec.STRING),
+                    (action, value) -> action.rule.put("PlayerKind", value),
+                    action -> action.rule.get("PlayerKind"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@PlayerGroup", Codec.STRING),
+                    (action, value) -> action.rule.put("PlayerGroup", value),
+                    action -> action.rule.get("PlayerGroup"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@PlayerName", Codec.STRING),
+                    (action, value) -> action.rule.put("PlayerName", value),
+                    action -> action.rule.get("PlayerName"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@PlayerNode", Codec.STRING),
+                    (action, value) -> action.rule.put("PlayerNode", value),
+                    action -> action.rule.get("PlayerNode"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@PlayerLength", Codec.STRING),
+                    (action, value) -> action.rule.put("PlayerLength", value),
+                    action -> action.rule.get("PlayerLength"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@PlayerReason", Codec.STRING),
+                    (action, value) -> action.rule.put("PlayerReason", value),
+                    action -> action.rule.get("PlayerReason"))
+            .add()
             .build();
 
     String name;
@@ -208,6 +238,14 @@ final class PanelAction {
     String rule(String field) {
         String value = rule.get(field);
         return value == null ? "" : value;
+    }
+
+    static String playerKey(String field) {
+        return "@Player" + field;
+    }
+
+    String player(String field) {
+        return rule("Player" + field);
     }
 
     String name() {

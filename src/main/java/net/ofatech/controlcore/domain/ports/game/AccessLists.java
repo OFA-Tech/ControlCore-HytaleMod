@@ -5,7 +5,9 @@ import net.ofatech.controlcore.domain.model.PlayerId;
 
 public interface AccessLists {
 
-    String OPERATOR_GROUP = "hytale:Admin";
+    String operatorGroup();
+
+    String label(String group);
 
     boolean whitelistRequired();
 

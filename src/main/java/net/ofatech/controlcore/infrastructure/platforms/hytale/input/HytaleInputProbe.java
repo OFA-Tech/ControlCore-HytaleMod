@@ -36,29 +36,27 @@ public final class HytaleInputProbe implements InputProbe, PlayerPacketWatcher {
     private static final long REPEAT_MILLIS = 1_000;
 
     private final Log log;
+    private final InboundPacketHooks hooks;
     private final Set<UUID> probing = ConcurrentHashMap.newKeySet();
     private final Map<UUID, String> lastMovement = new ConcurrentHashMap<>();
     private final Map<String, Long> lastOther = new ConcurrentHashMap<>();
     private final Set<String> seenChains = ConcurrentHashMap.newKeySet();
     private volatile boolean registered;
 
-    public HytaleInputProbe(Log log) {
+    public HytaleInputProbe(Log log, InboundPacketHooks hooks) {
         this.log = log;
+        this.hooks = hooks;
     }
 
     @Override
     public synchronized boolean toggle(PlayerId player) {
         if (!registered) {
-            InboundPacketHooks.add(
-                    (sender, packet) -> {
-                        accept(sender, packet);
-                        return false;
-                    },
-                    log);
+            hooks.add((sender, packet) -> {
+                accept(sender, packet);
+                return false;
+            });
             PacketAdapters.registerInbound((PlayerPacketWatcher) (sender, packet) -> {
-                if (!(packet instanceof SyncInteractionChains
-                        || packet instanceof ClientMovement
-                        || packet instanceof ChatMessage)) {
+                if (!InboundPacketHooks.watched(packet)) {
                     accept(sender, packet);
                 }
             });

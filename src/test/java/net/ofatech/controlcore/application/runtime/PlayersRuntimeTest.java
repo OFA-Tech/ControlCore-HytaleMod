@@ -200,7 +200,7 @@ class PlayersRuntimeTest extends RuntimeTestBase {
     }
 
     @Test
-    void freezingIsUndoneWhenThePlayerLeaves() {
+    void aFreezeSurvivesLeavingAndIsAppliedAgainOnJoin() {
         runtime.setup();
         runtime.start();
         PlayerInfo admin = platform.players.join("Admin");
@@ -209,17 +209,25 @@ class PlayersRuntimeTest extends RuntimeTestBase {
 
         assertThat(view.freeze("Builder", true).join().isSuccess()).isTrue();
         assertThat(view.freeze("Builder", true).join().error().code()).isEqualTo("Players.NothingToDo");
+
+        platform.players.leave(builder);
+        platform.connectedPublisher.publish(new net.ofatech.controlcore.domain.event.PlayerLeft(builder));
+        PlayerInfo back = platform.players.join("Builder");
+        platform.connectedPublisher.publish(new net.ofatech.controlcore.domain.event.PlayerJoined(back));
+        platform.scheduler.runAll();
+
         assertThat(view.list().stream()
                         .filter(entry -> entry.name().equals("Builder"))
                         .findFirst()
                         .orElseThrow()
                         .frozen())
                 .isTrue();
+        platform.admin.spots.put(
+                back.id(), new net.ofatech.controlcore.domain.ports.game.PlayerAdmin.Spot("default", 40, 64, 0));
+        platform.scheduler.runAll();
+        assertThat(platform.admin.heldBack).isNotEmpty();
 
-        platform.players.leave(builder);
-        platform.connectedPublisher.publish(new net.ofatech.controlcore.domain.event.PlayerLeft(builder));
-        platform.players.join("Builder");
-
+        assertThat(view.freeze("Builder", false).join().isSuccess()).isTrue();
         assertThat(view.list().stream()
                         .filter(entry -> entry.name().equals("Builder"))
                         .findFirst()
@@ -240,7 +248,7 @@ class PlayersRuntimeTest extends RuntimeTestBase {
                         new net.ofatech.controlcore.domain.ports.game.PlayerAdmin.Item("Weapon_Sword_Iron", 1)));
         PlayersView view = viewFor(admin);
 
-        var details = view.details(builder.id().value().toString()).join();
+        var details = view.details(builder.id().value().toString()).join().value();
 
         assertThat(details.title()).isEqualTo("Builder");
         assertThat(details.lines()).extracting(PlayersView.Line::text).contains("Weapon_Sword_Iron x1");

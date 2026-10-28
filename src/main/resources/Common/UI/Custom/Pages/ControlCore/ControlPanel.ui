@@ -299,8 +299,8 @@ $C.@PageOverlay {
                 Anchor: (Width: 180, Right: 2);
               }
 
-              TextButton #ServerModeBans {
-                Text: %controlcore.ui.server.modeBans;
+              TextButton #ServerModePlayers {
+                Text: %controlcore.ui.server.modePlayers;
                 Style: @SegmentStyle;
                 Anchor: (Width: 180, Right: 12);
               }
@@ -363,17 +363,17 @@ $C.@PageOverlay {
             }
             }
 
-            Group #BansPanel {
+            Group #PlayersPanel {
               LayoutMode: Top;
               Visible: false;
 
               Label {
-                Text: %controlcore.ui.bans.intro;
+                Text: %controlcore.ui.players.intro;
                 Style: @NoteStyle;
                 Anchor: (Bottom: 8);
               }
 
-              Group #BanForm {
+              Group #PlayerActionForm {
                 LayoutMode: Top;
                 Visible: false;
                 Anchor: (Bottom: 10);
@@ -409,19 +409,24 @@ $C.@PageOverlay {
                     Anchor: (Width: 180, Right: 6);
                   }
 
-                  $C.@TextField #BanPlayer {
+                  $C.@TextField #PlayerActionPlayer {
                     Anchor: (Width: 220, Right: 6);
                   }
 
-                  $C.@DropdownBox #BanLength {
-                    Anchor: (Width: 170, Right: 6);
-                  }
-
-                  $C.@TextField #BanReason {
+                  $C.@TextField #PlayerActionNode {
+                    Visible: false;
                     FlexWeight: 1;
                   }
 
-                  $C.@SmallSecondaryTextButton #BanAdd {
+                  $C.@DropdownBox #PlayerActionLength {
+                    Anchor: (Width: 170, Right: 6);
+                  }
+
+                  $C.@TextField #PlayerActionReason {
+                    FlexWeight: 1;
+                  }
+
+                  $C.@SmallSecondaryTextButton #PlayerActionApply {
                     @Text = %controlcore.ui.players.apply;
                     Anchor: (Width: 130, Height: 34, Left: 6);
                   }
@@ -462,13 +467,13 @@ $C.@PageOverlay {
                 }
               }
 
-              Label #BansEmpty {
-                Text: %controlcore.ui.bans.empty;
+              Label #PlayerListEmpty {
+                Text: %controlcore.ui.players.empty;
                 Style: @NoteStyle;
                 Visible: false;
               }
 
-              Group #BanList {
+              Group #PlayerList {
                 LayoutMode: TopScrolling;
                 ScrollbarStyle: $C.@DefaultScrollbarStyle;
                 Anchor: (Height: 400);

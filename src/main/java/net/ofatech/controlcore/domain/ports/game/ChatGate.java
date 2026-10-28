@@ -8,7 +8,19 @@ public interface ChatGate {
         boolean allow(PlayerId sender, String name, String text);
     }
 
-    ChatGate NONE = listener -> {};
+    interface Observer {
+        void sent(PlayerId sender, String name, String text);
+    }
+
+    ChatGate NONE = new ChatGate() {
+        @Override
+        public void listen(Listener listener) {}
+
+        @Override
+        public void observe(Observer observer) {}
+    };
 
     void listen(Listener listener);
+
+    void observe(Observer observer);
 }

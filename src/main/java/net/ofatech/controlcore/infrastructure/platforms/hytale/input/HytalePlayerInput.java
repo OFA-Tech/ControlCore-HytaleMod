@@ -31,23 +31,25 @@ public final class HytalePlayerInput implements PlayerInput, PlayerPacketFilter 
             Set.of("gm a", "gm c", "gm adventure", "gm creative", "gamemode a", "gamemode c");
 
     private final Log log;
+    private final InboundPacketHooks hooks;
     private final Map<UUID, State> states = new ConcurrentHashMap<>();
     private volatile Listener listener;
 
-    public HytalePlayerInput(Log log) {
+    public HytalePlayerInput(Log log, InboundPacketHooks hooks) {
         this.log = log;
+        this.hooks = hooks;
     }
 
     @Override
     public synchronized void listen(Listener listener) {
         this.listener = listener;
-        InboundPacketHooks.add(this, log);
+        hooks.add(this);
     }
 
     @Override
     public synchronized void stop() {
         listener = null;
-        InboundPacketHooks.remove(this);
+        hooks.remove(this);
         states.clear();
     }
 

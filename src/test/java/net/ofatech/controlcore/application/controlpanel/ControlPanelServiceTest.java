@@ -134,13 +134,20 @@ class ControlPanelServiceTest {
                         players,
                         player -> net.ofatech.controlcore.domain.ports.game.PlayerContext.Context.UNKNOWN,
                         log));
-        var playerAdmin = new net.ofatech.controlcore.application.players.PlayersService(
-                bans,
-                players,
-                sessions,
-                new FakePlayerData(),
-                new net.ofatech.controlcore.fakes.FakePlayerAdmin(),
-                new net.ofatech.controlcore.fakes.FakeAccessLists(),
+        var playerData = new FakePlayerData();
+        var access = new net.ofatech.controlcore.fakes.FakeAccessLists();
+        var playerAdminPort = new net.ofatech.controlcore.fakes.FakePlayerAdmin();
+        var texts = TestTexts.of(registry, players);
+        var playersChanges = new net.ofatech.controlcore.application.players.PlayersChanges(bans, log);
+        var guard = new net.ofatech.controlcore.application.players.PlayerGuard(policy, (player, node) -> true, bans);
+        var directory =
+                new net.ofatech.controlcore.application.players.PlayerDirectory(players, playerData, bans, access);
+        var chat = new net.ofatech.controlcore.application.players.RecentChat(new FakeClock());
+        var moderation = new net.ofatech.controlcore.application.players.PlayerModeration(
+                directory,
+                guard,
+                playerData,
+                playerAdminPort,
                 new net.ofatech.controlcore.application.worlds.WorldsService(
                         registry,
                         serverConfig,
@@ -149,12 +156,31 @@ class ControlPanelServiceTest {
                         players,
                         new net.ofatech.controlcore.fakes.FakeScheduler()),
                 net.ofatech.controlcore.domain.ports.game.ChatGate.NONE,
+                chat,
                 changes,
-                policy,
-                (player, node) -> true,
-                TestTexts.of(registry, players),
+                texts,
                 notifications,
+                new FakeClock(),
+                new net.ofatech.controlcore.fakes.FakeScheduler(),
+                playersChanges,
+                log);
+        var playerAccess = new net.ofatech.controlcore.application.players.PlayerAccess(
+                directory, guard, access, changes, playersChanges);
+        var control = new net.ofatech.controlcore.application.players.PlayerControl(
+                directory, guard, moderation, playerAdminPort, changes, texts, notifications, playersChanges, log);
+        var listing = new net.ofatech.controlcore.application.players.PlayerListing(
+                players,
+                playerData,
+                directory,
+                moderation,
+                playerAdminPort,
+                access,
+                sessions,
+                bans,
+                chat,
                 new FakeClock());
+        var playerAdmin = new net.ofatech.controlcore.application.players.PlayersService(
+                playersChanges, guard, listing, moderation, playerAccess, control, bans, texts);
         var history = new HistoryEditor(
                 changes,
                 registry,
@@ -165,7 +191,7 @@ class ControlPanelServiceTest {
                 (player, node) -> true,
                 TestTexts.of(registry, players),
                 bans,
-                playerAdmin,
+                new net.ofatech.controlcore.application.players.PlayerHistory(moderation, playerAccess, control, texts),
                 new FakeClock());
         var snapshots = new SnapshotService(
                 new FakeSnapshotStore(),

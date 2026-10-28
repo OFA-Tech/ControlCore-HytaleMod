@@ -57,12 +57,14 @@ import net.ofatech.controlcore.infrastructure.persistence.JsonSettingStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonSnapshotStore;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.command.HytaleCommandRegistrar;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.config.HytaleSettingsProvider;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.event.HytaleChatGate;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.event.HytaleGameEvents;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.i18n.HytaleTranslations;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleCommandRunner;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleEmptyHandInput;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleInputProbe;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytalePlayerInput;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.input.InboundPacketHooks;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.log.HytaleLog;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.mods.HytaleModCatalog;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.mods.HytaleModLookup;
@@ -135,18 +137,16 @@ public final class HytalePlatform implements Platform {
         binder.bind(PlayerTuning.class, new HytalePlayerTuning(log));
         binder.bind(PlayerAdmin.class, new HytalePlayerAdmin(log));
         binder.bind(AccessLists.class, new HytaleAccessLists());
-        binder.bind(
-                ChatGate.class,
-                new net.ofatech.controlcore.infrastructure.platforms.hytale.event.HytaleChatGate(
-                        plugin.getEventRegistry(), log));
+        binder.bind(ChatGate.class, new HytaleChatGate(plugin.getEventRegistry(), log));
         binder.bind(Bans.class, new HytaleBans(log));
         binder.bind(ModCatalog.class, new HytaleModCatalog(serverConfiguration, log));
         binder.bind(ControlPanelView.class, new HytaleControlPanelView(log));
         binder.bind(HudDisplay.class, new HytaleHudDisplay(log));
         binder.bind(OverlayDisplay.class, new HytaleOverlayDisplay(log));
         binder.bind(PlayerContext.class, new HytalePlayerContext());
-        binder.bind(InputProbe.class, new HytaleInputProbe(log));
-        binder.bind(PlayerInput.class, new HytalePlayerInput(log));
+        InboundPacketHooks inboundHooks = new InboundPacketHooks(log);
+        binder.bind(InputProbe.class, new HytaleInputProbe(log, inboundHooks));
+        binder.bind(PlayerInput.class, new HytalePlayerInput(log, inboundHooks));
         binder.bind(
                 EmptyHandInput.class,
                 new HytaleEmptyHandInput(plugin.getIdentifier().toString(), log));

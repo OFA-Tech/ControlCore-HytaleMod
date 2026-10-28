@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -77,7 +78,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private static final String LEGEND_ALL = "#LegendAll";
     private static final String SERVER_MODE_CONFIG = "ServerMode:Config";
     private static final String SERVER_MODE_WORLDS = "ServerMode:Worlds";
-    private static final String SERVER_MODE_BANS = "ServerMode:Bans";
+    private static final String SERVER_MODE_PLAYERS = "ServerMode:Players";
     private static final String SERVER_WORLD = "ServerWorld";
 
     private enum Tab {
@@ -173,9 +174,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private Tab selected;
     private final List<String> worlds;
     private boolean showingWorlds;
-    private boolean showingBans;
+    private boolean showingPlayers;
     private final Optional<PlayersTab> playersTab;
     private boolean replied;
+    private final AtomicBoolean playersRefreshPending = new AtomicBoolean();
     private String world;
     private boolean editingServerKeys = true;
 
@@ -212,7 +214,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 : Optional.empty();
         this.historyMode = historyTab.isPresent() ? HistoryMode.CHANGES : HistoryMode.SNAPSHOTS;
         this.playersTab = shownSections.includeServerSettings()
-                ? content.players().map(view -> new PlayersTab(view, tr, hooks))
+                ? content.players().map(view -> new PlayersTab(view, tr, hooks, log))
                 : Optional.empty();
         this.probe = manageKeys ? content.debug() : Optional.empty();
         this.viewerId = PlayerId.of(player.getUuid());
@@ -359,7 +361,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         if (subscriptions.isEmpty()) {
             sections.forEach((key, section) ->
                     subscriptions.add(section.listen(change -> onSettingChanged(key, section, change))));
-            playersTab.ifPresent(tab -> subscriptions.add(tab.view().onChange(this::onBansChanged)));
+            playersTab.ifPresent(tab -> subscriptions.add(tab.view().onChange(this::refreshPlayers)));
         }
     }
 
@@ -443,7 +445,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 "#ServerModeButtons.Visible",
                 sections.containsKey(PanelSection.SERVER_CONFIG) && (!worlds.isEmpty() || playersTab.isPresent()));
         commands.set("#ServerModeWorlds.Visible", !worlds.isEmpty());
-        commands.set("#ServerModeBans.Visible", playersTab.isPresent());
+        commands.set("#ServerModePlayers.Visible", playersTab.isPresent());
         commands.set(
                 "#ServerWorld.Entries",
                 worlds.stream()
@@ -455,8 +457,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
         events.addEventBinding(
                 CustomUIEventBindingType.Activating,
-                "#ServerModeBans",
-                EventData.of(PanelAction.KEY, SERVER_MODE_BANS));
+                "#ServerModePlayers",
+                EventData.of(PanelAction.KEY, SERVER_MODE_PLAYERS));
         events.addEventBinding(
                 CustomUIEventBindingType.Activating,
                 "#ServerModeConfig",
@@ -473,15 +475,15 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     }
 
     private void showServerMode(UICommandBuilder commands) {
-        boolean config = !showingWorlds && !showingBans;
+        boolean config = !showingWorlds && !showingPlayers;
         commands.set("#ServerModeConfig.Style", Value.ref(LAYOUT, config ? "SegmentOnStyle" : "SegmentStyle"));
         commands.set("#ServerModeWorlds.Style", Value.ref(LAYOUT, showingWorlds ? "SegmentOnStyle" : "SegmentStyle"));
-        commands.set("#ServerModeBans.Style", Value.ref(LAYOUT, showingBans ? "SegmentOnStyle" : "SegmentStyle"));
+        commands.set("#ServerModePlayers.Style", Value.ref(LAYOUT, showingPlayers ? "SegmentOnStyle" : "SegmentStyle"));
         commands.set("#ServerWorld.Visible", showingWorlds);
         commands.set("#ServerIntro.Visible", config);
         commands.set("#WorldsIntro.Visible", showingWorlds);
-        commands.set("#ServerRows.Visible", !showingBans);
-        commands.set("#BansPanel.Visible", showingBans);
+        commands.set("#ServerRows.Visible", !showingPlayers);
+        commands.set("#PlayersPanel.Visible", showingPlayers);
     }
 
     private void refreshServerScope() {
@@ -579,7 +581,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
     private Optional<PanelSection> currentSection() {
         PanelSection key = switch (selected) {
-            case SERVER -> showingBans ? null : PanelSection.SERVER_CONFIG;
+            case SERVER -> showingPlayers ? null : PanelSection.SERVER_CONFIG;
             case SETTINGS -> PanelSection.SETTINGS;
             case PLAYER -> PanelSection.PREFS;
             case KEYMAP ->
@@ -928,7 +930,15 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     public void handleDataEvent(
             @Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull PanelAction action) {
         replied = false;
-        ChangeContext.fromPanel(viewerId, viewerName, () -> handle(action));
+        try {
+            ChangeContext.fromPanel(viewerId, viewerName, () -> handle(action));
+        } catch (RuntimeException e) {
+            log.error("A control panel action of " + viewerName + " failed: " + action.name(), e);
+            UICommandBuilder update = new UICommandBuilder();
+            update.set("#FooterStatus.Text", tr.t("controlcore.panel.failed"));
+            sendUpdate(update, false);
+            return;
+        }
         if (!replied) {
             sendUpdate(new UICommandBuilder(), false);
         }
@@ -984,9 +994,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             sendUpdate(update, false);
         } else if (SERVER_MODE_CONFIG.equals(name)
                 || SERVER_MODE_WORLDS.equals(name)
-                || SERVER_MODE_BANS.equals(name)) {
+                || SERVER_MODE_PLAYERS.equals(name)) {
             showingWorlds = SERVER_MODE_WORLDS.equals(name) && !worlds.isEmpty();
-            showingBans = SERVER_MODE_BANS.equals(name) && playersTab.isPresent();
+            showingPlayers = SERVER_MODE_PLAYERS.equals(name) && playersTab.isPresent();
             refreshServerScope();
         } else if (SERVER_WORLD.equals(name)) {
             if (action.value != null && worlds.contains(action.value)) {
@@ -1319,22 +1329,27 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
     }
 
-    private void onBansChanged() {
+    private void refreshPlayers() {
+        if (!playersRefreshPending.compareAndSet(false, true)) {
+            return;
+        }
         Ref<EntityStore> ref = playerRef.getReference();
         if (ref == null || !ref.isValid()) {
+            playersRefreshPending.set(false);
             stopListening();
             return;
         }
         Store<EntityStore> store = ref.getStore();
         store.getExternalData().getWorld().execute(() -> {
+            playersRefreshPending.set(false);
             try {
                 if (!isOpen(ref, store)) {
                     stopListening();
-                } else if (showingBans) {
+                } else if (showingPlayers) {
                     rebuild();
                 }
             } catch (RuntimeException e) {
-                log.error("Could not refresh the bans list of " + playerRef.getUsername(), e);
+                log.error("Could not refresh the Players list of " + playerRef.getUsername(), e);
             }
         });
     }
@@ -1619,6 +1634,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         @Override
         public void rebuild() {
             ControlPanelPage.this.rebuild();
+        }
+
+        @Override
+        public void refresh() {
+            refreshPlayers();
         }
 
         @Override

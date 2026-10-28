@@ -35,6 +35,9 @@ public final class FakePlayerAdmin implements PlayerAdmin {
 
     @Override
     public CompletableFuture<Boolean> setGameMode(PlayerId player, String mode) {
+        if (failGameMode) {
+            return CompletableFuture.completedFuture(false);
+        }
         modes.put(player, mode);
         return CompletableFuture.completedFuture(true);
     }
@@ -47,6 +50,27 @@ public final class FakePlayerAdmin implements PlayerAdmin {
     @Override
     public CompletableFuture<Boolean> teleport(PlayerId player, PlayerId to) {
         teleports.add(player + "->" + to);
+        return CompletableFuture.completedFuture(true);
+    }
+
+    public final Map<PlayerId, Spot> spots = new ConcurrentHashMap<>();
+    public final List<String> heldBack = new ArrayList<>();
+    public volatile boolean failGameMode;
+
+    @Override
+    public CompletableFuture<Optional<Spot>> spot(PlayerId player) {
+        return CompletableFuture.completedFuture(
+                Optional.of(spots.getOrDefault(player, new Spot("default", 0, 64, 0))));
+    }
+
+    @Override
+    public CompletableFuture<Boolean> keepAt(PlayerId player, Spot spot) {
+        Spot now = spots.getOrDefault(player, spot);
+        if (now.equals(spot)) {
+            return CompletableFuture.completedFuture(false);
+        }
+        heldBack.add(player + "@" + spot.x() + "," + spot.y() + "," + spot.z());
+        spots.put(player, spot);
         return CompletableFuture.completedFuture(true);
     }
 }

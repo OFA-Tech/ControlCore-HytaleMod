@@ -16,6 +16,16 @@ public final class FakeAccessLists implements AccessLists {
             Map.of("hytale:Adventurer", new TreeSet<>(), "hytale:Admin", new TreeSet<>(Set.of("*"))));
 
     @Override
+    public String operatorGroup() {
+        return "hytale:Admin";
+    }
+
+    @Override
+    public String label(String group) {
+        return group.startsWith("hytale:") ? group.substring("hytale:".length()) : group;
+    }
+
+    @Override
     public boolean whitelistRequired() {
         return required;
     }

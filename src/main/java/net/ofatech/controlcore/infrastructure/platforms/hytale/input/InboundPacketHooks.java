@@ -10,91 +10,121 @@ import com.hypixel.hytale.server.core.io.ServerManager;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
 import com.hypixel.hytale.server.core.io.adapter.PlayerPacketFilter;
+import com.hypixel.hytale.server.core.io.handlers.GenericPacketHandler;
 import com.hypixel.hytale.server.core.io.handlers.IPacketHandler;
 import com.hypixel.hytale.server.core.io.handlers.SubPacketHandler;
 import com.hypixel.hytale.server.core.io.handlers.game.GamePacketHandler;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.domain.ports.system.Log;
 
-final class InboundPacketHooks implements SubPacketHandler {
+public final class InboundPacketHooks {
 
-    private static final AtomicBoolean INSTALLED = new AtomicBoolean();
-    private static final List<PlayerPacketFilter> FILTERS = new CopyOnWriteArrayList<>();
-    private static final Set<PacketHandler> HOOKED =
+    static boolean watched(Packet packet) {
+        return packet instanceof SyncInteractionChains
+                || packet instanceof ClientMovement
+                || packet instanceof ChatMessage;
+    }
+
+    private final Log log;
+    private final List<PlayerPacketFilter> filters = new CopyOnWriteArrayList<>();
+    private final Set<PacketHandler> hooked =
             Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
-    private static final java.util.concurrent.atomic.AtomicReference<Log> LOG =
-            new java.util.concurrent.atomic.AtomicReference<>();
+    private boolean subHandlerRegistered;
+    private PacketFilter fallback;
+    private boolean nativeLookupFailed;
 
-    private final IPacketHandler packetHandler;
-
-    private InboundPacketHooks(IPacketHandler packetHandler) {
-        this.packetHandler = packetHandler;
+    public InboundPacketHooks(Log log) {
+        this.log = log;
     }
 
-    static void add(PlayerPacketFilter filter, Log logger) {
-        LOG.set(logger);
-        if (!FILTERS.contains(filter)) {
-            FILTERS.add(filter);
+    synchronized void add(PlayerPacketFilter filter) {
+        if (!filters.contains(filter)) {
+            filters.add(filter);
         }
-        if (INSTALLED.compareAndSet(false, true)) {
-            ServerManager.get().registerSubPacketHandlers(InboundPacketHooks::new);
-            PacketAdapters.registerInbound((PacketFilter) InboundPacketHooks::fallback);
+        if (!subHandlerRegistered) {
+            subHandlerRegistered = true;
+            ServerManager.get().registerSubPacketHandlers(this::hooksFor);
+        }
+        if (fallback == null) {
+            fallback = this::fallback;
+            PacketAdapters.registerInbound(fallback);
         }
     }
 
-    static void remove(PlayerPacketFilter filter) {
-        FILTERS.remove(filter);
-    }
-
-    @Override
-    public void registerHandlers() {
-        if (!(packetHandler instanceof GamePacketHandler game)) {
-            return;
+    synchronized void remove(PlayerPacketFilter filter) {
+        filters.remove(filter);
+        if (filters.isEmpty() && fallback != null) {
+            PacketAdapters.deregisterInbound(fallback);
+            fallback = null;
         }
-        hook(game, SyncInteractionChains.PACKET_ID, packet -> game.handle((SyncInteractionChains) packet));
-        hook(game, ClientMovement.PACKET_ID, packet -> game.handle((ClientMovement) packet));
-        hook(game, ChatMessage.PACKET_ID, packet -> game.handle((ChatMessage) packet));
-        HOOKED.add(game);
     }
 
-    private static void hook(GamePacketHandler game, int packetId, Consumer<ToServerPacket> nativeHandler) {
+    private SubPacketHandler hooksFor(IPacketHandler handler) {
+        return () -> {
+            if (handler instanceof GamePacketHandler game) {
+                hook(game, SyncInteractionChains.PACKET_ID, packet -> game.handle((SyncInteractionChains) packet));
+                hook(game, ClientMovement.PACKET_ID, packet -> game.handle((ClientMovement) packet));
+                hook(game, ChatMessage.PACKET_ID, packet -> game.handle((ChatMessage) packet));
+                hooked.add(game);
+            }
+        };
+    }
+
+    private void hook(GamePacketHandler game, int packetId, Consumer<ToServerPacket> builtIn) {
+        Consumer<ToServerPacket> next = current(game, packetId).orElse(builtIn);
         game.registerHandler(packetId, packet -> {
             if (!filtered(game.getPlayerRef(), packet)) {
-                nativeHandler.accept(packet);
+                next.accept(packet);
             }
         });
     }
 
-    private static boolean fallback(PacketHandler handler, Packet packet) {
-        if (HOOKED.contains(handler) || !(handler instanceof GamePacketHandler game)) {
+    @SuppressWarnings("unchecked")
+    private Optional<Consumer<ToServerPacket>> current(GamePacketHandler game, int packetId) {
+        if (nativeLookupFailed) {
+            return Optional.empty();
+        }
+        try {
+            Field field = GenericPacketHandler.class.getDeclaredField("handlers");
+            field.setAccessible(true);
+            Consumer<ToServerPacket>[] handlers = (Consumer<ToServerPacket>[]) field.get(game);
+            return handlers != null && packetId < handlers.length
+                    ? Optional.ofNullable(handlers[packetId])
+                    : Optional.empty();
+        } catch (ReflectiveOperationException | RuntimeException e) {
+            nativeLookupFailed = true;
+            log.warn("Could not read Hytale's packet handlers, using its public handlers instead: " + e);
+            return Optional.empty();
+        }
+    }
+
+    private boolean fallback(PacketHandler handler, Packet packet) {
+        if (!watched(packet) || hooked.contains(handler) || !(handler instanceof GamePacketHandler game)) {
             return false;
         }
         return filtered(game.getPlayerRef(), packet);
     }
 
-    private static boolean filtered(PlayerRef player, Packet packet) {
+    private boolean filtered(PlayerRef player, Packet packet) {
         if (player == null) {
             return false;
         }
-        for (PlayerPacketFilter filter : FILTERS) {
+        boolean blocked = false;
+        for (PlayerPacketFilter filter : filters) {
             try {
-                if (filter.test(player, packet)) {
-                    return true;
-                }
+                blocked |= filter.test(player, packet);
             } catch (RuntimeException e) {
-                Log current = LOG.get();
-                if (current != null) {
-                    current.error("Could not read input of " + player.getUsername(), e);
-                }
+                log.error("Could not read the input of " + player.getUsername(), e);
             }
         }
-        return false;
+        return blocked;
     }
 }

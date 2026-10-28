@@ -11,6 +11,18 @@ import net.ofatech.controlcore.domain.ports.game.AccessLists;
 
 public final class HytaleAccessLists implements AccessLists {
 
+    private static final String HYTALE_PREFIX = "hytale:";
+
+    @Override
+    public String operatorGroup() {
+        return HYTALE_PREFIX + "Admin";
+    }
+
+    @Override
+    public String label(String group) {
+        return group.startsWith(HYTALE_PREFIX) ? group.substring(HYTALE_PREFIX.length()) : group;
+    }
+
     @Override
     public boolean whitelistRequired() {
         return AccessControlModule.get().isJoinPermissionRequired();
