@@ -13,6 +13,10 @@ All nodes start with **`ofatech.controlcore`**. Operators have every node.
 | `ofatech.controlcore.history` | see the change history (History tab, `/cc-history`) |
 | `ofatech.controlcore.history.rollback` | roll changes back; for settings it still needs the right to change that setting |
 | `ofatech.controlcore.snapshots` | save, restore and delete snapshots |
+| `ofatech.controlcore.players` | see Server Configs → Players |
+| `ofatech.controlcore.players.gamemode` | switch a player between Adventure and Creative |
+| `ofatech.controlcore.players.teleport` | teleport to a player or bring them to you |
+| `ofatech.controlcore.players.kick` | kick a player |
 
 Players without any node can still use `/prefs`, their own preferences and keys, `/cc-keys`, `/cc-settings` (showing
 only what they may see) and the Mods tab.

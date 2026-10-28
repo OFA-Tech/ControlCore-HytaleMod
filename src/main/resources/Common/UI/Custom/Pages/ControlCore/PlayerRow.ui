@@ -71,33 +71,71 @@ Group {
     }
 
     Label #Name {
-      Anchor: (Width: 260);
+      Anchor: (Width: 220);
       Style: (...$C.@DefaultLabelStyle, FontSize: 15, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center);
     }
 
     Label #Uuid {
       FlexWeight: 1;
-      Style: (...$C.@DefaultLabelStyle, FontSize: 12, TextColor: #5f7383, VerticalAlignment: Center);
+      Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #5f7383, VerticalAlignment: Center);
     }
 
-    Label #Expired {
-      Text: %controlcore.ui.bans.expired;
-      Visible: false;
+    Label #OnlineBadge {
+      Text: %controlcore.ui.players.online;
+      Anchor: (Height: 22, Top: 9, Right: 8);
+      Padding: (Horizontal: 8);
+      Background: #3f6e3c;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+    }
+    Label #OfflineBadge {
+      Text: %controlcore.ui.players.offline;
       Anchor: (Height: 22, Top: 9, Right: 8);
       Padding: (Horizontal: 8);
       Background: #4a5866;
       Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
     }
-
-    $C.@SmallTertiaryTextButton #Unban {
-      @Text = %controlcore.ui.bans.unban;
+    Label #BannedBadge {
+      Text: %controlcore.ui.players.banned;
+      Anchor: (Height: 22, Top: 9, Right: 8);
+      Padding: (Horizontal: 8);
+      Background: #8a2f2f;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+    }
+    $C.@SmallTertiaryTextButton #GameMode {
+      @Text = %controlcore.ui.players.gameMode;
       Anchor: (Width: 150, Height: 32, Top: 4, Left: 6);
+    }
+    $C.@SmallTertiaryTextButton #TeleportTo {
+      @Text = %controlcore.ui.players.teleportTo;
+      Anchor: (Width: 140, Height: 32, Top: 4, Left: 6);
+    }
+    $C.@SmallTertiaryTextButton #Bring {
+      @Text = %controlcore.ui.players.bring;
+      Anchor: (Width: 110, Height: 32, Top: 4, Left: 6);
+    }
+    $C.@SmallTertiaryTextButton #Kick {
+      @Text = %controlcore.ui.players.kick;
+      Anchor: (Width: 110, Height: 32, Top: 4, Left: 6);
+    }
+    $C.@SmallTertiaryTextButton #Ban {
+      @Text = %controlcore.ui.players.ban;
+      Anchor: (Width: 110, Height: 32, Top: 4, Left: 6);
+    }
+    $C.@SmallTertiaryTextButton #Unban {
+      @Text = %controlcore.ui.players.unban;
+      Anchor: (Width: 120, Height: 32, Top: 4, Left: 6);
     }
   }
 
-  Label #Details {
+  Label #Status {
     Anchor: (Left: 48, Top: 1);
     Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #9fb0bd, Wrap: true);
+  }
+
+  Label #BanInfo {
+    Visible: false;
+    Anchor: (Left: 48, Top: 2);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #d98c8c, Wrap: true);
   }
 
   Group {

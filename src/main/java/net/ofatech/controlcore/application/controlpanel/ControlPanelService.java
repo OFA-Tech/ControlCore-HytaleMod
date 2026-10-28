@@ -7,12 +7,12 @@ import java.util.Optional;
 import net.ofatech.controlcore.api.ControlPanelApi;
 import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.automation.AutomationService;
-import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.diagnostics.DiagnosticsService;
 import net.ofatech.controlcore.application.history.HistoryEditor;
 import net.ofatech.controlcore.application.keymaps.InputProbeCommand;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.mods.ModsEditor;
+import net.ofatech.controlcore.application.players.PlayersService;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.application.settings.PermissionsEditor;
 import net.ofatech.controlcore.application.settings.PermittedSettingsEditor;
@@ -43,7 +43,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final ControlPanelView view;
     private final SettingsApi registry;
     private final ServerConfigEditor serverConfig;
-    private final BansService bans;
+    private final PlayersService playerAdmin;
     private final KeymapsEditor keymaps;
     private final SettingPermissionPolicy permissions;
     private final Texts texts;
@@ -64,7 +64,7 @@ public final class ControlPanelService implements ControlPanelApi {
             ControlPanelView view,
             SettingsApi registry,
             ServerConfigEditor serverConfig,
-            BansService bans,
+            PlayersService playerAdmin,
             KeymapsEditor keymaps,
             SettingPermissionPolicy permissions,
             Texts texts,
@@ -83,7 +83,7 @@ public final class ControlPanelService implements ControlPanelApi {
         this.view = view;
         this.registry = registry;
         this.serverConfig = serverConfig;
-        this.bans = bans;
+        this.playerAdmin = playerAdmin;
         this.keymaps = keymaps;
         this.permissions = permissions;
         this.texts = texts;
@@ -204,7 +204,9 @@ public final class ControlPanelService implements ControlPanelApi {
                         nodes.hasOwn(player, InputProbeCommand.PERMISSION) ? Optional.of(probe) : Optional.empty(),
                         focus,
                         serverConfig.worldNames(),
-                        bans.mayManage(Optional.of(player)) ? Optional.of(bans.viewedBy(player)) : Optional.empty(),
+                        playerAdmin.maySee(Optional.of(player))
+                                ? Optional.of(playerAdmin.viewedBy(player))
+                                : Optional.empty(),
                         snapshots.mayUse(Optional.of(player))
                                 ? Optional.of(profiles.viewedBy(player, nameOf(player)))
                                 : Optional.empty(),

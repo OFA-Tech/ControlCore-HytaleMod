@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Added
+- **Players** (Server Configs -> Players, replaces Bans): everyone who has played here, is online or is banned, with
+  head, name, UUID, an Online / Offline / Banned badge and a status line (world, game mode, ping and playtime, or when
+  they were last seen). Filter Everyone / Online / Offline / Banned and search by name or UUID.
+- Buttons per player: **Game mode** (Adventure <-> Creative), **Teleport to**, **Bring**, **Kick** (press twice, the
+  reason field is the message), **Ban** and **Unban**. Players get a toast when an admin changes their game mode or
+  brings them.
+- Game mode changes and kicks are recorded in History under the new **Players** filter; game mode changes can be
+  rolled back.
+- New permission nodes: `ofatech.controlcore.players` (see the list), `.players.gamemode`, `.players.teleport` and
+  `.players.kick`. `ofatech.controlcore.bans` still covers bans.
+
 ## 0.18.0 - 2026-10-27
 
 Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.4. The API for other mods

@@ -38,7 +38,8 @@ final class HistoryTab {
         BINDS(ChangeRecord.Kind.CUSTOM_BIND),
         PERMISSIONS(ChangeRecord.Kind.PERMISSION),
         MODS(ChangeRecord.Kind.MOD),
-        BANS(ChangeRecord.Kind.BAN);
+        BANS(ChangeRecord.Kind.BAN),
+        PLAYERS(ChangeRecord.Kind.PLAYER);
 
         private final ChangeRecord.Kind kind;
 

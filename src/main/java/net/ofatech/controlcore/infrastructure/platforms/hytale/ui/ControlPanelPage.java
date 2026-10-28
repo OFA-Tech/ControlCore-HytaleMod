@@ -174,7 +174,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private final List<String> worlds;
     private boolean showingWorlds;
     private boolean showingBans;
-    private final Optional<BansTab> bansTab;
+    private final Optional<PlayersTab> playersTab;
     private boolean replied;
     private String world;
     private boolean editingServerKeys = true;
@@ -211,8 +211,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 ? content.automation().map(view -> new AutomationTab(view, tr, hooks))
                 : Optional.empty();
         this.historyMode = historyTab.isPresent() ? HistoryMode.CHANGES : HistoryMode.SNAPSHOTS;
-        this.bansTab = shownSections.includeServerSettings()
-                ? content.bans().map(view -> new BansTab(view, tr, hooks))
+        this.playersTab = shownSections.includeServerSettings()
+                ? content.players().map(view -> new PlayersTab(view, tr, hooks))
                 : Optional.empty();
         this.probe = manageKeys ? content.debug() : Optional.empty();
         this.viewerId = PlayerId.of(player.getUuid());
@@ -308,7 +308,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         profilesTab.ifPresent(tab -> tab.build(commands, events));
         healthTab.ifPresent(tab -> tab.build(commands, events));
         automationTab.ifPresent(tab -> tab.build(commands, events));
-        bansTab.ifPresent(tab -> tab.build(commands, events));
+        playersTab.ifPresent(tab -> tab.build(commands, events));
         armedDefaults = Optional.empty();
         events.addEventBinding(
                 CustomUIEventBindingType.Activating,
@@ -359,7 +359,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         if (subscriptions.isEmpty()) {
             sections.forEach((key, section) ->
                     subscriptions.add(section.listen(change -> onSettingChanged(key, section, change))));
-            bansTab.ifPresent(tab -> subscriptions.add(tab.view().onChange(this::onBansChanged)));
+            playersTab.ifPresent(tab -> subscriptions.add(tab.view().onChange(this::onBansChanged)));
         }
     }
 
@@ -441,16 +441,16 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private void buildServerMode(UICommandBuilder commands, UIEventBuilder events) {
         commands.set(
                 "#ServerModeButtons.Visible",
-                sections.containsKey(PanelSection.SERVER_CONFIG) && (!worlds.isEmpty() || bansTab.isPresent()));
+                sections.containsKey(PanelSection.SERVER_CONFIG) && (!worlds.isEmpty() || playersTab.isPresent()));
         commands.set("#ServerModeWorlds.Visible", !worlds.isEmpty());
-        commands.set("#ServerModeBans.Visible", bansTab.isPresent());
+        commands.set("#ServerModeBans.Visible", playersTab.isPresent());
         commands.set(
                 "#ServerWorld.Entries",
                 worlds.stream()
                         .map(name -> new DropdownEntryInfo(LocalizableString.fromString(name), name))
                         .toList());
         commands.set("#ServerWorld.Value", world);
-        if (!worlds.isEmpty() || bansTab.isPresent()) {
+        if (!worlds.isEmpty() || playersTab.isPresent()) {
             commands.setObject("#ServerList.Anchor", height(540));
         }
         events.addEventBinding(
@@ -962,7 +962,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 || profilesTab.map(tab -> tab.handle(action)).orElse(false)
                 || healthTab.map(tab -> tab.handle(action)).orElse(false)
                 || automationTab.map(tab -> tab.handle(action)).orElse(false)
-                || bansTab.map(tab -> tab.handle(action)).orElse(false)) {
+                || playersTab.map(tab -> tab.handle(action)).orElse(false)) {
             return;
         }
         if (CLOSE.equals(name)) {
@@ -986,7 +986,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 || SERVER_MODE_WORLDS.equals(name)
                 || SERVER_MODE_BANS.equals(name)) {
             showingWorlds = SERVER_MODE_WORLDS.equals(name) && !worlds.isEmpty();
-            showingBans = SERVER_MODE_BANS.equals(name) && bansTab.isPresent();
+            showingBans = SERVER_MODE_BANS.equals(name) && playersTab.isPresent();
             refreshServerScope();
         } else if (SERVER_WORLD.equals(name)) {
             if (action.value != null && worlds.contains(action.value)) {
@@ -1600,7 +1600,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                     ProfilesTab.Host,
                     HealthTab.Host,
                     AutomationTab.Host,
-                    BansTab.Host {
+                    PlayersTab.Host {
 
         @Override
         public PlayerRef viewer() {

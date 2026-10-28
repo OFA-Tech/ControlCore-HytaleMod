@@ -120,6 +120,32 @@ class ControlPanelServiceTest {
                 TestTexts.of(registry, players),
                 new FakeClock(),
                 registry);
+        var sessions = new SessionService(new FakePlayerData(), players, new FakeClock());
+        var notifications = new NotificationService(
+                new FakeMessenger(),
+                players,
+                policy,
+                new net.ofatech.controlcore.fakes.FakeOverlayDisplay(),
+                new net.ofatech.controlcore.fakes.FakeScheduler(),
+                registry,
+                new net.ofatech.controlcore.application.hud.HudService(
+                        registry,
+                        (player, hide, show) -> {},
+                        players,
+                        player -> net.ofatech.controlcore.domain.ports.game.PlayerContext.Context.UNKNOWN,
+                        log));
+        var playerAdmin = new net.ofatech.controlcore.application.players.PlayersService(
+                bans,
+                players,
+                sessions,
+                new FakePlayerData(),
+                new net.ofatech.controlcore.fakes.FakePlayerAdmin(),
+                changes,
+                policy,
+                (player, node) -> true,
+                TestTexts.of(registry, players),
+                notifications,
+                new FakeClock());
         var history = new HistoryEditor(
                 changes,
                 registry,
@@ -130,6 +156,7 @@ class ControlPanelServiceTest {
                 (player, node) -> true,
                 TestTexts.of(registry, players),
                 bans,
+                playerAdmin,
                 new FakeClock());
         var snapshots = new SnapshotService(
                 new FakeSnapshotStore(),
@@ -153,20 +180,8 @@ class ControlPanelServiceTest {
                 new FakeAutomationRuleStore(),
                 new AutomationSettings(registry),
                 new ActionRegistry(),
-                new SessionService(new FakePlayerData(), players, new FakeClock()),
-                new NotificationService(
-                        new FakeMessenger(),
-                        players,
-                        policy,
-                        new net.ofatech.controlcore.fakes.FakeOverlayDisplay(),
-                        new net.ofatech.controlcore.fakes.FakeScheduler(),
-                        registry,
-                        new net.ofatech.controlcore.application.hud.HudService(
-                                registry,
-                                (player, hide, show) -> {},
-                                players,
-                                player -> net.ofatech.controlcore.domain.ports.game.PlayerContext.Context.UNKNOWN,
-                                log)),
+                sessions,
+                notifications,
                 new RecordingCommandRunner(),
                 profiles,
                 registry,
@@ -185,7 +200,7 @@ class ControlPanelServiceTest {
                 builtIn,
                 registry,
                 serverConfig,
-                bans,
+                playerAdmin,
                 new KeymapsEditor(keyRegistry, TestTexts.of(registry, players), modNames),
                 policy,
                 TestTexts.of(registry, players),

@@ -94,6 +94,11 @@ public final class BansService {
         }
     }
 
+    public net.ofatech.controlcore.domain.event.Subscription onChange(Runnable listener) {
+        listeners.add(listener);
+        return () -> listeners.remove(listener);
+    }
+
     public boolean mayManage(Optional<PlayerId> who) {
         return who.isEmpty() || policy.isAdmin(who.get()) || permissions.hasOwn(who.get(), NODE);
     }

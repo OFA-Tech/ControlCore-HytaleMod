@@ -58,13 +58,29 @@ They come from the world's own `universe/worlds/<world>/config.json` and apply a
 - **Movement:** player speed and jump strength for this world, in %; 0 uses the server-wide value from Mod Settings.
 - **Advanced (read-only):** seed, gameplay config, delete when removed.
 
-#### Bans
+#### Players
 
-The **Bans** switch lists every ban in `bans.json`: the player, when and by whom, how long (permanent, until a date,
-or expired) and the reason. **Unban** lifts a ban (press it twice). The form on top bans a player by name or UUID,
-even when they are offline, permanently or for 1 hour, 1 day, 7 days or 30 days, with an optional reason; an online
-player is kicked at once. Admins have it; give `ofatech.controlcore.bans` to let others manage bans. Bans made with
-Hytale's own `/ban` and `/unban` appear here too, and every ban and unban is in History.
+The **Players** switch lists everyone who has played on the server, everyone online and everyone banned, with their
+head, name and UUID, an **Online**, **Offline** or **Banned** badge, and a status line: the world, game mode, ping and
+playtime for players online, or when they were last seen. A dropdown shows **Everyone**, **Online**, **Offline** or
+**Banned**, and the search box finds a name or UUID.
+
+Buttons on each row:
+
+- **Game mode** switches the player between Adventure and Creative. The player gets a toast, and History keeps the
+  change so it can be rolled back.
+- **Teleport to** takes you to the player, **Bring** brings them to you (also across worlds).
+- **Kick** (press twice) disconnects the player with the text in the reason field as the message. It is in History
+  but can't be undone.
+- **Ban** bans the player with the length and reason chosen in the form; **Unban** (press twice) lifts a ban.
+
+The form on top bans a player by name or UUID, even when they are offline, permanently or for 1 hour, 1 day, 7 days
+or 30 days, with an optional reason; an online player is kicked at once. Bans made with Hytale's own `/ban` and
+`/unban` appear here too, and every ban and unban is in History.
+
+Admins can do everything. Others need `ofatech.controlcore.players` to see the list, plus
+`ofatech.controlcore.players.gamemode`, `ofatech.controlcore.players.teleport` or `ofatech.controlcore.players.kick`
+for each button, and `ofatech.controlcore.bans` for bans.
 
 World ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`, so `/cc-get`, `/cc-set`,
 permissions, History and snapshots work on them like on `config.json` keys.

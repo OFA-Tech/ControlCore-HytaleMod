@@ -373,7 +373,7 @@ $C.@PageOverlay {
                 Anchor: (Bottom: 8);
               }
 
-              Group {
+              Group #BanForm {
                 LayoutMode: Top;
                 Anchor: (Bottom: 10);
                 Background: #182a37;
@@ -408,6 +408,24 @@ $C.@PageOverlay {
                 }
               }
 
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 34, Bottom: 8);
+
+                $C.@DropdownBox #PlayerFilter {
+                  Anchor: (Width: 200, Right: 6);
+                }
+
+                $C.@TextField #PlayerSearch {
+                  FlexWeight: 1;
+                }
+
+                Label #PlayerCount {
+                  Style: @CountStyle;
+                  Anchor: (Width: 160, Left: 10);
+                }
+              }
+
               Label #BansEmpty {
                 Text: %controlcore.ui.bans.empty;
                 Style: @NoteStyle;
@@ -417,7 +435,7 @@ $C.@PageOverlay {
               Group #BanList {
                 LayoutMode: TopScrolling;
                 ScrollbarStyle: $C.@DefaultScrollbarStyle;
-                Anchor: (Height: 440);
+                Anchor: (Height: 400);
                 Padding: (Right: 10);
               }
             }
