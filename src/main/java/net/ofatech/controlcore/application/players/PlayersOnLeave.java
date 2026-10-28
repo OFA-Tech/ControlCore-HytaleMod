@@ -21,6 +21,6 @@ public final class PlayersOnLeave implements ModEventHandler<PlayerLeft> {
 
     @Override
     public void handle(PlayerLeft event) {
-        players.changed();
+        players.left(event.player().id());
     }
 }

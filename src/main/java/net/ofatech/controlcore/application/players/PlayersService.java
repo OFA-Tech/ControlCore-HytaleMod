@@ -49,12 +49,23 @@ public final class PlayersService {
     public static final String GAME_MODE = "players.gamemode";
     public static final String TELEPORT = "players.teleport";
     public static final String WHITELIST = "players.whitelist";
+    public static final String MUTE = "players.mute";
+    public static final String FREEZE = "players.freeze";
+    public static final String INVENTORY = "players.inventory";
+    static final String MUTED_UNTIL = "players.muted-until";
+    static final String PERMANENT = "permanent";
+    private static final int CHAT_KEPT = 200;
+    private static final int CHAT_SHOWN = 50;
+    private static final int CHAT_PER_PLAYER = 20;
+    private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("HH:mm");
     public static final String TARGET = "player:";
     static final String GAME_MODE_TARGET = TARGET + "gamemode:";
     static final String KICK_TARGET = TARGET + "kick:";
     static final String WHITELIST_TARGET = TARGET + "whitelist:";
     static final String GROUP_TARGET = TARGET + "group:";
     static final String GROUP_PERM_TARGET = TARGET + "groupperm:";
+    static final String MUTE_TARGET = TARGET + "mute:";
+    static final String FREEZE_TARGET = TARGET + "freeze:";
     private static final String SEPARATOR = "|";
 
     private static final DateTimeFormatter WHEN = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
@@ -66,6 +77,8 @@ public final class PlayersService {
     private final PlayerData data;
     private final PlayerAdmin admin;
     private final AccessLists access;
+    private final net.ofatech.controlcore.application.worlds.WorldsService worlds;
+    private final java.util.Deque<ChatLine> chat = new java.util.concurrent.ConcurrentLinkedDeque<>();
     private final ChangeHistory history;
     private final SettingPermissionPolicy policy;
     private final Permissions permissions;
@@ -81,6 +94,8 @@ public final class PlayersService {
             PlayerData data,
             PlayerAdmin admin,
             AccessLists access,
+            net.ofatech.controlcore.application.worlds.WorldsService worlds,
+            net.ofatech.controlcore.domain.ports.game.ChatGate chatGate,
             ChangeHistory history,
             SettingPermissionPolicy policy,
             Permissions permissions,
@@ -93,6 +108,7 @@ public final class PlayersService {
         this.data = data;
         this.admin = admin;
         this.access = access;
+        this.worlds = worlds;
         this.history = history;
         this.policy = policy;
         this.permissions = permissions;
@@ -100,7 +116,10 @@ public final class PlayersService {
         this.notifications = notifications;
         this.clock = clock;
         bans.onChange(this::changed);
+        chatGate.listen(this::allowChat);
     }
+
+    private record ChatLine(Instant at, PlayerId player, String name, String text) {}
 
     public void changed() {
         for (Runnable listener : listeners) {
@@ -161,6 +180,8 @@ public final class PlayersService {
                     ban != null && ban.inEffect(now),
                     whitelisted.contains(id),
                     groups.contains(AccessLists.OPERATOR_GROUP),
+                    mutedUntil(id).isPresent(),
+                    worlds.isFrozen(id),
                     status(id, isOnline, tr) + groupsText(groups, tr),
                     banText));
         });
@@ -380,6 +401,244 @@ public final class PlayersService {
                 permission));
     }
 
+    boolean allowChat(PlayerId sender, String name, String text) {
+        Optional<String> muted = mutedUntil(sender);
+        if (muted.isPresent()) {
+            Translator theirs = texts.forPlayer(Optional.of(sender));
+            notifications.message(
+                    sender,
+                    PERMANENT.equals(muted.get())
+                            ? theirs.t("controlcore.players.you_are_muted")
+                            : theirs.t(
+                                    "controlcore.players.you_are_muted_until",
+                                    "when",
+                                    when(Instant.parse(muted.get()))));
+            return false;
+        }
+        chat.addLast(new ChatLine(clock.now(), sender, name == null ? "" : name, text == null ? "" : text));
+        while (chat.size() > CHAT_KEPT) {
+            chat.pollFirst();
+        }
+        return true;
+    }
+
+    Optional<String> mutedUntil(PlayerId id) {
+        Optional<String> stored = data.get(id, MUTED_UNTIL).filter(value -> !value.isBlank());
+        if (stored.isEmpty() || PERMANENT.equals(stored.get())) {
+            return stored;
+        }
+        try {
+            if (Instant.parse(stored.get()).isAfter(clock.now())) {
+                return stored;
+            }
+        } catch (DateTimeParseException broken) {
+            return Optional.empty();
+        }
+        data.remove(id, MUTED_UNTIL);
+        return Optional.empty();
+    }
+
+    private void writeMute(PlayerId id, String value) {
+        if (value == null || value.isBlank()) {
+            data.remove(id, MUTED_UNTIL);
+        } else {
+            data.put(id, MUTED_UNTIL, value);
+        }
+        data.flush();
+    }
+
+    public CompletableFuture<Result<String>> setMuted(
+            Optional<PlayerId> who, String player, String length, boolean add, Translator tr) {
+        if (!may(who, MUTE)) {
+            return CompletableFuture.completedFuture(Result.failure(forbidden()));
+        }
+        Result<Optional<Duration>> duration = add ? BansService.duration(length) : Result.success(Optional.empty());
+        if (duration.isFailure()) {
+            return CompletableFuture.completedFuture(Result.failure(duration.error()));
+        }
+        return target(player).thenApply(found -> {
+            if (found.isEmpty()) {
+                return Result.<String>failure(unknown(player));
+            }
+            PlayerId id = found.get();
+            if (add && who.filter(id::equals).isPresent()) {
+                return Result.<String>failure(self());
+            }
+            String before = mutedUntil(id).orElse("");
+            if (!add && before.isEmpty()) {
+                return Result.<String>failure(Error.validation(
+                        "Players.NothingToDo",
+                        Text.key("controlcore.errors.players.not_muted", "{player} is not muted.")
+                                .with("player", nameOf(id))));
+            }
+            String after = add
+                    ? duration.value()
+                            .map(time -> clock.now().plus(time).toString())
+                            .orElse(PERMANENT)
+                    : "";
+            writeMute(id, after);
+            history.record(Kind.PLAYER, MUTE_TARGET + id.value() + ":" + nameOf(id), before, after, false);
+            if (players.find(id).isPresent()) {
+                Translator theirs = texts.forPlayer(Optional.of(id));
+                toast(
+                        id,
+                        add
+                                ? theirs.t(
+                                        "controlcore.players.toast.muted",
+                                        "actor",
+                                        actor(who, theirs),
+                                        "length",
+                                        shown(after, theirs))
+                                : theirs.t("controlcore.players.toast.unmuted", "actor", actor(who, theirs)));
+            }
+            changed();
+            return Result.success(tr.t(
+                    add ? "controlcore.players.muted" : "controlcore.players.unmuted",
+                    "player",
+                    nameOf(id),
+                    "length",
+                    shown(after, tr)));
+        });
+    }
+
+    public CompletableFuture<Result<String>> setFrozen(
+            Optional<PlayerId> who, String player, boolean add, Translator tr) {
+        if (!may(who, FREEZE)) {
+            return CompletableFuture.completedFuture(Result.failure(forbidden()));
+        }
+        return target(player).thenApply(found -> {
+            if (found.isEmpty()) {
+                return Result.<String>failure(unknown(player));
+            }
+            PlayerId id = found.get();
+            if (players.find(id).isEmpty()) {
+                return Result.<String>failure(notOnline(id));
+            }
+            if (add && who.filter(id::equals).isPresent()) {
+                return Result.<String>failure(self());
+            }
+            if (!worlds.setFrozen(id, add)) {
+                return Result.<String>failure(Error.validation(
+                        "Players.NothingToDo",
+                        Text.key(
+                                        add
+                                                ? "controlcore.errors.players.already_frozen"
+                                                : "controlcore.errors.players.not_frozen",
+                                        add ? "{player} is already frozen." : "{player} is not frozen.")
+                                .with("player", nameOf(id))));
+            }
+            history.record(
+                    Kind.PLAYER,
+                    FREEZE_TARGET + id.value() + ":" + nameOf(id),
+                    String.valueOf(!add),
+                    String.valueOf(add),
+                    false);
+            Translator theirs = texts.forPlayer(Optional.of(id));
+            toast(
+                    id,
+                    theirs.t(
+                            add ? "controlcore.players.toast.frozen" : "controlcore.players.toast.unfrozen",
+                            "actor",
+                            actor(who, theirs)));
+            changed();
+            return Result.success(
+                    tr.t(add ? "controlcore.players.frozen" : "controlcore.players.unfrozen", "player", nameOf(id)));
+        });
+    }
+
+    public void left(PlayerId id) {
+        worlds.setFrozen(id, false);
+        changed();
+    }
+
+    CompletableFuture<PlayersView.Details> details(PlayerId id, boolean inventory, Translator tr) {
+        List<PlayersView.Line> lines = new ArrayList<>();
+        boolean online = players.find(id).isPresent();
+        String name = nameOf(id);
+        lines.add(new PlayersView.Line(tr.t("controlcore.players.details.about"), true));
+        lines.add(new PlayersView.Line(
+                tr.t("controlcore.players.details.uuid", "uuid", id.value().toString()), false));
+        lines.add(new PlayersView.Line(status(id, online, tr), false));
+        java.util.Set<String> groups = access.groupsOf(id);
+        lines.add(new PlayersView.Line(
+                tr.t(
+                        "controlcore.players.details.groups",
+                        "groups",
+                        groups.isEmpty()
+                                ? "-"
+                                : String.join(
+                                        ", ",
+                                        groups.stream()
+                                                .map(PlayersService::groupName)
+                                                .toList())),
+                false));
+        lines.add(new PlayersView.Line(
+                tr.t(
+                        "controlcore.players.details.whitelist",
+                        "value",
+                        shown(String.valueOf(access.whitelisted().contains(id)), tr)),
+                false));
+        instant(id, SessionService.FIRST_JOIN)
+                .ifPresent(first -> lines.add(new PlayersView.Line(
+                        tr.t("controlcore.players.details.first_join", "when", when(first)), false)));
+        bans.all().stream()
+                .filter(ban -> ban.target().equals(id))
+                .findFirst()
+                .ifPresent(ban -> lines.add(new PlayersView.Line(bans.details(ban, tr), false)));
+        mutedUntil(id).ifPresent(until -> lines.add(new PlayersView.Line(shown(until, tr), false)));
+        if (worlds.isFrozen(id)) {
+            lines.add(new PlayersView.Line(tr.t("controlcore.players.details.frozen"), false));
+        }
+        lines.add(new PlayersView.Line(tr.t("controlcore.players.details.chat"), true));
+        List<ChatLine> theirs =
+                chat.stream().filter(line -> line.player().equals(id)).toList();
+        if (theirs.isEmpty()) {
+            lines.add(new PlayersView.Line(tr.t("controlcore.players.details.no_chat"), false));
+        }
+        theirs.stream()
+                .skip(Math.max(0, theirs.size() - CHAT_PER_PLAYER))
+                .forEach(line -> lines.add(new PlayersView.Line(time(line.at()) + "  " + line.text(), false)));
+        if (!inventory) {
+            return CompletableFuture.completedFuture(new PlayersView.Details(name, lines));
+        }
+        lines.add(new PlayersView.Line(tr.t("controlcore.players.details.inventory"), true));
+        if (!online) {
+            lines.add(new PlayersView.Line(tr.t("controlcore.players.details.inventory_offline"), false));
+            return CompletableFuture.completedFuture(new PlayersView.Details(name, lines));
+        }
+        return admin.inventory(id).thenApply(items -> {
+            List<PlayersView.Line> all = new ArrayList<>(lines);
+            if (items.isEmpty()) {
+                all.add(new PlayersView.Line(tr.t("controlcore.players.details.inventory_offline"), false));
+            } else if (items.get().isEmpty()) {
+                all.add(new PlayersView.Line(tr.t("controlcore.players.details.inventory_empty"), false));
+            } else {
+                items.get()
+                        .forEach(item -> all.add(new PlayersView.Line(
+                                tr.t("controlcore.players.details.item", "item", item.id(), "count", item.quantity()),
+                                false)));
+            }
+            return new PlayersView.Details(name, all);
+        });
+    }
+
+    PlayersView.Details chatView(Translator tr) {
+        List<ChatLine> all = List.copyOf(chat);
+        List<PlayersView.Line> lines = new ArrayList<>();
+        if (all.isEmpty()) {
+            lines.add(new PlayersView.Line(tr.t("controlcore.players.chat.empty"), false));
+        }
+        all.stream()
+                .skip(Math.max(0, all.size() - CHAT_SHOWN))
+                .forEach(line -> lines.add(
+                        new PlayersView.Line(time(line.at()) + "  " + line.name() + ": " + line.text(), false)));
+        return new PlayersView.Details(tr.t("controlcore.players.chat.title"), lines);
+    }
+
+    private static String time(Instant at) {
+        return TIME.format(at.atZone(ZoneId.systemDefault()));
+    }
+
     private boolean mayChangeGroups(Optional<PlayerId> who) {
         return who.isEmpty() || policy.isAdmin(who.get());
     }
@@ -514,6 +773,26 @@ public final class PlayersService {
 
     public Result<?> restore(String target, String old, String current, Optional<PlayerId> who) {
         boolean wanted = Boolean.parseBoolean(old);
+        if (target.startsWith(MUTE_TARGET)) {
+            Optional<PlayerId> id = idOf(target, MUTE_TARGET);
+            if (id.isEmpty()) {
+                return Result.failure(failed());
+            }
+            if (!may(who, MUTE)) {
+                return Result.failure(forbidden());
+            }
+            writeMute(id.get(), old);
+            history.record(Kind.PLAYER, target, current, old, false);
+            changed();
+            return Result.success(true);
+        }
+        if (target.startsWith(FREEZE_TARGET)) {
+            Optional<PlayerId> id = idOf(target, FREEZE_TARGET);
+            return id.isEmpty()
+                    ? Result.failure(failed())
+                    : setFrozen(who, id.get().value().toString(), wanted, texts.forPlayer(who))
+                            .join();
+        }
         if (target.startsWith(WHITELIST_TARGET)) {
             Optional<PlayerId> id = idOf(target, WHITELIST_TARGET);
             return id.isEmpty()
@@ -574,6 +853,8 @@ public final class PlayersService {
                     split < 0 ? "" : rest.substring(split + 1));
         }
         for (String[] kind : new String[][] {
+            {MUTE_TARGET, "controlcore.history.what.player_mute"},
+            {FREEZE_TARGET, "controlcore.history.what.player_freeze"},
             {WHITELIST_TARGET, "controlcore.history.what.player_whitelist"},
             {GROUP_TARGET, "controlcore.history.what.player_group"}
         }) {
@@ -601,6 +882,17 @@ public final class PlayersService {
         if (PlayerAdmin.ADVENTURE.equals(value) || PlayerAdmin.CREATIVE.equals(value)) {
             return modeName(value, tr);
         }
+        if (PERMANENT.equals(value)) {
+            return tr.t("controlcore.players.muted_forever");
+        }
+        try {
+            Instant until = Instant.parse(value);
+            return tr.t("controlcore.players.muted_until", "when", when(until));
+        } catch (DateTimeParseException notADate) {
+            if (value.isEmpty()) {
+                return tr.t("controlcore.players.not_muted");
+            }
+        }
         if ("true".equals(value) || "false".equals(value)) {
             return tr.t(Boolean.parseBoolean(value) ? "controlcore.players.value.yes" : "controlcore.players.value.no");
         }
@@ -616,7 +908,10 @@ public final class PlayersService {
                 may(who, TELEPORT),
                 bans.mayManage(who),
                 may(who, WHITELIST),
-                mayChangeGroups(who));
+                mayChangeGroups(who),
+                may(who, MUTE),
+                may(who, FREEZE),
+                may(who, INVENTORY));
         return new PlayersView() {
             @Override
             public String viewer() {
@@ -732,6 +1027,28 @@ public final class PlayersService {
             @Override
             public Result<String> groupPermission(String group, String node, boolean add) {
                 return setGroupPermission(who, group, node, add, tr);
+            }
+
+            @Override
+            public CompletableFuture<Result<String>> mute(String player, String length, boolean add) {
+                return setMuted(who, player, length, add, tr);
+            }
+
+            @Override
+            public CompletableFuture<Result<String>> freeze(String player, boolean add) {
+                return setFrozen(who, player, add, tr);
+            }
+
+            @Override
+            public CompletableFuture<Details> details(String id) {
+                return parse(id)
+                        .map(found -> PlayersService.this.details(found, rights.inventory(), tr))
+                        .orElse(CompletableFuture.completedFuture(new Details(id, List.of())));
+            }
+
+            @Override
+            public Details chat() {
+                return PlayersService.this.chatView(tr);
             }
 
             @Override

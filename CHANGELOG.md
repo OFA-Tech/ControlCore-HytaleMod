@@ -16,8 +16,13 @@
   or take a group's **permission nodes** (the form lists the group's own permissions). Rows show **Whitelist** and
   **Operator** badges and the player's groups; filters **Whitelisted** and **Operators**. All of it is in History and
   can be rolled back. Operators and groups are admin-only.
+- **Mute** (for a length, kept after restarts) and **Freeze** (until unfrozen or the player leaves) in the form, with
+  **Muted** and **Frozen** badges, toasts for the player, and History with rollback.
+- **Details** page per player (**< Back** returns): status, groups, whitelist, first join, ban, mute, freeze, their
+  recent messages and, while online, their inventory. **Recent chat** shows the last 50 messages (memory only).
 - New permission nodes: `ofatech.controlcore.players` (see the list), `.players.gamemode`, `.players.teleport`,
-  `.players.kick` and `.players.whitelist`. `ofatech.controlcore.bans` still covers bans.
+  `.players.kick`, `.players.whitelist`, `.players.mute`, `.players.freeze` and `.players.inventory`.
+  `ofatech.controlcore.bans` still covers bans.
 
 ## 0.18.0 - 2026-10-27
 

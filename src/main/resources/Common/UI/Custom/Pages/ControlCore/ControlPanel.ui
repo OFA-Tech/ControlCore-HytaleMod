@@ -434,7 +434,7 @@ $C.@PageOverlay {
                 }
               }
 
-              Group {
+              Group #PlayerFilterRow {
                 LayoutMode: Left;
                 Anchor: (Height: 34, Bottom: 8);
 
@@ -449,6 +449,11 @@ $C.@PageOverlay {
                 Label #PlayerCount {
                   Style: @CountStyle;
                   Anchor: (Width: 110, Left: 10);
+                }
+
+                $C.@SmallTertiaryTextButton #PlayerChat {
+                  @Text = %controlcore.ui.players.recentChat;
+                  Anchor: (Width: 150, Height: 32, Left: 6);
                 }
 
                 $C.@SmallSecondaryTextButton #PlayerActionNew {
@@ -468,6 +473,34 @@ $C.@PageOverlay {
                 ScrollbarStyle: $C.@DefaultScrollbarStyle;
                 Anchor: (Height: 400);
                 Padding: (Right: 10);
+              }
+
+              Group #PlayerDetails {
+                LayoutMode: Top;
+                Visible: false;
+
+                Group {
+                  LayoutMode: Left;
+                  Anchor: (Height: 34, Bottom: 8);
+
+                  $C.@SmallTertiaryTextButton #PlayerDetailsBack {
+                    @Text = %controlcore.ui.players.back;
+                    Anchor: (Width: 120, Height: 32);
+                  }
+
+                  Label #PlayerDetailsTitle {
+                    Style: (...@SubsectionTitleStyle, FontSize: 15, VerticalAlignment: Center);
+                    Anchor: (Left: 12);
+                    FlexWeight: 1;
+                  }
+                }
+
+                Group #PlayerDetailsBody {
+                  LayoutMode: TopScrolling;
+                  ScrollbarStyle: $C.@DefaultScrollbarStyle;
+                  Anchor: (Height: 470);
+                  Padding: (Right: 10);
+                }
               }
             }
           }

@@ -17,6 +17,7 @@ import net.ofatech.controlcore.domain.ports.config.SnapshotStore;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
 import net.ofatech.controlcore.domain.ports.game.AccessLists;
 import net.ofatech.controlcore.domain.ports.game.Bans;
+import net.ofatech.controlcore.domain.ports.game.ChatGate;
 import net.ofatech.controlcore.domain.ports.game.CommandRunner;
 import net.ofatech.controlcore.domain.ports.game.EmptyHandInput;
 import net.ofatech.controlcore.domain.ports.game.HudDisplay;
@@ -134,6 +135,10 @@ public final class HytalePlatform implements Platform {
         binder.bind(PlayerTuning.class, new HytalePlayerTuning(log));
         binder.bind(PlayerAdmin.class, new HytalePlayerAdmin(log));
         binder.bind(AccessLists.class, new HytaleAccessLists());
+        binder.bind(
+                ChatGate.class,
+                new net.ofatech.controlcore.infrastructure.platforms.hytale.event.HytaleChatGate(
+                        plugin.getEventRegistry(), log));
         binder.bind(Bans.class, new HytaleBans(log));
         binder.bind(ModCatalog.class, new HytaleModCatalog(serverConfiguration, log));
         binder.bind(ControlPanelView.class, new HytaleControlPanelView(log));

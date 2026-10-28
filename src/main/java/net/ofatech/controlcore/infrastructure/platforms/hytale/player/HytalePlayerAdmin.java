@@ -111,6 +111,25 @@ public final class HytalePlayerAdmin implements PlayerAdmin {
         return done;
     }
 
+    @Override
+    public CompletableFuture<Optional<java.util.List<Item>>> inventory(PlayerId player) {
+        CompletableFuture<Optional<java.util.List<Item>>> done = new CompletableFuture<>();
+        onWorldThread(player, done, Optional.empty(), (ref, store) -> {
+            java.util.Map<String, Integer> counts = new java.util.TreeMap<>();
+            com.hypixel.hytale.server.core.inventory.InventoryComponent.getCombined(
+                            store, ref, com.hypixel.hytale.server.core.inventory.InventoryComponent.EVERYTHING)
+                    .forEach((slot, stack) -> {
+                        if (stack != null && !stack.isEmpty() && stack.getItemId() != null) {
+                            counts.merge(stack.getItemId(), stack.getQuantity(), Integer::sum);
+                        }
+                    });
+            done.complete(Optional.of(counts.entrySet().stream()
+                    .map(entry -> new Item(entry.getKey(), entry.getValue()))
+                    .toList()));
+        });
+        return done;
+    }
+
     private <T> void onWorldThread(
             PlayerId player,
             CompletableFuture<T> done,

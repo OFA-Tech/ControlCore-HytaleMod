@@ -18,6 +18,9 @@ All nodes start with **`ofatech.controlcore`**. Operators have every node.
 | `ofatech.controlcore.players.teleport` | teleport to a player or bring them to you |
 | `ofatech.controlcore.players.kick` | kick a player |
 | `ofatech.controlcore.players.whitelist` | add players to or remove them from the whitelist |
+| `ofatech.controlcore.players.mute` | mute and unmute players |
+| `ofatech.controlcore.players.freeze` | freeze and unfreeze players |
+| `ofatech.controlcore.players.inventory` | see a player's inventory on their Details page |
 
 Players without any node can still use `/prefs`, their own preferences and keys, `/cc-keys`, `/cc-settings` (showing
 only what they may see) and the Mods tab.

@@ -169,4 +169,80 @@ class PlayersRuntimeTest extends RuntimeTestBase {
         assertThat(view.operator("Builder", true).join().error().code()).isEqualTo("Players.AdminsOnly");
         assertThat(view.whitelist("Builder", true).join().isSuccess()).isTrue();
     }
+
+    @Test
+    void mutedPlayersCannotChatUntilUnmutedAndChatIsKept() {
+        runtime.setup();
+        runtime.start();
+        PlayerInfo admin = platform.players.join("Admin");
+        PlayerInfo builder = platform.players.join("Builder");
+        PlayersView view = viewFor(admin);
+
+        assertThat(platform.chat.say(builder.id(), "Builder", "hello all")).isTrue();
+        assertThat(view.mute("Builder", "1h", true).join().isSuccess()).isTrue();
+        assertThat(platform.chat.say(builder.id(), "Builder", "spam")).isFalse();
+        assertThat(view.list().stream()
+                        .filter(entry -> entry.name().equals("Builder"))
+                        .findFirst()
+                        .orElseThrow()
+                        .muted())
+                .isTrue();
+
+        long mute = platform.changeLog.records.getLast().id();
+        platform.commands.run("cc-rollback", admin, Map.of("change", (int) mute));
+        assertThat(platform.chat.say(builder.id(), "Builder", "back")).isTrue();
+
+        assertThat(view.chat().lines())
+                .extracting(PlayersView.Line::text)
+                .anyMatch(text -> text.endsWith("Builder: hello all"))
+                .noneMatch(text -> text.contains("spam"));
+        assertThat(view.mute("Builder", "soon", true).join().error().code()).isEqualTo("Bans.BadLength");
+    }
+
+    @Test
+    void freezingIsUndoneWhenThePlayerLeaves() {
+        runtime.setup();
+        runtime.start();
+        PlayerInfo admin = platform.players.join("Admin");
+        PlayerInfo builder = platform.players.join("Builder");
+        PlayersView view = viewFor(admin);
+
+        assertThat(view.freeze("Builder", true).join().isSuccess()).isTrue();
+        assertThat(view.freeze("Builder", true).join().error().code()).isEqualTo("Players.NothingToDo");
+        assertThat(view.list().stream()
+                        .filter(entry -> entry.name().equals("Builder"))
+                        .findFirst()
+                        .orElseThrow()
+                        .frozen())
+                .isTrue();
+
+        platform.players.leave(builder);
+        platform.connectedPublisher.publish(new net.ofatech.controlcore.domain.event.PlayerLeft(builder));
+        platform.players.join("Builder");
+
+        assertThat(view.list().stream()
+                        .filter(entry -> entry.name().equals("Builder"))
+                        .findFirst()
+                        .orElseThrow()
+                        .frozen())
+                .isFalse();
+    }
+
+    @Test
+    void detailsShowTheInventoryOfOnlinePlayers() {
+        runtime.setup();
+        runtime.start();
+        PlayerInfo admin = platform.players.join("Admin");
+        PlayerInfo builder = platform.players.join("Builder");
+        platform.admin.inventories.put(
+                builder.id(),
+                java.util.List.of(
+                        new net.ofatech.controlcore.domain.ports.game.PlayerAdmin.Item("Weapon_Sword_Iron", 1)));
+        PlayersView view = viewFor(admin);
+
+        var details = view.details(builder.id().value().toString()).join();
+
+        assertThat(details.title()).isEqualTo("Builder");
+        assertThat(details.lines()).extracting(PlayersView.Line::text).contains("Weapon_Sword_Iron x1");
+    }
 }

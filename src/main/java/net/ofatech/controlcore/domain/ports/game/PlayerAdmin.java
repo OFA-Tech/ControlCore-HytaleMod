@@ -19,4 +19,8 @@ public interface PlayerAdmin {
     CompletableFuture<Boolean> setGameMode(PlayerId player, String mode);
 
     CompletableFuture<Boolean> teleport(PlayerId player, PlayerId to);
+
+    record Item(String id, int quantity) {}
+
+    CompletableFuture<Optional<java.util.List<Item>>> inventory(PlayerId player);
 }

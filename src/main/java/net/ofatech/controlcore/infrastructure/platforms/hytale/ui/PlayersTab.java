@@ -27,6 +27,11 @@ final class PlayersTab {
     private static final String UNBAN_KIND = "unban";
     private static final String KICK_KIND = "kick";
     private static final String GROUP = "PlayerActionGroup";
+    private static final String DETAILS = "PlayerDetails";
+    private static final String DETAILS_BACK = "PlayerDetailsBack";
+    private static final String CHAT = "PlayerChat";
+    private static final String BODY = "#PlayerDetailsBody";
+    private static final List<String> NEEDS_LENGTH = List.of(BAN_KIND, "mute-add");
     private static final List<String> NEEDS_GROUP = List.of("group-add", "group-remove", "node-add", "node-remove");
     private static final List<String> NEEDS_NODE = List.of("node-add", "node-remove");
     private static final int LIST_OPEN = 400;
@@ -66,6 +71,7 @@ final class PlayersTab {
     private boolean formOpen;
     private String kind = BAN_KIND;
     private String group = "";
+    private Optional<PlayersView.Details> details = Optional.empty();
     private Optional<String> armed = Optional.empty();
     private Optional<String> footer = Optional.empty();
     private List<PlayersView.Entry> rows = List.of();
@@ -109,6 +115,9 @@ final class PlayersTab {
         commands.set("#PlayerSearch.PlaceholderText", tr.t("controlcore.players.search_hint"));
         events.addEventBinding(
                 CustomUIEventBindingType.Activating, "#PlayerActionNew", EventData.of(PanelAction.KEY, OPEN));
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#PlayerChat", EventData.of(PanelAction.KEY, CHAT));
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating, "#PlayerDetailsBack", EventData.of(PanelAction.KEY, DETAILS_BACK));
         events.addEventBinding(
                 CustomUIEventBindingType.Activating, "#PlayerActionClose", EventData.of(PanelAction.KEY, CLOSE));
         events.addEventBinding(
@@ -159,6 +168,8 @@ final class PlayersTab {
             commands.set(row + " #BannedBadge.Visible", entry.banned());
             commands.set(row + " #WhitelistBadge.Visible", entry.whitelisted());
             commands.set(row + " #OpBadge.Visible", entry.operator());
+            commands.set(row + " #MutedBadge.Visible", entry.muted());
+            commands.set(row + " #FrozenBadge.Visible", entry.frozen());
             commands.set(row + " #Status.Text", entry.status());
             commands.set(row + " #BanInfo.Text", entry.ban());
             commands.set(row + " #BanInfo.Visible", !entry.ban().isEmpty());
@@ -171,6 +182,7 @@ final class PlayersTab {
             commands.set(row + " #Unban.Visible", !entry.ban().isEmpty() && rights.ban());
             commands.set(row + ".Visible", entry.matches(filter, query));
             for (String[] button : List.of(
+                    new String[] {"#Details", DETAILS},
                     new String[] {"#GameMode", GAME_MODE},
                     new String[] {"#TeleportTo", TELEPORT_TO},
                     new String[] {"#Bring", BRING},
@@ -217,6 +229,7 @@ final class PlayersTab {
         }
         showCount(commands);
         showForm(commands, !kinds.isEmpty());
+        showDetails(commands);
         footer.ifPresent(text -> commands.set("#FooterStatus.Text", text));
         footer = Optional.empty();
     }
@@ -225,7 +238,7 @@ final class PlayersTab {
         boolean open = formOpen && allowed;
         commands.set("#BanForm.Visible", open);
         commands.set("#PlayerActionNew.Visible", allowed && !open);
-        commands.set("#BanLength.Visible", BAN_KIND.equals(kind));
+        commands.set("#BanLength.Visible", NEEDS_LENGTH.contains(kind));
         commands.set("#BanReason.Visible", BAN_KIND.equals(kind) || KICK_KIND.equals(kind));
         commands.set(
                 "#BanReason.PlaceholderText",
@@ -253,6 +266,29 @@ final class PlayersTab {
         host.resize(LIST, open ? (note ? LIST_OPEN - 30 : LIST_OPEN) : LIST_CLOSED, commands);
     }
 
+    private void showDetails(UICommandBuilder commands) {
+        boolean open = details.isPresent();
+        commands.set("#PlayerDetails.Visible", open);
+        commands.set("#PlayerFilterRow.Visible", !open);
+        commands.set("#BanList.Visible", !open);
+        if (open) {
+            commands.set("#BanForm.Visible", false);
+            commands.set("#BansEmpty.Visible", false);
+            PlayersView.Details shown = details.get();
+            commands.set("#PlayerDetailsTitle.Text", shown.title());
+            List<PlayersView.Line> lines = shown.lines();
+            for (int index = 0; index < lines.size(); index++) {
+                PlayersView.Line line = lines.get(index);
+                commands.append(
+                        BODY,
+                        line.heading()
+                                ? "Pages/ControlCore/PlayerDetailHeading.ui"
+                                : "Pages/ControlCore/PlayerDetailLine.ui");
+                commands.set(BODY + "[" + index + "].Text", line.text());
+            }
+        }
+    }
+
     private List<PlayersView.Choice> kinds(PlayersView.Rights rights) {
         List<PlayersView.Choice> kinds = new ArrayList<>();
         if (rights.ban()) {
@@ -265,6 +301,12 @@ final class PlayersTab {
         List<String> more = new ArrayList<>();
         if (rights.whitelist()) {
             more.addAll(List.of("whitelist-add", "whitelist-remove"));
+        }
+        if (rights.mute()) {
+            more.addAll(List.of("mute-add", "mute-remove"));
+        }
+        if (rights.freeze()) {
+            more.addAll(List.of("freeze-add", "freeze-remove"));
         }
         if (rights.groups()) {
             more.addAll(List.of("op-add", "op-remove", "group-add", "group-remove", "node-add", "node-remove"));
@@ -309,6 +351,23 @@ final class PlayersTab {
                 UICommandBuilder update = new UICommandBuilder();
                 showForm(update, !kinds(view.rights()).isEmpty());
                 host.send(update);
+            }
+            case DETAILS -> {
+                host.send(new UICommandBuilder());
+                String id = text(action.id);
+                view.details(id)
+                        .whenComplete((found, failure) -> host.later(() -> {
+                            details = Optional.ofNullable(found);
+                            host.rebuild();
+                        }));
+            }
+            case CHAT -> {
+                details = Optional.of(view.chat());
+                host.rebuild();
+            }
+            case DETAILS_BACK -> {
+                details = Optional.empty();
+                host.rebuild();
             }
             case GROUP -> {
                 group = text(action.bindName).isEmpty() ? group : text(action.bindName);
@@ -371,7 +430,11 @@ final class PlayersTab {
         kind = text(action.bindKeys).isEmpty() ? kind : text(action.bindKeys);
         group = text(action.bindName).isEmpty() ? group : text(action.bindName);
         CompletableFuture<Result<String>> pending;
-        if (kind.startsWith("whitelist-")) {
+        if (kind.startsWith("mute-")) {
+            pending = view.mute(player, length, kind.endsWith("-add"));
+        } else if (kind.startsWith("freeze-")) {
+            pending = view.freeze(player, kind.endsWith("-add"));
+        } else if (kind.startsWith("whitelist-")) {
             pending = view.whitelist(player, kind.endsWith("-add"));
         } else if (kind.startsWith("op-")) {
             pending = view.operator(player, kind.endsWith("-add"));

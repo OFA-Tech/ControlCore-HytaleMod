@@ -15,6 +15,7 @@ public final class FakePlayerAdmin implements PlayerAdmin {
     public final Map<PlayerId, String> modes = new ConcurrentHashMap<>();
     public final List<String> kicked = new ArrayList<>();
     public final List<String> teleports = new ArrayList<>();
+    public final Map<PlayerId, List<Item>> inventories = new ConcurrentHashMap<>();
 
     @Override
     public OptionalInt ping(PlayerId player) {
@@ -36,6 +37,11 @@ public final class FakePlayerAdmin implements PlayerAdmin {
     public CompletableFuture<Boolean> setGameMode(PlayerId player, String mode) {
         modes.put(player, mode);
         return CompletableFuture.completedFuture(true);
+    }
+
+    @Override
+    public CompletableFuture<Optional<List<Item>>> inventory(PlayerId player) {
+        return CompletableFuture.completedFuture(Optional.ofNullable(inventories.get(player)));
     }
 
     @Override

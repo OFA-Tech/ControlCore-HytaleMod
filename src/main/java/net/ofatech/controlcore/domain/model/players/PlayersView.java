@@ -38,6 +38,8 @@ public interface PlayersView {
             boolean banned,
             boolean whitelisted,
             boolean operator,
+            boolean muted,
+            boolean frozen,
             String status,
             String ban) {
 
@@ -66,7 +68,25 @@ public interface PlayersView {
 
     record Choice(String id, String label) {}
 
-    record Rights(boolean kick, boolean gameMode, boolean teleport, boolean ban, boolean whitelist, boolean groups) {}
+    record Rights(
+            boolean kick,
+            boolean gameMode,
+            boolean teleport,
+            boolean ban,
+            boolean whitelist,
+            boolean groups,
+            boolean mute,
+            boolean freeze,
+            boolean inventory) {}
+
+    record Line(String text, boolean heading) {}
+
+    record Details(String title, List<Line> lines) {
+
+        public Details {
+            lines = List.copyOf(lines);
+        }
+    }
 
     String viewer();
 
@@ -107,6 +127,14 @@ public interface PlayersView {
     CompletableFuture<Result<String>> group(String player, String group, boolean add);
 
     Result<String> groupPermission(String group, String node, boolean add);
+
+    CompletableFuture<Result<String>> mute(String player, String length, boolean add);
+
+    CompletableFuture<Result<String>> freeze(String player, boolean add);
+
+    CompletableFuture<Details> details(String id);
+
+    Details chat();
 
     Subscription onChange(Runnable listener);
 }

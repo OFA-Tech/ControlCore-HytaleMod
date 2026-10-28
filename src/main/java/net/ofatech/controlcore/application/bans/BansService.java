@@ -423,7 +423,7 @@ public final class BansService {
         };
     }
 
-    static Result<Optional<Duration>> duration(String text) {
+    public static Result<Optional<Duration>> duration(String text) {
         String value = text == null ? "" : text.strip().toLowerCase(Locale.ROOT);
         if (value.isEmpty() || value.equals("permanent") || value.equals("perm") || value.equals("forever")) {
             return Result.success(Optional.empty());

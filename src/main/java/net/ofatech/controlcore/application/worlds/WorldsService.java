@@ -36,6 +36,7 @@ public final class WorldsService {
     private final Setting<Integer> speed;
     private final Setting<Integer> jump;
     private final Set<String> pausedByUs = ConcurrentHashMap.newKeySet();
+    private final Set<PlayerId> frozen = ConcurrentHashMap.newKeySet();
 
     public WorldsService(
             SettingsApi settings,
@@ -131,8 +132,23 @@ public final class WorldsService {
         tuneLater(player);
     }
 
+    public boolean isFrozen(PlayerId player) {
+        return frozen.contains(player);
+    }
+
+    public boolean setFrozen(PlayerId player, boolean freeze) {
+        boolean changed = freeze ? frozen.add(player) : frozen.remove(player);
+        if (changed) {
+            tune(player);
+        }
+        return changed;
+    }
+
     public Tuning tuningFor(PlayerId player) {
         Optional<String> world = tuning.worldOf(player);
+        if (frozen.contains(player)) {
+            return new Tuning(0, 0, sectionsPerSecond.get(), sectionsPerTick.get());
+        }
         int speedPercent = world.flatMap(name -> override(name, Worlds.SPEED)).orElse(speed.get());
         int jumpPercent = world.flatMap(name -> override(name, Worlds.JUMP)).orElse(jump.get());
         return new Tuning(speedPercent, jumpPercent, sectionsPerSecond.get(), sectionsPerTick.get());
