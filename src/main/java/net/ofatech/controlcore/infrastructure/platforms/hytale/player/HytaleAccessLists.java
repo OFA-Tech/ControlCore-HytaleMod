@@ -24,11 +24,6 @@ public final class HytaleAccessLists implements AccessLists {
     }
 
     @Override
-    public boolean whitelistRequired() {
-        return AccessControlModule.get().isJoinPermissionRequired();
-    }
-
-    @Override
     public Set<PlayerId> whitelisted() {
         return AccessControlModule.get().getUsersWithJoinGrant().stream()
                 .map(PlayerId::of)

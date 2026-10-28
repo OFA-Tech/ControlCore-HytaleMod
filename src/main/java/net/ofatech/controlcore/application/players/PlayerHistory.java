@@ -8,8 +8,6 @@ import net.ofatech.controlcore.domain.result.Result;
 
 public final class PlayerHistory {
 
-    public static final String TARGET = PlayerChange.TARGET;
-
     private final PlayerModeration moderation;
     private final PlayerAccess access;
     private final PlayerControl control;
@@ -41,7 +39,7 @@ public final class PlayerHistory {
         }
         PlayerId id = parts.player().get();
         return switch (change.get()) {
-            case MUTE -> moderation.restoreMute(who, id, old, current);
+            case MUTE -> moderation.restoreMute(who, id, old);
             case FREEZE -> moderation.freeze(who, id, wanted, tr);
             case WHITELIST -> access.whitelist(who, id, wanted, tr);
             case GROUP -> access.group(who, id, parts.extra(), wanted, tr);

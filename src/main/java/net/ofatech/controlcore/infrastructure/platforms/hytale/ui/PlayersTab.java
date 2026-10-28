@@ -8,9 +8,11 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -40,6 +42,8 @@ final class PlayersTab {
     private static final int NOTE_HEIGHT = 30;
     private static final int LIST_ALONE = 490;
     private static final int AVATAR_COLOURS = 8;
+    private static final int HEADS_SHOWN = 24;
+    private static final long QUIET_MILLIS = 2_000;
     private static final List<String[]> ROW_BUTTONS = List.of(
             new String[] {"#Details", DETAILS},
             new String[] {"#GameMode", GAME_MODE},
@@ -50,7 +54,7 @@ final class PlayersTab {
             new String[] {"#Unban", UNBAN});
 
     interface Host {
-        void refresh();
+        void rebuild();
 
         void send(UICommandBuilder update);
 
@@ -74,6 +78,9 @@ final class PlayersTab {
     private Optional<String> footer = Optional.empty();
     private List<PlayersView.Entry> rows = List.of();
     private int generation;
+    private final Set<String> pendingRows = new HashSet<>();
+    private boolean stale;
+    private long lastTyped;
 
     PlayersTab(PlayersView view, Translator tr, Host host, Log log) {
         this.view = view;
@@ -88,7 +95,7 @@ final class PlayersTab {
     }
 
     void build(UICommandBuilder commands, UIEventBuilder events) {
-        armed = Optional.empty();
+        stale = false;
         form.build(commands, events);
         commands.set("#PlayerFilter.Entries", entries(view.filters()));
         commands.set("#PlayerFilter.Value", filter.id());
@@ -108,8 +115,13 @@ final class PlayersTab {
         rows = view.list();
         int built = ++generation;
         boolean heads = view.showHeads();
+        int headsLeft = HEADS_SHOWN;
         for (int index = 0; index < rows.size(); index++) {
-            buildRow(commands, events, index, built, heads);
+            boolean head = heads && headsLeft > 0 && rows.get(index).matches(filter, query);
+            if (head) {
+                headsLeft--;
+            }
+            buildRow(commands, events, index, built, head);
         }
         showCount(commands);
         resizeList(commands);
@@ -250,26 +262,29 @@ final class PlayersTab {
                 armed = Optional.empty();
                 detailsRequest++;
                 details = Optional.of(view.chat());
-                host.refresh();
+                host.rebuild();
             }
             case DETAILS_BACK -> {
                 detailsRequest++;
                 details = Optional.empty();
-                host.refresh();
+                host.rebuild();
             }
             case FILTER, SEARCH -> narrow(action);
             case UNBAN -> confirmed(action, "controlcore.panel.players.confirm_unban", () -> view.unban(action.id));
-            case KICK ->
-                confirmed(action, "controlcore.players.confirm_kick", () -> view.kick(action.id, form.kickReason()));
+            case KICK -> confirmed(action, "controlcore.players.confirm_kick", () -> view.kick(action.id, ""));
             case BAN -> {
                 armed = Optional.empty();
+                if (form.busy()) {
+                    showError(busy());
+                    return true;
+                }
                 form.prefillBan(nameOf(text(action.id)));
                 footer = Optional.of(tr.t("controlcore.players.ban_prefilled", "player", nameOf(text(action.id))));
-                host.refresh();
+                host.rebuild();
             }
-            case GAME_MODE -> finish(view.toggleGameMode(action.id), result -> {});
-            case TELEPORT_TO -> finish(view.teleportTo(action.id), result -> {});
-            case BRING -> finish(view.bring(action.id), result -> {});
+            case GAME_MODE -> rowAction(action, () -> view.toggleGameMode(action.id));
+            case TELEPORT_TO -> rowAction(action, () -> view.teleportTo(action.id));
+            case BRING -> rowAction(action, () -> view.bring(action.id));
             default -> {
                 return false;
             }
@@ -280,6 +295,31 @@ final class PlayersTab {
     private void sendFormUpdate(UICommandBuilder update) {
         resizeList(update);
         host.send(update);
+        if (stale && !form.isOpen()) {
+            host.rebuild();
+        }
+    }
+
+    boolean refreshNow() {
+        boolean typing = System.currentTimeMillis() - lastTyped < QUIET_MILLIS;
+        if (form.isOpen() || typing || !pendingRows.isEmpty()) {
+            stale = true;
+            return false;
+        }
+        return true;
+    }
+
+    private void rowAction(PanelAction action, Supplier<CompletableFuture<Result<String>>> work) {
+        String key = action.name() + ":" + text(action.id);
+        if (!pendingRows.add(key)) {
+            showError(busy());
+            return;
+        }
+        finish(work.get(), result -> pendingRows.remove(key));
+    }
+
+    private Error busy() {
+        return Error.validation("Players.Busy", tr.t("controlcore.players.working"));
     }
 
     private void openDetails(PanelAction action) {
@@ -297,7 +337,7 @@ final class PlayersTab {
                     Result<PlayersView.Details> found = failure == null ? result : Result.failure(failed(failure));
                     if (found.isSuccess()) {
                         details = Optional.of(found.value());
-                        host.refresh();
+                        host.rebuild();
                     } else {
                         showError(found.error());
                     }
@@ -310,6 +350,7 @@ final class PlayersTab {
             filter = PlayersView.Filter.of(action.value);
         } else {
             query = text(action.value);
+            lastTyped = System.currentTimeMillis();
         }
         UICommandBuilder update = new UICommandBuilder();
         for (int index = 0; index < rows.size(); index++) {
@@ -343,6 +384,9 @@ final class PlayersTab {
             Result<String> outcome = failure == null ? result : Result.failure(failed(failure));
             done.accept(outcome);
             show(outcome);
+            if (stale && outcome.isFailure() && refreshNow()) {
+                host.rebuild();
+            }
         }));
     }
 
@@ -354,7 +398,7 @@ final class PlayersTab {
     private void show(Result<String> result) {
         if (result.isSuccess()) {
             footer = Optional.of(result.value());
-            host.refresh();
+            host.rebuild();
         } else {
             showError(result.error());
         }

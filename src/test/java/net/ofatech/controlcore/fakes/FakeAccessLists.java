@@ -9,7 +9,6 @@ import net.ofatech.controlcore.domain.ports.game.AccessLists;
 
 public final class FakeAccessLists implements AccessLists {
 
-    public volatile boolean required;
     public final Set<PlayerId> allowed = ConcurrentHashMap.newKeySet();
     public final Map<PlayerId, Set<String>> members = new ConcurrentHashMap<>();
     public final Map<String, Set<String>> nodes = new ConcurrentHashMap<>(
@@ -23,11 +22,6 @@ public final class FakeAccessLists implements AccessLists {
     @Override
     public String label(String group) {
         return group.startsWith("hytale:") ? group.substring("hytale:".length()) : group;
-    }
-
-    @Override
-    public boolean whitelistRequired() {
-        return required;
     }
 
     @Override

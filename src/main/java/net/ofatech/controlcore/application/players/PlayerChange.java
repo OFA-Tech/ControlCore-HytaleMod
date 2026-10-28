@@ -14,7 +14,7 @@ enum PlayerChange {
     FREEZE("freeze", "controlcore.history.what.player_freeze");
 
     static final String TARGET = "player:";
-    private static final String EXTRA = "|";
+    private static final String EXTRA = "\u001f";
 
     private final String id;
     private final String whatKey;

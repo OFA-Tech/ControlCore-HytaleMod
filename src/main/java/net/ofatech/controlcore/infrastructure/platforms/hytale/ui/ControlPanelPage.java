@@ -177,6 +177,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private boolean showingPlayers;
     private final Optional<PlayersTab> playersTab;
     private boolean replied;
+    private static final long PLAYERS_REFRESH_DELAY_MILLIS = 750;
     private final AtomicBoolean playersRefreshPending = new AtomicBoolean();
     private String world;
     private boolean editingServerKeys = true;
@@ -1340,18 +1341,20 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             return;
         }
         Store<EntityStore> store = ref.getStore();
-        store.getExternalData().getWorld().execute(() -> {
-            playersRefreshPending.set(false);
-            try {
-                if (!isOpen(ref, store)) {
-                    stopListening();
-                } else if (showingPlayers) {
-                    rebuild();
-                }
-            } catch (RuntimeException e) {
-                log.error("Could not refresh the Players list of " + playerRef.getUsername(), e);
-            }
-        });
+        CompletableFuture.delayedExecutor(PLAYERS_REFRESH_DELAY_MILLIS, TimeUnit.MILLISECONDS)
+                .execute(() -> store.getExternalData().getWorld().execute(() -> {
+                    playersRefreshPending.set(false);
+                    try {
+                        if (!isOpen(ref, store)) {
+                            stopListening();
+                        } else if (showingPlayers
+                                && playersTab.map(PlayersTab::refreshNow).orElse(false)) {
+                            rebuild();
+                        }
+                    } catch (RuntimeException e) {
+                        log.error("Could not refresh the Players list of " + playerRef.getUsername(), e);
+                    }
+                }));
     }
 
     private boolean isOpen(Ref<EntityStore> ref, Store<EntityStore> store) {
@@ -1634,11 +1637,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         @Override
         public void rebuild() {
             ControlPanelPage.this.rebuild();
-        }
-
-        @Override
-        public void refresh() {
-            refreshPlayers();
         }
 
         @Override

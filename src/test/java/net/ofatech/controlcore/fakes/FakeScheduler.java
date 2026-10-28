@@ -33,7 +33,12 @@ public final class FakeScheduler implements Scheduler {
     }
 
     public void runAll() {
-        entries.stream().filter(e -> !e.cancelled).forEach(e -> e.work.run());
+        entries.stream().filter(e -> !e.cancelled).forEach(e -> {
+            if (e.period == null) {
+                e.cancelled = true;
+            }
+            e.work.run();
+        });
     }
 
     private ScheduledTask add(Entry entry) {

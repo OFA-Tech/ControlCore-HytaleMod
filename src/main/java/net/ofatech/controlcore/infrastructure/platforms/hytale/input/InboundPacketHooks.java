@@ -39,7 +39,7 @@ public final class InboundPacketHooks {
             Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
     private boolean subHandlerRegistered;
     private PacketFilter fallback;
-    private boolean nativeLookupFailed;
+    private volatile boolean nativeLookupFailed;
 
     public InboundPacketHooks(Log log) {
         this.log = log;
@@ -70,10 +70,10 @@ public final class InboundPacketHooks {
     private SubPacketHandler hooksFor(IPacketHandler handler) {
         return () -> {
             if (handler instanceof GamePacketHandler game) {
+                hooked.add(game);
                 hook(game, SyncInteractionChains.PACKET_ID, packet -> game.handle((SyncInteractionChains) packet));
                 hook(game, ClientMovement.PACKET_ID, packet -> game.handle((ClientMovement) packet));
                 hook(game, ChatMessage.PACKET_ID, packet -> game.handle((ChatMessage) packet));
-                hooked.add(game);
             }
         };
     }

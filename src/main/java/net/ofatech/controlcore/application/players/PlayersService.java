@@ -5,6 +5,7 @@ import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.players.PlayersView;
+import net.ofatech.controlcore.domain.ports.game.ChatGate;
 
 public final class PlayersService {
 
@@ -25,7 +26,8 @@ public final class PlayersService {
             PlayerAccess access,
             PlayerControl control,
             BansService bans,
-            Texts texts) {
+            Texts texts,
+            ChatGate chatGate) {
         this.changes = changes;
         this.guard = guard;
         this.listing = listing;
@@ -34,6 +36,7 @@ public final class PlayersService {
         this.control = control;
         this.bans = bans;
         this.texts = texts;
+        moderation.listenTo(chatGate);
     }
 
     public boolean maySee(Optional<PlayerId> who) {
@@ -51,8 +54,15 @@ public final class PlayersService {
     }
 
     public PlayersView viewedBy(PlayerId viewer) {
-        Optional<PlayerId> who = Optional.of(viewer);
         return new PlayersViewer(
-                viewer, texts.forPlayer(who), guard.rights(who), listing, moderation, access, control, bans, changes);
+                viewer,
+                texts.forPlayer(Optional.of(viewer)),
+                guard,
+                listing,
+                moderation,
+                access,
+                control,
+                bans,
+                changes);
     }
 }

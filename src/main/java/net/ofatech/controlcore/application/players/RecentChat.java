@@ -4,7 +4,9 @@ import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import net.ofatech.controlcore.application.text.PlainText;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.ports.game.ChatGate;
 import net.ofatech.controlcore.domain.ports.system.Clock;
 
 public final class RecentChat {
@@ -19,12 +21,14 @@ public final class RecentChat {
     private final Deque<Line> lines = new ArrayDeque<>();
     private final Clock clock;
 
-    public RecentChat(Clock clock) {
+    public RecentChat(ChatGate chatGate, Clock clock) {
         this.clock = clock;
+        chatGate.observe(this::add);
     }
 
-    public synchronized void add(PlayerId player, String name, String text) {
-        lines.addLast(new Line(clock.now(), player, oneLine(name, MAX_TEXT), oneLine(text, MAX_TEXT)));
+    synchronized void add(PlayerId player, String name, String text) {
+        lines.addLast(
+                new Line(clock.now(), player, PlainText.oneLine(name, MAX_TEXT), PlainText.oneLine(text, MAX_TEXT)));
         while (lines.size() > KEPT) {
             lines.pollFirst();
         }
@@ -39,10 +43,5 @@ public final class RecentChat {
         List<Line> theirs =
                 lines.stream().filter(line -> line.player().equals(player)).toList();
         return theirs.subList(Math.max(0, theirs.size() - count), theirs.size());
-    }
-
-    static String oneLine(String text, int max) {
-        String flat = text == null ? "" : text.replaceAll("\\p{Cntrl}", " ").strip();
-        return flat.length() <= max ? flat : flat.substring(0, max - 1) + "…";
     }
 }

@@ -33,17 +33,24 @@ public final class PlayerGuard {
         return may(who, NODE) || bans.mayManage(who);
     }
 
+    boolean mayInspect(Optional<PlayerId> who) {
+        return may(who, NODE);
+    }
+
     boolean may(Optional<PlayerId> who, String node) {
-        return who.isEmpty() || policy.isAdmin(who.get()) || permissions.hasOwn(who.get(), node);
+        return isAdmin(who) || permissions.hasOwn(who.get(), node);
     }
 
     boolean mayChangeGroups(Optional<PlayerId> who) {
-        return who.isEmpty() || policy.isAdmin(who.get());
+        return isAdmin(who);
+    }
+
+    boolean mayInspectInventoryOf(Optional<PlayerId> who, PlayerId target) {
+        return may(who, INVENTORY) && (isAdmin(who) || !policy.isAdmin(target));
     }
 
     Optional<Error> protects(Optional<PlayerId> who, PlayerId target, String targetName) {
-        boolean actorIsAdmin = who.isEmpty() || policy.isAdmin(who.get());
-        return !actorIsAdmin && policy.isAdmin(target)
+        return !isAdmin(who) && policy.isAdmin(target)
                 ? Optional.of(PlayerErrors.protectedAdmin(targetName))
                 : Optional.empty();
     }
@@ -63,5 +70,9 @@ public final class PlayerGuard {
                 may(who, MUTE),
                 may(who, FREEZE),
                 may(who, INVENTORY));
+    }
+
+    private boolean isAdmin(Optional<PlayerId> who) {
+        return who.isEmpty() || policy.isAdmin(who.get());
     }
 }

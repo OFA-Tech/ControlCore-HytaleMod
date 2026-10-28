@@ -2,8 +2,6 @@ package net.ofatech.controlcore.application.bans;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -22,6 +20,7 @@ import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.history.ChangeContext;
 import net.ofatech.controlcore.application.history.ChangeHistory;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
+import net.ofatech.controlcore.application.text.PlainText;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -43,11 +42,10 @@ public final class BansService {
     public static final String NODE = "bans";
     public static final String TARGET = "ban:";
     static final List<String> LENGTHS = List.of("permanent", "1h", "1d", "7d", "30d");
-    private static final int MAX_REASON = 200;
 
-    private static final DateTimeFormatter WHEN = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final Pattern LENGTH = Pattern.compile("(\\d{1,4})\\s*([mhdw])");
     private static final String SEPARATOR = "\u001f";
+    private static final Duration RETRY_UNKNOWN = Duration.ofMinutes(10);
 
     private final Bans bans;
     private final ChangeHistory history;
@@ -57,6 +55,7 @@ public final class BansService {
     private final Clock clock;
     private final Map<PlayerId, String> names = new ConcurrentHashMap<>();
     private final Set<PlayerId> asked = ConcurrentHashMap.newKeySet();
+    private final Map<PlayerId, Instant> notFound = new ConcurrentHashMap<>();
     private final Map<PlayerId, String> lastSeen = new ConcurrentHashMap<>();
     private volatile boolean seen;
     private final Setting<Boolean> heads;
@@ -74,8 +73,8 @@ public final class BansService {
                         .named(Text.key("controlcore.settings.player_heads.name", "Show player heads"))
                         .describedAs(Text.key(
                                 "controlcore.settings.player_heads.desc",
-                                "Shows each player's head in the Bans list. The pictures come from hyvatar.io, which"
-                                        + " gets the player names; turn off to show only initials."))
+                                "Shows player heads in the Players list. The pictures come from hyvatar.io, which gets"
+                                        + " the name of every player listed there; turn off to show only initials."))
                         .inCategory(Text.key("controlcore.settings.category.bans", "Bans")))
                 .value();
         this.history = history;
@@ -133,8 +132,17 @@ public final class BansService {
         if (known != null) {
             return CompletableFuture.completedFuture(Optional.of(known));
         }
+        Instant failed = notFound.get(id);
+        if (failed != null && failed.plus(RETRY_UNKNOWN).isAfter(clock.now())) {
+            return CompletableFuture.completedFuture(Optional.empty());
+        }
         return bans.nameOf(id).thenApply(found -> {
-            found.ifPresent(name -> remember(id, name));
+            if (found.isPresent()) {
+                remember(id, found.get());
+                notFound.remove(id);
+            } else {
+                notFound.put(id, clock.now());
+            }
             return found;
         });
     }
@@ -186,7 +194,14 @@ public final class BansService {
     }
 
     public String when(Instant instant) {
-        return WHEN.format(instant.atZone(ZoneId.systemDefault()));
+        return PlainText.when(instant);
+    }
+
+    public static Error protectedAdmin(String player) {
+        return Error.forbidden(
+                "Players.ProtectedAdmin",
+                Text.key("controlcore.errors.players.protected_admin", "Only admins can do that to {player}.")
+                        .with("player", player));
     }
 
     public CompletableFuture<Result<String>> ban(
@@ -227,10 +242,7 @@ public final class BansService {
                     Error.validation("Bans.Self", Text.key("controlcore.errors.bans.self", "You can't ban yourself.")));
         }
         if (who.isPresent() && !policy.isAdmin(who.get()) && policy.isAdmin(target)) {
-            return Result.failure(Error.forbidden(
-                    "Players.ProtectedAdmin",
-                    Text.key("controlcore.errors.players.protected_admin", "Only admins can do that to {player}.")
-                            .with("player", name(target))));
+            return Result.failure(protectedAdmin(name(target)));
         }
         if (find(target).filter(ban -> ban.inEffect(clock.now())).isPresent()) {
             return Result.failure(Error.validation(
@@ -239,7 +251,7 @@ public final class BansService {
                             .with("player", name(target))));
         }
         Instant now = clock.now();
-        Ban ban = new Ban(target, who, now, length.map(now::plus), cleanReason(reason));
+        Ban ban = new Ban(target, who, now, length.map(now::plus), PlainText.oneLine(reason, PlainText.MAX_REASON));
         String before = find(target).map(BansService::encode).orElse("");
         if (!bans.ban(ban)) {
             return Result.failure(Error.failure(
@@ -257,11 +269,6 @@ public final class BansService {
                 ban.expires()
                         .map(end -> tr.t("controlcore.bans.until", "when", when(end)))
                         .orElse(tr.t("controlcore.bans.permanent"))));
-    }
-
-    private static String cleanReason(String reason) {
-        String flat = reason == null ? "" : reason.replaceAll("\\p{Cntrl}", " ").strip();
-        return flat.length() <= MAX_REASON ? flat : flat.substring(0, MAX_REASON);
     }
 
     public synchronized Result<String> unban(Optional<PlayerId> who, String player, Translator tr) {

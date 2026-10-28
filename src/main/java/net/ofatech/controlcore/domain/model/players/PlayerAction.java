@@ -1,49 +1,45 @@
 package net.ofatech.controlcore.domain.model.players;
 
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import net.ofatech.controlcore.domain.model.players.PlayersView.Rights;
 
 public enum PlayerAction {
-    BAN(Rights::ban, true, true, true, false, false),
-    UNBAN(Rights::ban, true, false, false, false, false),
-    KICK(Rights::kick, true, false, true, false, false),
-    WHITELIST_ADD(Rights::whitelist, true, false, false, false, false),
-    WHITELIST_REMOVE(Rights::whitelist, true, false, false, false, false),
-    MUTE_ADD(Rights::mute, true, true, false, false, false),
-    MUTE_REMOVE(Rights::mute, true, false, false, false, false),
-    FREEZE_ADD(Rights::freeze, true, false, false, false, false),
-    FREEZE_REMOVE(Rights::freeze, true, false, false, false, false),
-    OP_ADD(Rights::groups, true, false, false, false, false),
-    OP_REMOVE(Rights::groups, true, false, false, false, false),
-    GROUP_ADD(Rights::groups, true, false, false, true, false),
-    GROUP_REMOVE(Rights::groups, true, false, false, true, false),
-    NODE_ADD(Rights::groups, false, false, false, true, true),
-    NODE_REMOVE(Rights::groups, false, false, false, true, true);
+    BAN(Rights::ban, Field.PLAYER, Field.LENGTH, Field.REASON),
+    UNBAN(Rights::ban, Field.PLAYER),
+    KICK(Rights::kick, Field.PLAYER, Field.REASON),
+    WHITELIST_ADD(Rights::whitelist, Field.PLAYER),
+    WHITELIST_REMOVE(Rights::whitelist, Field.PLAYER),
+    MUTE_ADD(Rights::mute, Field.PLAYER, Field.LENGTH),
+    MUTE_REMOVE(Rights::mute, Field.PLAYER),
+    FREEZE_ADD(Rights::freeze, Field.PLAYER),
+    FREEZE_REMOVE(Rights::freeze, Field.PLAYER),
+    OP_ADD(Rights::groups, Field.PLAYER),
+    OP_REMOVE(Rights::groups, Field.PLAYER),
+    GROUP_ADD(Rights::groups, Field.PLAYER, Field.GROUP),
+    GROUP_REMOVE(Rights::groups, Field.PLAYER, Field.GROUP),
+    NODE_ADD(Rights::groups, Field.GROUP, Field.NODE),
+    NODE_REMOVE(Rights::groups, Field.GROUP, Field.NODE);
+
+    public enum Field {
+        PLAYER,
+        LENGTH,
+        REASON,
+        GROUP,
+        NODE
+    }
 
     private final Predicate<Rights> allowed;
-    private final boolean needsPlayer;
-    private final boolean needsLength;
-    private final boolean needsReason;
-    private final boolean needsGroup;
-    private final boolean needsNode;
+    private final Set<Field> fields;
 
-    PlayerAction(
-            Predicate<Rights> allowed,
-            boolean needsPlayer,
-            boolean needsLength,
-            boolean needsReason,
-            boolean needsGroup,
-            boolean needsNode) {
+    PlayerAction(Predicate<Rights> allowed, Field first, Field... more) {
         this.allowed = allowed;
-        this.needsPlayer = needsPlayer;
-        this.needsLength = needsLength;
-        this.needsReason = needsReason;
-        this.needsGroup = needsGroup;
-        this.needsNode = needsNode;
+        this.fields = EnumSet.of(first, more);
     }
 
     public String id() {
@@ -60,24 +56,8 @@ public enum PlayerAction {
                 .toList();
     }
 
-    public boolean needsPlayer() {
-        return needsPlayer;
-    }
-
-    public boolean needsLength() {
-        return needsLength;
-    }
-
-    public boolean needsReason() {
-        return needsReason;
-    }
-
-    public boolean needsGroup() {
-        return needsGroup;
-    }
-
-    public boolean needsNode() {
-        return needsNode;
+    public boolean needs(Field field) {
+        return fields.contains(field);
     }
 
     public record Input(String player, String length, String reason, String group, String node) {}

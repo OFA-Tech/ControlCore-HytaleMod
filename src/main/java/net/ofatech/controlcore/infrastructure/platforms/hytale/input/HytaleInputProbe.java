@@ -31,7 +31,7 @@ import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
-public final class HytaleInputProbe implements InputProbe, PlayerPacketWatcher {
+public final class HytaleInputProbe implements InputProbe {
 
     private static final long REPEAT_MILLIS = 1_000;
 
@@ -107,8 +107,7 @@ public final class HytaleInputProbe implements InputProbe, PlayerPacketWatcher {
         return Result.success();
     }
 
-    @Override
-    public void accept(PlayerRef player, Packet packet) {
+    private void accept(PlayerRef player, Packet packet) {
         if (player == null || !probing.contains(player.getUuid())) {
             return;
         }

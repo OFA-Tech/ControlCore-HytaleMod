@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.domain.model.players.PlayerAction;
+import net.ofatech.controlcore.domain.model.players.PlayerAction.Field;
 import net.ofatech.controlcore.domain.model.players.PlayersView;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.result.Result;
@@ -19,10 +20,11 @@ final class PlayerActionForm {
     private static final String CLOSE = "PlayerActionClose";
     private static final String KIND = "PlayerActionKind";
     private static final String GROUP = "PlayerActionGroup";
-    private static final String FIELD = "PlayerActionField";
+    private static final String TYPED = "PlayerActionTyped";
     private static final String APPLY = "PlayerActionApply";
     private static final String PERMANENT = "permanent";
-    private static final List<String> TEXT_FIELDS = List.of("Name", "Node", "Reason");
+    private static final List<String> TEXT_FIELDS = List.of("Player", "Node", "Reason");
+    private static final List<String> ALL_FIELDS = List.of("Kind", "Group", "Player", "Node", "Length", "Reason");
 
     private final PlayersView view;
     private final Translator tr;
@@ -48,16 +50,16 @@ final class PlayerActionForm {
         return open && allowed();
     }
 
+    boolean busy() {
+        return busy;
+    }
+
     void prefillBan(String name) {
         open = true;
         action = PlayerAction.BAN;
         player = name;
         reason = "";
         length = PERMANENT;
-    }
-
-    String kickReason() {
-        return isOpen() && action == PlayerAction.KICK ? reason : "";
     }
 
     void build(UICommandBuilder commands, UIEventBuilder events) {
@@ -103,27 +105,23 @@ final class PlayerActionForm {
                 CustomUIEventBindingType.ValueChanged,
                 "#PlayerActionLength",
                 new EventData()
-                        .append(PanelAction.KEY, FIELD)
+                        .append(PanelAction.KEY, TYPED)
                         .append(PanelAction.ITEM, "Length")
                         .append(PanelAction.VALUE, "#PlayerActionLength.Value"));
         for (String field : TEXT_FIELDS) {
-            String element = "#PlayerAction" + ("Name".equals(field) ? "Player" : field);
+            String element = "#PlayerAction" + field;
             events.addEventBinding(
                     CustomUIEventBindingType.ValueChanged,
                     element,
                     new EventData()
-                            .append(PanelAction.KEY, FIELD)
+                            .append(PanelAction.KEY, TYPED)
                             .append(PanelAction.ITEM, field)
                             .append(PanelAction.VALUE, element + ".Value"));
         }
-        EventData apply = new EventData()
-                .append(PanelAction.KEY, APPLY)
-                .append(PanelAction.playerKey("Kind"), "#PlayerActionKind.Value")
-                .append(PanelAction.playerKey("Group"), "#PlayerActionGroup.Value")
-                .append(PanelAction.playerKey("Name"), "#PlayerActionPlayer.Value")
-                .append(PanelAction.playerKey("Node"), "#PlayerActionNode.Value")
-                .append(PanelAction.playerKey("Length"), "#PlayerActionLength.Value")
-                .append(PanelAction.playerKey("Reason"), "#PlayerActionReason.Value");
+        EventData apply = new EventData().append(PanelAction.KEY, APPLY);
+        for (String field : ALL_FIELDS) {
+            apply.append(PanelAction.formKey(field), "#PlayerAction" + field + ".Value");
+        }
         events.addEventBinding(CustomUIEventBindingType.Activating, "#PlayerActionApply", apply);
         show(commands);
     }
@@ -132,19 +130,19 @@ final class PlayerActionForm {
         boolean visible = isOpen();
         commands.set(FORM + ".Visible", visible);
         commands.set("#PlayerActionNew.Visible", allowed() && !visible);
-        commands.set("#PlayerActionPlayer.Visible", action.needsPlayer());
-        commands.set("#PlayerActionNode.Visible", action.needsNode());
-        commands.set("#PlayerActionLength.Visible", action.needsLength());
-        commands.set("#PlayerActionReason.Visible", action.needsReason());
+        commands.set("#PlayerActionPlayer.Visible", action.needs(Field.PLAYER));
+        commands.set("#PlayerActionNode.Visible", action.needs(Field.NODE));
+        commands.set("#PlayerActionLength.Visible", action.needs(Field.LENGTH));
+        commands.set("#PlayerActionReason.Visible", action.needs(Field.REASON));
         commands.set(
                 "#PlayerActionReason.PlaceholderText",
                 tr.t(
                         action == PlayerAction.KICK
                                 ? "controlcore.players.kick_reason_hint"
                                 : "controlcore.panel.players.reason_hint"));
-        commands.set("#PlayerActionGroup.Visible", action.needsGroup());
-        boolean note = action.needsNode() && !group.isEmpty();
-        commands.set("#PlayerActionNote.Visible", note && visible);
+        commands.set("#PlayerActionGroup.Visible", action.needs(Field.GROUP));
+        boolean note = showsNote();
+        commands.set("#PlayerActionNote.Visible", note);
         if (note) {
             List<String> nodes = view.groupPermissions(group);
             commands.set(
@@ -156,7 +154,7 @@ final class PlayerActionForm {
     }
 
     boolean showsNote() {
-        return isOpen() && action.needsNode() && !group.isEmpty();
+        return isOpen() && action.needs(Field.NODE) && !group.isEmpty();
     }
 
     boolean handle(
@@ -180,7 +178,7 @@ final class PlayerActionForm {
                 show(update);
                 send.accept(update);
             }
-            case FIELD -> {
+            case TYPED -> {
                 remember(text(event.item), event.value == null ? "" : event.value);
                 send.accept(new UICommandBuilder());
             }
@@ -194,10 +192,11 @@ final class PlayerActionForm {
 
     private void remember(String field, String value) {
         switch (field) {
-            case "Name" -> player = value;
+            case "Player" -> player = value;
             case "Node" -> node = value;
             case "Reason" -> reason = value;
             case "Length" -> length = value.isBlank() ? PERMANENT : value;
+            case "Group" -> group = value.isBlank() ? group : value.strip();
             default -> {}
         }
     }
@@ -210,23 +209,26 @@ final class PlayerActionForm {
             send.accept(update);
             return;
         }
-        PlayerAction.of(event.player("Kind")).ifPresent(chosen -> action = chosen);
-        for (String field : List.of("Name", "Node", "Reason", "Length")) {
-            String value = event.player(field);
-            if (!value.isEmpty() || !"Length".equals(field)) {
+        PlayerAction.of(event.form("Kind")).ifPresent(chosen -> action = chosen);
+        for (String field : List.of("Player", "Node", "Reason", "Length", "Group")) {
+            String value = event.form(field);
+            if (!value.isEmpty() || TEXT_FIELDS.contains(field)) {
                 remember(field, value);
             }
-        }
-        if (!event.player("Group").isBlank()) {
-            group = event.player("Group").strip();
         }
         if (!PlayerAction.allowedBy(view.rights()).contains(action)) {
             send.accept(new UICommandBuilder());
             return;
         }
         busy = true;
-        CompletableFuture<Result<String>> pending =
-                view.apply(action, new PlayerAction.Input(player.strip(), length, reason.strip(), group, node.strip()));
+        CompletableFuture<Result<String>> pending;
+        try {
+            pending = view.apply(
+                    action, new PlayerAction.Input(player.strip(), length, reason.strip(), group, node.strip()));
+        } catch (RuntimeException e) {
+            busy = false;
+            throw e;
+        }
         finish.accept(pending);
     }
 

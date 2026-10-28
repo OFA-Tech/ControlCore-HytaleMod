@@ -5,7 +5,10 @@ import com.hypixel.hytale.event.EventRegistry;
 import com.hypixel.hytale.server.core.event.events.player.PlayerChatEvent;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -81,6 +84,11 @@ public final class HytaleChatGate implements ChatGate {
 
     private static boolean toEveryone(PlayerChatEvent event) {
         List<PlayerRef> targets = event.getTargets();
-        return targets == null || targets.size() >= Universe.get().getPlayerCount();
+        if (targets == null) {
+            return true;
+        }
+        Set<UUID> reached = new HashSet<>();
+        targets.forEach(target -> reached.add(target.getUuid()));
+        return Universe.get().getPlayers().stream().allMatch(online -> reached.contains(online.getUuid()));
     }
 }

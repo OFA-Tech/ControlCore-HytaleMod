@@ -15,7 +15,9 @@ import net.ofatech.controlcore.domain.result.Result;
 
 public final class PlayerAccess {
 
-    private static final Pattern NODE = Pattern.compile("-?(?=[A-Za-z0-9_.*:-]*[A-Za-z0-9*])[A-Za-z0-9_.*:-]{1,120}");
+    private static final int MAX_NODE = 120;
+    private static final Pattern NODE =
+            Pattern.compile("-?[A-Za-z0-9_*:][A-Za-z0-9_*:-]*(\\.[A-Za-z0-9_*:][A-Za-z0-9_*:-]*)*");
 
     private final PlayerDirectory directory;
     private final PlayerGuard guard;
@@ -44,13 +46,13 @@ public final class PlayerAccess {
         return directory.resolve(player, id -> whitelist(who, id, add, tr));
     }
 
-    Result<String> whitelist(Optional<PlayerId> who, PlayerId id, boolean add, Translator tr) {
+    synchronized Result<String> whitelist(Optional<PlayerId> who, PlayerId id, boolean add, Translator tr) {
         if (!guard.may(who, PlayerGuard.WHITELIST)) {
             return Result.failure(PlayerErrors.forbidden());
         }
         String name = directory.nameOf(id);
         if (!add) {
-            Optional<Error> refused = guard.protects(who, id, name);
+            Optional<Error> refused = PlayerGuard.self(who, id).or(() -> guard.protects(who, id, name));
             if (refused.isPresent()) {
                 return Result.failure(refused.get());
             }
@@ -88,7 +90,7 @@ public final class PlayerAccess {
         return directory.resolve(player, id -> group(who, id, wanted.value(), add, tr));
     }
 
-    Result<String> group(Optional<PlayerId> who, PlayerId id, String group, boolean add, Translator tr) {
+    synchronized Result<String> group(Optional<PlayerId> who, PlayerId id, String group, boolean add, Translator tr) {
         Result<String> wanted = checkGroup(who, group);
         if (wanted.isFailure()) {
             return Result.failure(wanted.error());
@@ -131,14 +133,14 @@ public final class PlayerAccess {
                 label));
     }
 
-    public Result<String> setGroupPermission(
+    public synchronized Result<String> setGroupPermission(
             Optional<PlayerId> who, String group, String node, boolean add, Translator tr) {
         Result<String> wanted = checkGroup(who, group);
         if (wanted.isFailure()) {
             return Result.failure(wanted.error());
         }
         String permission = PlayerDirectory.clean(node);
-        if (!NODE.matcher(permission).matches()) {
+        if (permission.length() > MAX_NODE || !NODE.matcher(permission).matches()) {
             return Result.failure(PlayerErrors.badNode(permission));
         }
         String label = access.label(wanted.value());

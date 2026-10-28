@@ -18,7 +18,7 @@ final class PlayersViewer implements PlayersView {
     private final PlayerId viewer;
     private final Optional<PlayerId> who;
     private final Translator tr;
-    private final Rights rights;
+    private final PlayerGuard guard;
     private final PlayerListing listing;
     private final PlayerModeration moderation;
     private final PlayerAccess access;
@@ -29,7 +29,7 @@ final class PlayersViewer implements PlayersView {
     PlayersViewer(
             PlayerId viewer,
             Translator tr,
-            Rights rights,
+            PlayerGuard guard,
             PlayerListing listing,
             PlayerModeration moderation,
             PlayerAccess access,
@@ -39,7 +39,7 @@ final class PlayersViewer implements PlayersView {
         this.viewer = viewer;
         this.who = Optional.of(viewer);
         this.tr = tr;
-        this.rights = rights;
+        this.guard = guard;
         this.listing = listing;
         this.moderation = moderation;
         this.access = access;
@@ -55,12 +55,12 @@ final class PlayersViewer implements PlayersView {
 
     @Override
     public Rights rights() {
-        return rights;
+        return guard.rights(who);
     }
 
     @Override
     public List<Entry> list() {
-        return listing.list(tr);
+        return guard.maySee(who) ? listing.list(tr) : List.of();
     }
 
     @Override
@@ -87,6 +87,9 @@ final class PlayersViewer implements PlayersView {
 
     @Override
     public CompletableFuture<Optional<String>> live(String id) {
+        if (!guard.maySee(who)) {
+            return CompletableFuture.completedFuture(Optional.empty());
+        }
         return PlayerDirectory.parse(id)
                 .map(found -> listing.live(found, tr))
                 .orElse(CompletableFuture.completedFuture(Optional.empty()));
@@ -166,7 +169,8 @@ final class PlayersViewer implements PlayersView {
 
     @Override
     public CompletableFuture<Result<String>> apply(PlayerAction action, PlayerAction.Input input) {
-        if (action.needsPlayer() && PlayerDirectory.clean(input.player()).isEmpty()) {
+        if (action.needs(PlayerAction.Field.PLAYER)
+                && PlayerDirectory.clean(input.player()).isEmpty()) {
             return PlayerDirectory.completed(Result.failure(PlayerErrors.noPlayer()));
         }
         return switch (action) {
@@ -190,12 +194,17 @@ final class PlayersViewer implements PlayersView {
         if (found.isEmpty()) {
             return PlayerDirectory.completed(Result.failure(PlayerErrors.unknown(PlayerDirectory.clean(id))));
         }
-        return listing.details(found.get(), rights.inventory(), tr);
+        if (!guard.mayInspect(who)) {
+            return PlayerDirectory.completed(Result.failure(PlayerErrors.forbidden()));
+        }
+        return listing.details(found.get(), guard.mayInspectInventoryOf(who, found.get()), tr);
     }
 
     @Override
     public Details chat() {
-        return listing.chatView(tr);
+        return guard.mayInspect(who)
+                ? listing.chatView(tr)
+                : new Details(tr.t("controlcore.players.chat.title"), List.of());
     }
 
     @Override

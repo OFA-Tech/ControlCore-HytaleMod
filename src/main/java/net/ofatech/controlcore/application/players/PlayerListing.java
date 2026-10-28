@@ -2,8 +2,6 @@ package net.ofatech.controlcore.application.players;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -19,6 +17,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import net.ofatech.controlcore.application.automation.SessionService;
 import net.ofatech.controlcore.application.bans.BansService;
+import net.ofatech.controlcore.application.text.PlainText;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.players.PlayersView.Details;
@@ -34,8 +33,6 @@ import net.ofatech.controlcore.domain.ports.system.Clock;
 import net.ofatech.controlcore.domain.result.Result;
 
 public final class PlayerListing {
-
-    private static final DateTimeFormatter CLOCK_TIME = DateTimeFormatter.ofPattern("HH:mm");
 
     private final Players players;
     private final PlayerData data;
@@ -144,7 +141,7 @@ public final class PlayerListing {
                 "when",
                 instant(id, SessionService.LAST_SEEN)
                         .or(() -> first)
-                        .map(PlayerModeration::when)
+                        .map(PlainText::when)
                         .orElse("-"),
                 "played",
                 played);
@@ -202,7 +199,7 @@ public final class PlayerListing {
                 false));
         instant(id, SessionService.FIRST_JOIN)
                 .ifPresent(first -> lines.add(new Line(
-                        tr.t("controlcore.players.details.first_join", "when", PlayerModeration.when(first)), false)));
+                        tr.t("controlcore.players.details.first_join", "when", PlainText.when(first)), false)));
         bans.find(id).ifPresent(ban -> lines.add(new Line(bans.details(ban, tr), false)));
         moderation.activeMute(id).ifPresent(until -> lines.add(new Line(moderation.shownMute(until, tr), false)));
         if (moderation.frozen(id)) {
@@ -213,7 +210,7 @@ public final class PlayerListing {
         if (theirs.isEmpty()) {
             lines.add(new Line(tr.t("controlcore.players.details.no_chat"), false));
         }
-        theirs.forEach(line -> lines.add(new Line(time(line.at()) + "  " + line.text(), false)));
+        theirs.forEach(line -> lines.add(new Line(PlainText.clock(line.at()) + "  " + line.text(), false)));
         if (!inventory) {
             return CompletableFuture.completedFuture(Result.success(new Details(name, lines)));
         }
@@ -244,7 +241,8 @@ public final class PlayerListing {
         if (recent.isEmpty()) {
             lines.add(new Line(tr.t("controlcore.players.chat.empty"), false));
         }
-        recent.forEach(line -> lines.add(new Line(time(line.at()) + "  " + line.name() + ": " + line.text(), false)));
+        recent.forEach(line ->
+                lines.add(new Line(PlainText.clock(line.at()) + "  " + line.name() + ": " + line.text(), false)));
         return new Details(tr.t("controlcore.players.chat.title"), lines);
     }
 
@@ -252,10 +250,6 @@ public final class PlayerListing {
         Duration played = sessions.find(id).map(session -> session.playtime()).orElse(Duration.ZERO);
         long minutes = played.toMinutes();
         return minutes >= 60 ? (minutes / 60) + "h " + (minutes % 60) + "m" : minutes + "m";
-    }
-
-    private static String time(Instant at) {
-        return CLOCK_TIME.format(at.atZone(ZoneId.systemDefault()));
     }
 
     private Optional<Instant> instant(PlayerId id, String key) {

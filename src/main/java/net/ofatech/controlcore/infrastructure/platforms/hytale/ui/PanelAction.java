@@ -185,34 +185,34 @@ final class PanelAction {
                     action -> action.rule.get("A7Value"))
             .add()
             .append(
-                    new KeyedCodec<>("@PlayerKind", Codec.STRING),
-                    (action, value) -> action.rule.put("PlayerKind", value),
-                    action -> action.rule.get("PlayerKind"))
+                    new KeyedCodec<>("@PlayerActionKind", Codec.STRING),
+                    (action, value) -> action.form.put("Kind", value),
+                    action -> action.form.get("Kind"))
             .add()
             .append(
-                    new KeyedCodec<>("@PlayerGroup", Codec.STRING),
-                    (action, value) -> action.rule.put("PlayerGroup", value),
-                    action -> action.rule.get("PlayerGroup"))
+                    new KeyedCodec<>("@PlayerActionGroup", Codec.STRING),
+                    (action, value) -> action.form.put("Group", value),
+                    action -> action.form.get("Group"))
             .add()
             .append(
-                    new KeyedCodec<>("@PlayerName", Codec.STRING),
-                    (action, value) -> action.rule.put("PlayerName", value),
-                    action -> action.rule.get("PlayerName"))
+                    new KeyedCodec<>("@PlayerActionPlayer", Codec.STRING),
+                    (action, value) -> action.form.put("Player", value),
+                    action -> action.form.get("Player"))
             .add()
             .append(
-                    new KeyedCodec<>("@PlayerNode", Codec.STRING),
-                    (action, value) -> action.rule.put("PlayerNode", value),
-                    action -> action.rule.get("PlayerNode"))
+                    new KeyedCodec<>("@PlayerActionNode", Codec.STRING),
+                    (action, value) -> action.form.put("Node", value),
+                    action -> action.form.get("Node"))
             .add()
             .append(
-                    new KeyedCodec<>("@PlayerLength", Codec.STRING),
-                    (action, value) -> action.rule.put("PlayerLength", value),
-                    action -> action.rule.get("PlayerLength"))
+                    new KeyedCodec<>("@PlayerActionLength", Codec.STRING),
+                    (action, value) -> action.form.put("Length", value),
+                    action -> action.form.get("Length"))
             .add()
             .append(
-                    new KeyedCodec<>("@PlayerReason", Codec.STRING),
-                    (action, value) -> action.rule.put("PlayerReason", value),
-                    action -> action.rule.get("PlayerReason"))
+                    new KeyedCodec<>("@PlayerActionReason", Codec.STRING),
+                    (action, value) -> action.form.put("Reason", value),
+                    action -> action.form.get("Reason"))
             .add()
             .build();
 
@@ -230,6 +230,7 @@ final class PanelAction {
     String filter;
     String match;
     final java.util.Map<String, String> rule = new java.util.HashMap<>();
+    final java.util.Map<String, String> form = new java.util.HashMap<>();
 
     static String ruleKey(String field) {
         return "@Rule" + field;
@@ -240,12 +241,13 @@ final class PanelAction {
         return value == null ? "" : value;
     }
 
-    static String playerKey(String field) {
-        return "@Player" + field;
+    static String formKey(String field) {
+        return "@PlayerAction" + field;
     }
 
-    String player(String field) {
-        return rule("Player" + field);
+    String form(String field) {
+        String value = form.get(field);
+        return value == null ? "" : value;
     }
 
     String name() {

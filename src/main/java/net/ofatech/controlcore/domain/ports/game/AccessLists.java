@@ -9,8 +9,6 @@ public interface AccessLists {
 
     String label(String group);
 
-    boolean whitelistRequired();
-
     Set<PlayerId> whitelisted();
 
     boolean allow(PlayerId player);

@@ -132,10 +132,6 @@ public final class WorldsService {
         tuneLater(player);
     }
 
-    public boolean isFrozen(PlayerId player) {
-        return frozen.contains(player);
-    }
-
     public boolean setFrozen(PlayerId player, boolean freeze) {
         boolean changed = freeze ? frozen.add(player) : frozen.remove(player);
         if (changed) {

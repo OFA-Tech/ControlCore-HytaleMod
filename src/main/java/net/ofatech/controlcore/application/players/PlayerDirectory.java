@@ -1,5 +1,6 @@
 package net.ofatech.controlcore.application.players;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,15 +30,6 @@ public final class PlayerDirectory {
         this.access = access;
     }
 
-    public CompletableFuture<Optional<PlayerId>> find(String nameOrId) {
-        String input = clean(nameOrId);
-        if (input.isEmpty()) {
-            return CompletableFuture.completedFuture(Optional.empty());
-        }
-        Optional<PlayerId> known = local(input);
-        return known.isPresent() ? CompletableFuture.completedFuture(known) : bans.lookup(input);
-    }
-
     CompletableFuture<Result<String>> resolve(String player, Function<PlayerId, Result<String>> work) {
         String input = clean(player);
         if (input.isEmpty()) {
@@ -54,6 +46,15 @@ public final class PlayerDirectory {
         return CompletableFuture.completedFuture(result);
     }
 
+    CompletableFuture<Optional<PlayerId>> find(String nameOrId) {
+        String input = clean(nameOrId);
+        if (input.isEmpty()) {
+            return CompletableFuture.completedFuture(Optional.empty());
+        }
+        Optional<PlayerId> known = local(input);
+        return known.isPresent() ? CompletableFuture.completedFuture(known) : bans.lookup(input);
+    }
+
     Optional<PlayerId> local(String input) {
         Optional<PlayerId> online = onlineNamed(input);
         if (online.isPresent()) {
@@ -63,12 +64,11 @@ public final class PlayerDirectory {
         if (parsed.isPresent()) {
             return parsed.filter(this::known);
         }
-        for (Map.Entry<PlayerId, Map<String, String>> entry : data.all().entrySet()) {
-            if (input.equalsIgnoreCase(entry.getValue().get(SessionService.NAME))) {
-                return Optional.of(entry.getKey());
-            }
-        }
-        return Optional.empty();
+        List<PlayerId> saved = data.all().entrySet().stream()
+                .filter(entry -> input.equalsIgnoreCase(entry.getValue().get(SessionService.NAME)))
+                .map(Map.Entry::getKey)
+                .toList();
+        return saved.size() == 1 ? Optional.of(saved.getFirst()) : Optional.empty();
     }
 
     Optional<PlayerId> onlineNamed(String nameOrId) {
@@ -81,9 +81,7 @@ public final class PlayerDirectory {
     }
 
     private boolean known(PlayerId id) {
-        return players.find(id).isPresent()
-                || data.get(id, SessionService.FIRST_JOIN).isPresent()
-                || data.get(id, SessionService.NAME).isPresent()
+        return online(id)
                 || !data.all().getOrDefault(id, Map.of()).isEmpty()
                 || access.whitelisted().contains(id)
                 || !access.groupsOf(id).isEmpty()

@@ -3,10 +3,8 @@ package net.ofatech.controlcore.application.players;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import net.ofatech.controlcore.application.automation.NotificationService;
 import net.ofatech.controlcore.application.history.ChangeContext;
 import net.ofatech.controlcore.application.history.ChangeHistory;
-import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
 import net.ofatech.controlcore.domain.model.text.Translator;
@@ -19,43 +17,35 @@ public final class PlayerControl {
 
     private final PlayerDirectory directory;
     private final PlayerGuard guard;
-    private final PlayerModeration moderation;
+    private final PlayerNotices notices;
     private final PlayerAdmin admin;
     private final ChangeHistory history;
-    private final Texts texts;
-    private final NotificationService notifications;
     private final PlayersChanges changes;
     private final Log log;
 
     public PlayerControl(
             PlayerDirectory directory,
             PlayerGuard guard,
-            PlayerModeration moderation,
+            PlayerNotices notices,
             PlayerAdmin admin,
             ChangeHistory history,
-            Texts texts,
-            NotificationService notifications,
             PlayersChanges changes,
             Log log) {
         this.directory = directory;
         this.guard = guard;
-        this.moderation = moderation;
+        this.notices = notices;
         this.admin = admin;
         this.history = history;
-        this.texts = texts;
-        this.notifications = notifications;
         this.changes = changes;
         this.log = log;
     }
 
     public CompletableFuture<Result<String>> toggleGameMode(Optional<PlayerId> who, PlayerId target, Translator tr) {
-        if (!guard.may(who, PlayerGuard.GAME_MODE)) {
-            return PlayerDirectory.completed(Result.failure(PlayerErrors.forbidden()));
+        Optional<Error> refused = gameModeRefusal(who, target);
+        if (refused.isPresent()) {
+            return PlayerDirectory.completed(Result.failure(refused.get()));
         }
         String name = directory.nameOf(target);
-        if (!directory.online(target)) {
-            return PlayerDirectory.completed(Result.failure(PlayerErrors.notOnline(name)));
-        }
         ChangeContext.Attribution attribution = ChangeContext.current();
         return admin.gameMode(target).thenCompose(current -> {
             String from = current.orElse(PlayerAdmin.ADVENTURE);
@@ -76,13 +66,11 @@ public final class PlayerControl {
         if (!(PlayerAdmin.ADVENTURE.equals(old) || PlayerAdmin.CREATIVE.equals(old))) {
             return Result.failure(PlayerErrors.failed());
         }
-        if (!guard.may(who, PlayerGuard.GAME_MODE)) {
-            return Result.failure(PlayerErrors.forbidden());
+        Optional<Error> refused = gameModeRefusal(who, target);
+        if (refused.isPresent()) {
+            return Result.failure(refused.get());
         }
         String name = directory.nameOf(target);
-        if (!directory.online(target)) {
-            return Result.failure(PlayerErrors.notOnline(name));
-        }
         ChangeContext.Attribution attribution = ChangeContext.current();
         admin.setGameMode(target, old).whenComplete((ok, failure) -> {
             if (Boolean.TRUE.equals(ok)) {
@@ -94,22 +82,32 @@ public final class PlayerControl {
             }
             log.warn("Rolling back the game mode of " + name + " did not work"
                     + (failure == null ? "" : ": " + failure));
-            who.ifPresent(actor -> notifications.message(
-                    actor, texts.forPlayer(who).t("controlcore.players.gamemode_rollback_failed", "player", name)));
+            who.ifPresent(actor -> notices.message(
+                    actor, notices.of(who).t("controlcore.players.gamemode_rollback_failed", "player", name)));
         });
         return Result.success(true);
     }
 
-    private void recordGameMode(Optional<PlayerId> who, PlayerId target, String from, String to) {
+    private Optional<Error> gameModeRefusal(Optional<PlayerId> who, PlayerId target) {
+        if (!guard.may(who, PlayerGuard.GAME_MODE)) {
+            return Optional.of(PlayerErrors.forbidden());
+        }
         String name = directory.nameOf(target);
-        history.record(Kind.PLAYER, PlayerChange.GAME_MODE.target(target, name), from, to, false);
-        Translator theirs = texts.forPlayer(Optional.of(target));
-        moderation.toast(
+        if (!directory.online(target)) {
+            return Optional.of(PlayerErrors.notOnline(name));
+        }
+        return who.filter(target::equals).isPresent() ? Optional.empty() : guard.protects(who, target, name);
+    }
+
+    private void recordGameMode(Optional<PlayerId> who, PlayerId target, String from, String to) {
+        history.record(Kind.PLAYER, PlayerChange.GAME_MODE.target(target, directory.nameOf(target)), from, to, false);
+        Translator theirs = notices.of(target);
+        notices.toast(
                 target,
                 theirs.t(
                         "controlcore.players.toast.gamemode",
                         "actor",
-                        moderation.actor(who, theirs),
+                        notices.actor(who, theirs),
                         "mode",
                         modeName(to, theirs)));
         changes.fire();
@@ -143,9 +141,9 @@ public final class PlayerControl {
                 return Result.<String>failure(PlayerErrors.failed());
             }
             if (bring) {
-                Translator theirs = texts.forPlayer(Optional.of(mover));
-                moderation.toast(
-                        mover, theirs.t("controlcore.players.toast.brought", "actor", moderation.actor(who, theirs)));
+                Translator theirs = notices.of(mover);
+                notices.toast(
+                        mover, theirs.t("controlcore.players.toast.brought", "actor", notices.actor(who, theirs)));
             }
             return Result.success(tr.t(
                     bring ? "controlcore.players.brought" : "controlcore.players.teleported",

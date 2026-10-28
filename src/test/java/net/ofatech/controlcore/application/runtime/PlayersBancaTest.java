@@ -118,7 +118,7 @@ class PlayersBancaTest extends RuntimeTestBase {
     }
 
     @Test
-    void offlinePlayersCannotBeFrozenOrTeleportedButCanBeMuted() {
+    void offlinePlayersCannotBeTeleportedButCanBeFrozenAndMuted() {
         start();
         PlayerInfo admin = platform.players.join("Admin");
         PlayerInfo builder = platform.players.join("Builder");
@@ -128,7 +128,7 @@ class PlayersBancaTest extends RuntimeTestBase {
         PlayersView view = viewFor(admin);
         String id = builder.id().value().toString();
 
-        assertThat(view.freeze("Builder", true).join().error().code()).isEqualTo("Players.NotOnline");
+        assertThat(view.freeze("Builder", true).join().value()).contains("join");
         assertThat(view.teleportTo(id).join().error().code()).isEqualTo("Players.NotOnline");
         assertThat(view.bring(id).join().error().code()).isEqualTo("Players.NotOnline");
         assertThat(view.mute("Builder", "1d", true).join().isSuccess()).isTrue();
