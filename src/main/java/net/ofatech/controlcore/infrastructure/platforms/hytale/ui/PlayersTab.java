@@ -20,6 +20,14 @@ import net.ofatech.controlcore.domain.result.Result;
 final class PlayersTab {
 
     private static final String ADD = "BanAdd";
+    private static final String OPEN = "PlayerActionNew";
+    private static final String CLOSE = "PlayerActionClose";
+    private static final String KIND = "PlayerActionKind";
+    private static final String BAN_KIND = "ban";
+    private static final String UNBAN_KIND = "unban";
+    private static final String KICK_KIND = "kick";
+    private static final int LIST_OPEN = 400;
+    private static final int LIST_CLOSED = 490;
     private static final String UNBAN = "BanRemove";
     private static final String BAN = "PlayerBan";
     private static final String KICK = "PlayerKick";
@@ -40,6 +48,8 @@ final class PlayersTab {
         void later(Runnable work);
 
         PlayerRef viewer();
+
+        void resize(String element, int pixels, UICommandBuilder update);
     }
 
     private final PlayersView view;
@@ -50,6 +60,8 @@ final class PlayersTab {
     private String reason = "";
     private PlayersView.Filter filter = PlayersView.Filter.ALL;
     private String query = "";
+    private boolean formOpen;
+    private String kind = BAN_KIND;
     private Optional<String> armed = Optional.empty();
     private Optional<String> footer = Optional.empty();
     private List<PlayersView.Entry> rows = List.of();
@@ -67,7 +79,12 @@ final class PlayersTab {
 
     void build(UICommandBuilder commands, UIEventBuilder events) {
         PlayersView.Rights rights = view.rights();
-        commands.set("#BanForm.Visible", rights.ban());
+        List<PlayersView.Choice> kinds = kinds(rights);
+        if (kinds.stream().noneMatch(choice -> choice.id().equals(kind))) {
+            kind = kinds.isEmpty() ? BAN_KIND : kinds.getFirst().id();
+        }
+        commands.set("#PlayerActionKind.Entries", entries(kinds));
+        commands.set("#PlayerActionKind.Value", kind);
         commands.set("#BanPlayer.Value", player);
         commands.set("#BanPlayer.PlaceholderText", tr.t("controlcore.panel.bans.player_hint"));
         commands.set("#BanReason.Value", reason);
@@ -79,10 +96,19 @@ final class PlayersTab {
         commands.set("#PlayerSearch.Value", query);
         commands.set("#PlayerSearch.PlaceholderText", tr.t("controlcore.players.search_hint"));
         events.addEventBinding(
+                CustomUIEventBindingType.Activating, "#PlayerActionNew", EventData.of(PanelAction.KEY, OPEN));
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating, "#PlayerActionClose", EventData.of(PanelAction.KEY, CLOSE));
+        events.addEventBinding(
+                CustomUIEventBindingType.ValueChanged,
+                "#PlayerActionKind",
+                new EventData().append(PanelAction.KEY, KIND).append(PanelAction.KEYS, "#PlayerActionKind.Value"));
+        events.addEventBinding(
                 CustomUIEventBindingType.Activating,
                 "#BanAdd",
                 new EventData()
                         .append(PanelAction.KEY, ADD)
+                        .append(PanelAction.KEYS, "#PlayerActionKind.Value")
                         .append(PanelAction.VALUE, "#BanPlayer.Value")
                         .append(PanelAction.FILTER, "#BanLength.Value")
                         .append(PanelAction.MATCH, "#BanReason.Value"));
@@ -171,8 +197,36 @@ final class PlayersTab {
             }
         }
         showCount(commands);
+        showForm(commands, !kinds.isEmpty());
         footer.ifPresent(text -> commands.set("#FooterStatus.Text", text));
         footer = Optional.empty();
+    }
+
+    private void showForm(UICommandBuilder commands, boolean allowed) {
+        boolean open = formOpen && allowed;
+        commands.set("#BanForm.Visible", open);
+        commands.set("#PlayerActionNew.Visible", allowed && !open);
+        commands.set("#BanLength.Visible", BAN_KIND.equals(kind));
+        commands.set("#BanReason.Visible", !UNBAN_KIND.equals(kind));
+        commands.set(
+                "#BanReason.PlaceholderText",
+                tr.t(
+                        KICK_KIND.equals(kind)
+                                ? "controlcore.players.kick_reason_hint"
+                                : "controlcore.panel.bans.reason_hint"));
+        host.resize(LIST, open ? LIST_OPEN : LIST_CLOSED, commands);
+    }
+
+    private List<PlayersView.Choice> kinds(PlayersView.Rights rights) {
+        List<PlayersView.Choice> kinds = new ArrayList<>();
+        if (rights.ban()) {
+            kinds.add(new PlayersView.Choice(BAN_KIND, tr.t("controlcore.players.action.ban")));
+            kinds.add(new PlayersView.Choice(UNBAN_KIND, tr.t("controlcore.players.action.unban")));
+        }
+        if (rights.kick()) {
+            kinds.add(new PlayersView.Choice(KICK_KIND, tr.t("controlcore.players.action.kick")));
+        }
+        return kinds;
     }
 
     private void showCount(UICommandBuilder commands) {
@@ -204,13 +258,36 @@ final class PlayersTab {
     boolean handle(PanelAction action) {
         switch (action.name()) {
             case ADD -> add(action);
+            case OPEN, CLOSE -> {
+                formOpen = OPEN.equals(action.name());
+                UICommandBuilder update = new UICommandBuilder();
+                showForm(update, !kinds(view.rights()).isEmpty());
+                host.send(update);
+            }
+            case KIND -> {
+                kind = text(action.bindKeys).isEmpty() ? kind : text(action.bindKeys);
+                UICommandBuilder update = new UICommandBuilder();
+                showForm(update, !kinds(view.rights()).isEmpty());
+                host.send(update);
+            }
             case FILTER, SEARCH -> narrow(action);
             case UNBAN -> confirmed(action, "controlcore.panel.bans.confirm_unban", () -> view.unban(action.id));
             case KICK ->
                 confirmed(action, "controlcore.players.confirm_kick", () -> view.kick(action.id, text(action.match)));
             case BAN -> {
-                remember(action);
-                finish(view.ban(action.id, length, reason));
+                formOpen = true;
+                kind = BAN_KIND;
+                player = rows.stream()
+                        .filter(entry -> entry.id().equals(action.id))
+                        .map(entry -> entry.name().isEmpty() ? entry.id() : entry.name())
+                        .findFirst()
+                        .orElse(text(action.id));
+                UICommandBuilder update = new UICommandBuilder();
+                update.set("#BanPlayer.Value", player);
+                update.set("#PlayerActionKind.Value", kind);
+                showForm(update, true);
+                update.set("#FooterStatus.Text", tr.t("controlcore.players.ban_prefilled", "player", player));
+                host.send(update);
             }
             case GAME_MODE -> finish(view.toggleGameMode(action.id));
             case TELEPORT_TO -> finish(view.teleportTo(action.id));
@@ -239,13 +316,33 @@ final class PlayersTab {
     private void add(PanelAction action) {
         player = text(action.value);
         remember(action);
-        UICommandBuilder waiting = new UICommandBuilder();
-        waiting.set("#FooterStatus.Text", tr.t("controlcore.bans.looking_up", "player", player));
-        host.send(waiting);
-        finish(view.ban(player, length, reason).thenApply(result -> {
+        kind = text(action.bindKeys).isEmpty() ? kind : text(action.bindKeys);
+        CompletableFuture<Result<String>> pending;
+        if (UNBAN_KIND.equals(kind)) {
+            pending = CompletableFuture.completedFuture(view.unban(player));
+        } else if (KICK_KIND.equals(kind)) {
+            pending = CompletableFuture.completedFuture(rows.stream()
+                    .filter(PlayersView.Entry::online)
+                    .filter(entry ->
+                            entry.name().equalsIgnoreCase(player) || entry.id().equalsIgnoreCase(player))
+                    .findFirst()
+                    .map(entry -> view.kick(entry.id(), reason))
+                    .orElseGet(() -> Result.failure(Error.validation(
+                            "Players.NotOnline",
+                            net.ofatech.controlcore.domain.model.text.Text.key(
+                                            "controlcore.errors.players.not_online", "{player} is not online.")
+                                    .with("player", player)))));
+        } else {
+            UICommandBuilder waiting = new UICommandBuilder();
+            waiting.set("#FooterStatus.Text", tr.t("controlcore.bans.looking_up", "player", player));
+            host.send(waiting);
+            pending = view.ban(player, length, reason);
+        }
+        finish(pending.thenApply(result -> {
             if (result.isSuccess()) {
                 player = "";
                 reason = "";
+                formOpen = false;
             }
             return result;
         }));

@@ -74,9 +74,10 @@ Buttons on each row:
   but can't be undone.
 - **Ban** bans the player with the length and reason chosen in the form; **Unban** (press twice) lifts a ban.
 
-The form on top bans a player by name or UUID, even when they are offline, permanently or for 1 hour, 1 day, 7 days
-or 30 days, with an optional reason; an online player is kicked at once. Bans made with Hytale's own `/ban` and
-`/unban` appear here too, and every ban and unban is in History.
+**+ Player action** opens a form (and **Close form** folds it away): pick **Ban**, **Unban** or **Kick**, type a
+name or UUID and press **Apply**. Bans work for offline players too, permanently or for 1 hour, 1 day, 7 days or 30
+days, with an optional reason; an online player is kicked at once. **Ban** on a row opens the form with that player
+filled in. Bans made with Hytale's own `/ban` and `/unban` appear here too, and every ban and unban is in History.
 
 Admins can do everything. Others need `ofatech.controlcore.players` to see the list, plus
 `ofatech.controlcore.players.gamemode`, `ofatech.controlcore.players.teleport` or `ofatech.controlcore.players.kick`

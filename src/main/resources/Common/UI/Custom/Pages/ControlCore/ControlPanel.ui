@@ -375,19 +375,34 @@ $C.@PageOverlay {
 
               Group #BanForm {
                 LayoutMode: Top;
+                Visible: false;
                 Anchor: (Bottom: 10);
                 Background: #182a37;
                 Padding: (Full: 10);
 
-                Label {
-                  Text: %controlcore.ui.bans.title;
-                  Style: @SubsectionTitleStyle;
-                  Anchor: (Height: 20, Bottom: 6);
+                Group {
+                  LayoutMode: Left;
+                  Anchor: (Height: 30, Bottom: 6);
+
+                  Label {
+                    Text: %controlcore.ui.players.actionTitle;
+                    Style: @SubsectionTitleStyle;
+                    FlexWeight: 1;
+                  }
+
+                  $C.@SmallTertiaryTextButton #PlayerActionClose {
+                    @Text = %controlcore.ui.players.closeForm;
+                    Anchor: (Width: 150, Height: 30);
+                  }
                 }
 
                 Group {
                   LayoutMode: Left;
                   Anchor: (Height: 38);
+
+                  $C.@DropdownBox #PlayerActionKind {
+                    Anchor: (Width: 190, Right: 6);
+                  }
 
                   $C.@TextField #BanPlayer {
                     Anchor: (Width: 220, Right: 6);
@@ -402,7 +417,7 @@ $C.@PageOverlay {
                   }
 
                   $C.@SmallSecondaryTextButton #BanAdd {
-                    @Text = %controlcore.ui.bans.add;
+                    @Text = %controlcore.ui.players.apply;
                     Anchor: (Width: 130, Height: 34, Left: 6);
                   }
                 }
@@ -422,7 +437,12 @@ $C.@PageOverlay {
 
                 Label #PlayerCount {
                   Style: @CountStyle;
-                  Anchor: (Width: 160, Left: 10);
+                  Anchor: (Width: 110, Left: 10);
+                }
+
+                $C.@SmallSecondaryTextButton #PlayerActionNew {
+                  @Text = %controlcore.ui.players.newAction;
+                  Anchor: (Width: 210, Height: 32, Left: 6);
                 }
               }
 
