@@ -80,6 +80,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private static final String SERVER_MODE_WORLDS = "ServerMode:Worlds";
     private static final String SERVER_MODE_PLAYERS = "ServerMode:Players";
     private static final String SERVER_WORLD = "ServerWorld";
+    private static final long PLAYERS_REFRESH_DELAY_MILLIS = 750;
 
     private enum Tab {
         SERVER(ControlPanelTab.SERVER_CONFIGS, "#ServerTab", "#ServerTabButton"),
@@ -177,7 +178,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private boolean showingPlayers;
     private final Optional<PlayersTab> playersTab;
     private boolean replied;
-    private static final long PLAYERS_REFRESH_DELAY_MILLIS = 750;
     private final AtomicBoolean playersRefreshPending = new AtomicBoolean();
     private String world;
     private boolean editingServerKeys = true;
@@ -1334,27 +1334,29 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         if (!playersRefreshPending.compareAndSet(false, true)) {
             return;
         }
-        Ref<EntityStore> ref = playerRef.getReference();
-        if (ref == null || !ref.isValid()) {
-            playersRefreshPending.set(false);
-            stopListening();
-            return;
-        }
-        Store<EntityStore> store = ref.getStore();
         CompletableFuture.delayedExecutor(PLAYERS_REFRESH_DELAY_MILLIS, TimeUnit.MILLISECONDS)
-                .execute(() -> store.getExternalData().getWorld().execute(() -> {
-                    playersRefreshPending.set(false);
-                    try {
-                        if (!isOpen(ref, store)) {
-                            stopListening();
-                        } else if (showingPlayers
-                                && playersTab.map(PlayersTab::refreshNow).orElse(false)) {
-                            rebuild();
-                        }
-                    } catch (RuntimeException e) {
-                        log.error("Could not refresh the Players list of " + playerRef.getUsername(), e);
+                .execute(() -> {
+                    Ref<EntityStore> ref = playerRef.getReference();
+                    if (ref == null || !ref.isValid()) {
+                        playersRefreshPending.set(false);
+                        stopListening();
+                        return;
                     }
-                }));
+                    Store<EntityStore> store = ref.getStore();
+                    store.getExternalData().getWorld().execute(() -> {
+                        playersRefreshPending.set(false);
+                        try {
+                            if (!isOpen(ref, store)) {
+                                stopListening();
+                            } else if (showingPlayers
+                                    && playersTab.map(PlayersTab::refreshNow).orElse(false)) {
+                                rebuild();
+                            }
+                        } catch (RuntimeException e) {
+                            log.error("Could not refresh the Players list of " + playerRef.getUsername(), e);
+                        }
+                    });
+                });
     }
 
     private boolean isOpen(Ref<EntityStore> ref, Store<EntityStore> store) {

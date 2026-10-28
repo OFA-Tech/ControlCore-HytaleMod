@@ -14,6 +14,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import net.ofatech.controlcore.domain.model.players.PlayersView;
@@ -44,6 +45,8 @@ final class PlayersTab {
     private static final int AVATAR_COLOURS = 8;
     private static final int HEADS_SHOWN = 24;
     private static final long QUIET_MILLIS = 2_000;
+    private static final long CONFIRM_MILLIS = 5_000;
+    private static final long ACTION_TIMEOUT_SECONDS = 20;
     private static final List<String[]> ROW_BUTTONS = List.of(
             new String[] {"#Details", DETAILS},
             new String[] {"#GameMode", GAME_MODE},
@@ -75,6 +78,7 @@ final class PlayersTab {
     private Optional<PlayersView.Details> details = Optional.empty();
     private int detailsRequest;
     private Optional<String> armed = Optional.empty();
+    private long armedAt;
     private Optional<String> footer = Optional.empty();
     private List<PlayersView.Entry> rows = List.of();
     private int generation;
@@ -253,7 +257,10 @@ final class PlayersTab {
     }
 
     boolean handle(PanelAction action) {
-        if (form.handle(action, this::sendFormUpdate, pending -> finish(pending, form::finished))) {
+        if (form.handle(
+                action,
+                this::sendFormUpdate,
+                pending -> finish(pending.orTimeout(ACTION_TIMEOUT_SECONDS, TimeUnit.SECONDS), form::finished))) {
             return true;
         }
         switch (action.name()) {
@@ -275,7 +282,7 @@ final class PlayersTab {
             case BAN -> {
                 armed = Optional.empty();
                 if (form.busy()) {
-                    showError(busy());
+                    showError(PlayerErrorText.busy(tr));
                     return true;
                 }
                 form.prefillBan(nameOf(text(action.id)));
@@ -303,23 +310,39 @@ final class PlayersTab {
     boolean refreshNow() {
         boolean typing = System.currentTimeMillis() - lastTyped < QUIET_MILLIS;
         if (form.isOpen() || typing || !pendingRows.isEmpty()) {
+            boolean first = !stale;
             stale = true;
+            if (first && typing && !form.isOpen()) {
+                retryWhenQuiet();
+            }
             return false;
         }
         return true;
     }
 
+    private void retryWhenQuiet() {
+        CompletableFuture.delayedExecutor(QUIET_MILLIS, TimeUnit.MILLISECONDS)
+                .execute(() -> host.later(() -> {
+                    if (stale && refreshNow()) {
+                        host.rebuild();
+                    }
+                }));
+    }
+
     private void rowAction(PanelAction action, Supplier<CompletableFuture<Result<String>>> work) {
         String key = action.name() + ":" + text(action.id);
         if (!pendingRows.add(key)) {
-            showError(busy());
+            showError(PlayerErrorText.busy(tr));
             return;
         }
-        finish(work.get(), result -> pendingRows.remove(key));
-    }
-
-    private Error busy() {
-        return Error.validation("Players.Busy", tr.t("controlcore.players.working"));
+        CompletableFuture<Result<String>> pending;
+        try {
+            pending = work.get().orTimeout(ACTION_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (RuntimeException e) {
+            pendingRows.remove(key);
+            throw e;
+        }
+        finish(pending, result -> pendingRows.remove(key));
     }
 
     private void openDetails(PanelAction action) {
@@ -366,8 +389,10 @@ final class PlayersTab {
             return;
         }
         String key = action.name() + ":" + action.id;
-        if (armed.filter(key::equals).isEmpty()) {
+        boolean fresh = System.currentTimeMillis() - armedAt < CONFIRM_MILLIS;
+        if (armed.filter(key::equals).isEmpty() || !fresh) {
             armed = Optional.of(key);
+            armedAt = System.currentTimeMillis();
             UICommandBuilder update = new UICommandBuilder();
             update.set("#FooterStatus.Text", tr.t(question, "player", nameOf(action.id)));
             host.send(update);
@@ -396,7 +421,12 @@ final class PlayersTab {
     }
 
     private void show(Result<String> result) {
-        if (result.isSuccess()) {
+        if (result.isSuccess() && form.isOpen()) {
+            stale = true;
+            UICommandBuilder update = new UICommandBuilder();
+            update.set("#FooterStatus.Text", result.value());
+            host.send(update);
+        } else if (result.isSuccess()) {
             footer = Optional.of(result.value());
             host.rebuild();
         } else {

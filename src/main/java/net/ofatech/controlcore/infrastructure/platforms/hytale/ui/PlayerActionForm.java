@@ -210,7 +210,7 @@ final class PlayerActionForm {
             return;
         }
         PlayerAction.of(event.form("Kind")).ifPresent(chosen -> action = chosen);
-        for (String field : List.of("Player", "Node", "Reason", "Length", "Group")) {
+        for (String field : ALL_FIELDS.subList(1, ALL_FIELDS.size())) {
             String value = event.form(field);
             if (!value.isEmpty() || TEXT_FIELDS.contains(field)) {
                 remember(field, value);

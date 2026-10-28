@@ -197,6 +197,13 @@ public final class BansService {
         return PlainText.when(instant);
     }
 
+    private static Error unknownPlayer(String input) {
+        return Error.notFound(
+                "Bans.UnknownPlayer",
+                Text.key("controlcore.errors.bans.unknown_player", "No Hytale player is called {player}.")
+                        .with("player", PlainText.oneLine(input, PlainText.MAX_SHOWN_INPUT)));
+    }
+
     public static Error protectedAdmin(String player) {
         return Error.forbidden(
                 "Players.ProtectedAdmin",
@@ -218,16 +225,14 @@ public final class BansService {
             return CompletableFuture.completedFuture(Result.failure(Error.validation(
                     "Bans.NoPlayer", Text.key("controlcore.errors.bans.no_player", "Type a player name first."))));
         }
+        if (input.length() > PlainText.MAX_SHOWN_INPUT) {
+            return CompletableFuture.completedFuture(Result.failure(unknownPlayer(input)));
+        }
         ChangeContext.Attribution attribution = ChangeContext.current();
         return bans.lookup(input)
                 .thenApply(profile -> ChangeContext.as(attribution, () -> {
                     if (profile.isEmpty()) {
-                        return Result.<String>failure(Error.notFound(
-                                "Bans.UnknownPlayer",
-                                Text.key(
-                                                "controlcore.errors.bans.unknown_player",
-                                                "No Hytale player is called {player}.")
-                                        .with("player", input)));
+                        return Result.<String>failure(unknownPlayer(input));
                     }
                     PlayerId target = profile.get().id();
                     remember(target, profile.get().name());
@@ -284,7 +289,7 @@ public final class BansService {
             return Result.failure(Error.notFound(
                     "Bans.NotBanned",
                     Text.key("controlcore.errors.bans.not_banned", "{player} is not banned.")
-                            .with("player", player == null ? "" : player.strip())));
+                            .with("player", PlainText.oneLine(player, PlainText.MAX_SHOWN_INPUT))));
         }
         Ban ban = found.get();
         if (!bans.unban(ban.target())) {

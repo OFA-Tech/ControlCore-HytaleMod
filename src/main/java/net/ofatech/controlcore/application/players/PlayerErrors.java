@@ -101,13 +101,6 @@ final class PlayerErrors {
                 Text.key("controlcore.errors.players.players_only", "Only players in the game can do that."));
     }
 
-    static Error busy() {
-        return Error.validation(
-                "Players.Busy",
-                Text.key(
-                        "controlcore.errors.players.busy", "Still working on the last change. Try again in a moment."));
-    }
-
     private static String shown(String input) {
         return PlainText.oneLine(input, PlainText.MAX_SHOWN_INPUT);
     }

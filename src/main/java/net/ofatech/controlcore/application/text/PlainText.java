@@ -14,9 +14,17 @@ public final class PlainText {
     private PlainText() {}
 
     public static String oneLine(String text, int max) {
-        String flat =
-                text == null ? "" : text.replaceAll("[\\p{Cntrl}\\p{Cf}]", " ").strip();
-        return flat.length() <= max ? flat : flat.substring(0, max - 1) + "…";
+        String flat = text == null
+                ? ""
+                : text.replaceAll("[\\p{Cc}\\p{Cf}\\p{Zl}\\p{Zp}]", " ").strip();
+        if (flat.length() <= max) {
+            return flat;
+        }
+        int end = max - 1;
+        if (end > 0 && Character.isHighSurrogate(flat.charAt(end - 1))) {
+            end--;
+        }
+        return flat.substring(0, end) + "…";
     }
 
     public static String when(Instant instant) {

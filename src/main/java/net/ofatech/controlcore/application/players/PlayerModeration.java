@@ -301,13 +301,15 @@ public final class PlayerModeration {
         stopHoldingIfIdle();
     }
 
-    private synchronized void hold(PlayerId id) {
-        admin.spot(id)
-                .thenAccept(spot -> spot.ifPresent(found -> {
-                    if (frozen(id)) {
-                        held.put(id, found);
-                    }
-                }));
+    private void hold(PlayerId id) {
+        admin.spot(id).thenAccept(spot -> spot.ifPresent(found -> holdAt(id, found)));
+    }
+
+    private synchronized void holdAt(PlayerId id, Spot spot) {
+        if (!frozen(id) || !directory.online(id)) {
+            return;
+        }
+        held.put(id, spot);
         if (holding == null) {
             holding = scheduler.schedule(HOLD_EVERY, HOLD_EVERY, this::holdFrozen);
         }

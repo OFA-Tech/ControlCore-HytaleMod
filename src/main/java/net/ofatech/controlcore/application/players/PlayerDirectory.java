@@ -1,8 +1,9 @@
 package net.ofatech.controlcore.application.players;
 
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -64,11 +65,23 @@ public final class PlayerDirectory {
         if (parsed.isPresent()) {
             return parsed.filter(this::known);
         }
-        List<PlayerId> saved = data.all().entrySet().stream()
-                .filter(entry -> input.equalsIgnoreCase(entry.getValue().get(SessionService.NAME)))
-                .map(Map.Entry::getKey)
-                .toList();
-        return saved.size() == 1 ? Optional.of(saved.getFirst()) : Optional.empty();
+        Set<PlayerId> named = new HashSet<>();
+        data.all().forEach((id, values) -> {
+            if (input.equalsIgnoreCase(values.get(SessionService.NAME))) {
+                named.add(id);
+            }
+        });
+        if (named.isEmpty()) {
+            bans.all().forEach(ban -> addIfNamed(named, ban.target(), input));
+            access.whitelisted().forEach(id -> addIfNamed(named, id, input));
+        }
+        return named.size() == 1 ? named.stream().findFirst() : Optional.empty();
+    }
+
+    private void addIfNamed(Set<PlayerId> named, PlayerId id, String input) {
+        if (bans.knownName(id).filter(input::equalsIgnoreCase).isPresent()) {
+            named.add(id);
+        }
     }
 
     Optional<PlayerId> onlineNamed(String nameOrId) {

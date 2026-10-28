@@ -95,7 +95,7 @@ for each button, `ofatech.controlcore.players.whitelist` for the whitelist, `.pl
 since the server started (kept in memory only).
 Operators and groups can only be changed by admins, because adding someone to `hytale:Admin` gives them everything.
 Whether joining needs the whitelist is the **Require join permission** key in config.json. All of these changes are in
-History and can be rolled back. Moderators can't use these actions on an admin; only admins can. A freeze stays until it is lifted, even if the player leaves and joins again; an offline player can be frozen and is held in place when they join. Mute only blocks normal chat messages; commands from other mods that send messages are not covered.
+History and can be rolled back. Moderators can't use these actions on an admin; only admins can. A freeze stays until it is lifted, even if the player leaves and joins again; an offline player can be frozen and is held in place when they join. Nobody can lift their own mute or freeze or take themselves off the whitelist; another admin or the console has to. Mute only blocks normal chat messages; commands from other mods that send messages are not covered.
 
 World ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`, so `/cc-get`, `/cc-set`,
 permissions, History and snapshots work on them like on `config.json` keys.
