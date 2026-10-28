@@ -447,7 +447,7 @@ $C.@PageOverlay {
                   Anchor: (Width: 200, Right: 6);
                 }
 
-                $C.@TextField #PlayerSearch {
+                $C.@TextField #PlayersSearch {
                   FlexWeight: 1;
                 }
 
@@ -473,7 +473,7 @@ $C.@PageOverlay {
                 Visible: false;
               }
 
-              Group #PlayerList {
+              Group #PlayersRows {
                 LayoutMode: TopScrolling;
                 ScrollbarStyle: $C.@DefaultScrollbarStyle;
                 Anchor: (Height: 400);

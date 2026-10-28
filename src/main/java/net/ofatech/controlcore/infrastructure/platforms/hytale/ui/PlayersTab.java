@@ -38,7 +38,7 @@ final class PlayersTab {
     private static final String SEARCH = "PlayerSearch";
     private static final String BODY = "#PlayerDetailsBody";
     private static final String ROW = "Pages/ControlCore/PlayerRow.ui";
-    private static final String LIST = "#PlayerList";
+    private static final String LIST = "#PlayersRows";
     private static final int LIST_WITH_FORM = 400;
     private static final int NOTE_HEIGHT = 30;
     private static final int LIST_ALONE = 490;
@@ -103,8 +103,8 @@ final class PlayersTab {
         form.build(commands, events);
         commands.set("#PlayerFilter.Entries", entries(view.filters()));
         commands.set("#PlayerFilter.Value", filter.id());
-        commands.set("#PlayerSearch.Value", query);
-        commands.set("#PlayerSearch.PlaceholderText", tr.t("controlcore.players.search_hint"));
+        commands.set("#PlayersSearch.Value", query);
+        commands.set("#PlayersSearch.PlaceholderText", tr.t("controlcore.players.search_hint"));
         events.addEventBinding(CustomUIEventBindingType.Activating, "#PlayerChat", EventData.of(PanelAction.KEY, CHAT));
         events.addEventBinding(
                 CustomUIEventBindingType.Activating, "#PlayerDetailsBack", EventData.of(PanelAction.KEY, DETAILS_BACK));
@@ -114,8 +114,8 @@ final class PlayersTab {
                 new EventData().append(PanelAction.KEY, FILTER).append(PanelAction.VALUE, "#PlayerFilter.Value"));
         events.addEventBinding(
                 CustomUIEventBindingType.ValueChanged,
-                "#PlayerSearch",
-                new EventData().append(PanelAction.KEY, SEARCH).append(PanelAction.VALUE, "#PlayerSearch.Value"));
+                "#PlayersSearch",
+                new EventData().append(PanelAction.KEY, SEARCH).append(PanelAction.VALUE, "#PlayersSearch.Value"));
         rows = view.list();
         int built = ++generation;
         boolean heads = view.showHeads();
