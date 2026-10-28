@@ -320,7 +320,7 @@ public final class PlayerModeration {
             if (directory.online(id) && frozen(id)) {
                 admin.keepAt(id, spot);
             } else {
-                held.remove(id);
+                held.remove(id, spot);
             }
         });
         stopHoldingIfIdle();
