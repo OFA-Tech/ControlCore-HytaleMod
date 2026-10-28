@@ -119,4 +119,54 @@ class PlayersRuntimeTest extends RuntimeTestBase {
         assertThat(view.toggleGameMode(id.value().toString()).join().error().code())
                 .isEqualTo("Players.NotOnline");
     }
+
+    @Test
+    void whitelistOperatorsAndGroupsAreChangedRecordedAndRolledBack() {
+        runtime.setup();
+        runtime.start();
+        PlayerInfo admin = platform.players.join("Admin");
+        PlayerInfo builder = platform.players.join("Builder");
+        PlayersView view = viewFor(admin);
+
+        assertThat(view.whitelist("Builder", true).join().isSuccess()).isTrue();
+        assertThat(platform.access.allowed).contains(builder.id());
+        assertThat(view.whitelist("Builder", true).join().error().code()).isEqualTo("Players.NothingToDo");
+        assertThat(view.operator("Builder", true).join().isSuccess()).isTrue();
+        assertThat(platform.access.groupsOf(builder.id())).contains("hytale:Admin");
+        assertThat(view.groupPermission("hytale:Adventurer", "homes.use", true).isSuccess())
+                .isTrue();
+        assertThat(view.groupPermission("hytale:Adventurer", "bad node!", true)
+                        .error()
+                        .code())
+                .isEqualTo("Players.BadNode");
+        assertThat(view.group("Builder", "nope", true).join().error().code()).isEqualTo("Players.UnknownGroup");
+
+        PlayersView.Entry entry = viewFor(admin).list().stream()
+                .filter(found -> found.name().equals("Builder"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(entry.whitelisted()).isTrue();
+        assertThat(entry.operator()).isTrue();
+        assertThat(entry.matches(Filter.OPERATORS, "")).isTrue();
+
+        long node = platform.changeLog.records.getLast().id();
+        platform.commands.run("cc-rollback", admin, Map.of("change", (int) node));
+        assertThat(platform.access.groupPermissions("hytale:Adventurer")).doesNotContain("homes.use");
+    }
+
+    @Test
+    void onlyAdminsMayChangeOperatorsAndGroups() {
+        runtime.setup();
+        runtime.start();
+        PlayerInfo helper = platform.players.join("Helper");
+        platform.deniedNodes.add("settings");
+        platform.deniedNodes.add("admin");
+        platform.players.join("Builder");
+        platform.commands.run(COMMAND, helper, Map.of());
+        PlayersView view = platform.controlPanel.lastContent.players().orElseThrow();
+
+        assertThat(view.rights().groups()).isFalse();
+        assertThat(view.operator("Builder", true).join().error().code()).isEqualTo("Players.AdminsOnly");
+        assertThat(view.whitelist("Builder", true).join().isSuccess()).isTrue();
+    }
 }

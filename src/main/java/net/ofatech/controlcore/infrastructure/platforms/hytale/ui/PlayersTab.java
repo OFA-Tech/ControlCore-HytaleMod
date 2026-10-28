@@ -26,6 +26,9 @@ final class PlayersTab {
     private static final String BAN_KIND = "ban";
     private static final String UNBAN_KIND = "unban";
     private static final String KICK_KIND = "kick";
+    private static final String GROUP = "PlayerActionGroup";
+    private static final List<String> NEEDS_GROUP = List.of("group-add", "group-remove", "node-add", "node-remove");
+    private static final List<String> NEEDS_NODE = List.of("node-add", "node-remove");
     private static final int LIST_OPEN = 400;
     private static final int LIST_CLOSED = 490;
     private static final String UNBAN = "BanRemove";
@@ -62,6 +65,7 @@ final class PlayersTab {
     private String query = "";
     private boolean formOpen;
     private String kind = BAN_KIND;
+    private String group = "";
     private Optional<String> armed = Optional.empty();
     private Optional<String> footer = Optional.empty();
     private List<PlayersView.Entry> rows = List.of();
@@ -85,6 +89,14 @@ final class PlayersTab {
         }
         commands.set("#PlayerActionKind.Entries", entries(kinds));
         commands.set("#PlayerActionKind.Value", kind);
+        List<PlayersView.Choice> groups = rights.groups() ? view.groups() : List.of();
+        if (group.isEmpty() || groups.stream().noneMatch(choice -> choice.id().equals(group))) {
+            group = groups.isEmpty() ? "" : groups.getFirst().id();
+        }
+        commands.set("#PlayerActionGroup.Entries", entries(groups));
+        if (!group.isEmpty()) {
+            commands.set("#PlayerActionGroup.Value", group);
+        }
         commands.set("#BanPlayer.Value", player);
         commands.set("#BanPlayer.PlaceholderText", tr.t("controlcore.panel.bans.player_hint"));
         commands.set("#BanReason.Value", reason);
@@ -104,11 +116,16 @@ final class PlayersTab {
                 "#PlayerActionKind",
                 new EventData().append(PanelAction.KEY, KIND).append(PanelAction.KEYS, "#PlayerActionKind.Value"));
         events.addEventBinding(
+                CustomUIEventBindingType.ValueChanged,
+                "#PlayerActionGroup",
+                new EventData().append(PanelAction.KEY, GROUP).append(PanelAction.NAME, "#PlayerActionGroup.Value"));
+        events.addEventBinding(
                 CustomUIEventBindingType.Activating,
                 "#BanAdd",
                 new EventData()
                         .append(PanelAction.KEY, ADD)
                         .append(PanelAction.KEYS, "#PlayerActionKind.Value")
+                        .append(PanelAction.NAME, "#PlayerActionGroup.Value")
                         .append(PanelAction.VALUE, "#BanPlayer.Value")
                         .append(PanelAction.FILTER, "#BanLength.Value")
                         .append(PanelAction.MATCH, "#BanReason.Value"));
@@ -140,6 +157,8 @@ final class PlayersTab {
             commands.set(row + " #OnlineBadge.Visible", entry.online());
             commands.set(row + " #OfflineBadge.Visible", !entry.online());
             commands.set(row + " #BannedBadge.Visible", entry.banned());
+            commands.set(row + " #WhitelistBadge.Visible", entry.whitelisted());
+            commands.set(row + " #OpBadge.Visible", entry.operator());
             commands.set(row + " #Status.Text", entry.status());
             commands.set(row + " #BanInfo.Text", entry.ban());
             commands.set(row + " #BanInfo.Visible", !entry.ban().isEmpty());
@@ -207,14 +226,31 @@ final class PlayersTab {
         commands.set("#BanForm.Visible", open);
         commands.set("#PlayerActionNew.Visible", allowed && !open);
         commands.set("#BanLength.Visible", BAN_KIND.equals(kind));
-        commands.set("#BanReason.Visible", !UNBAN_KIND.equals(kind));
+        commands.set("#BanReason.Visible", BAN_KIND.equals(kind) || KICK_KIND.equals(kind));
         commands.set(
                 "#BanReason.PlaceholderText",
                 tr.t(
                         KICK_KIND.equals(kind)
                                 ? "controlcore.players.kick_reason_hint"
                                 : "controlcore.panel.bans.reason_hint"));
-        host.resize(LIST, open ? LIST_OPEN : LIST_CLOSED, commands);
+        commands.set("#PlayerActionGroup.Visible", NEEDS_GROUP.contains(kind));
+        commands.set(
+                "#BanPlayer.PlaceholderText",
+                tr.t(
+                        NEEDS_NODE.contains(kind)
+                                ? "controlcore.players.node_hint"
+                                : "controlcore.panel.bans.player_hint"));
+        boolean note = NEEDS_NODE.contains(kind) && !group.isEmpty();
+        commands.set("#PlayerActionNote.Visible", note && open);
+        if (note) {
+            List<String> nodes = view.groupPermissions(group);
+            commands.set(
+                    "#PlayerActionNote.Text",
+                    nodes.isEmpty()
+                            ? tr.t("controlcore.players.group_no_nodes")
+                            : tr.t("controlcore.players.group_nodes", "nodes", String.join(", ", nodes)));
+        }
+        host.resize(LIST, open ? (note ? LIST_OPEN - 30 : LIST_OPEN) : LIST_CLOSED, commands);
     }
 
     private List<PlayersView.Choice> kinds(PlayersView.Rights rights) {
@@ -225,6 +261,16 @@ final class PlayersTab {
         }
         if (rights.kick()) {
             kinds.add(new PlayersView.Choice(KICK_KIND, tr.t("controlcore.players.action.kick")));
+        }
+        List<String> more = new ArrayList<>();
+        if (rights.whitelist()) {
+            more.addAll(List.of("whitelist-add", "whitelist-remove"));
+        }
+        if (rights.groups()) {
+            more.addAll(List.of("op-add", "op-remove", "group-add", "group-remove", "node-add", "node-remove"));
+        }
+        for (String id : more) {
+            kinds.add(new PlayersView.Choice(id, tr.t("controlcore.players.action." + id)));
         }
         return kinds;
     }
@@ -260,6 +306,12 @@ final class PlayersTab {
             case ADD -> add(action);
             case OPEN, CLOSE -> {
                 formOpen = OPEN.equals(action.name());
+                UICommandBuilder update = new UICommandBuilder();
+                showForm(update, !kinds(view.rights()).isEmpty());
+                host.send(update);
+            }
+            case GROUP -> {
+                group = text(action.bindName).isEmpty() ? group : text(action.bindName);
                 UICommandBuilder update = new UICommandBuilder();
                 showForm(update, !kinds(view.rights()).isEmpty());
                 host.send(update);
@@ -317,8 +369,17 @@ final class PlayersTab {
         player = text(action.value);
         remember(action);
         kind = text(action.bindKeys).isEmpty() ? kind : text(action.bindKeys);
+        group = text(action.bindName).isEmpty() ? group : text(action.bindName);
         CompletableFuture<Result<String>> pending;
-        if (UNBAN_KIND.equals(kind)) {
+        if (kind.startsWith("whitelist-")) {
+            pending = view.whitelist(player, kind.endsWith("-add"));
+        } else if (kind.startsWith("op-")) {
+            pending = view.operator(player, kind.endsWith("-add"));
+        } else if (kind.startsWith("group-")) {
+            pending = view.group(player, group, kind.endsWith("-add"));
+        } else if (kind.startsWith("node-")) {
+            pending = CompletableFuture.completedFuture(view.groupPermission(group, player, kind.endsWith("-add")));
+        } else if (UNBAN_KIND.equals(kind)) {
             pending = CompletableFuture.completedFuture(view.unban(player));
         } else if (KICK_KIND.equals(kind)) {
             pending = CompletableFuture.completedFuture(rows.stream()

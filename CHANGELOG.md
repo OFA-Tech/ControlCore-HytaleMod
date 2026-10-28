@@ -11,8 +11,13 @@
   brings them.
 - Game mode changes and kicks are recorded in History under the new **Players** filter; game mode changes can be
   rolled back.
-- New permission nodes: `ofatech.controlcore.players` (see the list), `.players.gamemode`, `.players.teleport` and
-  `.players.kick`. `ofatech.controlcore.bans` still covers bans.
+- **+ Player action** form (opens and closes like the bind form): ban, unban, kick, add to or remove from the
+  **whitelist**, make or remove **operators**, add players to or remove them from **Hytale permission groups**, and give
+  or take a group's **permission nodes** (the form lists the group's own permissions). Rows show **Whitelist** and
+  **Operator** badges and the player's groups; filters **Whitelisted** and **Operators**. All of it is in History and
+  can be rolled back. Operators and groups are admin-only.
+- New permission nodes: `ofatech.controlcore.players` (see the list), `.players.gamemode`, `.players.teleport`,
+  `.players.kick` and `.players.whitelist`. `ofatech.controlcore.bans` still covers bans.
 
 ## 0.18.0 - 2026-10-27
 

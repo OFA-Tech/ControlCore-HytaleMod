@@ -101,6 +101,22 @@ Group {
       Background: #8a2f2f;
       Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
     }
+    Label #WhitelistBadge {
+      Text: %controlcore.ui.players.whitelisted;
+      Visible: false;
+      Anchor: (Height: 22, Top: 9, Right: 8);
+      Padding: (Horizontal: 8);
+      Background: #2a6b6b;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+    }
+    Label #OpBadge {
+      Text: %controlcore.ui.players.operator;
+      Visible: false;
+      Anchor: (Height: 22, Top: 9, Right: 8);
+      Padding: (Horizontal: 8);
+      Background: #8a6a22;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+    }
     $C.@SmallTertiaryTextButton #GameMode {
       @Text = %controlcore.ui.players.gameMode;
       Anchor: (Width: 150, Height: 32, Top: 4, Left: 6);

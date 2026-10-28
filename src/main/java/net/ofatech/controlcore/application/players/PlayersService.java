@@ -32,6 +32,7 @@ import net.ofatech.controlcore.domain.model.players.PlayersView;
 import net.ofatech.controlcore.domain.model.players.PlayersView.Entry;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
+import net.ofatech.controlcore.domain.ports.game.AccessLists;
 import net.ofatech.controlcore.domain.ports.game.Bans.Ban;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
 import net.ofatech.controlcore.domain.ports.game.PlayerAdmin;
@@ -47,9 +48,14 @@ public final class PlayersService {
     public static final String KICK = "players.kick";
     public static final String GAME_MODE = "players.gamemode";
     public static final String TELEPORT = "players.teleport";
+    public static final String WHITELIST = "players.whitelist";
     public static final String TARGET = "player:";
     static final String GAME_MODE_TARGET = TARGET + "gamemode:";
     static final String KICK_TARGET = TARGET + "kick:";
+    static final String WHITELIST_TARGET = TARGET + "whitelist:";
+    static final String GROUP_TARGET = TARGET + "group:";
+    static final String GROUP_PERM_TARGET = TARGET + "groupperm:";
+    private static final String SEPARATOR = "|";
 
     private static final DateTimeFormatter WHEN = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final int TOAST_SECONDS = 6;
@@ -59,6 +65,7 @@ public final class PlayersService {
     private final SessionService sessions;
     private final PlayerData data;
     private final PlayerAdmin admin;
+    private final AccessLists access;
     private final ChangeHistory history;
     private final SettingPermissionPolicy policy;
     private final Permissions permissions;
@@ -73,6 +80,7 @@ public final class PlayersService {
             SessionService sessions,
             PlayerData data,
             PlayerAdmin admin,
+            AccessLists access,
             ChangeHistory history,
             SettingPermissionPolicy policy,
             Permissions permissions,
@@ -84,6 +92,7 @@ public final class PlayersService {
         this.sessions = sessions;
         this.data = data;
         this.admin = admin;
+        this.access = access;
         this.history = history;
         this.policy = policy;
         this.permissions = permissions;
@@ -124,6 +133,10 @@ public final class PlayersService {
                 names.putIfAbsent(id, name == null ? bans.knownName(id).orElse("") : name);
             }
         });
+        java.util.Set<PlayerId> whitelisted = access.whitelisted();
+        for (PlayerId id : whitelisted) {
+            names.putIfAbsent(id, bans.knownName(id).orElse(""));
+        }
         Map<PlayerId, Ban> banned = new HashMap<>();
         for (Ban ban : bans.all()) {
             banned.putIfAbsent(ban.target(), ban);
@@ -140,12 +153,15 @@ public final class PlayersService {
                             ban.inEffect(now) ? "controlcore.players.ban.active" : "controlcore.players.ban.expired",
                             "details",
                             bans.details(ban, tr));
+            java.util.Set<String> groups = access.groupsOf(id);
             entries.add(new Entry(
                     id.value().toString(),
                     name == null ? "" : name,
                     isOnline,
                     ban != null && ban.inEffect(now),
-                    status(id, isOnline, tr),
+                    whitelisted.contains(id),
+                    groups.contains(AccessLists.OPERATOR_GROUP),
+                    status(id, isOnline, tr) + groupsText(groups, tr),
                     banText));
         });
         entries.sort(Comparator.comparing((Entry entry) -> !entry.online())
@@ -186,17 +202,226 @@ public final class PlayersService {
         OptionalInt ping = admin.ping(id);
         return admin.gameMode(id)
                 .thenApply(mode -> Optional.of(tr.t(
-                        "controlcore.players.status.live",
-                        "world",
-                        sessions.world(id).orElse("-"),
-                        "mode",
-                        mode.map(found -> modeName(found, tr)).orElse("?"),
-                        "ping",
-                        ping.isPresent()
-                                ? tr.t("controlcore.players.ping", "ms", ping.getAsInt())
-                                : tr.t("controlcore.players.ping_unknown"),
-                        "played",
-                        playtime(id))));
+                                "controlcore.players.status.live",
+                                "world",
+                                sessions.world(id).orElse("-"),
+                                "mode",
+                                mode.map(found -> modeName(found, tr)).orElse("?"),
+                                "ping",
+                                ping.isPresent()
+                                        ? tr.t("controlcore.players.ping", "ms", ping.getAsInt())
+                                        : tr.t("controlcore.players.ping_unknown"),
+                                "played",
+                                playtime(id))
+                        + groupsText(access.groupsOf(id), tr)));
+    }
+
+    private static String groupsText(java.util.Set<String> groups, Translator tr) {
+        if (groups.isEmpty()) {
+            return "";
+        }
+        return " · "
+                + tr.t(
+                        "controlcore.players.groups",
+                        "groups",
+                        String.join(
+                                ", ",
+                                groups.stream().map(PlayersService::groupName).toList()));
+    }
+
+    static String groupName(String group) {
+        return group.startsWith("hytale:") ? group.substring("hytale:".length()) : group;
+    }
+
+    public CompletableFuture<Result<String>> setWhitelisted(
+            Optional<PlayerId> who, String player, boolean add, Translator tr) {
+        if (!may(who, WHITELIST)) {
+            return CompletableFuture.completedFuture(Result.failure(forbidden()));
+        }
+        return target(player).thenApply(found -> {
+            if (found.isEmpty()) {
+                return Result.<String>failure(unknown(player));
+            }
+            PlayerId id = found.get();
+            boolean before = access.whitelisted().contains(id);
+            if (before == add) {
+                return Result.<String>failure(Error.validation(
+                        "Players.NothingToDo",
+                        Text.key(
+                                        add
+                                                ? "controlcore.errors.players.already_whitelisted"
+                                                : "controlcore.errors.players.not_whitelisted",
+                                        add
+                                                ? "{player} is already on the whitelist."
+                                                : "{player} is not on the whitelist.")
+                                .with("player", nameOf(id))));
+            }
+            boolean ok = add ? access.allow(id) : access.disallow(id);
+            if (!ok) {
+                return Result.<String>failure(failed());
+            }
+            history.record(
+                    Kind.PLAYER,
+                    WHITELIST_TARGET + id.value() + ":" + nameOf(id),
+                    String.valueOf(before),
+                    String.valueOf(add),
+                    false);
+            changed();
+            return Result.success(tr.t(
+                    add ? "controlcore.players.whitelisted" : "controlcore.players.unwhitelisted",
+                    "player",
+                    nameOf(id)));
+        });
+    }
+
+    public CompletableFuture<Result<String>> setGroup(
+            Optional<PlayerId> who, String player, String group, boolean add, Translator tr) {
+        if (!mayChangeGroups(who)) {
+            return CompletableFuture.completedFuture(Result.failure(adminsOnly()));
+        }
+        String wanted = group == null ? "" : group.strip();
+        if (wanted.isEmpty() || !access.groups().contains(wanted)) {
+            return CompletableFuture.completedFuture(Result.failure(Error.validation(
+                    "Players.UnknownGroup",
+                    Text.key("controlcore.errors.players.unknown_group", "There is no group {group}.")
+                            .with("group", wanted))));
+        }
+        return target(player).thenApply(found -> {
+            if (found.isEmpty()) {
+                return Result.<String>failure(unknown(player));
+            }
+            PlayerId id = found.get();
+            if (!add
+                    && wanted.equals(AccessLists.OPERATOR_GROUP)
+                    && who.filter(id::equals).isPresent()) {
+                return Result.<String>failure(self());
+            }
+            boolean before = access.groupsOf(id).contains(wanted);
+            if (before == add) {
+                return Result.<String>failure(Error.validation(
+                        "Players.NothingToDo",
+                        Text.key(
+                                        add
+                                                ? "controlcore.errors.players.already_in_group"
+                                                : "controlcore.errors.players.not_in_group",
+                                        add ? "{player} is already in {group}." : "{player} is not in {group}.")
+                                .with("player", nameOf(id), "group", groupName(wanted))));
+            }
+            if (add) {
+                access.addToGroup(id, wanted);
+            } else {
+                access.removeFromGroup(id, wanted);
+            }
+            history.record(
+                    Kind.PLAYER,
+                    GROUP_TARGET + id.value() + ":" + nameOf(id) + SEPARATOR + wanted,
+                    String.valueOf(before),
+                    String.valueOf(add),
+                    false);
+            changed();
+            return Result.success(tr.t(
+                    add ? "controlcore.players.group_added" : "controlcore.players.group_removed",
+                    "player",
+                    nameOf(id),
+                    "group",
+                    groupName(wanted)));
+        });
+    }
+
+    public Result<String> setGroupPermission(
+            Optional<PlayerId> who, String group, String node, boolean add, Translator tr) {
+        if (!mayChangeGroups(who)) {
+            return Result.failure(adminsOnly());
+        }
+        String wanted = group == null ? "" : group.strip();
+        String permission = node == null ? "" : node.strip();
+        if (wanted.isEmpty() || !access.groups().contains(wanted)) {
+            return Result.failure(Error.validation(
+                    "Players.UnknownGroup",
+                    Text.key("controlcore.errors.players.unknown_group", "There is no group {group}.")
+                            .with("group", wanted)));
+        }
+        if (!permission.matches("-?[A-Za-z0-9_.*:-]{1,120}")) {
+            return Result.failure(Error.validation(
+                    "Players.BadNode",
+                    Text.key(
+                                    "controlcore.errors.players.bad_node",
+                                    "'{node}' is not a permission node. Use letters, digits, dots, - and *.")
+                            .with("node", permission)));
+        }
+        boolean before = access.groupPermissions(wanted).contains(permission);
+        if (before == add) {
+            return Result.failure(Error.validation(
+                    "Players.NothingToDo",
+                    Text.key(
+                                    add
+                                            ? "controlcore.errors.players.group_has_node"
+                                            : "controlcore.errors.players.group_lacks_node",
+                                    add ? "{group} already has {node}." : "{group} doesn't have {node}.")
+                            .with("group", groupName(wanted), "node", permission)));
+        }
+        if (add) {
+            access.addGroupPermission(wanted, permission);
+        } else {
+            access.removeGroupPermission(wanted, permission);
+        }
+        history.record(
+                Kind.PLAYER,
+                GROUP_PERM_TARGET + wanted + SEPARATOR + permission,
+                String.valueOf(before),
+                String.valueOf(add),
+                false);
+        changed();
+        return Result.success(tr.t(
+                add ? "controlcore.players.node_added" : "controlcore.players.node_removed",
+                "group",
+                groupName(wanted),
+                "node",
+                permission));
+    }
+
+    private boolean mayChangeGroups(Optional<PlayerId> who) {
+        return who.isEmpty() || policy.isAdmin(who.get());
+    }
+
+    private CompletableFuture<Optional<PlayerId>> target(String player) {
+        String input = player == null ? "" : player.strip();
+        if (input.isEmpty()) {
+            return CompletableFuture.completedFuture(Optional.empty());
+        }
+        Optional<PlayerId> online = players.online().stream()
+                .filter(info -> info.name().equalsIgnoreCase(input)
+                        || info.id().value().toString().equalsIgnoreCase(input))
+                .map(PlayerInfo::id)
+                .findFirst();
+        if (online.isPresent()) {
+            return CompletableFuture.completedFuture(online);
+        }
+        Optional<PlayerId> parsed = parse(input);
+        if (parsed.isPresent() && data.all().containsKey(parsed.get())) {
+            return CompletableFuture.completedFuture(parsed);
+        }
+        for (var known : data.all().entrySet()) {
+            if (input.equalsIgnoreCase(known.getValue().get(SessionService.NAME))) {
+                return CompletableFuture.completedFuture(Optional.of(known.getKey()));
+            }
+        }
+        return bans.lookup(input);
+    }
+
+    private Error unknown(String player) {
+        return Error.notFound(
+                "Players.Unknown",
+                Text.key("controlcore.errors.bans.unknown_player", "No Hytale player is called {player}.")
+                        .with("player", player == null ? "" : player.strip()));
+    }
+
+    private static Error adminsOnly() {
+        return Error.forbidden(
+                "Players.AdminsOnly",
+                Text.key(
+                        "controlcore.errors.players.admins_only",
+                        "Only admins (operators) can change operators and groups."));
     }
 
     public Result<String> kick(Optional<PlayerId> who, PlayerId target, String reason, Translator tr) {
@@ -288,6 +513,35 @@ public final class PlayersService {
     }
 
     public Result<?> restore(String target, String old, String current, Optional<PlayerId> who) {
+        boolean wanted = Boolean.parseBoolean(old);
+        if (target.startsWith(WHITELIST_TARGET)) {
+            Optional<PlayerId> id = idOf(target, WHITELIST_TARGET);
+            return id.isEmpty()
+                    ? Result.failure(failed())
+                    : setWhitelisted(who, id.get().value().toString(), wanted, texts.forPlayer(who))
+                            .join();
+        }
+        if (target.startsWith(GROUP_TARGET)) {
+            Optional<PlayerId> id = idOf(target, GROUP_TARGET);
+            int split = target.indexOf(SEPARATOR);
+            return id.isEmpty() || split < 0
+                    ? Result.failure(failed())
+                    : setGroup(
+                                    who,
+                                    id.get().value().toString(),
+                                    target.substring(split + 1),
+                                    wanted,
+                                    texts.forPlayer(who))
+                            .join();
+        }
+        if (target.startsWith(GROUP_PERM_TARGET)) {
+            String rest = target.substring(GROUP_PERM_TARGET.length());
+            int split = rest.indexOf(SEPARATOR);
+            return split < 0
+                    ? Result.failure(failed())
+                    : setGroupPermission(
+                            who, rest.substring(0, split), rest.substring(split + 1), wanted, texts.forPlayer(who));
+        }
         if (target.startsWith(KICK_TARGET)) {
             return Result.failure(Error.validation(
                     "Players.KickUndo", Text.key("controlcore.errors.players.kick_undo", "A kick can't be undone.")));
@@ -309,6 +563,30 @@ public final class PlayersService {
     }
 
     public String what(String target, Translator tr) {
+        if (target.startsWith(GROUP_PERM_TARGET)) {
+            String rest = target.substring(GROUP_PERM_TARGET.length());
+            int split = rest.indexOf(SEPARATOR);
+            return tr.t(
+                    "controlcore.history.what.group_node",
+                    "group",
+                    groupName(split < 0 ? rest : rest.substring(0, split)),
+                    "node",
+                    split < 0 ? "" : rest.substring(split + 1));
+        }
+        for (String[] kind : new String[][] {
+            {WHITELIST_TARGET, "controlcore.history.what.player_whitelist"},
+            {GROUP_TARGET, "controlcore.history.what.player_group"}
+        }) {
+            if (target.startsWith(kind[0])) {
+                String rest = target.substring(kind[0].length());
+                int split = rest.indexOf(SEPARATOR);
+                String group = split < 0 ? "" : rest.substring(split + 1);
+                String person = split < 0 ? rest : rest.substring(0, split);
+                int colon = person.indexOf(':');
+                return tr.t(
+                        kind[1], "player", colon < 0 ? person : person.substring(colon + 1), "group", groupName(group));
+            }
+        }
         boolean kick = target.startsWith(KICK_TARGET);
         String rest = target.substring((kick ? KICK_TARGET : GAME_MODE_TARGET).length());
         int colon = rest.indexOf(':');
@@ -323,14 +601,22 @@ public final class PlayersService {
         if (PlayerAdmin.ADVENTURE.equals(value) || PlayerAdmin.CREATIVE.equals(value)) {
             return modeName(value, tr);
         }
+        if ("true".equals(value) || "false".equals(value)) {
+            return tr.t(Boolean.parseBoolean(value) ? "controlcore.players.value.yes" : "controlcore.players.value.no");
+        }
         return value.isEmpty() ? tr.t("controlcore.history.value.empty") : value;
     }
 
     public PlayersView viewedBy(PlayerId viewer) {
         Translator tr = texts.forPlayer(Optional.of(viewer));
         Optional<PlayerId> who = Optional.of(viewer);
-        PlayersView.Rights rights =
-                new PlayersView.Rights(may(who, KICK), may(who, GAME_MODE), may(who, TELEPORT), bans.mayManage(who));
+        PlayersView.Rights rights = new PlayersView.Rights(
+                may(who, KICK),
+                may(who, GAME_MODE),
+                may(who, TELEPORT),
+                bans.mayManage(who),
+                may(who, WHITELIST),
+                mayChangeGroups(who));
         return new PlayersView() {
             @Override
             public String viewer() {
@@ -414,6 +700,38 @@ public final class PlayersService {
                 return parse(id)
                         .map(found -> teleport(who, found, viewer, true, tr))
                         .orElse(CompletableFuture.completedFuture(Result.failure(failed())));
+            }
+
+            @Override
+            public List<Choice> groups() {
+                return access.groups().stream()
+                        .map(group -> new Choice(group, groupName(group)))
+                        .toList();
+            }
+
+            @Override
+            public List<String> groupPermissions(String group) {
+                return List.copyOf(access.groupPermissions(group));
+            }
+
+            @Override
+            public CompletableFuture<Result<String>> whitelist(String player, boolean add) {
+                return setWhitelisted(who, player, add, tr);
+            }
+
+            @Override
+            public CompletableFuture<Result<String>> operator(String player, boolean add) {
+                return setGroup(who, player, AccessLists.OPERATOR_GROUP, add, tr);
+            }
+
+            @Override
+            public CompletableFuture<Result<String>> group(String player, String group, boolean add) {
+                return setGroup(who, player, group, add, tr);
+            }
+
+            @Override
+            public Result<String> groupPermission(String group, String node, boolean add) {
+                return setGroupPermission(who, group, node, add, tr);
             }
 
             @Override

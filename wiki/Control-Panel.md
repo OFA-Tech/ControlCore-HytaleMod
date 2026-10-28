@@ -60,10 +60,11 @@ They come from the world's own `universe/worlds/<world>/config.json` and apply a
 
 #### Players
 
-The **Players** switch lists everyone who has played on the server, everyone online and everyone banned, with their
-head, name and UUID, an **Online**, **Offline** or **Banned** badge, and a status line: the world, game mode, ping and
-playtime for players online, or when they were last seen. A dropdown shows **Everyone**, **Online**, **Offline** or
-**Banned**, and the search box finds a name or UUID.
+The **Players** switch lists everyone who has played on the server, everyone online, banned or on the whitelist, with
+their head, name and UUID, badges (**Online** or **Offline**, **Banned**, **Whitelist**, **Operator**), and a status
+line: the world, game mode, ping, playtime and Hytale groups for players online, or when they were last seen. A dropdown
+shows **Everyone**, **Online**, **Offline**, **Banned**, **Whitelisted** or **Operators**, and the search box finds a
+name or UUID.
 
 Buttons on each row:
 
@@ -74,14 +75,19 @@ Buttons on each row:
   but can't be undone.
 - **Ban** bans the player with the length and reason chosen in the form; **Unban** (press twice) lifts a ban.
 
-**+ Player action** opens a form (and **Close form** folds it away): pick **Ban**, **Unban** or **Kick**, type a
+**+ Player action** opens a form (and **Close form** folds it away): pick **Ban**, **Unban**, **Kick**, **Add to /
+Remove from whitelist**, **Make / Remove operator**, **Add to / Remove from group**, or **Give / Take a permission** for
+a group (the form then lists that group's own permissions), type a
 name or UUID and press **Apply**. Bans work for offline players too, permanently or for 1 hour, 1 day, 7 days or 30
 days, with an optional reason; an online player is kicked at once. **Ban** on a row opens the form with that player
 filled in. Bans made with Hytale's own `/ban` and `/unban` appear here too, and every ban and unban is in History.
 
 Admins can do everything. Others need `ofatech.controlcore.players` to see the list, plus
 `ofatech.controlcore.players.gamemode`, `ofatech.controlcore.players.teleport` or `ofatech.controlcore.players.kick`
-for each button, and `ofatech.controlcore.bans` for bans.
+for each button, `ofatech.controlcore.players.whitelist` for the whitelist, and `ofatech.controlcore.bans` for bans.
+Operators and groups can only be changed by admins, because adding someone to `hytale:Admin` gives them everything.
+Whether joining needs the whitelist is the **Require join permission** key in config.json. All of these changes are in
+History and can be rolled back.
 
 World ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`, so `/cc-get`, `/cc-set`,
 permissions, History and snapshots work on them like on `config.json` keys.

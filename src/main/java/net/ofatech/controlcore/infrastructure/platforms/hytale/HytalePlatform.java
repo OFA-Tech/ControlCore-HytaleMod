@@ -15,6 +15,7 @@ import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 import net.ofatech.controlcore.domain.ports.config.SnapshotStore;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
+import net.ofatech.controlcore.domain.ports.game.AccessLists;
 import net.ofatech.controlcore.domain.ports.game.Bans;
 import net.ofatech.controlcore.domain.ports.game.CommandRunner;
 import net.ofatech.controlcore.domain.ports.game.EmptyHandInput;
@@ -64,6 +65,7 @@ import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytalePlaye
 import net.ofatech.controlcore.infrastructure.platforms.hytale.log.HytaleLog;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.mods.HytaleModCatalog;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.mods.HytaleModLookup;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytaleAccessLists;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytaleHudDisplay;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytaleMessenger;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytaleOverlayDisplay;
@@ -131,6 +133,7 @@ public final class HytalePlatform implements Platform {
                         new JsonSettingStore(plugin.getDataDirectory().resolve("WorldSettings.json"), log), log));
         binder.bind(PlayerTuning.class, new HytalePlayerTuning(log));
         binder.bind(PlayerAdmin.class, new HytalePlayerAdmin(log));
+        binder.bind(AccessLists.class, new HytaleAccessLists());
         binder.bind(Bans.class, new HytaleBans(log));
         binder.bind(ModCatalog.class, new HytaleModCatalog(serverConfiguration, log));
         binder.bind(ControlPanelView.class, new HytaleControlPanelView(log));

@@ -101,7 +101,8 @@ public final class ControlPanelService implements ControlPanelApi {
     public boolean mayOpenAdminPanel(PlayerId player) {
         return permissions.isAdmin(player)
                 || permitted(serverConfig, player).seesAny(SettingScope.SERVER)
-                || permitted(registry, player).seesAny(SettingScope.SERVER);
+                || permitted(registry, player).seesAny(SettingScope.SERVER)
+                || playerAdmin.maySee(Optional.of(player));
     }
 
     private PermittedSettingsEditor permitted(SettingsEditor editor, PlayerId player) {

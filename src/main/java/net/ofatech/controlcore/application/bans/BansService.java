@@ -109,6 +109,18 @@ public final class BansService {
         }
     }
 
+    public CompletableFuture<Optional<PlayerId>> lookup(String nameOrId) {
+        String input = nameOrId == null ? "" : nameOrId.strip();
+        if (input.isEmpty()) {
+            return CompletableFuture.completedFuture(Optional.empty());
+        }
+        return bans.lookup(input)
+                .thenApply(profile -> profile.map(found -> {
+                    remember(found.id(), found.name());
+                    return found.id();
+                }));
+    }
+
     public Optional<String> knownName(PlayerId id) {
         return Optional.ofNullable(names.get(id));
     }

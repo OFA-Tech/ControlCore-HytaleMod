@@ -13,7 +13,9 @@ public interface PlayersView {
         ALL,
         ONLINE,
         OFFLINE,
-        BANNED;
+        BANNED,
+        WHITELISTED,
+        OPERATORS;
 
         public String id() {
             return name().toLowerCase(Locale.ROOT);
@@ -29,7 +31,15 @@ public interface PlayersView {
         }
     }
 
-    record Entry(String id, String name, boolean online, boolean banned, String status, String ban) {
+    record Entry(
+            String id,
+            String name,
+            boolean online,
+            boolean banned,
+            boolean whitelisted,
+            boolean operator,
+            String status,
+            String ban) {
 
         public String initial() {
             String shown = name.isEmpty() ? id : name;
@@ -46,6 +56,8 @@ public interface PlayersView {
                 case ONLINE -> online;
                 case OFFLINE -> !online;
                 case BANNED -> banned;
+                case WHITELISTED -> whitelisted;
+                case OPERATORS -> operator;
             };
             String wanted = query == null ? "" : query.strip().toLowerCase(Locale.ROOT);
             return kept && (wanted.isEmpty() || name.toLowerCase(Locale.ROOT).contains(wanted) || id.contains(wanted));
@@ -54,7 +66,7 @@ public interface PlayersView {
 
     record Choice(String id, String label) {}
 
-    record Rights(boolean kick, boolean gameMode, boolean teleport, boolean ban) {}
+    record Rights(boolean kick, boolean gameMode, boolean teleport, boolean ban, boolean whitelist, boolean groups) {}
 
     String viewer();
 
@@ -83,6 +95,18 @@ public interface PlayersView {
     CompletableFuture<Result<String>> teleportTo(String id);
 
     CompletableFuture<Result<String>> bring(String id);
+
+    List<Choice> groups();
+
+    List<String> groupPermissions(String group);
+
+    CompletableFuture<Result<String>> whitelist(String player, boolean add);
+
+    CompletableFuture<Result<String>> operator(String player, boolean add);
+
+    CompletableFuture<Result<String>> group(String player, String group, boolean add);
+
+    Result<String> groupPermission(String group, String node, boolean add);
 
     Subscription onChange(Runnable listener);
 }

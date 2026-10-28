@@ -140,6 +140,7 @@ class ControlPanelServiceTest {
                 sessions,
                 new FakePlayerData(),
                 new net.ofatech.controlcore.fakes.FakePlayerAdmin(),
+                new net.ofatech.controlcore.fakes.FakeAccessLists(),
                 changes,
                 policy,
                 (player, node) -> true,

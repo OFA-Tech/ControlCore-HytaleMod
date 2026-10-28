@@ -401,7 +401,12 @@ $C.@PageOverlay {
                   Anchor: (Height: 38);
 
                   $C.@DropdownBox #PlayerActionKind {
-                    Anchor: (Width: 190, Right: 6);
+                    Anchor: (Width: 230, Right: 6);
+                  }
+
+                  $C.@DropdownBox #PlayerActionGroup {
+                    Visible: false;
+                    Anchor: (Width: 180, Right: 6);
                   }
 
                   $C.@TextField #BanPlayer {
@@ -420,6 +425,12 @@ $C.@PageOverlay {
                     @Text = %controlcore.ui.players.apply;
                     Anchor: (Width: 130, Height: 34, Left: 6);
                   }
+                }
+
+                Label #PlayerActionNote {
+                  Visible: false;
+                  Style: (...@NoteStyle, Wrap: true);
+                  Anchor: (Top: 6);
                 }
               }
 
