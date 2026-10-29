@@ -5,7 +5,7 @@ import net.ofatech.controlcore.domain.model.keys.Key;
 
 final class KeyCaptureLogic {
 
-    static final long HOLD_WINDOW_MILLIS = 600;
+    static final long HOLD_WINDOW_MILLIS = 1200;
 
     private String hold;
     private long heldUntil = Long.MIN_VALUE;

@@ -42,11 +42,19 @@ class KeyCaptureLogicTest {
     }
 
     @Test
+    void aSlowRepeatDelayStillCountsAsHeld() {
+        KeyCaptureLogic logic = new KeyCaptureLogic();
+        logic.accept(CTRL, false, 0);
+
+        assertThat(logic.accept(NUMPAD_5, false, 1000)).contains(Optional.of("CTRL+NUMPAD_5"));
+    }
+
+    @Test
     void staleModifierIsNotHeld() {
         KeyCaptureLogic logic = new KeyCaptureLogic();
         logic.accept(CTRL, false, 0);
 
-        assertThat(logic.accept(NUMPAD_5, false, 2000)).contains(Optional.of("NUMPAD_5"));
+        assertThat(logic.accept(NUMPAD_5, false, 3000)).contains(Optional.of("NUMPAD_5"));
     }
 
     @Test

@@ -127,6 +127,16 @@ class KeyDetectorTest {
     }
 
     @Test
+    void theScreenHasNoTimeoutSoALateKeyStillArrives() {
+        detector.fromScreen(caio, results::add);
+
+        scheduler.runAll();
+        detector.offer(caio, Optional.of(new KeyDetector.Detected("NUMPAD_5")));
+
+        assertThat(results).containsExactly(Optional.of(new KeyDetector.Detected("NUMPAD_5")));
+    }
+
+    @Test
     void withoutDetectionNormalBindsStillRun() {
         input.press(caio, KeySignal.ABILITY_3);
 

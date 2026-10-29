@@ -96,11 +96,13 @@ public final class KeyDetector implements PlayerInput.Listener {
 
     private void start(PlayerId player, boolean fromGame, Consumer<Optional<Detected>> done) {
         Pending[] slot = new Pending[1];
-        Scheduler.ScheduledTask timeout = scheduler.runLater(TIMEOUT, () -> {
-            if (slot[0] != null) {
-                finish(player, slot[0], Optional.empty());
-            }
-        });
+        Scheduler.ScheduledTask timeout = fromGame
+                ? scheduler.runLater(TIMEOUT, () -> {
+                    if (slot[0] != null) {
+                        finish(player, slot[0], Optional.empty());
+                    }
+                })
+                : () -> {};
         slot[0] = new Pending(fromGame, done, timeout);
         Pending previous = pending.put(player, slot[0]);
         if (previous != null) {
