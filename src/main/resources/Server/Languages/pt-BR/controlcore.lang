@@ -1127,3 +1127,6 @@ keys.detect_modes.game = Pelo jogo
 keys.detect_modes.screen = Tela de captura
 settings.all_keys_in_lists.name = Mostrar todas as teclas nas listas
 settings.all_keys_in_lists.desc = Inclui teclado numérico, F1-F12 e o resto. Teclas que o servidor ainda não ouve ficam marcadas.
+ui.keyCapture.title = Aperte uma tecla
+ui.keyCapture.hint = Aperte a tecla que quiser, com Ctrl, Alt ou Shift se quiser. Esc cancela.
+ui.keyCapture.cancel = Cancelar

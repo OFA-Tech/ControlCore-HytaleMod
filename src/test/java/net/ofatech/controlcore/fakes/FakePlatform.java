@@ -27,6 +27,7 @@ import net.ofatech.controlcore.domain.ports.game.CommandRunner;
 import net.ofatech.controlcore.domain.ports.game.EmptyHandInput;
 import net.ofatech.controlcore.domain.ports.game.HudDisplay;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
+import net.ofatech.controlcore.domain.ports.game.KeyCapture;
 import net.ofatech.controlcore.domain.ports.game.Messenger;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
 import net.ofatech.controlcore.domain.ports.game.PlayerData;
@@ -63,6 +64,7 @@ public final class FakePlatform implements Platform {
     public final FakeModLookup mods = new FakeModLookup();
     public final RecordingControlPanelView controlPanel = new RecordingControlPanelView();
     public final FakePlayerInput input = new FakePlayerInput();
+    public final FakeKeyCapture keyCapture = new FakeKeyCapture();
     public final RecordingCommandRunner commandRunner = new RecordingCommandRunner();
     public final FakeKeyBindStore keyBinds = new FakeKeyBindStore();
     public final FakeCustomKeyBindStore customKeyBinds = new FakeCustomKeyBindStore();
@@ -153,6 +155,7 @@ public final class FakePlatform implements Platform {
                 net.ofatech.controlcore.domain.ports.game.PlayerContext.class,
                 player -> context.getOrDefault(
                         player, net.ofatech.controlcore.domain.ports.game.PlayerContext.Context.UNKNOWN));
+        binder.bind(KeyCapture.class, keyCapture);
         binder.bind(InputProbe.class, new InputProbe() {
             @Override
             public boolean toggle(PlayerId player) {

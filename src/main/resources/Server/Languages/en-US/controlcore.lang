@@ -1127,3 +1127,6 @@ keys.detect_modes.game = From the game
 keys.detect_modes.screen = Capture screen
 settings.all_keys_in_lists.name = Show every keyboard key in key lists
 settings.all_keys_in_lists.desc = Adds numpad, F-keys and the rest. Keys the server can't hear yet are marked.
+ui.keyCapture.title = Press a key
+ui.keyCapture.hint = Press the key you want, with Ctrl, Alt or Shift if you like. Esc cancels.
+ui.keyCapture.cancel = Cancel

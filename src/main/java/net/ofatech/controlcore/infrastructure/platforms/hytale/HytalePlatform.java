@@ -22,6 +22,7 @@ import net.ofatech.controlcore.domain.ports.game.CommandRunner;
 import net.ofatech.controlcore.domain.ports.game.EmptyHandInput;
 import net.ofatech.controlcore.domain.ports.game.HudDisplay;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
+import net.ofatech.controlcore.domain.ports.game.KeyCapture;
 import net.ofatech.controlcore.domain.ports.game.Messenger;
 import net.ofatech.controlcore.domain.ports.game.OverlayDisplay;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
@@ -63,6 +64,7 @@ import net.ofatech.controlcore.infrastructure.platforms.hytale.i18n.HytaleTransl
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleCommandRunner;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleEmptyHandInput;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleInputProbe;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytaleKeyCapture;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.HytalePlayerInput;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.input.InboundPacketHooks;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.log.HytaleLog;
@@ -146,6 +148,7 @@ public final class HytalePlatform implements Platform {
         binder.bind(PlayerContext.class, new HytalePlayerContext());
         InboundPacketHooks inboundHooks = new InboundPacketHooks(log);
         binder.bind(InputProbe.class, new HytaleInputProbe(log, inboundHooks));
+        binder.bind(KeyCapture.class, new HytaleKeyCapture(log));
         binder.bind(PlayerInput.class, new HytalePlayerInput(log, inboundHooks));
         binder.bind(
                 EmptyHandInput.class,
