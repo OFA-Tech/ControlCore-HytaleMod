@@ -35,8 +35,6 @@ class KeyPickerBanca3Test {
         assertThat(KeyPicker.followsGameAction("F | NUMPAD_5")).isTrue();
     }
 
-    // ALT alone is WALK_TAP (a press), but with another key it is only WALKING (held).
-    // A screen capture of ALT+NUMPAD_5 must not be told "binds follow game actions".
     @Test
     void altHeldWithAnExtraKeyIsNotAGameAction() {
         assertThat(KeyPicker.followsGameAction("ALT+NUMPAD_5")).isFalse();

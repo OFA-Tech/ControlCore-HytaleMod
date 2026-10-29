@@ -38,16 +38,8 @@ public final class SnapshotDiffCommand implements ModCommand {
     }
 
     static String text(SnapshotsView.Preview preview, Translator tr) {
-        StringBuilder text = new StringBuilder(tr.t(
-                preview.changes() == 0 ? "controlcore.snapshots.preview.same" : "controlcore.snapshots.preview.header",
-                "name",
-                preview.name(),
-                "count",
-                preview.changes()));
-        preview.lines().forEach(line -> text.append('\n').append(line));
-        if (preview.skipped() > 0) {
-            text.append('\n').append(tr.t("controlcore.snapshots.preview.skipped", "count", preview.skipped()));
-        }
+        StringBuilder text = new StringBuilder(preview.title(tr));
+        preview.allLines(tr).forEach(line -> text.append('\n').append(line));
         return text.toString();
     }
 }

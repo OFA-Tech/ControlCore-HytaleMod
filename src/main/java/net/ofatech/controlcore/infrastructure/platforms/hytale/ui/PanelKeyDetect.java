@@ -38,6 +38,7 @@ final class PanelKeyDetect {
 
     private final KeyDetection detection;
     private final Supplier<PanelRights> rights;
+    private final PanelRights opened;
     private final Translator tr;
     private final Host host;
     private final Log log;
@@ -45,6 +46,7 @@ final class PanelKeyDetect {
     PanelKeyDetect(KeyDetection detection, Supplier<PanelRights> rights, Translator tr, Host host, Log log) {
         this.detection = detection;
         this.rights = rights;
+        this.opened = rights.get();
         this.tr = tr;
         this.host = host;
         this.log = log;
@@ -52,17 +54,18 @@ final class PanelKeyDetect {
 
     void start(Target target, BiFunction<String, KeyDetection.Mode, String> applyKeys) {
         KeyDetection.Mode mode = detection.mode();
-        PanelRights atStart = rights.get();
         long startedAt = System.nanoTime();
         long timeout =
                 mode == KeyDetection.Mode.GAME ? detection.gameTimeoutSeconds() : detection.screenTimeoutSeconds();
         detection.detect(
                 mode,
                 result -> HytalePages.onWorldThread(host.viewer(), () -> {
-                    boolean stillAllowed = nothingLost(atStart, rights.get());
+                    PanelRights now = rights.get();
+                    boolean stillAllowed = now.keepsEverythingOf(opened);
+                    boolean panelGone = opened.adminPanel() && !now.adminPanel();
                     boolean timedOut =
                             timeout > 0 && System.nanoTime() - startedAt >= TimeUnit.SECONDS.toNanos(timeout);
-                    finish(mode, result, target == Target.BIND_FORM, stillAllowed, timedOut, applyKeys);
+                    finish(mode, result, target == Target.BIND_FORM, stillAllowed, panelGone, timedOut, applyKeys);
                 }));
         if (mode == KeyDetection.Mode.GAME) {
             host.closePanel();
@@ -74,6 +77,7 @@ final class PanelKeyDetect {
             Optional<String> result,
             boolean reopenWithoutKey,
             boolean stillAllowed,
+            boolean panelGone,
             boolean timedOut,
             BiFunction<String, KeyDetection.Mode, String> applyKeys) {
         try {
@@ -111,24 +115,7 @@ final class PanelKeyDetect {
     }
 
     static boolean nothingLost(PanelRights before, PanelRights now) {
-        boolean[][] pairs = {
-            {before.admin(), now.admin()},
-            {before.adminPanel(), now.adminPanel()},
-            {before.adminPanel() && before.panelEnabled(), now.panelEnabled()},
-            {before.history(), now.history()},
-            {before.rollback(), now.rollback()},
-            {before.snapshots(), now.snapshots()},
-            {before.inputProbe(), now.inputProbe()},
-            {before.players(), now.players()},
-            {before.diagnostics(), now.diagnostics()},
-            {before.automation(), now.automation()}
-        };
-        for (boolean[] pair : pairs) {
-            if (pair[0] && !pair[1]) {
-                return false;
-            }
-        }
-        return true;
+        return now.keepsEverythingOf(before);
     }
 
     private String cancelled(KeyDetection.Mode mode, boolean timedOut) {

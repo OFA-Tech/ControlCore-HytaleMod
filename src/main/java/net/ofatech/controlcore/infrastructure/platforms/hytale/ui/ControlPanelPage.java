@@ -442,7 +442,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                             : Optional.empty();
                     SettingRows.build(key, section, row, element, customBind, gameAction, commands, events);
                     String typed = unsaved.get(shownKey(key, row.id()));
-                    if (typed != null && SettingRows.tracksTyping(row.kind())) {
+                    if (typed != null && SettingRows.tracksTyping(row.kind()) && !showsNumber(row.kind(), typed)) {
+                        commands.set(element + " #Input.Value", typed);
+                    } else if (typed != null && SettingRows.tracksTyping(row.kind())) {
                         SettingSnapshot shown = row.snapshot();
                         SettingRows.showValue(
                                 section,
@@ -725,20 +727,12 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
         String shownKey = shownKey(key, snapshot.id());
         String text = action.value == null ? "" : action.value;
-        boolean changed = !snapshot.value().equals(text);
         boolean wasUnsaved = unsaved.containsKey(shownKey);
-        if (changed) {
-            unsaved.put(shownKey, text);
-        } else {
-            unsaved.remove(shownKey);
-        }
-        if (changed == wasUnsaved) {
-            return;
-        }
         UICommandBuilder update = new UICommandBuilder();
-        showState(key, index, snapshot, update);
-        showLegend(update);
-        sendUpdate(update, false);
+        markTyped(key, index, snapshot, text, snapshot.value().equals(text), update);
+        if (wasUnsaved != unsaved.containsKey(shownKey)) {
+            sendUpdate(update, false);
+        }
     }
 
     private void undoChange(PanelSection key, SettingsSection section, PanelAction action) {
@@ -1338,10 +1332,15 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         if (fillField) {
             update.set(key.row(index) + " #Input.Value", hex);
             SettingSnapshot snapshot = latestOf(key, action.id);
-            if (snapshot != null && !snapshot.value().equalsIgnoreCase(hex)) {
-                unsaved.put(shownKey(key, snapshot.id()), hex);
-                showState(key, index, snapshot, update);
-                showLegend(update);
+            if (snapshot != null) {
+                String saved = SettingRows.pickedHex(snapshot.value());
+                markTyped(
+                        key,
+                        index,
+                        snapshot,
+                        hex,
+                        hex.equalsIgnoreCase(saved == null ? snapshot.value() : saved),
+                        update);
             }
         }
         footer(update, tr.t("controlcore.panel.color_picked", "color", hex));
@@ -1356,7 +1355,46 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
         UICommandBuilder update = new UICommandBuilder();
         update.set(key.row(index) + " #Input.Value", value.get());
+        SettingSnapshot snapshot = latestOf(key, action.id);
+        if (snapshot != null) {
+            markTyped(key, index, snapshot, value.get(), sameNumber(snapshot.value(), value.get()), update);
+        }
         sendUpdate(update, false);
+    }
+
+    private void markTyped(
+            PanelSection key, int index, SettingSnapshot snapshot, String text, boolean same, UICommandBuilder update) {
+        String shownKey = shownKey(key, snapshot.id());
+        boolean wasUnsaved = unsaved.containsKey(shownKey);
+        if (same) {
+            unsaved.remove(shownKey);
+        } else {
+            unsaved.put(shownKey, text);
+        }
+        if (wasUnsaved == !same) {
+            return;
+        }
+        showState(key, index, snapshot, update);
+        showLegend(update);
+    }
+
+    private static boolean showsNumber(SettingsSection.Kind kind, String text) {
+        if (kind != SettingsSection.Kind.INTEGER && kind != SettingsSection.Kind.DECIMAL) {
+            return true;
+        }
+        try {
+            return Double.isFinite(Double.parseDouble(text.strip()));
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private static boolean sameNumber(String saved, String shown) {
+        try {
+            return new java.math.BigDecimal(saved.strip()).compareTo(new java.math.BigDecimal(shown.strip())) == 0;
+        } catch (NumberFormatException e) {
+            return saved.equals(shown);
+        }
     }
 
     private Optional<String> sliderValue(PanelSection key, PanelAction action) {

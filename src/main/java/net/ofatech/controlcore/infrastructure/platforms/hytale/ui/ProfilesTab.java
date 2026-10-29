@@ -4,7 +4,6 @@ import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import net.ofatech.controlcore.domain.model.snapshot.ProfilesView;
@@ -143,16 +142,15 @@ final class ProfilesTab {
         }
         SnapshotsView.Preview preview = result.value();
         previewing = Optional.of(profile);
-        List<String> lines = new ArrayList<>(preview.lines());
-        if (preview.skipped() > 0) {
-            lines.add(tr.t("controlcore.snapshots.preview.skipped", "count", preview.skipped()));
-        }
+        List<String> lines = preview.allLines(tr);
         update.set(
                 "#ProfilePreviewTitle.Text",
                 tr.t(
-                        preview.changes() == 0
-                                ? "controlcore.profiles.preview.same"
-                                : "controlcore.profiles.preview.header",
+                        preview.changes() > 0
+                                ? "controlcore.profiles.preview.header"
+                                : preview.adminOnly() > 0
+                                        ? "controlcore.snapshots.preview.only_admin"
+                                        : "controlcore.profiles.preview.same",
                         "name",
                         preview.name(),
                         "count",

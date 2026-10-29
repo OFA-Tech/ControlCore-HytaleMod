@@ -37,7 +37,7 @@ public final class ProfilesCommand implements ModCommand {
             return Result.success(Reply.of(tr.t("controlcore.errors.snapshots.forbidden")));
         }
         List<String> lines = new ArrayList<>();
-        lines.add(profiles.status(tr));
+        lines.add(profiles.status(SnapshotCommands.who(context), tr));
         for (ProfilesView.Entry entry : profiles.list(tr)) {
             lines.add((entry.active() ? "* " : "  ") + entry.id() + " - " + entry.name() + ": " + entry.details());
         }

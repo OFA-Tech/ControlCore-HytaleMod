@@ -15,7 +15,6 @@ class KeyNumpadBanca3Test {
             Key.HOLDS.add(Key.SPACE);
             assertThat(false).as("HOLDS must be unmodifiable").isTrue();
         } catch (UnsupportedOperationException expected) {
-            // ok
         }
     }
 

@@ -118,7 +118,7 @@ public final class ProfileService {
 
             @Override
             public String status() {
-                return ProfileService.this.status(tr);
+                return ProfileService.this.status(who, tr);
             }
 
             @Override
@@ -174,12 +174,12 @@ public final class ProfileService {
         return entries;
     }
 
-    public String status(Translator tr) {
+    public String status(Optional<PlayerId> who, Translator tr) {
         Optional<String> current = active.get();
         if (current.isEmpty()) {
             return tr.t("controlcore.profiles.status.none");
         }
-        Result<SnapshotService.Plan> plan = plan(current.get(), Optional.empty(), tr);
+        Result<SnapshotService.Plan> plan = plan(current.get(), who, tr);
         if (plan.isFailure()) {
             active.set(Optional.empty());
             return tr.t("controlcore.profiles.status.none");
@@ -199,7 +199,7 @@ public final class ProfileService {
         return plan(id, who, tr).map(plan -> {
             SnapshotsView.Preview preview = snapshots.preview(plan, tr);
             return new SnapshotsView.Preview(
-                    displayName(id, tr), preview.lines(), preview.changes(), preview.skipped());
+                    displayName(id, tr), preview.lines(), preview.changes(), preview.skipped(), preview.adminOnly());
         });
     }
 
@@ -238,7 +238,7 @@ public final class ProfileService {
             return Result.success(
                     preset.get() == Preset.VANILLA
                             ? snapshots.defaultsPlan(snapshot, tr)
-                            : snapshots.differences(snapshot, tr));
+                            : snapshots.differences(snapshot, tr, who));
         }
         return snapshots
                 .plan(id, who, tr)

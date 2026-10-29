@@ -55,8 +55,6 @@ class KeyDetectRuntimeBanca4Test extends RuntimeTestBase {
         assertThat(platform.keyCapture.closed).isEmpty();
     }
 
-    // Esc/Cancel on the capture screen also ends empty, so the server asks to close it as well.
-    // Harmless in the game (closeIf only closes a capture page), but it is not "only on timeout".
     @Test
     void escOnTheCaptureScreenAlsoAsksToCloseIt() {
         screenMode();

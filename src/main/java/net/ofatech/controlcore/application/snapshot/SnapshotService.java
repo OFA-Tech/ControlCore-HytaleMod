@@ -111,9 +111,50 @@ public final class SnapshotService {
         this.log = log;
     }
 
-    record Change(String what, String current, String target, Supplier<Result<?>> apply) {}
+    record Change(String what, String current, String target, Supplier<Result<?>> apply, boolean adminOnly) {
 
-    public record Plan(Snapshot snapshot, List<Change> changes, int skipped) {}
+        Change(String what, String current, String target, Supplier<Result<?>> apply) {
+            this(what, current, target, apply, false);
+        }
+
+        Change onlyForAdmins() {
+            return new Change(what, current, target, apply, true);
+        }
+    }
+
+    public record Plan(Snapshot snapshot, List<Change> changes, int skipped, int adminOnly) {
+
+        public Plan(Snapshot snapshot, List<Change> changes, int skipped) {
+            this(snapshot, changes, skipped, 0);
+        }
+
+        Plan forViewer(boolean admin) {
+            if (admin) {
+                return this;
+            }
+            List<Change> allowed =
+                    changes.stream().filter(change -> !change.adminOnly()).toList();
+            return new Plan(snapshot, allowed, skipped, adminOnly + changes.size() - allowed.size());
+        }
+    }
+
+    static final Set<Part> ADMIN_PARTS = Set.of(Part.KEYS, Part.PERMISSIONS);
+
+    private boolean isAdmin(Optional<PlayerId> who) {
+        return who.isEmpty() || policy.isAdmin(who.get());
+    }
+
+    private Result<Boolean> mayChange(Snapshot snapshot, Optional<PlayerId> who) {
+        if (isAdmin(who) || snapshot.parts().stream().noneMatch(ADMIN_PARTS::contains)) {
+            return Result.success(true);
+        }
+        return Result.failure(Error.forbidden(
+                "Snapshots.AdminParts",
+                Text.key(
+                                "controlcore.errors.snapshots.admin_parts",
+                                "Snapshot '{name}' holds keys or permissions, which only admins can change.")
+                        .with("name", snapshot.name())));
+    }
 
     public boolean mayUse(Optional<PlayerId> who) {
         return who.isEmpty() || policy.isAdmin(who.get()) || permissions.hasOwn(who.get(), NODE);
@@ -200,7 +241,9 @@ public final class SnapshotService {
         if (allowed.isFailure()) {
             return Result.failure(allowed.error());
         }
-        return find(rawName).flatMap(snapshot -> store.save(snapshot.asProfile(profile)));
+        return find(rawName)
+                .flatMap(snapshot -> mayChange(snapshot, who).map(ok -> snapshot))
+                .flatMap(snapshot -> store.save(snapshot.asProfile(profile)));
     }
 
     public Result<Integer> deleteAll(Optional<PlayerId> who) {
@@ -210,7 +253,7 @@ public final class SnapshotService {
         }
         int deleted = 0;
         for (Snapshot snapshot : store.all()) {
-            if (!snapshot.profile() && store.delete(snapshot.name())) {
+            if (!snapshot.profile() && mayChange(snapshot, who).isSuccess() && store.delete(snapshot.name())) {
                 deleted++;
             }
         }
@@ -220,7 +263,10 @@ public final class SnapshotService {
 
     public Result<Snapshot> saveBefore(
             String base, Set<Part> parts, Set<String> onlyMods, Optional<PlayerId> who, Actor actor) {
-        return save(safetyName(base), parts, onlyMods, who, actor);
+        Set<Part> allowed = isAdmin(who)
+                ? parts
+                : parts.stream().filter(part -> !ADMIN_PARTS.contains(part)).collect(Collectors.toSet());
+        return save(safetyName(base), allowed, onlyMods, who, actor);
     }
 
     public Result<Snapshot> save(
@@ -234,7 +280,21 @@ public final class SnapshotService {
                     "Snapshots.NoParts",
                     Text.key("controlcore.errors.snapshots.no_parts", "Choose at least one part to save.")));
         }
+        if (!isAdmin(who) && parts.stream().anyMatch(ADMIN_PARTS::contains)) {
+            return Result.failure(Error.forbidden(
+                    "Snapshots.AdminParts",
+                    Text.key(
+                            "controlcore.errors.snapshots.admin_parts_save",
+                            "Only admins can save keys or permissions in a snapshot.")));
+        }
         return Snapshot.validName(rawName).flatMap(name -> {
+            Optional<Snapshot> existing = store.find(name);
+            if (existing.isPresent()) {
+                Result<Boolean> mayReplace = mayChange(existing.get(), who);
+                if (mayReplace.isFailure()) {
+                    return Result.failure(mayReplace.error());
+                }
+            }
             Snapshot snapshot = capture(name, parts, onlyMods, actor);
             return store.save(snapshot).map(saved -> {
                 log.info(actor.name() + " saved snapshot " + name + " (" + partsList(saved) + ")");
@@ -248,8 +308,7 @@ public final class SnapshotService {
         if (allowed.isFailure()) {
             return Result.failure(allowed.error());
         }
-        boolean admin = who.isEmpty() || policy.isAdmin(who.get());
-        return find(rawName).map(snapshot -> differences(snapshot, tr, admin));
+        return find(rawName).map(snapshot -> differences(snapshot, tr, who));
     }
 
     public SnapshotsView.Preview preview(Plan plan, Translator tr) {
@@ -272,7 +331,7 @@ public final class SnapshotService {
                     change.target()));
         }
         return new SnapshotsView.Preview(
-                plan.snapshot().name(), lines, plan.changes().size(), plan.skipped());
+                plan.snapshot().name(), lines, plan.changes().size(), plan.skipped(), plan.adminOnly());
     }
 
     public Result<String> restore(
@@ -300,10 +359,11 @@ public final class SnapshotService {
                             "name",
                             saved.value().name());
         }
+        Plan allowed = plan.forViewer(isAdmin(who));
         List<String> failures = new ArrayList<>();
         int applied = ChangeContext.restoringSnapshot(actor, () -> {
             int done = 0;
-            for (Change change : plan.changes()) {
+            for (Change change : allowed.changes()) {
                 Result<?> result;
                 try {
                     result = change.apply().get();
@@ -333,6 +393,9 @@ public final class SnapshotService {
         if (!failures.isEmpty()) {
             text += " " + tr.t("controlcore.snapshots.first_failure", "failure", failures.getFirst());
         }
+        if (allowed.adminOnly() > 0) {
+            text += " " + tr.t("controlcore.snapshots.preview.admin_only", "count", allowed.adminOnly());
+        }
         return Result.success(text + safety);
     }
 
@@ -341,11 +404,13 @@ public final class SnapshotService {
         if (allowed.isFailure()) {
             return Result.failure(allowed.error());
         }
-        return find(rawName).map(snapshot -> {
-            store.delete(snapshot.name());
-            log.info("Deleted snapshot " + snapshot.name());
-            return snapshot.name();
-        });
+        return find(rawName)
+                .flatMap(snapshot -> mayChange(snapshot, who).map(ok -> snapshot))
+                .map(snapshot -> {
+                    store.delete(snapshot.name());
+                    log.info("Deleted snapshot " + snapshot.name());
+                    return snapshot.name();
+                });
     }
 
     public String when(Snapshot snapshot) {
@@ -549,13 +614,13 @@ public final class SnapshotService {
                 false);
     }
 
-    Plan differences(Snapshot snapshot, Translator tr) {
-        return differences(snapshot, tr, true);
+    Plan differences(Snapshot snapshot, Translator tr, Optional<PlayerId> who) {
+        return differences(snapshot, tr).forViewer(isAdmin(who));
     }
 
-    private Plan differences(Snapshot snapshot, Translator tr, boolean adminParts) {
+    private Plan differences(Snapshot snapshot, Translator tr) {
         List<Change> changes = new ArrayList<>();
-        List<Change> adminOnly = adminParts ? changes : new ArrayList<>();
+        List<Change> adminOnly = new ArrayList<>();
         int[] skipped = {0};
         if (snapshot.has(Part.CONFIG) || snapshot.has(Part.WORLDS)) {
             snapshot.config().forEach((id, value) -> {
@@ -667,9 +732,7 @@ public final class SnapshotService {
         if (snapshot.has(Part.PLAYERS)) {
             playerChanges(snapshot, tr, changes, skipped);
         }
-        if (!adminParts) {
-            skipped[0] += adminOnly.size();
-        }
+        adminOnly.forEach(change -> changes.add(change.onlyForAdmins()));
         return new Plan(snapshot, changes, skipped[0]);
     }
 

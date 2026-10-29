@@ -265,20 +265,8 @@ final class SnapshotsTab {
         }
         SnapshotsView.Preview preview = result.value();
         previewing = Optional.of(preview.name());
-        List<String> lines = new ArrayList<>(preview.lines());
-        if (preview.skipped() > 0) {
-            lines.add(tr.t("controlcore.snapshots.preview.skipped", "count", preview.skipped()));
-        }
-        update.set(
-                "#SnapshotPreviewTitle.Text",
-                tr.t(
-                        preview.changes() == 0
-                                ? "controlcore.snapshots.preview.same"
-                                : "controlcore.snapshots.preview.header",
-                        "name",
-                        preview.name(),
-                        "count",
-                        preview.changes()));
+        List<String> lines = preview.allLines(tr);
+        update.set("#SnapshotPreviewTitle.Text", preview.title(tr));
         update.set("#SnapshotPreviewText.Text", String.join("\n", lines));
         update.set("#SnapshotRestore.Visible", preview.changes() > 0);
         update.set("#SnapshotRestoreSafe.Visible", preview.changes() > 0);
