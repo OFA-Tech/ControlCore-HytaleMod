@@ -10,6 +10,7 @@ import net.ofatech.controlcore.application.automation.AutomationService;
 import net.ofatech.controlcore.application.diagnostics.DiagnosticsService;
 import net.ofatech.controlcore.application.history.HistoryEditor;
 import net.ofatech.controlcore.application.keymaps.InputProbeCommand;
+import net.ofatech.controlcore.application.keymaps.KeyDetectionService;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.mods.ModsEditor;
 import net.ofatech.controlcore.application.players.PlayersService;
@@ -50,6 +51,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final ModsEditor mods;
     private final PermissionsEditor permissionRules;
     private final InputProbe probe;
+    private final KeyDetectionService keyDetection;
     private final Permissions nodes;
     private final HistoryEditor history;
     private final SnapshotService snapshots;
@@ -71,6 +73,7 @@ public final class ControlPanelService implements ControlPanelApi {
             ModsEditor mods,
             PermissionsEditor permissionRules,
             InputProbe probe,
+            KeyDetectionService keyDetection,
             Permissions nodes,
             HistoryEditor history,
             SnapshotService snapshots,
@@ -90,6 +93,7 @@ public final class ControlPanelService implements ControlPanelApi {
         this.mods = mods;
         this.permissionRules = permissionRules;
         this.probe = probe;
+        this.keyDetection = keyDetection;
         this.nodes = nodes;
         this.history = history;
         this.snapshots = snapshots;
@@ -216,7 +220,8 @@ public final class ControlPanelService implements ControlPanelApi {
                                 : Optional.empty(),
                         automation.mayManage(Optional.of(player))
                                 ? players.find(player).map(automation::viewedBy)
-                                : Optional.empty()));
+                                : Optional.empty(),
+                        keyDetection.viewedBy(player)));
     }
 
     private String nameOf(PlayerId player) {

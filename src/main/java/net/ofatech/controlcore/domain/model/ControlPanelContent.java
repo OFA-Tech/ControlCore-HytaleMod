@@ -8,6 +8,7 @@ import net.ofatech.controlcore.domain.model.automation.AutomationView;
 import net.ofatech.controlcore.domain.model.diagnostics.DiagnosticsView;
 import net.ofatech.controlcore.domain.model.history.HistoryView;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
+import net.ofatech.controlcore.domain.model.keys.KeyDetection;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.players.PlayersView;
 import net.ofatech.controlcore.domain.model.settings.PermissionsView;
@@ -38,7 +39,8 @@ public record ControlPanelContent(
         Optional<PlayersView> players,
         Optional<ProfilesView> profiles,
         Optional<DiagnosticsView> diagnostics,
-        Optional<AutomationView> automation) {
+        Optional<AutomationView> automation,
+        KeyDetection keyDetection) {
 
     public ControlPanelContent {
         Guard.notNull(server, "server");
@@ -60,5 +62,6 @@ public record ControlPanelContent(
         Guard.notNull(profiles, "profiles");
         Guard.notNull(diagnostics, "diagnostics");
         Guard.notNull(automation, "automation");
+        Guard.notNull(keyDetection, "keyDetection");
     }
 }

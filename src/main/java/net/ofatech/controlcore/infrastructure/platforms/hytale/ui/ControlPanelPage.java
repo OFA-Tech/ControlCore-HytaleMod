@@ -30,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -43,6 +44,7 @@ import net.ofatech.controlcore.domain.model.ControlPanelTab;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.keys.GameActionMode;
+import net.ofatech.controlcore.domain.model.keys.KeyDetection;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
@@ -171,6 +173,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private final Optional<InputProbe> probe;
     private final PlayerId viewerId;
     private final String viewerName;
+    private final KeyDetection keyDetection;
+    private Optional<String> reopenStatus = Optional.empty();
 
     private Tab selected;
     private final List<String> worlds;
@@ -220,6 +224,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         this.probe = manageKeys ? content.debug() : Optional.empty();
         this.viewerId = PlayerId.of(player.getUuid());
         this.viewerName = player.getUsername();
+        this.keyDetection = content.keyDetection();
         this.worlds = content.worlds();
         this.world = worlds.contains("default")
                 ? "default"
@@ -359,6 +364,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                     state.legendButton(),
                     EventData.of(PanelAction.KEY, LEGEND_PREFIX + state.name()));
         }
+        reopenStatus.ifPresent(status -> commands.set("#FooterStatus.Text", status));
+        reopenStatus = Optional.empty();
         if (subscriptions.isEmpty()) {
             sections.forEach((key, section) ->
                     subscriptions.add(section.listen(change -> onSettingChanged(key, section, change))));
@@ -1122,6 +1129,24 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 pickGameAction(key, action);
                 return;
             }
+            case SettingRows.DETECT -> {
+                SettingSnapshot current = latestOf(key, action.id);
+                if (current != null && current.access() != SettingAccess.READ_ONLY) {
+                    String id = action.id;
+                    detect(result -> result.map(keys -> {
+                                SettingSnapshot latest = latestOf(key, id);
+                                Result<SettingSnapshot> saved = section.save(
+                                        id,
+                                        KeyPicker.withDetected(
+                                                keys, latest == null ? current.value() : latest.value()));
+                                return saved.isSuccess()
+                                        ? tr.t("controlcore.keys.detect.saved", "keys", keys)
+                                        : tr.error(saved.error());
+                            })
+                            .orElseGet(() -> tr.t("controlcore.keys.detect.none")));
+                }
+                return;
+            }
             case SettingRows.PICK_KEYS -> {
                 SettingSnapshot current = latestOf(key, action.id);
                 if (current == null) {
@@ -1365,6 +1390,43 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
         Player player = store.getComponent(ref, Player.getComponentType());
         return player != null && player.getPageManager().getCustomPage() == this;
+    }
+
+    private void detect(Function<Optional<String>, String> apply) {
+        Ref<EntityStore> ref = playerRef.getReference();
+        if (ref == null || !ref.isValid()) {
+            return;
+        }
+        keyDetection.detect(result -> {
+            Ref<EntityStore> now = playerRef.getReference();
+            if (now != null && now.isValid()) {
+                now.getStore().getExternalData().getWorld().execute(() -> {
+                    reopenStatus =
+                            Optional.of(ChangeContext.fromPanel(viewerId, viewerName, () -> apply.apply(result)));
+                    reopen();
+                });
+            }
+        });
+        if (!keyDetection.fromScreen()) {
+            close();
+        }
+    }
+
+    private void reopen() {
+        Ref<EntityStore> ref = playerRef.getReference();
+        if (ref == null || !ref.isValid()) {
+            return;
+        }
+        Store<EntityStore> store = ref.getStore();
+        Player player = store.getComponent(ref, Player.getComponentType());
+        if (player == null) {
+            return;
+        }
+        if (player.getPageManager().getCustomPage() != null
+                && player.getPageManager().getCustomPage() != this) {
+            return;
+        }
+        player.getPageManager().openCustomPage(ref, store, this);
     }
 
     private void stopListening() {
@@ -1654,6 +1716,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         @Override
         public void formToggled(UICommandBuilder update) {
             listHeights(update);
+        }
+
+        @Override
+        public void detect(Function<Optional<String>, String> apply) {
+            ControlPanelPage.this.detect(apply);
         }
 
         @Override

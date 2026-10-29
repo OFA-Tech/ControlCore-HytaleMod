@@ -633,6 +633,12 @@ $C.@PageOverlay {
               }
             }
 
+            Label #KeymapTip {
+              Text: %controlcore.ui.keymaps.tip;
+              Style: @NoteStyle;
+              Anchor: (Bottom: 8);
+            }
+
             Group #ServerKeymaps {
               LayoutMode: Top;
               Visible: false;
@@ -670,6 +676,11 @@ $C.@PageOverlay {
 
                   $C.@DropdownBox #NewBindKey {
                     Anchor: (Width: 180, Right: 6);
+                  }
+
+                  $C.@SmallTertiaryTextButton #NewBindDetect {
+                    @Text = %controlcore.ui.keys.detect;
+                    Anchor: (Width: 120, Height: 32, Right: 6);
                   }
 
                   $C.@TextField #NewBindCommand {

@@ -44,6 +44,7 @@ final class SettingRows {
     private static final String KEY_ROW = "Pages/ControlCore/SettingKeyRow.ui";
     static final String PICK_KEYS = "PickKeys";
     static final String PICK_GAME_ACTION = "PickGameAction";
+    static final String DETECT = "DetectKey";
 
     private SettingRows() {}
 
@@ -145,6 +146,8 @@ final class SettingRows {
                             element + " #GameAction",
                             event(PICK_GAME_ACTION, key, id).append(PanelAction.VALUE, element + " #GameAction.Value"));
                 });
+                events.addEventBinding(
+                        CustomUIEventBindingType.Activating, element + " #Detect", event(DETECT, key, id));
                 for (String part : List.of(" #Hold", " #Key")) {
                     events.addEventBinding(
                             CustomUIEventBindingType.ValueChanged,

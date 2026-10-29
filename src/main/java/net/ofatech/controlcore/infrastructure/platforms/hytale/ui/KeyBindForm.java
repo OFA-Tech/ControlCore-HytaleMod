@@ -4,7 +4,10 @@ import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
+import java.util.Optional;
+import java.util.function.Function;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
+import net.ofatech.controlcore.domain.model.keys.KeyBinds;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -14,6 +17,7 @@ final class KeyBindForm {
     static final String EDIT = "EditBind";
     static final String REMOVE = "RemoveBind";
     static final String TOGGLE = "ToggleBindForm";
+    static final String DETECT = "DetectBindKey";
 
     private static final String STATUS = "#FooterStatus.Text";
 
@@ -23,12 +27,18 @@ final class KeyBindForm {
         void send(UICommandBuilder update);
 
         void formToggled(UICommandBuilder update);
+
+        void detect(Function<Optional<String>, String> apply);
     }
+
+    private record Draft(String name, String keys, String command, boolean asServer) {}
 
     private final CustomKeyBindEditor binds;
     private final Translator tr;
     private final Host host;
     private boolean open;
+    private String formKeys = KeyBinds.NONE;
+    private Optional<Draft> draft = Optional.empty();
 
     KeyBindForm(CustomKeyBindEditor binds, Translator tr, Host host) {
         this.binds = binds;
@@ -45,27 +55,38 @@ final class KeyBindForm {
         events.addEventBinding(
                 CustomUIEventBindingType.Activating, "#NewBindToggle", EventData.of(PanelAction.KEY, TOGGLE));
         commands.set("#NewBindName.PlaceholderText", tr.t("controlcore.panel.bind.name_hint"));
-        SettingRows.showKeys(tr, "#NewBindHold", "#NewBindKey", "none", commands);
+        SettingRows.showKeys(tr, "#NewBindHold", "#NewBindKey", formKeys, commands);
         commands.set("#NewBindCommand.PlaceholderText", tr.t("controlcore.panel.bind.command_hint"));
-        events.addEventBinding(
-                CustomUIEventBindingType.Activating,
-                "#NewBindAdd",
-                new EventData()
-                        .append(PanelAction.KEY, ADD)
-                        .append(PanelAction.NAME, "#NewBindName.Value")
-                        .append(PanelAction.KEYS, "#NewBindKey.Value")
-                        .append(PanelAction.EDIT, "#NewBindHold.Value")
-                        .append(PanelAction.VALUE, "#NewBindCommand.Value")
-                        .append(PanelAction.CHECKED, "#NewBindAsServer.Value"));
+        draft.ifPresent(saved -> {
+            commands.set("#NewBindName.Value", saved.name());
+            commands.set("#NewBindCommand.Value", saved.command());
+            commands.set("#NewBindAsServer.Value", saved.asServer());
+        });
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#NewBindAdd", fields(ADD));
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#NewBindDetect", fields(DETECT));
+    }
+
+    private static EventData fields(String key) {
+        return new EventData()
+                .append(PanelAction.KEY, key)
+                .append(PanelAction.NAME, "#NewBindName.Value")
+                .append(PanelAction.KEYS, "#NewBindKey.Value")
+                .append(PanelAction.EDIT, "#NewBindHold.Value")
+                .append(PanelAction.VALUE, "#NewBindCommand.Value")
+                .append(PanelAction.CHECKED, "#NewBindAsServer.Value");
     }
 
     boolean handle(PanelAction action) {
         switch (action.name()) {
             case ADD -> add(action);
+            case DETECT -> detect(action);
             case EDIT -> edit(action.id);
             case REMOVE -> remove(action.id);
             case TOGGLE -> {
                 open = !open;
+                if (!open) {
+                    clearDraft();
+                }
                 UICommandBuilder update = new UICommandBuilder();
                 show(update);
                 host.formToggled(update);
@@ -95,6 +116,8 @@ final class KeyBindForm {
         binds.find(id)
                 .ifPresentOrElse(
                         bind -> {
+                            draft = Optional.empty();
+                            formKeys = bind.keys();
                             update.set("#NewBindName.Value", bind.name());
                             SettingRows.showKeys(tr, "#NewBindHold", "#NewBindKey", bind.keys(), update);
                             update.set("#NewBindCommand.Value", bind.command());
@@ -119,7 +142,7 @@ final class KeyBindForm {
     }
 
     private void add(PanelAction action) {
-        String keys = KeyPicker.compose(action.edit, action.bindKeys, "none");
+        String keys = KeyPicker.compose(action.edit, action.bindKeys, formKeys);
         Result<String> result = binds.add(action.bindName, keys, action.value, Boolean.TRUE.equals(action.checked));
         if (result.isSuccess()) {
             host.rebuild();
@@ -127,11 +150,34 @@ final class KeyBindForm {
         UICommandBuilder update = new UICommandBuilder();
         update.set(STATUS, result.isSuccess() ? result.value() : tr.error(result.error()));
         if (result.isSuccess()) {
+            clearDraft();
             update.set("#NewBindName.Value", "");
             SettingRows.showKeys(tr, "#NewBindHold", "#NewBindKey", "none", update);
             update.set("#NewBindCommand.Value", "");
             update.set("#NewBindAsServer.Value", false);
         }
         host.send(update);
+    }
+
+    private void detect(PanelAction action) {
+        open = true;
+        draft = Optional.of(new Draft(
+                action.bindName == null ? "" : action.bindName,
+                KeyPicker.compose(action.edit, action.bindKeys, formKeys),
+                action.value == null ? "" : action.value,
+                Boolean.TRUE.equals(action.checked)));
+        formKeys = draft.get().keys();
+        host.detect(result -> {
+            if (result.isEmpty()) {
+                return tr.t("controlcore.keys.detect.none");
+            }
+            formKeys = KeyPicker.withDetected(result.get(), formKeys);
+            return tr.t("controlcore.keys.detect.filled", "keys", result.get());
+        });
+    }
+
+    private void clearDraft() {
+        draft = Optional.empty();
+        formKeys = KeyBinds.NONE;
     }
 }

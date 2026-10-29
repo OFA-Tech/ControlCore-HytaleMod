@@ -124,6 +124,11 @@ final class KeyPicker {
         return before.rest().isEmpty() ? combo : combo + " | " + before.rest();
     }
 
+    static String withDetected(String detected, String current) {
+        String rest = read(current).rest();
+        return rest.isEmpty() ? detected : detected + " | " + rest;
+    }
+
     static List<Option> holds(Translator tr) {
         return HOLDS.stream()
                 .map(hold -> new Option(hold, tr.t("controlcore.panel.keypick.hold." + hold.toLowerCase(Locale.ROOT))))
