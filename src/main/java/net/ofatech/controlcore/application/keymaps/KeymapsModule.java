@@ -14,13 +14,13 @@ public final class KeymapsModule implements FeatureModule {
     static final String OPEN_PREFERENCES = "open-preferences";
 
     private final KeymapRegistry keymaps;
-    private final KeyDispatcher dispatcher;
+    private final KeyDetector detector;
     private final PlayerInput input;
 
     public KeymapsModule(
-            KeymapRegistry keymaps, KeyDispatcher dispatcher, PlayerInput input, KeyDetectSettings detectSettings) {
+            KeymapRegistry keymaps, KeyDetector detector, PlayerInput input, KeyDetectSettings detectSettings) {
         this.keymaps = keymaps;
-        this.dispatcher = dispatcher;
+        this.detector = detector;
         this.input = input;
     }
 
@@ -37,7 +37,7 @@ public final class KeymapsModule implements FeatureModule {
 
     @Override
     public void start(ModuleContext context) {
-        input.listen(dispatcher);
+        input.listen(detector);
     }
 
     @Override

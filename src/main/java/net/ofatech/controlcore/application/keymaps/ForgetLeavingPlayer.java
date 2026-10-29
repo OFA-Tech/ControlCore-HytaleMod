@@ -9,9 +9,11 @@ import net.ofatech.controlcore.domain.event.PlayerLeft;
 public final class ForgetLeavingPlayer implements ModEventHandler<PlayerLeft> {
 
     private final KeyDispatcher dispatcher;
+    private final KeyDetector detector;
 
-    public ForgetLeavingPlayer(KeyDispatcher dispatcher) {
+    public ForgetLeavingPlayer(KeyDispatcher dispatcher, KeyDetector detector) {
         this.dispatcher = dispatcher;
+        this.detector = detector;
     }
 
     @Override
@@ -22,5 +24,6 @@ public final class ForgetLeavingPlayer implements ModEventHandler<PlayerLeft> {
     @Override
     public void handle(PlayerLeft event) {
         dispatcher.forget(event.player().id());
+        detector.forget(event.player().id());
     }
 }
