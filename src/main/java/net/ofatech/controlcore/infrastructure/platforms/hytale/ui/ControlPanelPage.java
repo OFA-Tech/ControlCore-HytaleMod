@@ -442,7 +442,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                             : Optional.empty();
                     SettingRows.build(key, section, row, element, customBind, gameAction, commands, events);
                     String typed = unsaved.get(shownKey(key, row.id()));
-                    if (typed != null && SettingRows.tracksTyping(row.kind()) && !canShowTyped(row.kind(), typed)) {
+                    if (typed != null && SettingRows.tracksTyping(row.kind()) && !sliderCanFollow(row.kind(), typed)) {
                         commands.set(element + " #Input.Value", typed);
                     } else if (typed != null && SettingRows.tracksTyping(row.kind())) {
                         SettingSnapshot shown = row.snapshot();
@@ -1339,13 +1339,12 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             update.set(key.row(index) + " #Input.Value", hex);
             SettingSnapshot snapshot = latestOf(key, action.id);
             if (snapshot != null) {
-                String saved = SettingRows.pickedHex(snapshot.value());
                 markTyped(
                         key,
                         index,
                         snapshot,
                         hex,
-                        hex.equalsIgnoreCase(saved == null ? snapshot.value() : saved),
+                        sameShown(sections.get(key).kind(snapshot), snapshot.value(), hex),
                         update);
             }
         }
@@ -1363,7 +1362,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         update.set(key.row(index) + " #Input.Value", value.get());
         SettingSnapshot snapshot = latestOf(key, action.id);
         if (snapshot != null) {
-            markTyped(key, index, snapshot, value.get(), sameNumber(snapshot.value(), value.get()), update);
+            markTyped(
+                    key,
+                    index,
+                    snapshot,
+                    value.get(),
+                    sameShown(sections.get(key).kind(snapshot), snapshot.value(), value.get()),
+                    update);
         }
         sendUpdate(update, false);
     }
@@ -1385,7 +1390,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         showLegend(update);
     }
 
-    private static boolean canShowTyped(SettingsSection.Kind kind, String text) {
+    private static boolean sliderCanFollow(SettingsSection.Kind kind, String text) {
         if (kind != SettingsSection.Kind.INTEGER && kind != SettingsSection.Kind.DECIMAL) {
             return true;
         }
@@ -1399,14 +1404,35 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
     private static boolean sameShown(SettingsSection.Kind kind, String saved, String shown) {
         return switch (kind) {
-            case INTEGER, DECIMAL -> sameNumber(saved, shown);
+            case INTEGER -> sameWhole(saved, shown);
+            case DECIMAL -> sameNumber(saved, shown);
             case COLOR -> {
-                String a = SettingRows.pickedHex(saved);
-                String b = SettingRows.pickedHex(shown);
-                yield a != null && b != null ? a.equalsIgnoreCase(b) : saved.equals(shown);
+                Optional<String> a = colour(saved);
+                Optional<String> b = colour(shown);
+                yield a.isPresent() && a.equals(b);
             }
             default -> saved.equals(shown);
         };
+    }
+
+    private static boolean sameWhole(String saved, String shown) {
+        try {
+            return Long.parseLong(saved.strip()) == Long.parseLong(shown.strip());
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private static Optional<String> colour(String text) {
+        String hex = text.strip().toLowerCase(java.util.Locale.ROOT);
+        hex = hex.startsWith("#") ? hex.substring(1) : hex;
+        if (!hex.matches("[0-9a-f]{3}|[0-9a-f]{6}")) {
+            return Optional.empty();
+        }
+        if (hex.length() == 3) {
+            hex = "" + hex.charAt(0) + hex.charAt(0) + hex.charAt(1) + hex.charAt(1) + hex.charAt(2) + hex.charAt(2);
+        }
+        return Optional.of(hex);
     }
 
     private static boolean sameNumber(String saved, String shown) {

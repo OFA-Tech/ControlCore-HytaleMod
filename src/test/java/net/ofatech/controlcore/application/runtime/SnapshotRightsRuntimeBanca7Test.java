@@ -192,8 +192,8 @@ class SnapshotRightsRuntimeBanca7Test extends RuntimeTestBase {
 
         assertThat(profilesFor(admin).status()).contains("2 value(s) changed");
         assertThat(profilesFor(moderator).status())
-                .contains("Everything still matches it")
-                .contains("+2 key, permission or mod change(s) only admins can restore");
+                .contains("What you can restore still matches it")
+                .contains("2 key, permission or mod difference(s) only admins can restore");
         assertThat(ok(as(admin, "cc-profiles", Map.of()))).contains("2 value(s) changed");
     }
 

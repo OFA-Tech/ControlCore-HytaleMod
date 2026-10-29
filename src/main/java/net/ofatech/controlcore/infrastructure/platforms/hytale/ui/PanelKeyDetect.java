@@ -62,7 +62,7 @@ final class PanelKeyDetect {
                 result -> HytalePages.onWorldThread(host.viewer(), () -> {
                     PanelRights now = rights.get();
                     boolean stillAllowed = now.keepsEverythingOf(opened);
-                    boolean panelGone = opened.adminPanel() && !now.adminPanel();
+                    boolean panelGone = opened.opensAdminPanel() && !now.opensAdminPanel();
                     boolean timedOut =
                             timeout > 0 && System.nanoTime() - startedAt >= TimeUnit.SECONDS.toNanos(timeout);
                     finish(mode, result, target == Target.BIND_FORM, stillAllowed, panelGone, timedOut, applyKeys);

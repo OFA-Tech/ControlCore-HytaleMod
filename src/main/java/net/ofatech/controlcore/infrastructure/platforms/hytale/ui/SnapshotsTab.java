@@ -60,7 +60,7 @@ final class SnapshotsTab {
         this.tr = tr;
         this.host = host;
         if (!view.admin()) {
-            parts.removeAll(EnumSet.of(Part.KEYS, Part.PERMISSIONS, Part.MODS));
+            parts.removeIf(Part::adminOnly);
         }
     }
 
@@ -137,7 +137,7 @@ final class SnapshotsTab {
                                     ? "controlcore.panel.snapshots.is_profile"
                                     : "controlcore.panel.snapshots.make_profile"));
             commands.set(row + " #Delete.Visible", !entry.profile() && !entry.locked());
-            commands.set(row + " #Profile.Visible", !entry.locked());
+            commands.set(row + " #Profile.Visible", !entry.locked() || entry.profile());
             events.addEventBinding(
                     CustomUIEventBindingType.Activating,
                     row + " #Profile",
@@ -225,7 +225,11 @@ final class SnapshotsTab {
         if (!armedDeleteAll) {
             armedDeleteAll = true;
             UICommandBuilder update = new UICommandBuilder();
-            update.set("#FooterStatus.Text", tr.t("controlcore.panel.snapshots.confirm_delete_all"));
+            int kept = view.keptForAdmins();
+            update.set(
+                    "#FooterStatus.Text",
+                    tr.t("controlcore.panel.snapshots.confirm_delete_all")
+                            + (kept == 0 ? "" : " " + tr.t("controlcore.panel.snapshots.will_keep", "count", kept)));
             update.set("#SnapshotsDeleteAll.Text", tr.t("controlcore.panel.confirm"));
             host.send(update);
             return;

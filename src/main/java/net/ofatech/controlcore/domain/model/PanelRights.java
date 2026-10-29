@@ -14,12 +14,18 @@ public record PanelRights(
         boolean diagnostics,
         boolean automation) {
 
+    private static final String MASTER_SWITCH = "panelEnabled";
+
+    public boolean opensAdminPanel() {
+        return adminPanel && panelEnabled;
+    }
+
     public boolean keepsEverythingOf(PanelRights before) {
+        if (before.opensAdminPanel() && !opensAdminPanel()) {
+            return false;
+        }
         for (RecordComponent component : PanelRights.class.getRecordComponents()) {
-            boolean had = flag(before, component);
-            if (component.getName().equals("panelEnabled")) {
-                had = had && before.adminPanel();
-            }
+            boolean had = flag(before, component) && !component.getName().equals(MASTER_SWITCH);
             if (had && !flag(this, component)) {
                 return false;
             }

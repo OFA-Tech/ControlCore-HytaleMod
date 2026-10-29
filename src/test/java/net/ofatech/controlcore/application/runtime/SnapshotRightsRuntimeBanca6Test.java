@@ -57,13 +57,16 @@ class SnapshotRightsRuntimeBanca6Test extends RuntimeTestBase {
                         .code())
                 .isEqualTo("Snapshots.AdminParts");
         assertThat(platform.snapshots.snapshots).containsKey("staff");
-        assertThat(as(moderator, "cc-snapshot-save", Map.of("name", "mine"))
+        assertThat(as(moderator, "cc-snapshot-save", Map.of("name", "mine", "parts", "all"))
                         .error()
                         .code())
-                .as("a full snapshot includes keys and permissions")
+                .as("asking for every part includes keys and permissions")
                 .isEqualTo("Snapshots.AdminParts");
-        assertThat(ok(as(moderator, "cc-snapshot-save", Map.of("name", "mine", "parts", "config+settings"))))
+        assertThat(ok(as(moderator, "cc-snapshot-save", Map.of("name", "mine"))))
                 .isNotBlank();
+        assertThat(platform.snapshots.snapshots.get("mine").parts())
+                .as("without parts a moderator gets everything they may save")
+                .noneMatch(net.ofatech.controlcore.domain.model.snapshot.Snapshot.Part::adminOnly);
         assertThat(ok(as(moderator, "cc-snapshot-delete", Map.of("name", "mine"))))
                 .isNotBlank();
     }
@@ -199,7 +202,7 @@ class SnapshotRightsRuntimeBanca6Test extends RuntimeTestBase {
         assertThat(switched).contains("3 change(s) to keys, permissions or mods are left out");
         assertThat(ok(as(moderator, "cc-profiles", Map.of())))
                 .contains("Active profile: staff")
-                .contains("Everything still matches it");
+                .contains("What you can restore still matches it");
     }
 
     @Test

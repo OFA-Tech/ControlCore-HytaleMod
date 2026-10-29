@@ -38,6 +38,8 @@ public interface SnapshotsView {
 
     boolean admin();
 
+    int keptForAdmins();
+
     List<ModChoice> mods();
 
     Result<String> save(String name, Set<Snapshot.Part> parts, Optional<String> mod);

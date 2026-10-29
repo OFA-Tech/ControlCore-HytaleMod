@@ -176,21 +176,27 @@ public final class ProfileService {
 
     public String status(Optional<PlayerId> who, Translator tr) {
         Optional<String> current = active.get();
-        if (current.isEmpty()) {
+        if (current.isEmpty() || !snapshots.mayUse(who)) {
             return tr.t("controlcore.profiles.status.none");
         }
         Result<SnapshotService.Plan> plan = plan(current.get(), Optional.empty(), tr);
         if (plan.isFailure()) {
-            active.set(Optional.empty());
+            String code = plan.error().code();
+            if (code.equals("Snapshots.Unknown") || code.equals("Profiles.NotAProfile")) {
+                active.set(Optional.empty());
+            }
             return tr.t("controlcore.profiles.status.none");
         }
         plan = Result.success(snapshots.forViewer(plan.value(), who));
         int changed = plan.value().changes().size();
         String shown = displayName(current.get(), tr);
+        int adminOnly = plan.value().adminOnly();
+        if (changed == 0 && adminOnly > 0) {
+            return tr.t("controlcore.profiles.status.matches_yours", "name", shown, "count", adminOnly);
+        }
         String text = changed == 0
                 ? tr.t("controlcore.profiles.status.matches", "name", shown)
                 : tr.t("controlcore.profiles.status.changed", "name", shown, "count", changed);
-        int adminOnly = plan.value().adminOnly();
         return adminOnly == 0 ? text : text + " " + tr.t("controlcore.profiles.status.admin_only", "count", adminOnly);
     }
 

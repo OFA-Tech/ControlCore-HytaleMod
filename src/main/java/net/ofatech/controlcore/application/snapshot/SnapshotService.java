@@ -138,14 +138,12 @@ public final class SnapshotService {
         }
     }
 
-    static final Set<Part> ADMIN_PARTS = Set.of(Part.KEYS, Part.PERMISSIONS, Part.MODS);
-
     private boolean isAdmin(Optional<PlayerId> who) {
         return who.isEmpty() || policy.isAdmin(who.get());
     }
 
     private Result<Boolean> mayChange(Snapshot snapshot, Optional<PlayerId> who) {
-        if (isAdmin(who) || snapshot.parts().stream().noneMatch(ADMIN_PARTS::contains)) {
+        if (isAdmin(who) || snapshot.parts().stream().noneMatch(Part::adminOnly)) {
             return Result.success(true);
         }
         return Result.failure(Error.forbidden(
@@ -208,20 +206,21 @@ public final class SnapshotService {
             }
 
             @Override
+            public int keptForAdmins() {
+                return SnapshotService.this.keptForAdmins(who);
+            }
+
+            @Override
             public List<ModChoice> mods() {
                 return SnapshotService.this.modChoices(tr);
             }
 
             @Override
             public Result<String> save(String snapshotName, Set<Part> parts, Optional<String> mod) {
-                boolean replacing = Snapshot.validName(snapshotName)
-                        .map(n -> store.find(n).isPresent())
-                        .orElse(false);
+                boolean replacing = exists(snapshotName);
                 return SnapshotService.this
                         .save(snapshotName, parts, mod.map(Set::of).orElse(Set.of()), who, actor)
-                        .map(saved -> replacing
-                                ? tr.t("controlcore.snapshots.replaced", "name", saved.name())
-                                : savedText(saved, tr));
+                        .map(saved -> savedText(saved, replacing, tr));
             }
 
             @Override
@@ -292,10 +291,13 @@ public final class SnapshotService {
 
     public Result<Snapshot> saveBefore(
             String base, Set<Part> parts, Set<String> onlyMods, Optional<PlayerId> who, Actor actor) {
-        Set<Part> allowed = isAdmin(who)
+        return save(safetyName(base), allowedParts(parts, who), onlyMods, who, actor);
+    }
+
+    public Set<Part> allowedParts(Set<Part> parts, Optional<PlayerId> who) {
+        return isAdmin(who)
                 ? parts
-                : parts.stream().filter(part -> !ADMIN_PARTS.contains(part)).collect(Collectors.toSet());
-        return save(safetyName(base), allowed, onlyMods, who, actor);
+                : parts.stream().filter(part -> !part.adminOnly()).collect(Collectors.toSet());
     }
 
     public Result<Snapshot> save(
@@ -309,7 +311,7 @@ public final class SnapshotService {
                     "Snapshots.NoParts",
                     Text.key("controlcore.errors.snapshots.no_parts", "Choose at least one part to save.")));
         }
-        if (!isAdmin(who) && parts.stream().anyMatch(ADMIN_PARTS::contains)) {
+        if (!isAdmin(who) && parts.stream().anyMatch(Part::adminOnly)) {
             return Result.failure(Error.forbidden(
                     "Snapshots.AdminParts",
                     Text.key(
@@ -319,7 +321,14 @@ public final class SnapshotService {
         return Snapshot.validName(rawName).flatMap(name -> {
             Optional<Snapshot> existing = store.find(name);
             if (existing.isPresent()) {
-                Result<Boolean> mayReplace = mayChange(existing.get(), who);
+                Result<Boolean> mayReplace = existing.get().profile() && !isAdmin(who)
+                        ? Result.failure(Error.forbidden(
+                                "Snapshots.ProfileReplace",
+                                Text.key(
+                                                "controlcore.errors.snapshots.profile_replace",
+                                                "'{name}' is a profile; only admins can replace it.")
+                                        .with("name", existing.get().name())))
+                        : mayChange(existing.get(), who);
                 if (mayReplace.isFailure()) {
                     return Result.failure(mayReplace.error());
                 }
@@ -378,7 +387,7 @@ public final class SnapshotService {
             Plan plan, Optional<String> saveFirstAs, Optional<PlayerId> who, Actor actor, Translator tr) {
         String safety = "";
         boolean nothingToBackUp =
-                !isAdmin(who) && plan.snapshot().parts().stream().allMatch(ADMIN_PARTS::contains);
+                !isAdmin(who) && plan.snapshot().parts().stream().allMatch(Part::adminOnly);
         if (saveFirstAs.isPresent() && !nothingToBackUp) {
             Result<Snapshot> saved = saveBefore(
                     saveFirstAs.get(), plan.snapshot().parts(), plan.snapshot().mods(), who, actor);
@@ -459,6 +468,20 @@ public final class SnapshotService {
             names.add(name);
         }
         return String.join(", ", names);
+    }
+
+    public boolean exists(String rawName) {
+        return Snapshot.validName(rawName)
+                .map(name -> store.find(name).isPresent())
+                .orElse(false);
+    }
+
+    public String savedText(Snapshot snapshot, boolean replaced, Translator tr) {
+        if (!replaced) {
+            return savedText(snapshot, tr);
+        }
+        String text = tr.t("controlcore.snapshots.replaced", "name", snapshot.name(), "parts", partsText(snapshot, tr));
+        return snapshot.profile() ? text + " " + tr.t("controlcore.snapshots.still_profile") : text;
     }
 
     public String savedText(Snapshot snapshot, Translator tr) {
