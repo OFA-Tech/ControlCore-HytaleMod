@@ -13,7 +13,7 @@ If a server runs ControlCore, you can change some things for yourself, without b
 - **Mods:** the server's mods with their versions.
 
 Each row shows a mark for its state (changed, default, not saved, ...), explained in the Legend on the right.
-**Undo** puts back your last change and **Default** the default. Keys are picked from two dropdowns. Every list
+**Undo** puts back your last change and **Default** the default. Keys are picked from two dropdowns, or press **Detect key** and then the key you want (see [Key binds](Key-Binds#detect-key)). Every list
 has a search box.
 
 The panel and messages follow your game language (English, Portuguese and Spanish are included).

@@ -25,6 +25,16 @@
 - **Admins are protected:** a moderator with only these nodes can't kick, mute, freeze, bring, ban or take off the whitelist an admin; only admins can.
 - New filters **Muted** and **Frozen**; what you type in **+ Player action** is kept while the list updates.
   `ofatech.controlcore.bans` still covers bans.
+- **Detect key** on every key row and in the **New bind** form: press it, then press the key. Two ways, chosen in
+  **Mod Settings -> ControlCore: Keymaps**: **From the game** (default; the panel closes, a toast asks for the key, the
+  server takes the next game action you send) or a **Capture screen** that reads any key, numpad included. The panel
+  comes back on the same tab with the key saved or filled in.
+- **Show every keyboard key in key lists** (off by default): the Key dropdown lists the whole keyboard; keys the server
+  can't hear yet are marked, and binds on them explain how to make them work (give the key a game action in Hytale's
+  Controls and use Detect key).
+- Binds saved from the **New bind** form now keep keys the dropdowns can't show instead of losing them.
+- **Keys work in singleplayer worlds** (and player-hosted ones): binds, Ctrl+F for `/prefs` and the input probe did
+  nothing there before.
 - **API 2.3.0:** new `Key` constants for the numpad (`NUMPAD_0`-`NUMPAD_9`, `NUMPAD_DIVIDE`, `NUMPAD_MULTIPLY`,
   `NUMPAD_MINUS`, `NUMPAD_PLUS`, `NUMPAD_ENTER`, `NUMPAD_PERIOD`) and `NUM_LOCK`, `PRINT_SCREEN`, `SCROLL_LOCK`, `PAUSE`,
   `MENU`. Mods built for 2.0.0 to 2.2.0 keep working.

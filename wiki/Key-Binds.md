@@ -35,6 +35,27 @@ Keymaps shows two dropdowns per action: a key to **hold** (none, Ctrl, Alt, Shif
 saves at once. A combination made with commands that the dropdowns can't show (such as Ctrl+Alt+3) appears as
 "Custom: ..." and stays until you pick something else; extra alternatives are kept and listed as "Also: ...".
 
+## Detect key
+
+Every key row and the **New bind** form have a **Detect key** button. Press it, then press the key you want (holding
+Ctrl, Alt, Shift or Space if you want them). How it works is chosen in **Mod Settings -> ControlCore: Keymaps ->
+How Detect key works**:
+
+- **From the game** (default): the panel closes and a toast asks you to press the key within 10 seconds. The server
+  takes the next game action it receives from you, that one press doesn't do its normal action, and the panel comes
+  back with the key saved (on a row) or filled in (in the form; press **Add bind** to save). Only keys the server can
+  hear are detected.
+- **Capture screen**: a small "Press a key" window opens and reads any key, even ones the server can't hear during play
+  yet (numpad, F-keys, ...). Esc cancels. Use it when Hytale starts sending every key, or to prepare binds now.
+
+**Numpad and other extra keys today:** give the key a game action in Hytale's own **Settings -> Controls** first, for
+example set Numpad 5 as **Ability 4**. Then press **Detect key** and press Numpad 5: the server hears "Ability 4", and
+the bind works from then on.
+
+**Every key in the lists:** turn on **Show every keyboard key in key lists** (same category) to list the whole
+keyboard in the Key dropdown. Keys the server can't hear yet are marked "(server can't hear it)", and a bind on one
+says so on its row.
+
 ## Writing keys (commands)
 
 - Keys held together are joined with `+`: `ctrl+f`, `alt+shift+3`.
