@@ -8,8 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import net.ofatech.controlcore.domain.event.PlayerJoined;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
-import net.ofatech.controlcore.domain.model.keys.KeyDetection;
 import net.ofatech.controlcore.domain.model.keys.KeySignal;
+import net.ofatech.controlcore.domain.ports.game.KeyDetection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -39,7 +39,7 @@ class KeyDetectRuntimeTest extends RuntimeTestBase {
     void detectFromTheGameTakesTheNextPressAndShowsAToast() {
         List<Optional<String>> results = new ArrayList<>();
         KeyDetection detection = detection();
-        assertThat(detection.fromScreen()).isFalse();
+        assertThat(detection.mode()).isEqualTo(KeyDetection.Mode.GAME);
 
         detection.detect(results::add);
         platform.input.hold(admin.id(), KeySignal.CROUCHING);
@@ -67,7 +67,7 @@ class KeyDetectRuntimeTest extends RuntimeTestBase {
         platform.commands.run("cc-set", admin, Map.of("id", "controlcore:key-detect-mode", "value", "screen"));
         List<Optional<String>> results = new ArrayList<>();
         KeyDetection detection = detection();
-        assertThat(detection.fromScreen()).isTrue();
+        assertThat(detection.mode()).isEqualTo(KeyDetection.Mode.SCREEN);
 
         detection.detect(results::add);
         platform.input.press(admin.id(), KeySignal.ABILITY_3);

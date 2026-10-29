@@ -188,18 +188,18 @@ public enum Key implements KeyInput {
     NUMPAD_8("NUMPAD 8"),
     /** Numpad 9 (written {@code NUMPAD 9}); not reported to servers. */
     NUMPAD_9("NUMPAD 9"),
-    /** Numpad / key (written {@code NUMPAD /}); not reported to servers. */
-    NUMPAD_DIVIDE("NUMPAD /"),
-    /** Numpad * key (written {@code NUMPAD *}); not reported to servers. */
-    NUMPAD_MULTIPLY("NUMPAD *"),
-    /** Numpad - key (written {@code NUMPAD -}); not reported to servers. */
-    NUMPAD_MINUS("NUMPAD -"),
-    /** Numpad + key (written {@code NUMPAD +}); not reported to servers. */
-    NUMPAD_PLUS("NUMPAD +"),
+    /** Numpad / key (written {@code NUMPAD DIVIDE}); not reported to servers. */
+    NUMPAD_DIVIDE("NUMPAD DIVIDE"),
+    /** Numpad * key (written {@code NUMPAD MULTIPLY}); not reported to servers. */
+    NUMPAD_MULTIPLY("NUMPAD MULTIPLY"),
+    /** Numpad - key (written {@code NUMPAD MINUS}); not reported to servers. */
+    NUMPAD_MINUS("NUMPAD MINUS"),
+    /** Numpad + key (written {@code NUMPAD PLUS}); not reported to servers. */
+    NUMPAD_PLUS("NUMPAD PLUS"),
     /** Numpad ENTER key (written {@code NUMPAD ENTER}); not reported to servers. */
     NUMPAD_ENTER("NUMPAD ENTER"),
-    /** Numpad . key (written {@code NUMPAD .}); not reported to servers. */
-    NUMPAD_PERIOD("NUMPAD ."),
+    /** Numpad . key (written {@code NUMPAD PERIOD}); not reported to servers. */
+    NUMPAD_PERIOD("NUMPAD PERIOD"),
     /** Num Lock key; not reported to servers. */
     NUM_LOCK("NUM LOCK"),
     /** Print Screen key; not reported to servers. */

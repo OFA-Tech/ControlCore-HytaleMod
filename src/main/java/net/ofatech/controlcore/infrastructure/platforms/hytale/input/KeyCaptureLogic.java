@@ -1,37 +1,67 @@
 package net.ofatech.controlcore.infrastructure.platforms.hytale.input;
 
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import net.ofatech.controlcore.domain.model.keys.Key;
+import net.ofatech.controlcore.domain.model.keys.KeyCombo;
 
 final class KeyCaptureLogic {
 
     static final long HOLD_WINDOW_MILLIS = 1200;
+    private static final List<String> HOLD_ORDER = List.of("CTRL", "ALT", "SHIFT");
 
-    private String hold;
-    private long heldUntil = Long.MIN_VALUE;
+    sealed interface Outcome {
 
-    Optional<Optional<String>> accept(int keycode, boolean repeat, long nowMillis) {
+        default Optional<String> captured() {
+            return this instanceof Captured captured ? Optional.of(captured.keys()) : Optional.empty();
+        }
+
+        record Waiting() implements Outcome {}
+
+        record Holding(String holds) implements Outcome {}
+
+        record Unsupported(int keycode) implements Outcome {}
+
+        record Cancelled() implements Outcome {}
+
+        record Captured(String keys) implements Outcome {}
+    }
+
+    private final Map<String, Long> lastSeen = new LinkedHashMap<>();
+
+    Outcome accept(int keycode, boolean repeat, long nowMillis) {
         if (keycode == SdlKeys.ESCAPE) {
-            return Optional.of(Optional.empty());
+            return new Outcome.Cancelled();
         }
         if (SdlKeys.isModifier(keycode)) {
-            SdlKeys.hold(keycode).ifPresent(name -> {
-                hold = name;
-                heldUntil = nowMillis + HOLD_WINDOW_MILLIS;
-            });
-            return Optional.empty();
+            Optional<String> hold = SdlKeys.hold(keycode);
+            if (hold.isEmpty()) {
+                return new Outcome.Waiting();
+            }
+            lastSeen.put(hold.get(), nowMillis);
+            return new Outcome.Holding(holds(nowMillis));
         }
         if (repeat) {
-            return Optional.empty();
+            return new Outcome.Waiting();
         }
         Optional<Key> key = SdlKeys.key(keycode);
         if (key.isEmpty()) {
-            return Optional.empty();
+            return new Outcome.Unsupported(keycode);
         }
-        String written = key.get().name().startsWith("NUM_")
-                ? key.get().label()
-                : key.get().name();
-        boolean held = hold != null && nowMillis <= heldUntil;
-        return Optional.of(Optional.of(held ? hold + "+" + written : written));
+        String holds = holds(nowMillis);
+        String written = KeyCombo.write(key.get());
+        return new Outcome.Captured(holds.isEmpty() ? written : holds + "+" + written);
+    }
+
+    private String holds(long nowMillis) {
+        return HOLD_ORDER.stream()
+                .filter(hold -> {
+                    Long seen = lastSeen.get(hold);
+                    return seen != null && nowMillis - seen <= HOLD_WINDOW_MILLIS;
+                })
+                .collect(Collectors.joining("+"));
     }
 }

@@ -10,7 +10,6 @@ import net.ofatech.controlcore.application.automation.AutomationService;
 import net.ofatech.controlcore.application.diagnostics.DiagnosticsService;
 import net.ofatech.controlcore.application.history.HistoryEditor;
 import net.ofatech.controlcore.application.keymaps.InputProbeCommand;
-import net.ofatech.controlcore.application.keymaps.KeyDetectionService;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.mods.ModsEditor;
 import net.ofatech.controlcore.application.players.PlayersService;
@@ -29,6 +28,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
+import net.ofatech.controlcore.domain.ports.game.KeyDetections;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
 import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
@@ -51,7 +51,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final ModsEditor mods;
     private final PermissionsEditor permissionRules;
     private final InputProbe probe;
-    private final KeyDetectionService keyDetection;
+    private final KeyDetections keyDetection;
     private final Permissions nodes;
     private final HistoryEditor history;
     private final SnapshotService snapshots;
@@ -73,7 +73,7 @@ public final class ControlPanelService implements ControlPanelApi {
             ModsEditor mods,
             PermissionsEditor permissionRules,
             InputProbe probe,
-            KeyDetectionService keyDetection,
+            KeyDetections keyDetection,
             Permissions nodes,
             HistoryEditor history,
             SnapshotService snapshots,

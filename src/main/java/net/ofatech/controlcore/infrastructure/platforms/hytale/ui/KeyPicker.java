@@ -138,6 +138,24 @@ final class KeyPicker {
         return rest.isEmpty() ? detected : detected + " | " + rest;
     }
 
+    static String describe(Translator tr, String keys, boolean allKeys) {
+        Picked picked = read(keys, true);
+        if (picked.custom() || NONE.equals(picked.key())) {
+            return keys;
+        }
+        String key = keyLabel(tr, picked.key());
+        return NONE.equals(picked.hold())
+                ? key
+                : tr.t("controlcore.panel.keypick.hold." + picked.hold().toLowerCase(Locale.ROOT)) + " + " + key;
+    }
+
+    static boolean heard(String keys) {
+        var parsed = KeyBinds.parse(keys);
+        return parsed.isSuccess()
+                && !parsed.value().combos().isEmpty()
+                && parsed.value().combos().getFirst().trigger().isSuccess();
+    }
+
     static List<Option> holds(Translator tr) {
         return HOLDS.stream()
                 .map(hold -> new Option(hold, tr.t("controlcore.panel.keypick.hold." + hold.toLowerCase(Locale.ROOT))))
@@ -172,6 +190,11 @@ final class KeyPicker {
     }
 
     private static String keyLabel(Translator tr, String key) {
+        if (!KEYS.contains(key)) {
+            return KeyCombo.parse(key)
+                    .map(combo -> combo.inputs().getFirst().label())
+                    .orElse(key);
+        }
         if (key.length() == 1 && Character.isDigit(key.charAt(0))) {
             return tr.t("controlcore.panel.keypick.key.hotbar", "n", key);
         }

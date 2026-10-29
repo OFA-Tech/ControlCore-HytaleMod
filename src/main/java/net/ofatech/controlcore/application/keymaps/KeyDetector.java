@@ -1,13 +1,22 @@
 package net.ofatech.controlcore.application.keymaps;
 
 import java.time.Duration;
-import java.util.List;
+import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.model.keys.GameAction;
+import net.ofatech.controlcore.domain.model.keys.Key;
+import net.ofatech.controlcore.domain.model.keys.KeyCombo;
+import net.ofatech.controlcore.domain.model.keys.KeyInput;
 import net.ofatech.controlcore.domain.model.keys.KeySignal;
 import net.ofatech.controlcore.domain.ports.game.PlayerInput;
 import net.ofatech.controlcore.domain.ports.game.Scheduler;
@@ -18,29 +27,27 @@ public final class KeyDetector implements PlayerInput.Listener {
 
     public record Detected(String keys) {}
 
-    private static final List<Map.Entry<KeySignal, String>> HOLDS = List.of(
-            Map.entry(KeySignal.CROUCHING, "CTRL"),
-            Map.entry(KeySignal.WALKING, "ALT"),
-            Map.entry(KeySignal.SPRINTING, "SHIFT"),
-            Map.entry(KeySignal.JUMPING, "SPACE"));
+    private static final Map<KeySignal, String> HOLDS = holds();
+    private static final Map<KeySignal, String> PRESSES = presses();
 
-    private static final Map<KeySignal, String> PRESSES = Map.ofEntries(
-            Map.entry(KeySignal.ABILITY_1, "Q"),
-            Map.entry(KeySignal.ABILITY_2, "E"),
-            Map.entry(KeySignal.ABILITY_3, "R"),
-            Map.entry(KeySignal.ABILITY_4, "ABILITY_4"),
-            Map.entry(KeySignal.USE, "F"),
-            Map.entry(KeySignal.GAME_MODE_SWAP, "O"),
-            Map.entry(KeySignal.DODGE, "DODGE"),
-            Map.entry(KeySignal.WALK_TAP, "ALT"),
-            Map.entry(KeySignal.PRIMARY, "MOUSE_LEFT"),
-            Map.entry(KeySignal.SECONDARY, "MOUSE_RIGHT"),
-            Map.entry(KeySignal.PICK, "MOUSE_MIDDLE"));
+    private record Pending(
+            long token,
+            boolean fromGame,
+            Set<KeySignal> heldAtStart,
+            Consumer<Optional<Detected>> done,
+            AtomicReference<Scheduler.ScheduledTask> timeout) {
 
-    private record Pending(boolean fromGame, Consumer<Optional<Detected>> done, Scheduler.ScheduledTask timeout) {}
+        void stopTimer() {
+            Scheduler.ScheduledTask task = timeout.get();
+            if (task != null) {
+                task.cancel();
+            }
+        }
+    }
 
     private final KeyDispatcher dispatcher;
     private final Scheduler scheduler;
+    private final AtomicLong tokens = new AtomicLong();
     private final Map<PlayerId, Pending> pending = new ConcurrentHashMap<>();
     private final Map<PlayerId, Set<KeySignal>> held = new ConcurrentHashMap<>();
 
@@ -49,17 +56,21 @@ public final class KeyDetector implements PlayerInput.Listener {
         this.scheduler = scheduler;
     }
 
-    public void fromGame(PlayerId player, Consumer<Optional<Detected>> done) {
-        start(player, true, done);
+    public long fromGame(PlayerId player, Consumer<Optional<Detected>> done) {
+        return start(player, true, done);
     }
 
-    public void fromScreen(PlayerId player, Consumer<Optional<Detected>> done) {
-        start(player, false, done);
+    public long fromScreen(PlayerId player, Consumer<Optional<Detected>> done) {
+        return start(player, false, done);
     }
 
-    public void offer(PlayerId player, Optional<Detected> result) {
+    public boolean pending(PlayerId player) {
+        return pending.containsKey(player);
+    }
+
+    public void offer(PlayerId player, long token, Optional<Detected> result) {
         Pending current = pending.get(player);
-        if (current != null && !current.fromGame()) {
+        if (current != null && !current.fromGame() && current.token() == token) {
             finish(player, current, result);
         }
     }
@@ -67,7 +78,7 @@ public final class KeyDetector implements PlayerInput.Listener {
     public void cancel(PlayerId player) {
         Pending current = pending.remove(player);
         if (current != null) {
-            current.timeout().cancel();
+            current.stopTimer();
         }
     }
 
@@ -81,7 +92,8 @@ public final class KeyDetector implements PlayerInput.Listener {
         Pending current = pending.get(player);
         if (current != null && current.fromGame()) {
             Optional<String> key = key(signal);
-            if (key.isPresent() && finish(player, current, Optional.of(new Detected(withHold(player, key.get()))))) {
+            if (key.isPresent()
+                    && finish(player, current, Optional.of(new Detected(withHolds(player, current, key.get()))))) {
                 return !signal.isHotbar();
             }
         }
@@ -94,44 +106,58 @@ public final class KeyDetector implements PlayerInput.Listener {
         dispatcher.held(player, now);
     }
 
-    private void start(PlayerId player, boolean fromGame, Consumer<Optional<Detected>> done) {
-        Pending[] slot = new Pending[1];
-        Scheduler.ScheduledTask timeout = fromGame
-                ? scheduler.runLater(TIMEOUT, () -> {
-                    if (slot[0] != null) {
-                        finish(player, slot[0], Optional.empty());
-                    }
-                })
-                : () -> {};
-        slot[0] = new Pending(fromGame, done, timeout);
-        Pending previous = pending.put(player, slot[0]);
+    private long start(PlayerId player, boolean fromGame, Consumer<Optional<Detected>> done) {
+        long token = tokens.incrementAndGet();
+        Pending next = new Pending(token, fromGame, held.getOrDefault(player, Set.of()), done, new AtomicReference<>());
+        Pending previous = pending.put(player, next);
         if (previous != null) {
-            previous.timeout().cancel();
+            previous.stopTimer();
         }
+        if (fromGame) {
+            next.timeout().set(scheduler.runLater(TIMEOUT, () -> finish(player, next, Optional.empty())));
+        }
+        return token;
     }
 
     private boolean finish(PlayerId player, Pending expected, Optional<Detected> result) {
         if (!pending.remove(player, expected)) {
             return false;
         }
-        expected.timeout().cancel();
+        expected.stopTimer();
         expected.done().accept(result);
         return true;
     }
 
-    private String withHold(PlayerId player, String key) {
+    private String withHolds(PlayerId player, Pending detection, String key) {
         Set<KeySignal> now = held.getOrDefault(player, Set.of());
-        return HOLDS.stream()
-                .filter(hold -> now.contains(hold.getKey()) && !hold.getValue().equals(key))
-                .findFirst()
-                .map(hold -> hold.getValue() + "+" + key)
-                .orElse(key);
+        return Stream.concat(
+                        HOLDS.entrySet().stream()
+                                .filter(hold -> now.contains(hold.getKey())
+                                        && !detection.heldAtStart().contains(hold.getKey())
+                                        && !hold.getValue().equals(key))
+                                .map(Map.Entry::getValue),
+                        Stream.of(key))
+                .collect(Collectors.joining("+"));
     }
 
     private static Optional<String> key(KeySignal signal) {
-        if (signal.isHotbar()) {
-            return Optional.of(Integer.toString(signal.ordinal() - KeySignal.HOTBAR_1.ordinal() + 1));
-        }
         return Optional.ofNullable(PRESSES.get(signal));
+    }
+
+    private static Map<KeySignal, String> holds() {
+        Map<KeySignal, String> holds = new LinkedHashMap<>();
+        for (Key key : new Key[] {Key.CTRL, Key.ALT, Key.SHIFT, Key.SPACE}) {
+            key.signal(false).ifPresent(signal -> holds.put(signal, KeyCombo.write(key)));
+        }
+        return holds;
+    }
+
+    private static Map<KeySignal, String> presses() {
+        Map<KeySignal, String> presses = new EnumMap<>(KeySignal.class);
+        Stream.<KeyInput>concat(Stream.of(Key.values()), Stream.of(GameAction.values()))
+                .forEach(input -> input.signal(true)
+                        .filter(KeySignal::isPress)
+                        .ifPresent(signal -> presses.putIfAbsent(signal, KeyCombo.write(input))));
+        return presses;
     }
 }

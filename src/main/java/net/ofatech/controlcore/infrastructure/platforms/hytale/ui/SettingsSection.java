@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
@@ -59,11 +60,11 @@ final class SettingsSection {
     private final String emptyText;
     private final boolean keys;
     private final Translator tr;
-    private final boolean allKeys;
+    private final BooleanSupplier allKeys;
 
     SettingsSection(
             SettingsEditor settings, SettingScope scope, Optional<PlayerId> player, String emptyText, Translator tr) {
-        this(settings, scope, player, emptyText, false, tr, false);
+        this(settings, scope, player, emptyText, false, tr, () -> false);
     }
 
     private SettingsSection(
@@ -73,7 +74,7 @@ final class SettingsSection {
             String emptyText,
             boolean keys,
             Translator tr,
-            boolean allKeys) {
+            BooleanSupplier allKeys) {
         this.settings = settings;
         this.scope = scope;
         this.player = scope == SettingScope.PLAYER ? player : Optional.empty();
@@ -89,7 +90,7 @@ final class SettingsSection {
             Optional<PlayerId> player,
             String emptyText,
             Translator tr,
-            boolean allKeys) {
+            BooleanSupplier allKeys) {
         return new SettingsSection(keymaps, scope, player, emptyText, true, tr, allKeys);
     }
 
@@ -322,7 +323,7 @@ final class SettingsSection {
     }
 
     boolean allKeys() {
-        return allKeys;
+        return allKeys.getAsBoolean();
     }
 
     String error(Error error) {

@@ -1,7 +1,5 @@
 package net.ofatech.controlcore.infrastructure.platforms.hytale.input;
 
-import com.hypixel.hytale.component.Ref;
-import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.MovementStates;
 import com.hypixel.hytale.protocol.Packet;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChain;
@@ -11,13 +9,9 @@ import com.hypixel.hytale.protocol.packets.player.ClientMovement;
 import com.hypixel.hytale.protocol.packets.player.MouseInteraction;
 import com.hypixel.hytale.protocol.packets.window.ClientOpenWindow;
 import com.hypixel.hytale.server.core.Message;
-import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
 import com.hypixel.hytale.server.core.io.adapter.PlayerPacketWatcher;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
-import com.hypixel.hytale.server.core.universe.Universe;
-import com.hypixel.hytale.server.core.universe.world.World;
-import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -30,6 +24,7 @@ import net.ofatech.controlcore.domain.ports.game.InputProbe;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.pages.HytalePages;
 
 public final class HytaleInputProbe implements InputProbe {
 
@@ -87,23 +82,13 @@ public final class HytaleInputProbe implements InputProbe {
                     "InputProbe.UnknownTarget",
                     "Unknown target '" + target + "'. Use one of: " + KEY_TEST_TARGETS + "."));
         }
-        PlayerRef playerRef = Universe.get().getPlayer(player.value());
-        Ref<EntityStore> entity = playerRef != null ? playerRef.getReference() : null;
-        if (entity == null || !entity.isValid()) {
+        boolean opening = HytalePages.inWorld(player.value())
+                .map(playerRef -> HytalePages.open(
+                        playerRef, ref -> new KeyProbePage(ref, where, log), log, "the key test", () -> {}))
+                .orElse(false);
+        if (!opening) {
             return Result.failure(Error.notFound("InputProbe.PlayerNotFound", "That player is not in a world."));
         }
-        Store<EntityStore> store = entity.getStore();
-        World world = store.getExternalData().getWorld();
-        world.execute(() -> {
-            try {
-                Player component = store.getComponent(entity, Player.getComponentType());
-                if (component != null && entity.isValid()) {
-                    component.getPageManager().openCustomPage(entity, store, new KeyProbePage(playerRef, where, log));
-                }
-            } catch (RuntimeException e) {
-                log.error("Could not open the key test for " + playerRef.getUsername(), e);
-            }
-        });
         return Result.success();
     }
 

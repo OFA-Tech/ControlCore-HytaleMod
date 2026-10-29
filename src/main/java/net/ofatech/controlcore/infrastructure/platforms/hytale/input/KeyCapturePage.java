@@ -19,19 +19,22 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
+import net.ofatech.controlcore.domain.model.text.Translator;
 
 final class KeyCapturePage extends InteractiveCustomUIPage<KeyCapturePage.Event> {
 
     static final String LAYOUT = "Pages/ControlCore/KeyCapture.ui";
-    private static final Pattern KEYCODE = Pattern.compile("\"Keycode\"\\s*:\\s*(-?\\d+)");
+    private static final Pattern KEYCODE = Pattern.compile("\"Keycode\"\\s*:\\s*(\\d{1,10})");
     private static final Pattern REPEAT = Pattern.compile("\"Repeat\"\\s*:\\s*true");
 
     private final Consumer<Optional<String>> done;
+    private final Translator tr;
     private final KeyCaptureLogic logic = new KeyCaptureLogic();
     private final AtomicBoolean finished = new AtomicBoolean();
 
-    KeyCapturePage(PlayerRef player, Consumer<Optional<String>> done) {
+    KeyCapturePage(PlayerRef player, Translator tr, Consumer<Optional<String>> done) {
         super(player, CustomPageLifetime.CanDismiss, Event.CODEC);
+        this.tr = tr;
         this.done = done;
     }
 
@@ -54,15 +57,29 @@ final class KeyCapturePage extends InteractiveCustomUIPage<KeyCapturePage.Event>
             return;
         }
         Matcher keycode = KEYCODE.matcher(raw);
-        Optional<Optional<String>> result = keycode.find()
-                ? logic.accept(
-                        Integer.parseInt(keycode.group(1)), REPEAT.matcher(raw).find(), System.currentTimeMillis())
-                : Optional.empty();
-        if (result.isPresent()) {
-            finish(result.get());
-        } else {
-            sendUpdate(new UICommandBuilder(), false);
+        long code = keycode.find() ? Long.parseLong(keycode.group(1)) : -1;
+        KeyCaptureLogic.Outcome outcome = code >= 0 && code <= Integer.MAX_VALUE
+                ? logic.accept((int) code, REPEAT.matcher(raw).find(), System.currentTimeMillis())
+                : new KeyCaptureLogic.Outcome.Waiting();
+        UICommandBuilder update = new UICommandBuilder();
+        switch (outcome) {
+            case KeyCaptureLogic.Outcome.Captured captured -> {
+                finish(Optional.of(captured.keys()));
+                return;
+            }
+            case KeyCaptureLogic.Outcome.Cancelled cancelled -> {
+                finish(Optional.empty());
+                return;
+            }
+            case KeyCaptureLogic.Outcome.Holding holding ->
+                update.set("#CaptureHint.Text", tr.t("controlcore.ui.keyCapture.holding", "keys", holding.holds()));
+            case KeyCaptureLogic.Outcome.Unsupported unsupported ->
+                update.set(
+                        "#CaptureHint.Text",
+                        tr.t("controlcore.ui.keyCapture.unsupported", "code", unsupported.keycode()));
+            case KeyCaptureLogic.Outcome.Waiting waiting -> {}
         }
+        sendUpdate(update, false);
     }
 
     @Override

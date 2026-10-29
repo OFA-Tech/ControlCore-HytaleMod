@@ -17,10 +17,18 @@ public final class KeyDetectSettings {
     static final String SCREEN = "screen";
     private static final Text CATEGORY = Text.key("controlcore.settings.category.keymaps", "Keymaps");
 
-    private final Setting<String> mode;
-    private final Setting<Boolean> allKeys;
+    private final SettingsApi settings;
+    private volatile Setting<String> mode;
+    private volatile Setting<Boolean> allKeys;
 
     public KeyDetectSettings(SettingsApi settings) {
+        this.settings = settings;
+    }
+
+    public synchronized void register() {
+        if (mode != null) {
+            return;
+        }
         this.mode = settings.register(SettingDefinition.server(
                                 "controlcore", "key-detect-mode", SettingType.choice(GAME, SCREEN), GAME)
                         .named(Text.key("controlcore.settings.key_detect_mode.name", "How Detect key works"))
@@ -43,10 +51,12 @@ public final class KeyDetectSettings {
     }
 
     public DetectMode mode() {
-        return SCREEN.equals(mode.get()) ? DetectMode.SCREEN : DetectMode.GAME;
+        Setting<String> current = mode;
+        return current != null && SCREEN.equals(current.get()) ? DetectMode.SCREEN : DetectMode.GAME;
     }
 
     public boolean allKeys() {
-        return allKeys.get();
+        Setting<Boolean> current = allKeys;
+        return current != null && current.get();
     }
 }

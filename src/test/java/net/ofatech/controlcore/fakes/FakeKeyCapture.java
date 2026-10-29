@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.game.KeyCapture;
 
 public final class FakeKeyCapture implements KeyCapture {
@@ -15,7 +16,7 @@ public final class FakeKeyCapture implements KeyCapture {
     private final Map<PlayerId, Consumer<Optional<String>>> waiting = new ConcurrentHashMap<>();
 
     @Override
-    public void open(PlayerId player, Consumer<Optional<String>> done) {
+    public void open(PlayerId player, Translator tr, Consumer<Optional<String>> done) {
         opened.add(player);
         waiting.put(player, done);
     }

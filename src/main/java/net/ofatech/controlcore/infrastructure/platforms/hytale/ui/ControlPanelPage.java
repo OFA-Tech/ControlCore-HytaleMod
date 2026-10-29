@@ -5,6 +5,7 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.entity.entities.player.pages.CustomUIPage;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.ui.Anchor;
 import com.hypixel.hytale.server.core.ui.DropdownEntryInfo;
@@ -44,7 +45,6 @@ import net.ofatech.controlcore.domain.model.ControlPanelTab;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.keys.GameActionMode;
-import net.ofatech.controlcore.domain.model.keys.KeyDetection;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
@@ -56,6 +56,7 @@ import net.ofatech.controlcore.domain.model.snapshot.SnapshotsView;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
+import net.ofatech.controlcore.domain.ports.game.KeyDetection;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -174,7 +175,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private final PlayerId viewerId;
     private final String viewerName;
     private final KeyDetection keyDetection;
-    private Optional<String> reopenStatus = Optional.empty();
+    private final PanelKeyDetect keyDetect;
 
     private Tab selected;
     private final List<String> worlds;
@@ -197,11 +198,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         this.customKeyBinds = content.customKeyBinds();
         boolean manageKeys = content.manageKeys() && shownSections.includeRegisteredActions();
         this.bindForm = manageKeys
-                ? Optional.of(new KeyBindForm(
-                        content.customKeyBinds(),
-                        tr,
-                        hooks,
-                        content.keyDetection().allKeys()))
+                ? Optional.of(new KeyBindForm(content.customKeyBinds(), tr, hooks, content.keyDetection()::allKeys))
                 : Optional.empty();
         this.permissionsTab = shownSections.includeServerSettings()
                 ? content.permissions().map(view -> new PermissionsTab(view, tr, hooks))
@@ -230,6 +227,32 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         this.viewerId = PlayerId.of(player.getUuid());
         this.viewerName = player.getUsername();
         this.keyDetection = content.keyDetection();
+        this.keyDetect = new PanelKeyDetect(keyDetection, tr, new PanelKeyDetect.Host() {
+            @Override
+            public PlayerRef viewer() {
+                return playerRef;
+            }
+
+            @Override
+            public CustomUIPage page() {
+                return ControlPanelPage.this;
+            }
+
+            @Override
+            public void closePanel() {
+                close();
+            }
+
+            @Override
+            public void send(UICommandBuilder update) {
+                sendUpdate(update, false);
+            }
+
+            @Override
+            public String asViewer(Supplier<String> work) {
+                return ChangeContext.fromPanel(viewerId, viewerName, work);
+            }
+        });
         this.worlds = content.worlds();
         this.world = worlds.contains("default")
                 ? "default"
@@ -283,7 +306,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                             viewer,
                             tr.t("controlcore.panel.empty.keymaps"),
                             tr,
-                            content.keyDetection().allKeys()));
+                            content.keyDetection()::allKeys));
         }
         if (manageKeys) {
             sections.put(
@@ -294,7 +317,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                             viewer,
                             tr.t("controlcore.panel.empty.server_keymaps"),
                             tr,
-                            content.keyDetection().allKeys()));
+                            content.keyDetection()::allKeys));
         }
         content.focus().ifPresent(this::focusMod);
     }
@@ -371,8 +394,6 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                     state.legendButton(),
                     EventData.of(PanelAction.KEY, LEGEND_PREFIX + state.name()));
         }
-        reopenStatus.ifPresent(status -> commands.set("#FooterStatus.Text", status));
-        reopenStatus = Optional.empty();
         if (subscriptions.isEmpty()) {
             sections.forEach((key, section) ->
                     subscriptions.add(section.listen(change -> onSettingChanged(key, section, change))));
@@ -1137,21 +1158,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 return;
             }
             case SettingRows.DETECT -> {
-                SettingSnapshot current = latestOf(key, action.id);
-                if (current != null && current.access() != SettingAccess.READ_ONLY) {
-                    String id = action.id;
-                    detect(result -> result.map(keys -> {
-                                SettingSnapshot latest = latestOf(key, id);
-                                Result<SettingSnapshot> saved = section.save(
-                                        id,
-                                        KeyPicker.withDetected(
-                                                keys, latest == null ? current.value() : latest.value()));
-                                return saved.isSuccess()
-                                        ? tr.t("controlcore.keys.detect.saved", "keys", keys)
-                                        : tr.error(saved.error());
-                            })
-                            .orElseGet(() -> tr.t("controlcore.keys.detect.none")));
-                }
+                detectOnRow(key, section, action);
                 return;
             }
             case SettingRows.PICK_KEYS -> {
@@ -1399,41 +1406,35 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         return player != null && player.getPageManager().getCustomPage() == this;
     }
 
-    private void detect(Function<Optional<String>, String> apply) {
-        Ref<EntityStore> ref = playerRef.getReference();
-        if (ref == null || !ref.isValid()) {
+    private void detectOnRow(PanelSection key, SettingsSection section, PanelAction action) {
+        SettingSnapshot current = latestOf(key, action.id);
+        if (current == null || section.kind(current) != SettingsSection.Kind.KEYS) {
             return;
         }
-        keyDetection.detect(result -> {
-            Ref<EntityStore> now = playerRef.getReference();
-            if (now != null && now.isValid()) {
-                now.getStore().getExternalData().getWorld().execute(() -> {
-                    reopenStatus =
-                            Optional.of(ChangeContext.fromPanel(viewerId, viewerName, () -> apply.apply(result)));
-                    reopen();
-                });
+        if (current.access() == SettingAccess.READ_ONLY) {
+            UICommandBuilder update = new UICommandBuilder();
+            footer(update, tr.t("controlcore.keys.detect.locked"));
+            sendUpdate(update, false);
+            return;
+        }
+        String id = action.id;
+        keyDetect.start((keys, mode) -> {
+            SettingSnapshot latest = latestOf(key, id);
+            if (latest == null || latest.access() == SettingAccess.READ_ONLY) {
+                return tr.t("controlcore.keys.detect.locked");
             }
+            action.value = KeyPicker.withDetected(keys, latest.value());
+            handleSettingAction(key, section, SettingRows.SAVE, action);
+            SettingSnapshot saved = latestOf(key, id);
+            if (saved == null || !saved.value().equals(action.value)) {
+                return null;
+            }
+            String described = KeyPicker.describe(tr, keys, section.allKeys());
+            String text = mode == KeyDetection.Mode.SCREEN
+                    ? tr.t("controlcore.keys.detect.saved", "keys", described)
+                    : tr.t("controlcore.keys.detect.saved_game", "keys", described);
+            return KeyPicker.heard(keys) ? text : text + " " + tr.t("controlcore.keys.detect.unheard");
         });
-        if (!keyDetection.fromScreen()) {
-            close();
-        }
-    }
-
-    private void reopen() {
-        Ref<EntityStore> ref = playerRef.getReference();
-        if (ref == null || !ref.isValid()) {
-            return;
-        }
-        Store<EntityStore> store = ref.getStore();
-        Player player = store.getComponent(ref, Player.getComponentType());
-        if (player == null) {
-            return;
-        }
-        if (player.getPageManager().getCustomPage() != null
-                && player.getPageManager().getCustomPage() != this) {
-            return;
-        }
-        player.getPageManager().openCustomPage(ref, store, this);
     }
 
     private void stopListening() {
@@ -1726,8 +1727,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
 
         @Override
-        public void detect(Function<Optional<String>, String> apply) {
-            ControlPanelPage.this.detect(apply);
+        public void detect(Function<String, String> applyKeys) {
+            keyDetect.start((keys, mode) -> applyKeys.apply(keys));
         }
 
         @Override

@@ -2,7 +2,6 @@ package net.ofatech.controlcore.infrastructure.platforms.hytale.input;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Optional;
 import net.ofatech.controlcore.domain.model.keys.Key;
 import org.junit.jupiter.api.Test;
 
@@ -35,10 +34,10 @@ class KeyCaptureLogicTest {
     void ctrlThenNumpadFive() {
         KeyCaptureLogic logic = new KeyCaptureLogic();
 
-        assertThat(logic.accept(CTRL, false, 0)).isEmpty();
-        assertThat(logic.accept(CTRL, true, 100)).isEmpty();
+        assertThat(logic.accept(CTRL, false, 0).captured()).isEmpty();
+        assertThat(logic.accept(CTRL, true, 100).captured()).isEmpty();
 
-        assertThat(logic.accept(NUMPAD_5, false, 300)).contains(Optional.of("CTRL+NUMPAD_5"));
+        assertThat(logic.accept(NUMPAD_5, false, 300).captured()).contains("CTRL+NUMPAD_5");
     }
 
     @Test
@@ -46,7 +45,7 @@ class KeyCaptureLogicTest {
         KeyCaptureLogic logic = new KeyCaptureLogic();
         logic.accept(CTRL, false, 0);
 
-        assertThat(logic.accept(NUMPAD_5, false, 1000)).contains(Optional.of("CTRL+NUMPAD_5"));
+        assertThat(logic.accept(NUMPAD_5, false, 1000).captured()).contains("CTRL+NUMPAD_5");
     }
 
     @Test
@@ -54,25 +53,35 @@ class KeyCaptureLogicTest {
         KeyCaptureLogic logic = new KeyCaptureLogic();
         logic.accept(CTRL, false, 0);
 
-        assertThat(logic.accept(NUMPAD_5, false, 3000)).contains(Optional.of("NUMPAD_5"));
+        assertThat(logic.accept(NUMPAD_5, false, 3000).captured()).contains("NUMPAD_5");
     }
 
     @Test
     void digitsAreWrittenAsTheyLook() {
-        assertThat(new KeyCaptureLogic().accept(51, false, 0)).contains(Optional.of("3"));
+        assertThat(new KeyCaptureLogic().accept(51, false, 0).captured()).contains("3");
     }
 
     @Test
     void escapeCancels() {
-        assertThat(new KeyCaptureLogic().accept(ESC, false, 0)).contains(Optional.empty());
+        assertThat(new KeyCaptureLogic().accept(ESC, false, 0)).isInstanceOf(KeyCaptureLogic.Outcome.Cancelled.class);
+    }
+
+    @Test
+    void modifiersAloneShowWhatIsHeldAndUnknownKeysSaySo() {
+        KeyCaptureLogic logic = new KeyCaptureLogic();
+
+        assertThat(logic.accept(CTRL, false, 0)).isEqualTo(new KeyCaptureLogic.Outcome.Holding("CTRL"));
+        assertThat(logic.accept(RIGHT_ALT, false, 10)).isEqualTo(new KeyCaptureLogic.Outcome.Holding("CTRL+ALT"));
+        assertThat(logic.accept(231, false, 20)).isEqualTo(new KeyCaptureLogic.Outcome.Unsupported(231));
+        assertThat(logic.accept(NUMPAD_5, false, 30).captured()).contains("CTRL+ALT+NUMPAD_5");
     }
 
     @Test
     void repeatsAndUnknownKeysAreIgnored() {
         KeyCaptureLogic logic = new KeyCaptureLogic();
 
-        assertThat(logic.accept(NUMPAD_5, true, 0)).isEmpty();
-        assertThat(logic.accept(42424242, false, 0)).isEmpty();
-        assertThat(logic.accept(1073742051, false, 0)).isEmpty();
+        assertThat(logic.accept(NUMPAD_5, true, 0).captured()).isEmpty();
+        assertThat(logic.accept(42424242, false, 0).captured()).isEmpty();
+        assertThat(logic.accept(1073742051, false, 0).captured()).isEmpty();
     }
 }

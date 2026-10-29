@@ -117,10 +117,10 @@ class KeyDetectorTest {
 
     @Test
     void theScreenWaitsForItsOfferAndIgnoresGamePresses() {
-        detector.fromScreen(caio, results::add);
+        long screen1 = detector.fromScreen(caio, results::add);
 
         input.press(caio, KeySignal.ABILITY_3);
-        detector.offer(caio, Optional.of(new KeyDetector.Detected("CTRL+NUMPAD_5")));
+        detector.offer(caio, screen1, Optional.of(new KeyDetector.Detected("CTRL+NUMPAD_5")));
 
         assertThat(runner.runs).hasSize(1);
         assertThat(results).containsExactly(Optional.of(new KeyDetector.Detected("CTRL+NUMPAD_5")));
@@ -128,10 +128,10 @@ class KeyDetectorTest {
 
     @Test
     void theScreenHasNoTimeoutSoALateKeyStillArrives() {
-        detector.fromScreen(caio, results::add);
+        long screen1 = detector.fromScreen(caio, results::add);
 
         scheduler.runAll();
-        detector.offer(caio, Optional.of(new KeyDetector.Detected("NUMPAD_5")));
+        detector.offer(caio, screen1, Optional.of(new KeyDetector.Detected("NUMPAD_5")));
 
         assertThat(results).containsExactly(Optional.of(new KeyDetector.Detected("NUMPAD_5")));
     }

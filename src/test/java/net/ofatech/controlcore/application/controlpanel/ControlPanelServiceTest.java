@@ -17,7 +17,6 @@ import net.ofatech.controlcore.application.event.DomainEventBus;
 import net.ofatech.controlcore.application.history.ChangeHistory;
 import net.ofatech.controlcore.application.history.ChangeRecorder;
 import net.ofatech.controlcore.application.history.HistoryEditor;
-import net.ofatech.controlcore.application.keymaps.KeyDetectionService;
 import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.mods.ModsEditor;
@@ -38,6 +37,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.ports.game.Bans;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
+import net.ofatech.controlcore.domain.ports.game.KeyDetections;
 import net.ofatech.controlcore.domain.ports.game.Worlds;
 import net.ofatech.controlcore.domain.result.ErrorType;
 import net.ofatech.controlcore.domain.result.Result;
@@ -250,7 +250,7 @@ class ControlPanelServiceTest {
                 mods,
                 new PermissionsEditor(registry, serverConfig, policy),
                 probe,
-                KeyDetectionService.none(),
+                KeyDetections.NONE,
                 (player, node) -> !node.equals("debug") || debugAllowed,
                 history,
                 snapshots,

@@ -18,6 +18,7 @@ import net.ofatech.controlcore.application.component.ModuleContext;
 import net.ofatech.controlcore.application.component.TaskSchedule;
 import net.ofatech.controlcore.application.event.DomainEventBus;
 import net.ofatech.controlcore.application.history.ChangeContext;
+import net.ofatech.controlcore.application.keymaps.KeyDetectionService;
 import net.ofatech.controlcore.application.text.CommandTexts;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.event.DomainEvent;
@@ -25,6 +26,7 @@ import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.ports.command.CommandRegistrar;
 import net.ofatech.controlcore.domain.ports.config.SettingsProvider;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
+import net.ofatech.controlcore.domain.ports.game.KeyDetections;
 import net.ofatech.controlcore.domain.ports.game.Scheduler;
 import net.ofatech.controlcore.domain.ports.game.Scheduler.ScheduledTask;
 import net.ofatech.controlcore.domain.ports.mods.ModLookup;
@@ -72,6 +74,9 @@ public final class ModRuntime {
                 injector.get(Scheduler.class),
                 log);
         injector.bind(ModuleContext.class, context);
+        injector.bind(
+                KeyDetections.class,
+                player -> injector.get(KeyDetectionService.class).viewedBy(player));
 
         List<String> failures = new ArrayList<>();
         CommandRegistrar commands = context.commands();

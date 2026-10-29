@@ -8,7 +8,6 @@ import net.ofatech.controlcore.domain.model.automation.AutomationView;
 import net.ofatech.controlcore.domain.model.diagnostics.DiagnosticsView;
 import net.ofatech.controlcore.domain.model.history.HistoryView;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
-import net.ofatech.controlcore.domain.model.keys.KeyDetection;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.players.PlayersView;
 import net.ofatech.controlcore.domain.model.settings.PermissionsView;
@@ -18,6 +17,7 @@ import net.ofatech.controlcore.domain.model.snapshot.SnapshotsView;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
+import net.ofatech.controlcore.domain.ports.game.KeyDetection;
 
 public record ControlPanelContent(
         ServerSettings server,
