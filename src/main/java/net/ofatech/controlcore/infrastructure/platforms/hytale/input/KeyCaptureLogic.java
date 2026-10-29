@@ -1,7 +1,6 @@
 package net.ofatech.controlcore.infrastructure.platforms.hytale.input;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -11,7 +10,6 @@ import net.ofatech.controlcore.domain.model.keys.KeyCombo;
 final class KeyCaptureLogic {
 
     static final long HOLD_WINDOW_MILLIS = 1200;
-    private static final List<Key> HOLD_ORDER = Key.HOLDS;
 
     sealed interface Outcome {
 
@@ -57,7 +55,7 @@ final class KeyCaptureLogic {
     }
 
     private String holds(long nowMillis) {
-        return HOLD_ORDER.stream()
+        return Key.HOLDS.stream()
                 .filter(hold -> {
                     Long seen = lastSeen.get(hold);
                     return seen != null && nowMillis - seen <= HOLD_WINDOW_MILLIS;

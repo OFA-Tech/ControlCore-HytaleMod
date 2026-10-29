@@ -81,6 +81,14 @@ final class KeyBindForm {
                 .append(PanelAction.CHECKED, "#NewBindAsServer.Value");
     }
 
+    static boolean owns(String name) {
+        return ADD.equals(name)
+                || EDIT.equals(name)
+                || REMOVE.equals(name)
+                || TOGGLE.equals(name)
+                || DETECT.equals(name);
+    }
+
     boolean handle(PanelAction action) {
         switch (action.name()) {
             case ADD -> add(action);
@@ -181,8 +189,7 @@ final class KeyBindForm {
             update.set("#NewBindAsServer.Value", typed.asServer());
             SettingRows.showKeys(tr, "#NewBindHold", "#NewBindKey", formKeys, allKeys.getAsBoolean(), update);
             host.send(update);
-            String text = tr.t(
-                    "controlcore.keys.detect.filled", "keys", KeyPicker.describe(tr, keys, allKeys.getAsBoolean()));
+            String text = tr.t("controlcore.keys.detect.filled", "keys", KeyPicker.describe(tr, keys));
             return KeyPicker.heard(keys) ? text : text + " " + tr.t("controlcore.keys.detect.unheard");
         });
     }

@@ -29,7 +29,7 @@ class KeyDetectBancaTest extends RuntimeTestBase {
     @Test
     void leavingWhileDetectingFromTheGameDropsTheDetection() {
         List<Optional<String>> results = new ArrayList<>();
-        detection().detect(results::add);
+        detection().detect(detection().mode(), results::add);
 
         platform.connectedPublisher.publish(new PlayerLeft(admin));
         platform.scheduler.runAll();
@@ -43,7 +43,7 @@ class KeyDetectBancaTest extends RuntimeTestBase {
     void leavingWhileOnTheCaptureScreenIgnoresTheLateKey() {
         platform.commands.run("cc-set", admin, Map.of("id", "controlcore:key-detect-mode", "value", "screen"));
         List<Optional<String>> results = new ArrayList<>();
-        detection().detect(results::add);
+        detection().detect(detection().mode(), results::add);
 
         platform.connectedPublisher.publish(new PlayerLeft(admin));
         platform.keyCapture.press(admin.id(), "NUMPAD_5");
@@ -55,7 +55,7 @@ class KeyDetectBancaTest extends RuntimeTestBase {
     void escapeOnTheCaptureScreenEndsWithNothing() {
         platform.commands.run("cc-set", admin, Map.of("id", "controlcore:key-detect-mode", "value", "screen"));
         List<Optional<String>> results = new ArrayList<>();
-        detection().detect(results::add);
+        detection().detect(detection().mode(), results::add);
 
         platform.keyCapture.press(admin.id(), null);
 
@@ -67,10 +67,10 @@ class KeyDetectBancaTest extends RuntimeTestBase {
         List<Optional<String>> first = new ArrayList<>();
         List<Optional<String>> second = new ArrayList<>();
         KeyDetection detection = detection();
-        detection.detect(first::add);
+        detection.detect(detection.mode(), first::add);
         platform.scheduler.runAll();
 
-        detection.detect(second::add);
+        detection.detect(detection.mode(), second::add);
         platform.input.press(admin.id(), KeySignal.USE);
 
         assertThat(first).containsExactly(Optional.empty());

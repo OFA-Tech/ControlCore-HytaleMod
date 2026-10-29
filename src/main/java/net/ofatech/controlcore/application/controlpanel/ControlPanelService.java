@@ -4,7 +4,6 @@ import com.google.auto.service.AutoService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BooleanSupplier;
 import net.ofatech.controlcore.api.ControlPanelApi;
 import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.automation.AutomationService;
@@ -23,6 +22,7 @@ import net.ofatech.controlcore.application.snapshot.SnapshotService;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.ControlPanelContent;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
+import net.ofatech.controlcore.domain.model.PanelRights;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
@@ -222,21 +222,18 @@ public final class ControlPanelService implements ControlPanelApi {
                         automation.mayManage(Optional.of(player))
                                 ? players.find(player).map(automation::viewedBy)
                                 : Optional.empty(),
-                        keyDetection.viewedBy(player, rightsUnchanged(player))));
+                        keyDetection.viewedBy(player),
+                        () -> rights(player)));
     }
 
-    private BooleanSupplier rightsUnchanged(PlayerId player) {
-        List<Boolean> atOpen = rights(player);
-        return () -> rights(player).equals(atOpen);
-    }
-
-    private List<Boolean> rights(PlayerId player) {
+    private PanelRights rights(PlayerId player) {
         Optional<PlayerId> who = Optional.of(player);
-        return List.of(
+        return new PanelRights(
                 settings.panelEnabled(),
                 permissions.isAdmin(player),
                 mayOpenAdminPanel(player),
                 history.maySee(who),
+                history.mayRollBack(who),
                 snapshots.mayUse(who),
                 nodes.hasOwn(player, InputProbeCommand.PERMISSION),
                 playerAdmin.maySee(who),

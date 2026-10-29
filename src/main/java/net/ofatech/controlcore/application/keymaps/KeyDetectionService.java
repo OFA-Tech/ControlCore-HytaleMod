@@ -1,7 +1,6 @@
 package net.ofatech.controlcore.application.keymaps;
 
 import java.util.Optional;
-import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.application.automation.NotificationService;
 import net.ofatech.controlcore.application.text.Texts;
@@ -34,7 +33,8 @@ public final class KeyDetectionService implements KeyDetections {
     }
 
     @Override
-    public KeyDetection viewedBy(PlayerId player, BooleanSupplier rightsUnchanged) {
+    public KeyDetection viewedBy(PlayerId player) {
+        detector.cancel(player);
         return new KeyDetection() {
             @Override
             public boolean allKeys() {
@@ -47,20 +47,13 @@ public final class KeyDetectionService implements KeyDetections {
             }
 
             @Override
-            public long timeoutSeconds() {
+            public long gameTimeoutSeconds() {
                 return KeyDetector.TIMEOUT.toSeconds();
             }
 
             @Override
-            public Mode detect(Consumer<Optional<String>> done) {
-                Mode mode = mode();
+            public void detect(Mode mode, Consumer<Optional<String>> done) {
                 start(player, mode, done);
-                return mode;
-            }
-
-            @Override
-            public boolean rightsUnchanged() {
-                return rightsUnchanged.getAsBoolean();
             }
         };
     }
@@ -70,7 +63,12 @@ public final class KeyDetectionService implements KeyDetections {
                 result -> done.accept(result.map(KeyDetector.Detected::keys));
         Translator tr = texts.forPlayer(Optional.of(player));
         if (mode == KeyDetection.Mode.SCREEN) {
-            long token = detector.fromScreen(player, finished);
+            long token = detector.fromScreen(player, result -> {
+                if (result.isEmpty()) {
+                    capture.close(player);
+                }
+                finished.accept(result);
+            });
             capture.open(player, tr, keys -> detector.offer(player, token, keys.map(KeyDetector.Detected::new)));
             return;
         }

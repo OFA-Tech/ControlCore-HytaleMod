@@ -156,4 +156,16 @@ class KeyDetectorTest {
 
         assertThat(problems).contains("NUMPAD 5").contains("Detect key");
     }
+
+    @Test
+    void aBareClickIsNotDetectedButAClickWithAHoldIs() {
+        detector.fromGame(caio, results::add);
+        input.press(caio, KeySignal.PRIMARY);
+        assertThat(results).isEmpty();
+
+        input.hold(caio, KeySignal.CROUCHING);
+        input.press(caio, KeySignal.PRIMARY);
+
+        assertThat(results).containsExactly(Optional.of(new KeyDetector.Detected("CTRL+MOUSE_LEFT")));
+    }
 }

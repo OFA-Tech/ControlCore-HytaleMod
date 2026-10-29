@@ -18,23 +18,17 @@ public interface KeyDetection {
 
         @Override
         public Mode mode() {
-            return Mode.GAME;
+            return Mode.SCREEN;
         }
 
         @Override
-        public long timeoutSeconds() {
+        public long gameTimeoutSeconds() {
             return 0;
         }
 
         @Override
-        public Mode detect(Consumer<Optional<String>> done) {
+        public void detect(Mode mode, Consumer<Optional<String>> done) {
             done.accept(Optional.empty());
-            return Mode.GAME;
-        }
-
-        @Override
-        public boolean rightsUnchanged() {
-            return true;
         }
     };
 
@@ -42,9 +36,7 @@ public interface KeyDetection {
 
     Mode mode();
 
-    long timeoutSeconds();
+    long gameTimeoutSeconds();
 
-    Mode detect(Consumer<Optional<String>> done);
-
-    boolean rightsUnchanged();
+    void detect(Mode mode, Consumer<Optional<String>> done);
 }

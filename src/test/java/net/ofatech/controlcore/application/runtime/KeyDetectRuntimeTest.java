@@ -41,7 +41,7 @@ class KeyDetectRuntimeTest extends RuntimeTestBase {
         KeyDetection detection = detection();
         assertThat(detection.mode()).isEqualTo(KeyDetection.Mode.GAME);
 
-        detection.detect(results::add);
+        detection.detect(detection.mode(), results::add);
         platform.input.hold(admin.id(), KeySignal.CROUCHING);
         boolean cancelled = platform.input.press(admin.id(), KeySignal.ABILITY_3);
 
@@ -55,7 +55,7 @@ class KeyDetectRuntimeTest extends RuntimeTestBase {
     @Test
     void detectTimesOutWithNothing() {
         List<Optional<String>> results = new ArrayList<>();
-        detection().detect(results::add);
+        detection().detect(detection().mode(), results::add);
 
         platform.scheduler.runAll();
 
@@ -69,7 +69,7 @@ class KeyDetectRuntimeTest extends RuntimeTestBase {
         KeyDetection detection = detection();
         assertThat(detection.mode()).isEqualTo(KeyDetection.Mode.SCREEN);
 
-        detection.detect(results::add);
+        detection.detect(detection.mode(), results::add);
         platform.input.press(admin.id(), KeySignal.ABILITY_3);
         platform.keyCapture.press(admin.id(), "CTRL+NUMPAD_5");
 

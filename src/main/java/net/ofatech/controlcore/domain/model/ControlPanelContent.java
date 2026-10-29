@@ -40,7 +40,8 @@ public record ControlPanelContent(
         Optional<ProfilesView> profiles,
         Optional<DiagnosticsView> diagnostics,
         Optional<AutomationView> automation,
-        KeyDetection keyDetection) {
+        KeyDetection keyDetection,
+        Supplier<PanelRights> rights) {
 
     public ControlPanelContent {
         Guard.notNull(server, "server");
@@ -63,5 +64,6 @@ public record ControlPanelContent(
         Guard.notNull(diagnostics, "diagnostics");
         Guard.notNull(automation, "automation");
         Guard.notNull(keyDetection, "keyDetection");
+        Guard.notNull(rights, "rights");
     }
 }

@@ -16,6 +16,17 @@ public final class HytaleKeyCapture implements KeyCapture {
         this.log = log;
     }
 
+    public static boolean isCapturePage(Object page) {
+        return page instanceof KeyCapturePage;
+    }
+
+    @Override
+    public void close(PlayerId player) {
+        HytalePages.inWorld(player.value())
+                .ifPresent(playerRef -> HytalePages.onWorldThread(
+                        playerRef, () -> HytalePages.closeIf(playerRef, HytaleKeyCapture::isCapturePage)));
+    }
+
     @Override
     public void open(PlayerId player, Translator tr, Consumer<Optional<String>> done) {
         boolean opening = HytalePages.inWorld(player.value())

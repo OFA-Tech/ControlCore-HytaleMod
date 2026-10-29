@@ -3,6 +3,7 @@ package net.ofatech.controlcore.application.keymaps;
 import java.time.Duration;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -30,6 +31,7 @@ public final class KeyDetector implements PlayerInput.Listener {
 
     private static final Map<KeySignal, String> HOLDS = holds();
     private static final Map<KeySignal, String> PRESSES = presses();
+    private static final Set<KeySignal> CLICKS = Set.of(KeySignal.PRIMARY, KeySignal.SECONDARY);
 
     private record Pending(
             long token,
@@ -89,8 +91,12 @@ public final class KeyDetector implements PlayerInput.Listener {
         Pending current = pending.get(player);
         if (current != null && current.fromGame()) {
             Optional<String> key = key(signal);
+            List<String> holds =
+                    key.map(pressed -> holds(player, current, pressed)).orElse(List.of());
+            boolean bareClick = CLICKS.contains(signal) && holds.isEmpty();
             if (key.isPresent()
-                    && finish(player, current, Optional.of(new Detected(withHolds(player, current, key.get()))))) {
+                    && !bareClick
+                    && finish(player, current, Optional.of(new Detected(join(holds, key.get()))))) {
                 return !signal.isHotbar();
             }
         }
@@ -131,16 +137,18 @@ public final class KeyDetector implements PlayerInput.Listener {
         return true;
     }
 
-    private String withHolds(PlayerId player, Pending detection, String key) {
+    private List<String> holds(PlayerId player, Pending detection, String key) {
         Set<KeySignal> now = held.getOrDefault(player, Set.of());
-        return Stream.concat(
-                        HOLDS.entrySet().stream()
-                                .filter(hold -> now.contains(hold.getKey())
-                                        && !detection.heldAtStart().contains(hold.getKey())
-                                        && !hold.getValue().equals(key))
-                                .map(Map.Entry::getValue),
-                        Stream.of(key))
-                .collect(Collectors.joining("+"));
+        return HOLDS.entrySet().stream()
+                .filter(hold -> now.contains(hold.getKey())
+                        && !detection.heldAtStart().contains(hold.getKey())
+                        && !hold.getValue().equals(key))
+                .map(Map.Entry::getValue)
+                .toList();
+    }
+
+    private static String join(List<String> holds, String key) {
+        return Stream.concat(holds.stream(), Stream.of(key)).collect(Collectors.joining("+"));
     }
 
     private static Optional<String> key(KeySignal signal) {
@@ -149,7 +157,7 @@ public final class KeyDetector implements PlayerInput.Listener {
 
     private static Map<KeySignal, String> holds() {
         Map<KeySignal, String> holds = new LinkedHashMap<>();
-        for (Key key : new Key[] {Key.CTRL, Key.ALT, Key.SHIFT, Key.SPACE}) {
+        for (Key key : Stream.concat(Key.HOLDS.stream(), Stream.of(Key.SPACE)).toList()) {
             key.signal(false).ifPresent(signal -> holds.put(signal, KeyCombo.write(key)));
         }
         return holds;

@@ -21,6 +21,14 @@ public final class FakeKeyCapture implements KeyCapture {
         waiting.put(player, done);
     }
 
+    public final List<PlayerId> closed = new CopyOnWriteArrayList<>();
+
+    @Override
+    public void close(PlayerId player) {
+        closed.add(player);
+        waiting.remove(player);
+    }
+
     public void press(PlayerId player, String keys) {
         Consumer<Optional<String>> done = waiting.remove(player);
         if (done != null) {

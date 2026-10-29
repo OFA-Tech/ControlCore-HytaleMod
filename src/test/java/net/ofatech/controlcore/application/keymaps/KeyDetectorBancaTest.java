@@ -159,9 +159,9 @@ class KeyDetectorBancaTest {
     }
 
     @Test
-    void everyPressTheServerHearsIsDetected() {
+    void everyPressTheServerHearsIsDetectedExceptBareClicks() {
         for (KeySignal signal : KeySignal.values()) {
-            if (!signal.isPress()) {
+            if (!signal.isPress() || signal == KeySignal.PRIMARY || signal == KeySignal.SECONDARY) {
                 continue;
             }
             List<Optional<KeyDetector.Detected>> one = new ArrayList<>();

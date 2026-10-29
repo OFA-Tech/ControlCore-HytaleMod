@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import net.ofatech.controlcore.domain.model.keys.Key;
 import net.ofatech.controlcore.domain.model.keys.KeyBinds;
@@ -139,7 +140,7 @@ final class KeyPicker {
         return rest.isEmpty() ? detected : detected + " | " + rest;
     }
 
-    static String describe(Translator tr, String keys, boolean allKeys) {
+    static String describe(Translator tr, String keys) {
         Picked picked = read(keys, true);
         if (picked.custom() || NONE.equals(picked.key())) {
             return keys;
@@ -150,31 +151,42 @@ final class KeyPicker {
                 : tr.t("controlcore.panel.keypick.hold." + picked.hold().toLowerCase(Locale.ROOT)) + " + " + key;
     }
 
-    static boolean isGameAction(String keys) {
-        var parsed = KeyBinds.parse(keys);
-        return parsed.isSuccess()
-                && !parsed.value().combos().isEmpty()
-                && parsed.value().combos().getFirst().inputs().stream()
-                        .anyMatch(input ->
-                                input.signal(true).filter(KeySignal::isPress).isPresent());
+    static boolean followsGameAction(String keys) {
+        return firstCombo(keys)
+                .map(combo -> combo.inputs().stream()
+                        .anyMatch(input -> input.signal(combo.inputs().size() == 1)
+                                .filter(KeySignal::isPress)
+                                .isPresent()))
+                .orElse(false);
     }
 
-    static boolean sameFirstCombo(String a, String b) {
-        var first = KeyBinds.parse(a);
-        var second = KeyBinds.parse(b);
-        return first.isSuccess()
-                && second.isSuccess()
-                && !first.value().combos().isEmpty()
-                && !second.value().combos().isEmpty()
-                && new HashSet<>(first.value().combos().getFirst().inputs())
-                        .equals(new HashSet<>(second.value().combos().getFirst().inputs()));
+    static boolean sharesKeys(String a, String b) {
+        Set<Object> first = triggers(a);
+        return triggers(b).stream().anyMatch(first::contains);
     }
 
     static boolean heard(String keys) {
+        return firstCombo(keys).map(combo -> combo.trigger().isSuccess()).orElse(false);
+    }
+
+    private static Optional<KeyCombo> firstCombo(String keys) {
         var parsed = KeyBinds.parse(keys);
-        return parsed.isSuccess()
-                && !parsed.value().combos().isEmpty()
-                && parsed.value().combos().getFirst().trigger().isSuccess();
+        return parsed.isSuccess() && !parsed.value().combos().isEmpty()
+                ? Optional.of(parsed.value().combos().getFirst())
+                : Optional.empty();
+    }
+
+    private static Set<Object> triggers(String keys) {
+        var parsed = KeyBinds.parse(keys);
+        if (parsed.isFailure()) {
+            return Set.of();
+        }
+        Set<Object> triggers = new HashSet<>();
+        for (KeyCombo combo : parsed.value().combos()) {
+            var trigger = combo.trigger();
+            triggers.add(trigger.isSuccess() ? trigger.value() : new HashSet<>(combo.inputs()));
+        }
+        return triggers;
     }
 
     static List<Option> holds(Translator tr) {

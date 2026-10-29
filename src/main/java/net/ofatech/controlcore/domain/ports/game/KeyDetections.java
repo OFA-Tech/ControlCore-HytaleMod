@@ -1,12 +1,11 @@
 package net.ofatech.controlcore.domain.ports.game;
 
-import java.util.function.BooleanSupplier;
 import net.ofatech.controlcore.domain.model.PlayerId;
 
 @FunctionalInterface
 public interface KeyDetections {
 
-    KeyDetections NONE = (player, rightsUnchanged) -> KeyDetection.NONE;
+    KeyDetections NONE = player -> KeyDetection.NONE;
 
-    KeyDetection viewedBy(PlayerId player, BooleanSupplier rightsUnchanged);
+    KeyDetection viewedBy(PlayerId player);
 }

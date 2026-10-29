@@ -76,7 +76,7 @@ public final class ModRuntime {
         injector.bind(ModuleContext.class, context);
         injector.bind(
                 KeyDetections.class,
-                (player, rights) -> injector.get(KeyDetectionService.class).viewedBy(player, rights));
+                player -> injector.get(KeyDetectionService.class).viewedBy(player));
 
         List<String> failures = new ArrayList<>();
         CommandRegistrar commands = context.commands();

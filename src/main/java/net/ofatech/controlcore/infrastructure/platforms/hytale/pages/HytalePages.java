@@ -2,6 +2,7 @@ package net.ofatech.controlcore.infrastructure.platforms.hytale.pages;
 
 import com.hypixel.hytale.component.Ref;
 import com.hypixel.hytale.component.Store;
+import com.hypixel.hytale.protocol.packets.interface_.Page;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.CustomUIPage;
 import com.hypixel.hytale.server.core.modules.entity.damage.DeathComponent;
@@ -11,6 +12,7 @@ import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.mapping.Messages;
 
@@ -25,7 +27,8 @@ public final class HytalePages {
     }
 
     public enum Reopen {
-        DONE,
+        REOPENED,
+        ALREADY_OPEN,
         GONE,
         DEAD,
         BUSY
@@ -38,7 +41,8 @@ public final class HytalePages {
         }
     }
 
-    public static Reopen reopenIfFree(PlayerRef playerRef, CustomUIPage page) {
+    public static Reopen reopenIfFree(
+            PlayerRef playerRef, CustomUIPage page, Predicate<CustomUIPage> replaceable, Runnable beforeOpen) {
         Ref<EntityStore> ref = playerRef.getReference();
         if (ref == null || !ref.isValid()) {
             return Reopen.GONE;
@@ -53,15 +57,28 @@ public final class HytalePages {
         }
         CustomUIPage current = player.getPageManager().getCustomPage();
         if (current == page) {
-            return Reopen.DONE;
+            return Reopen.ALREADY_OPEN;
         }
-        if (current != null
+        if ((current != null && !replaceable.test(current))
                 || player.getPageManager().getActiveServersidePage() != null
                 || !player.getWindowManager().getWindows().isEmpty()) {
             return Reopen.BUSY;
         }
+        beforeOpen.run();
         player.getPageManager().openCustomPage(ref, store, page);
-        return Reopen.DONE;
+        return Reopen.REOPENED;
+    }
+
+    public static void closeIf(PlayerRef playerRef, Predicate<CustomUIPage> which) {
+        Ref<EntityStore> ref = playerRef.getReference();
+        if (ref == null || !ref.isValid()) {
+            return;
+        }
+        Store<EntityStore> store = ref.getStore();
+        Player player = store.getComponent(ref, Player.getComponentType());
+        if (player != null && which.test(player.getPageManager().getCustomPage())) {
+            player.getPageManager().setPage(ref, store, Page.None);
+        }
     }
 
     public static void tell(PlayerRef playerRef, String text) {
