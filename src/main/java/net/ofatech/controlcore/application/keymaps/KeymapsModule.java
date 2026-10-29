@@ -17,7 +17,8 @@ public final class KeymapsModule implements FeatureModule {
     private final KeyDispatcher dispatcher;
     private final PlayerInput input;
 
-    public KeymapsModule(KeymapRegistry keymaps, KeyDispatcher dispatcher, PlayerInput input) {
+    public KeymapsModule(
+            KeymapRegistry keymaps, KeyDispatcher dispatcher, PlayerInput input, KeyDetectSettings detectSettings) {
         this.keymaps = keymaps;
         this.dispatcher = dispatcher;
         this.input = input;
