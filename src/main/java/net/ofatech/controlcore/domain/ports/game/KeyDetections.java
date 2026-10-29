@@ -8,4 +8,6 @@ public interface KeyDetections {
     KeyDetections NONE = player -> KeyDetection.NONE;
 
     KeyDetection viewedBy(PlayerId player);
+
+    default void cancel(PlayerId player) {}
 }

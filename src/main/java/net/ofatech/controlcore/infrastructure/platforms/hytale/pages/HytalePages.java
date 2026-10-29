@@ -41,8 +41,7 @@ public final class HytalePages {
         }
     }
 
-    public static Reopen reopenIfFree(
-            PlayerRef playerRef, CustomUIPage page, Predicate<CustomUIPage> replaceable, Runnable beforeOpen) {
+    public static Reopen reopenIfFree(PlayerRef playerRef, CustomUIPage page, Predicate<CustomUIPage> replaceable) {
         Ref<EntityStore> ref = playerRef.getReference();
         if (ref == null || !ref.isValid()) {
             return Reopen.GONE;
@@ -64,7 +63,6 @@ public final class HytalePages {
                 || !player.getWindowManager().getWindows().isEmpty()) {
             return Reopen.BUSY;
         }
-        beforeOpen.run();
         player.getPageManager().openCustomPage(ref, store, page);
         return Reopen.REOPENED;
     }

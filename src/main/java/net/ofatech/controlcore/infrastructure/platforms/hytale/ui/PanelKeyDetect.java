@@ -4,8 +4,9 @@ import com.hypixel.hytale.server.core.entity.entities.player.pages.CustomUIPage;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import net.ofatech.controlcore.domain.model.PanelRights;
 import net.ofatech.controlcore.domain.model.text.Translator;
@@ -18,14 +19,18 @@ final class PanelKeyDetect {
 
     private static final String FOOTER = "#FooterStatus.Text";
 
+    enum Target {
+        OWN_KEY,
+        SERVER_KEY,
+        BIND_FORM
+    }
+
     interface Host {
         PlayerRef viewer();
 
         CustomUIPage page();
 
         void closePanel();
-
-        boolean forgetUnsavedRows();
 
         void send(UICommandBuilder update);
 
@@ -46,14 +51,23 @@ final class PanelKeyDetect {
         this.log = log;
     }
 
-    void start(boolean reopenWithoutKey, BiFunction<String, KeyDetection.Mode, String> applyKeys) {
+    void start(Target target, BiFunction<String, KeyDetection.Mode, String> applyKeys) {
         KeyDetection.Mode mode = detection.mode();
-        PanelRights atStart = rights.get();
-        BooleanSupplier rightsUnchanged = () -> rights.get().equals(atStart);
+        Function<PanelRights, Object> relevant =
+                target == Target.OWN_KEY ? PanelRights::panelEnabled : current -> current;
+        Object atStart = relevant.apply(rights.get());
+        long startedAt = System.nanoTime();
         detection.detect(
                 mode,
-                result -> HytalePages.onWorldThread(
-                        host.viewer(), () -> finish(mode, result, reopenWithoutKey, rightsUnchanged, applyKeys)));
+                result -> HytalePages.onWorldThread(host.viewer(), () -> {
+                    boolean rightsUnchanged = relevant.apply(rights.get()).equals(atStart);
+                    boolean timedOut = System.nanoTime() - startedAt
+                            >= TimeUnit.SECONDS.toNanos(
+                                    mode == KeyDetection.Mode.GAME
+                                            ? detection.gameTimeoutSeconds()
+                                            : detection.screenTimeoutSeconds());
+                    finish(mode, result, target == Target.BIND_FORM, rightsUnchanged, timedOut, applyKeys);
+                }));
         if (mode == KeyDetection.Mode.GAME) {
             host.closePanel();
         }
@@ -63,10 +77,11 @@ final class PanelKeyDetect {
             KeyDetection.Mode mode,
             Optional<String> result,
             boolean reopenWithoutKey,
-            BooleanSupplier rightsUnchanged,
+            boolean rightsUnchanged,
+            boolean timedOut,
             BiFunction<String, KeyDetection.Mode, String> applyKeys) {
         try {
-            if (!rightsUnchanged.getAsBoolean()) {
+            if (result.isPresent() && !rightsUnchanged) {
                 HytalePages.tell(host.viewer(), tr.t("controlcore.keys.detect.rights_changed"));
                 return;
             }
@@ -76,24 +91,15 @@ final class PanelKeyDetect {
                         tr.t("controlcore.keys.detect.timed_out", "seconds", detection.gameTimeoutSeconds()));
                 return;
             }
-            boolean[] dropped = new boolean[1];
-            HytalePages.Reopen reopened = HytalePages.reopenIfFree(
-                    host.viewer(),
-                    host.page(),
-                    HytaleKeyCapture::isCapturePage,
-                    () -> dropped[0] = host.forgetUnsavedRows());
+            HytalePages.Reopen reopened =
+                    HytalePages.reopenIfFree(host.viewer(), host.page(), HytaleKeyCapture::isCapturePage);
             if (reopened != HytalePages.Reopen.REOPENED && reopened != HytalePages.Reopen.ALREADY_OPEN) {
                 result.ifPresent(keys -> HytalePages.tell(host.viewer(), notSaved(reopened, keys)));
                 return;
             }
             String text = result.map(keys -> host.asViewer(() -> applyKeys.apply(keys, mode)))
-                    .orElseGet(() -> mode == KeyDetection.Mode.GAME
-                            ? tr.t("controlcore.keys.detect.timed_out", "seconds", detection.gameTimeoutSeconds())
-                            : tr.t("controlcore.keys.detect.cancelled"));
+                    .orElseGet(() -> cancelled(mode, timedOut));
             if (text != null) {
-                if (dropped[0]) {
-                    text = text + " " + tr.t("controlcore.keys.detect.unsaved_dropped");
-                }
                 UICommandBuilder update = new UICommandBuilder();
                 update.set(FOOTER, text);
                 host.send(update);
@@ -101,6 +107,15 @@ final class PanelKeyDetect {
         } catch (RuntimeException e) {
             log.error("Detect key failed for " + host.viewer().getUsername(), e);
         }
+    }
+
+    private String cancelled(KeyDetection.Mode mode, boolean timedOut) {
+        if (mode == KeyDetection.Mode.GAME) {
+            return tr.t("controlcore.keys.detect.timed_out_here", "seconds", detection.gameTimeoutSeconds());
+        }
+        return timedOut
+                ? tr.t("controlcore.keys.detect.screen_timed_out", "minutes", detection.screenTimeoutSeconds() / 60)
+                : tr.t("controlcore.keys.detect.cancelled");
     }
 
     private String notSaved(HytalePages.Reopen reason, String keys) {

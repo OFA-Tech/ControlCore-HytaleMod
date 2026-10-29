@@ -86,7 +86,7 @@ class KeyDetectRuntimeBanca3Test extends RuntimeTestBase {
 
     @Test
     void timeoutSecondsMatchesTheGameTimeoutAndTheToast() {
-        assertThat(detection().gameTimeoutSeconds()).isEqualTo(KeyDetector.TIMEOUT.toSeconds());
+        assertThat(detection().gameTimeoutSeconds()).isEqualTo(KeyDetector.GAME_TIMEOUT.toSeconds());
     }
 
     @Test

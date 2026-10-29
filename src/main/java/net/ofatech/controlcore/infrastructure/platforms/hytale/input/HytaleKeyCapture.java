@@ -1,5 +1,6 @@
 package net.ofatech.controlcore.infrastructure.platforms.hytale.input;
 
+import com.hypixel.hytale.server.core.entity.entities.player.pages.CustomUIPage;
 import java.util.Optional;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -16,7 +17,7 @@ public final class HytaleKeyCapture implements KeyCapture {
         this.log = log;
     }
 
-    public static boolean isCapturePage(Object page) {
+    public static boolean isCapturePage(CustomUIPage page) {
         return page instanceof KeyCapturePage;
     }
 

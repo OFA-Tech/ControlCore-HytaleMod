@@ -89,4 +89,25 @@ class KeymapsEditorTest {
     private String value(Optional<PlayerId> player) {
         return editor.read(HOME, player).value().value();
     }
+
+    @Test
+    void aViewerWhoIsNoLongerAdminCannotChangeTheServersKeysBindsOrGameActions() {
+        boolean[] admin = {true};
+        KeymapsEditor panel = editor.viewedBy(alice, () -> admin[0]);
+        assertThat(panel.write(HOME, Optional.empty(), "ctrl+f").isSuccess()).isTrue();
+
+        admin[0] = false;
+
+        assertThat(panel.write(HOME, Optional.empty(), "alt+3").error().code()).isEqualTo("Keys.ServerOnlyAdmins");
+        assertThat(panel.reset(HOME, Optional.empty()).isFailure()).isTrue();
+        assertThat(panel.add("warp", "ctrl+r", "warp spawn", false).isFailure()).isTrue();
+        assertThat(panel.remove("warp").isFailure()).isTrue();
+        assertThat(panel.setGameAction(HOME, net.ofatech.controlcore.domain.model.keys.GameActionMode.REPLACE)
+                        .isFailure())
+                .isTrue();
+        assertThat(value(Optional.empty())).isEqualTo("CTRL + F");
+        assertThat(panel.write(HOME, Optional.of(alice), "alt+3").isSuccess())
+                .as("her own keys still work")
+                .isTrue();
+    }
 }

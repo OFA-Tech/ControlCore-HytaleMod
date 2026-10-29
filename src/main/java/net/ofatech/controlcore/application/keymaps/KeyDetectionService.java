@@ -33,8 +33,14 @@ public final class KeyDetectionService implements KeyDetections {
     }
 
     @Override
+    public void cancel(PlayerId player) {
+        if (detector.cancel(player)) {
+            capture.close(player);
+        }
+    }
+
+    @Override
     public KeyDetection viewedBy(PlayerId player) {
-        detector.cancel(player);
         return new KeyDetection() {
             @Override
             public boolean allKeys() {
@@ -48,7 +54,12 @@ public final class KeyDetectionService implements KeyDetections {
 
             @Override
             public long gameTimeoutSeconds() {
-                return KeyDetector.TIMEOUT.toSeconds();
+                return KeyDetector.GAME_TIMEOUT.toSeconds();
+            }
+
+            @Override
+            public long screenTimeoutSeconds() {
+                return KeyDetector.SCREEN_TIMEOUT.toSeconds();
             }
 
             @Override
@@ -76,8 +87,8 @@ public final class KeyDetectionService implements KeyDetections {
         notifications.toast(
                 player,
                 tr.t("controlcore.keys.detect.toast_title"),
-                tr.t("controlcore.keys.detect.toast_text", "seconds", KeyDetector.TIMEOUT.toSeconds()),
+                tr.t("controlcore.keys.detect.toast_text", "seconds", KeyDetector.GAME_TIMEOUT.toSeconds()),
                 ToastLevel.INFO,
-                (int) KeyDetector.TIMEOUT.toSeconds());
+                (int) KeyDetector.GAME_TIMEOUT.toSeconds());
     }
 }

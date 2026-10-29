@@ -24,12 +24,12 @@ import net.ofatech.controlcore.domain.ports.game.Scheduler;
 
 public final class KeyDetector implements PlayerInput.Listener {
 
-    public static final Duration TIMEOUT = Duration.ofSeconds(10);
+    public static final Duration GAME_TIMEOUT = Duration.ofSeconds(10);
     public static final Duration SCREEN_TIMEOUT = Duration.ofMinutes(5);
 
     public record Detected(String keys) {}
 
-    private static final Map<KeySignal, String> HOLDS = holds();
+    private static final Map<KeySignal, String> HOLDS = holdSignals();
     private static final Map<KeySignal, String> PRESSES = presses();
     private static final Set<KeySignal> CLICKS = Set.of(KeySignal.PRIMARY, KeySignal.SECONDARY);
 
@@ -74,11 +74,13 @@ public final class KeyDetector implements PlayerInput.Listener {
         }
     }
 
-    public void cancel(PlayerId player) {
+    public boolean cancel(PlayerId player) {
         Pending current = pending.remove(player);
-        if (current != null) {
-            current.stopTimer();
+        if (current == null) {
+            return false;
         }
+        current.stopTimer();
+        return !current.fromGame();
     }
 
     public void forget(PlayerId player) {
@@ -92,7 +94,7 @@ public final class KeyDetector implements PlayerInput.Listener {
         if (current != null && current.fromGame()) {
             Optional<String> key = key(signal);
             List<String> holds =
-                    key.map(pressed -> holds(player, current, pressed)).orElse(List.of());
+                    key.map(pressed -> newHolds(player, current, pressed)).orElse(List.of());
             boolean bareClick = CLICKS.contains(signal) && holds.isEmpty();
             if (key.isPresent()
                     && !bareClick
@@ -124,7 +126,7 @@ public final class KeyDetector implements PlayerInput.Listener {
         }
         next.timeout()
                 .set(scheduler.runLater(
-                        fromGame ? TIMEOUT : SCREEN_TIMEOUT, () -> finish(player, next, Optional.empty())));
+                        fromGame ? GAME_TIMEOUT : SCREEN_TIMEOUT, () -> finish(player, next, Optional.empty())));
         return token;
     }
 
@@ -137,7 +139,7 @@ public final class KeyDetector implements PlayerInput.Listener {
         return true;
     }
 
-    private List<String> holds(PlayerId player, Pending detection, String key) {
+    private List<String> newHolds(PlayerId player, Pending detection, String key) {
         Set<KeySignal> now = held.getOrDefault(player, Set.of());
         return HOLDS.entrySet().stream()
                 .filter(hold -> now.contains(hold.getKey())
@@ -155,7 +157,7 @@ public final class KeyDetector implements PlayerInput.Listener {
         return Optional.ofNullable(PRESSES.get(signal));
     }
 
-    private static Map<KeySignal, String> holds() {
+    private static Map<KeySignal, String> holdSignals() {
         Map<KeySignal, String> holds = new LinkedHashMap<>();
         for (Key key : Stream.concat(Key.HOLDS.stream(), Stream.of(Key.SPACE)).toList()) {
             key.signal(false).ifPresent(signal -> holds.put(signal, KeyCombo.write(key)));

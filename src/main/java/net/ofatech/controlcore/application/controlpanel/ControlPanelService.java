@@ -180,15 +180,15 @@ public final class ControlPanelService implements ControlPanelApi {
                     "ControlPanel.PlayerNotFound",
                     Text.key("controlcore.errors.controlpanel.player_offline", "That player is not online.")));
         }
-        return view.open(
+        Result<Void> opened = view.open(
                 player,
                 request,
                 new ControlPanelContent(
                         server.read(),
                         permitted(serverConfig, player),
                         permitted(registry, player),
-                        keymaps.viewedBy(player),
-                        keymaps.viewedBy(player),
+                        keymaps.viewedBy(player, () -> permissions.isAdmin(player)),
+                        keymaps.viewedBy(player, () -> permissions.isAdmin(player)),
                         settings.startTab(player),
                         permissions.isAdmin(player),
                         texts.forPlayer(Optional.of(player)),
@@ -223,7 +223,10 @@ public final class ControlPanelService implements ControlPanelApi {
                                 ? players.find(player).map(automation::viewedBy)
                                 : Optional.empty(),
                         keyDetection.viewedBy(player),
-                        () -> rights(player)));
+                        () -> rights(player),
+                        () -> permissions.isAdmin(player)));
+        opened.onSuccess(nothing -> keyDetection.cancel(player));
+        return opened;
     }
 
     private PanelRights rights(PlayerId player) {

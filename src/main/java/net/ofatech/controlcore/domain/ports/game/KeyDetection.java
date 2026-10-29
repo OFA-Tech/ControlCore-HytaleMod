@@ -27,6 +27,11 @@ public interface KeyDetection {
         }
 
         @Override
+        public long screenTimeoutSeconds() {
+            return 0;
+        }
+
+        @Override
         public void detect(Mode mode, Consumer<Optional<String>> done) {
             done.accept(Optional.empty());
         }
@@ -37,6 +42,8 @@ public interface KeyDetection {
     Mode mode();
 
     long gameTimeoutSeconds();
+
+    long screenTimeoutSeconds();
 
     void detect(Mode mode, Consumer<Optional<String>> done);
 }

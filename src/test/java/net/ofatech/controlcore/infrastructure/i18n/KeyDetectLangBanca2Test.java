@@ -45,7 +45,8 @@ class KeyDetectLangBanca2Test {
             assertThat(messages.get("controlcore.keys.detect.saved_game")).contains("{keys}");
             assertThat(messages.get("controlcore.ui.keyCapture.holding")).contains("{keys}");
             assertThat(messages.get("controlcore.ui.keyCapture.unsupported")).doesNotContain("{code}");
-            assertThat(messages.get("controlcore.keys.detect.none")).contains("{seconds}");
+            assertThat(messages.get("controlcore.keys.detect.timed_out_here")).contains("{seconds}");
+            assertThat(messages.get("controlcore.keys.detect.screen_timed_out")).contains("{minutes}");
         }
     }
 }

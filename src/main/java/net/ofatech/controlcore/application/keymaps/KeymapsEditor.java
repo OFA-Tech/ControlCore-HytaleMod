@@ -3,6 +3,7 @@ package net.ofatech.controlcore.application.keymaps;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.application.settings.ModNames;
 import net.ofatech.controlcore.application.text.Texts;
@@ -33,20 +34,23 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
     private final Texts texts;
     private final Translator tr;
     private final ModNames modNames;
+    private final BooleanSupplier mayChangeServer;
 
     public KeymapsEditor(KeymapRegistry keymaps, Texts texts, ModNames modNames) {
-        this(keymaps, texts, texts.forServer(), modNames);
+        this(keymaps, texts, texts.forServer(), modNames, () -> true);
     }
 
-    private KeymapsEditor(KeymapRegistry keymaps, Texts texts, Translator tr, ModNames modNames) {
+    private KeymapsEditor(
+            KeymapRegistry keymaps, Texts texts, Translator tr, ModNames modNames, BooleanSupplier mayChangeServer) {
         this.keymaps = keymaps;
         this.texts = texts;
         this.tr = tr;
         this.modNames = modNames;
+        this.mayChangeServer = mayChangeServer;
     }
 
-    public KeymapsEditor viewedBy(PlayerId viewer) {
-        return new KeymapsEditor(keymaps, texts, texts.forPlayer(Optional.of(viewer)), modNames);
+    public KeymapsEditor viewedBy(PlayerId viewer, BooleanSupplier mayChangeServer) {
+        return new KeymapsEditor(keymaps, texts, texts.forPlayer(Optional.of(viewer)), modNames, mayChangeServer);
     }
 
     @Override
@@ -79,7 +83,7 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
     @Override
     public Result<SettingSnapshot> write(SettingId id, Optional<PlayerId> player, String text) {
         if (player.isEmpty()) {
-            return keymaps.bindServer(id, text).flatMap(binds -> read(id, player));
+            return serverChange().flatMap(ok -> keymaps.bindServer(id, text)).flatMap(binds -> read(id, player));
         }
         return player(player).flatMap(viewer -> keymaps.bind(id, viewer, text).flatMap(binds -> read(id, player)));
     }
@@ -87,14 +91,16 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
     @Override
     public Result<SettingSnapshot> reset(SettingId id, Optional<PlayerId> player) {
         if (player.isEmpty()) {
-            return keymaps.resetServerBind(id).flatMap(binds -> read(id, player));
+            return serverChange().flatMap(ok -> keymaps.resetServerBind(id)).flatMap(binds -> read(id, player));
         }
         return player(player).flatMap(viewer -> keymaps.resetBind(id, viewer).flatMap(binds -> read(id, player)));
     }
 
     @Override
     public Result<String> add(String name, String keys, String command, boolean runAsServer) {
-        return keymaps.addCustom(name, keys, command, runAsServer).map(action -> KeymapsText.created(tr, action));
+        return serverChange()
+                .flatMap(ok -> keymaps.addCustom(name, keys, command, runAsServer))
+                .map(action -> KeymapsText.created(tr, action));
     }
 
     @Override
@@ -104,7 +110,7 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
 
     @Override
     public Result<String> remove(String name) {
-        return keymaps.removeCustom(name).map(action -> KeymapsText.removed(tr, action));
+        return serverChange().flatMap(ok -> keymaps.removeCustom(name)).map(action -> KeymapsText.removed(tr, action));
     }
 
     @Override
@@ -185,6 +191,16 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
 
     @Override
     public Result<GameActionMode> setGameAction(SettingId action, GameActionMode mode) {
-        return keymaps.setGameAction(action, mode);
+        return serverChange().flatMap(ok -> keymaps.setGameAction(action, mode));
+    }
+
+    private Result<Boolean> serverChange() {
+        return mayChangeServer.getAsBoolean()
+                ? Result.success(true)
+                : Result.failure(Error.forbidden(
+                        "Keys.ServerOnlyAdmins",
+                        Text.key(
+                                "controlcore.errors.keys.server_only_admins",
+                                "Only admins can change the server's keys and binds.")));
     }
 }

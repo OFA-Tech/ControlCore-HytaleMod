@@ -5,6 +5,7 @@ import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
@@ -81,12 +82,10 @@ final class KeyBindForm {
                 .append(PanelAction.CHECKED, "#NewBindAsServer.Value");
     }
 
-    static boolean owns(String name) {
-        return ADD.equals(name)
-                || EDIT.equals(name)
-                || REMOVE.equals(name)
-                || TOGGLE.equals(name)
-                || DETECT.equals(name);
+    private static final Set<String> CHANGES = Set.of(ADD, EDIT, REMOVE, DETECT);
+
+    static boolean changesServerBinds(String name) {
+        return CHANGES.contains(name);
     }
 
     boolean handle(PanelAction action) {

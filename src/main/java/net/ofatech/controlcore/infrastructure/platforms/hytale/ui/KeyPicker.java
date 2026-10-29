@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.ofatech.controlcore.domain.model.keys.Key;
 import net.ofatech.controlcore.domain.model.keys.KeyBinds;
 import net.ofatech.controlcore.domain.model.keys.KeyCombo;
@@ -20,7 +21,10 @@ final class KeyPicker {
     static final String NONE = "NONE";
     static final String CUSTOM = "CUSTOM";
 
-    static final List<String> HOLDS = List.of(NONE, "CTRL", "ALT", "SHIFT", "SPACE", "STAND_STILL");
+    static final List<String> HOLDS = Stream.of(
+                    Stream.of(NONE), Key.HOLDS.stream().map(Key::name), Stream.of(Key.SPACE.name(), "STAND_STILL"))
+            .flatMap(names -> names)
+            .toList();
     static final List<String> KEYS = List.of(
             NONE,
             "Q",

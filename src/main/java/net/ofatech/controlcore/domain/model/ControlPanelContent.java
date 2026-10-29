@@ -2,6 +2,7 @@ package net.ofatech.controlcore.domain.model;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import net.ofatech.controlcore.domain.guard.Guard;
 import net.ofatech.controlcore.domain.model.automation.AutomationView;
@@ -41,7 +42,8 @@ public record ControlPanelContent(
         Optional<DiagnosticsView> diagnostics,
         Optional<AutomationView> automation,
         KeyDetection keyDetection,
-        Supplier<PanelRights> rights) {
+        Supplier<PanelRights> rights,
+        BooleanSupplier stillAdmin) {
 
     public ControlPanelContent {
         Guard.notNull(server, "server");
@@ -65,5 +67,6 @@ public record ControlPanelContent(
         Guard.notNull(automation, "automation");
         Guard.notNull(keyDetection, "keyDetection");
         Guard.notNull(rights, "rights");
+        Guard.notNull(stillAdmin, "stillAdmin");
     }
 }
