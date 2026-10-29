@@ -82,10 +82,11 @@ final class SettingRows {
         commands.set(element + " #Count.Text", count);
     }
 
-    static void showKeys(Translator tr, String hold, String key, String value, UICommandBuilder commands) {
-        KeyPicker.Picked picked = KeyPicker.read(value);
+    static void showKeys(
+            Translator tr, String hold, String key, String value, boolean allKeys, UICommandBuilder commands) {
+        KeyPicker.Picked picked = KeyPicker.read(value, allKeys);
         commands.set(hold + ".Entries", entries(KeyPicker.holds(tr)));
-        commands.set(key + ".Entries", entries(KeyPicker.keys(tr, picked)));
+        commands.set(key + ".Entries", entries(KeyPicker.keys(tr, picked, allKeys)));
         commands.set(hold + ".Value", picked.hold());
         commands.set(key + ".Value", picked.key());
     }
@@ -283,7 +284,13 @@ final class SettingRows {
         String input = element + " #Input";
         switch (kind) {
             case KEYS ->
-                showKeys(section.translator(), element + " #Hold", element + " #Key", snapshot.value(), commands);
+                showKeys(
+                        section.translator(),
+                        element + " #Hold",
+                        element + " #Key",
+                        snapshot.value(),
+                        section.allKeys(),
+                        commands);
             case TEXT, CHOICE -> commands.set(input + ".Value", snapshot.value());
             case COLOR -> {
                 commands.set(input + ".Value", snapshot.value());

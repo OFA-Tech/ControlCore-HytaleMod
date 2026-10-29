@@ -59,10 +59,11 @@ final class SettingsSection {
     private final String emptyText;
     private final boolean keys;
     private final Translator tr;
+    private final boolean allKeys;
 
     SettingsSection(
             SettingsEditor settings, SettingScope scope, Optional<PlayerId> player, String emptyText, Translator tr) {
-        this(settings, scope, player, emptyText, false, tr);
+        this(settings, scope, player, emptyText, false, tr, false);
     }
 
     private SettingsSection(
@@ -71,18 +72,25 @@ final class SettingsSection {
             Optional<PlayerId> player,
             String emptyText,
             boolean keys,
-            Translator tr) {
+            Translator tr,
+            boolean allKeys) {
         this.settings = settings;
         this.scope = scope;
         this.player = scope == SettingScope.PLAYER ? player : Optional.empty();
         this.emptyText = emptyText;
         this.keys = keys;
         this.tr = tr;
+        this.allKeys = allKeys;
     }
 
     static SettingsSection keymaps(
-            SettingsEditor keymaps, SettingScope scope, Optional<PlayerId> player, String emptyText, Translator tr) {
-        return new SettingsSection(keymaps, scope, player, emptyText, true, tr);
+            SettingsEditor keymaps,
+            SettingScope scope,
+            Optional<PlayerId> player,
+            String emptyText,
+            Translator tr,
+            boolean allKeys) {
+        return new SettingsSection(keymaps, scope, player, emptyText, true, tr, allKeys);
     }
 
     String placeholder(SettingSnapshot snapshot) {
@@ -311,6 +319,10 @@ final class SettingsSection {
 
     Translator translator() {
         return tr;
+    }
+
+    boolean allKeys() {
+        return allKeys;
     }
 
     String error(Error error) {

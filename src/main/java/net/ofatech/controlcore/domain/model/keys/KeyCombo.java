@@ -145,7 +145,7 @@ public record KeyCombo(List<KeyInput> inputs) {
                     "Keys.NotDetectable",
                     Text.key(
                                     "controlcore.errors.keys.not_detectable",
-                                    "Hytale does not tell servers about {missing} yet.")
+                                    "Hytale does not tell servers about {missing} yet. Give it a game action in Hytale's Controls and use Detect key.")
                             .with("missing", String.join(", ", missing))));
         }
         if (held.contains(KeySignal.MOVING) && held.contains(KeySignal.STANDING_STILL)) {

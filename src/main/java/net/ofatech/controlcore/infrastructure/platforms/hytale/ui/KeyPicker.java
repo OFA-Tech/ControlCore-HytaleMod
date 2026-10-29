@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import net.ofatech.controlcore.domain.model.keys.Key;
 import net.ofatech.controlcore.domain.model.keys.KeyBinds;
 import net.ofatech.controlcore.domain.model.keys.KeyCombo;
 import net.ofatech.controlcore.domain.model.keys.KeyInput;
@@ -82,6 +83,10 @@ final class KeyPicker {
     private KeyPicker() {}
 
     static Picked read(String text) {
+        return read(text, false);
+    }
+
+    static Picked read(String text, boolean allKeys) {
         var parsed = KeyBinds.parse(text);
         if (parsed.isFailure()) {
             return new Picked(NONE, CUSTOM, text == null ? "" : text.strip(), "");
@@ -98,6 +103,10 @@ final class KeyPicker {
         String key = null;
         for (KeyInput input : inputs) {
             Optional<KeySignal> signal = input.signal(alone);
+            if (signal.isEmpty() && allKeys && key == null && input instanceof Key extra && isExtra(extra)) {
+                key = extra.name();
+                continue;
+            }
             if (signal.isEmpty()) {
                 return new Picked(NONE, CUSTOM, first, rest);
             }
@@ -136,6 +145,10 @@ final class KeyPicker {
     }
 
     static List<Option> keys(Translator tr, Picked picked) {
+        return keys(tr, picked, false);
+    }
+
+    static List<Option> keys(Translator tr, Picked picked, boolean allKeys) {
         List<Option> options = new ArrayList<>();
         if (picked.custom()) {
             options.add(new Option(CUSTOM, tr.t("controlcore.panel.keypick.custom", "keys", picked.first())));
@@ -143,7 +156,19 @@ final class KeyPicker {
         for (String key : KEYS) {
             options.add(new Option(key, keyLabel(tr, key)));
         }
+        if (allKeys) {
+            for (Key extra : Key.values()) {
+                if (isExtra(extra)) {
+                    options.add(
+                            new Option(extra.name(), tr.t("controlcore.panel.keypick.unheard", "key", extra.label())));
+                }
+            }
+        }
         return options;
+    }
+
+    private static boolean isExtra(Key key) {
+        return key.signal(false).isEmpty() && key.signal(true).isEmpty();
     }
 
     private static String keyLabel(Translator tr, String key) {

@@ -133,4 +133,14 @@ class KeyDetectorTest {
         assertThat(runner.runs).hasSize(1);
         assertThat(results).isEmpty();
     }
+
+    @Test
+    void bindsOnKeysTheServerCantHearPointToDetectKey() {
+        String problems = KeymapsText.problems(
+                net.ofatech.controlcore.fakes.TestTexts.english(),
+                net.ofatech.controlcore.domain.model.keys.KeyBinds.parse("numpad_5")
+                        .value());
+
+        assertThat(problems).contains("NUMPAD 5").contains("Detect key");
+    }
 }

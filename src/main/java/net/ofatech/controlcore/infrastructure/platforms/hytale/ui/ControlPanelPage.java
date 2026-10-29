@@ -196,8 +196,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         ControlPanelRequest shownSections = request.isEmpty() ? ControlPanelRequest.PLAYER_PREFERENCES : request;
         this.customKeyBinds = content.customKeyBinds();
         boolean manageKeys = content.manageKeys() && shownSections.includeRegisteredActions();
-        this.bindForm =
-                manageKeys ? Optional.of(new KeyBindForm(content.customKeyBinds(), tr, hooks)) : Optional.empty();
+        this.bindForm = manageKeys
+                ? Optional.of(new KeyBindForm(
+                        content.customKeyBinds(),
+                        tr,
+                        hooks,
+                        content.keyDetection().allKeys()))
+                : Optional.empty();
         this.permissionsTab = shownSections.includeServerSettings()
                 ? content.permissions().map(view -> new PermissionsTab(view, tr, hooks))
                 : Optional.empty();
@@ -277,7 +282,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                             SettingScope.PLAYER,
                             viewer,
                             tr.t("controlcore.panel.empty.keymaps"),
-                            tr));
+                            tr,
+                            content.keyDetection().allKeys()));
         }
         if (manageKeys) {
             sections.put(
@@ -287,7 +293,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                             SettingScope.SERVER,
                             viewer,
                             tr.t("controlcore.panel.empty.server_keymaps"),
-                            tr));
+                            tr,
+                            content.keyDetection().allKeys()));
         }
         content.focus().ifPresent(this::focusMod);
     }

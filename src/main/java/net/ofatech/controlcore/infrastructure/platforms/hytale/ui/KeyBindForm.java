@@ -36,11 +36,13 @@ final class KeyBindForm {
     private final CustomKeyBindEditor binds;
     private final Translator tr;
     private final Host host;
+    private final boolean allKeys;
     private boolean open;
     private String formKeys = KeyBinds.NONE;
     private Optional<Draft> draft = Optional.empty();
 
-    KeyBindForm(CustomKeyBindEditor binds, Translator tr, Host host) {
+    KeyBindForm(CustomKeyBindEditor binds, Translator tr, Host host, boolean allKeys) {
+        this.allKeys = allKeys;
         this.binds = binds;
         this.tr = tr;
         this.host = host;
@@ -55,7 +57,7 @@ final class KeyBindForm {
         events.addEventBinding(
                 CustomUIEventBindingType.Activating, "#NewBindToggle", EventData.of(PanelAction.KEY, TOGGLE));
         commands.set("#NewBindName.PlaceholderText", tr.t("controlcore.panel.bind.name_hint"));
-        SettingRows.showKeys(tr, "#NewBindHold", "#NewBindKey", formKeys, commands);
+        SettingRows.showKeys(tr, "#NewBindHold", "#NewBindKey", formKeys, allKeys, commands);
         commands.set("#NewBindCommand.PlaceholderText", tr.t("controlcore.panel.bind.command_hint"));
         draft.ifPresent(saved -> {
             commands.set("#NewBindName.Value", saved.name());
@@ -119,7 +121,7 @@ final class KeyBindForm {
                             draft = Optional.empty();
                             formKeys = bind.keys();
                             update.set("#NewBindName.Value", bind.name());
-                            SettingRows.showKeys(tr, "#NewBindHold", "#NewBindKey", bind.keys(), update);
+                            SettingRows.showKeys(tr, "#NewBindHold", "#NewBindKey", bind.keys(), allKeys, update);
                             update.set("#NewBindCommand.Value", bind.command());
                             update.set("#NewBindAsServer.Value", bind.runAsServer());
                             update.set(STATUS, tr.t("controlcore.panel.bind.editing", "name", bind.name()));
@@ -152,7 +154,7 @@ final class KeyBindForm {
         if (result.isSuccess()) {
             clearDraft();
             update.set("#NewBindName.Value", "");
-            SettingRows.showKeys(tr, "#NewBindHold", "#NewBindKey", "none", update);
+            SettingRows.showKeys(tr, "#NewBindHold", "#NewBindKey", "none", allKeys, update);
             update.set("#NewBindCommand.Value", "");
             update.set("#NewBindAsServer.Value", false);
         }
