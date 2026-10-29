@@ -22,26 +22,29 @@ public interface KeyDetection {
         }
 
         @Override
-        public Optional<Mode> detect(Consumer<Optional<String>> done) {
-            return Optional.empty();
+        public long timeoutSeconds() {
+            return 0;
         }
 
         @Override
-        public boolean stillAllowed() {
+        public Mode detect(Consumer<Optional<String>> done) {
+            done.accept(Optional.empty());
+            return Mode.GAME;
+        }
+
+        @Override
+        public boolean rightsUnchanged() {
             return true;
         }
-
-        @Override
-        public void tell(String title, String text) {}
     };
 
     boolean allKeys();
 
     Mode mode();
 
-    Optional<Mode> detect(Consumer<Optional<String>> done);
+    long timeoutSeconds();
 
-    boolean stillAllowed();
+    Mode detect(Consumer<Optional<String>> done);
 
-    void tell(String title, String text);
+    boolean rightsUnchanged();
 }

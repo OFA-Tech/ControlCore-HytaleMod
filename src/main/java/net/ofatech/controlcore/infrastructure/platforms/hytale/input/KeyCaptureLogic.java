@@ -11,7 +11,7 @@ import net.ofatech.controlcore.domain.model.keys.KeyCombo;
 final class KeyCaptureLogic {
 
     static final long HOLD_WINDOW_MILLIS = 1200;
-    private static final List<String> HOLD_ORDER = List.of("CTRL", "ALT", "SHIFT");
+    private static final List<Key> HOLD_ORDER = Key.HOLDS;
 
     sealed interface Outcome {
 
@@ -30,14 +30,14 @@ final class KeyCaptureLogic {
         record Captured(String keys) implements Outcome {}
     }
 
-    private final Map<String, Long> lastSeen = new LinkedHashMap<>();
+    private final Map<Key, Long> lastSeen = new LinkedHashMap<>();
 
     Outcome accept(int keycode, boolean repeat, long nowMillis) {
         if (keycode == SdlKeys.ESCAPE) {
             return new Outcome.Cancelled();
         }
         if (SdlKeys.isModifier(keycode)) {
-            Optional<String> hold = SdlKeys.hold(keycode);
+            Optional<Key> hold = SdlKeys.hold(keycode);
             if (hold.isEmpty()) {
                 return new Outcome.Waiting();
             }
@@ -62,6 +62,7 @@ final class KeyCaptureLogic {
                     Long seen = lastSeen.get(hold);
                     return seen != null && nowMillis - seen <= HOLD_WINDOW_MILLIS;
                 })
+                .map(KeyCombo::write)
                 .collect(Collectors.joining("+"));
     }
 }

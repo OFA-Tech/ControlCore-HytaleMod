@@ -26,7 +26,7 @@ class KeyCaptureLogicTest {
         assertThat(SdlKeys.key(1073741925)).contains(Key.MENU);
         assertThat(SdlKeys.key(42424242)).isEmpty();
         assertThat(SdlKeys.isModifier(CTRL)).isTrue();
-        assertThat(SdlKeys.hold(RIGHT_ALT)).contains("ALT");
+        assertThat(SdlKeys.hold(RIGHT_ALT)).contains(net.ofatech.controlcore.domain.model.keys.Key.ALT);
         assertThat(SdlKeys.hold(1073742051)).isEmpty();
     }
 

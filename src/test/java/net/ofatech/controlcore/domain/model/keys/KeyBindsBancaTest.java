@@ -70,10 +70,13 @@ class KeyBindsBancaTest {
     }
 
     @Test
-    void numpadSymbolKeysCanBeWrittenAsTheirLabelShows() {
+    void numpadSymbolKeysShowTheirSymbolAndAreWrittenByName() {
         for (Key key :
                 List.of(Key.NUMPAD_DIVIDE, Key.NUMPAD_MULTIPLY, Key.NUMPAD_MINUS, Key.NUMPAD_PLUS, Key.NUMPAD_PERIOD)) {
-            assertThat(KeyBinds.parse(key.label()).isSuccess()).as(key.label()).isTrue();
+            assertThat(key.label()).startsWith("NUMPAD ").hasSize(8);
+            assertThat(KeyBinds.parse(KeyCombo.write(key)).isSuccess())
+                    .as(key.name())
+                    .isTrue();
         }
     }
 }

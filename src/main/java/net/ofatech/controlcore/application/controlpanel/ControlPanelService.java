@@ -4,6 +4,7 @@ import com.google.auto.service.AutoService;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import net.ofatech.controlcore.api.ControlPanelApi;
 import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.automation.AutomationService;
@@ -221,7 +222,26 @@ public final class ControlPanelService implements ControlPanelApi {
                         automation.mayManage(Optional.of(player))
                                 ? players.find(player).map(automation::viewedBy)
                                 : Optional.empty(),
-                        keyDetection.viewedBy(player)));
+                        keyDetection.viewedBy(player, rightsUnchanged(player))));
+    }
+
+    private BooleanSupplier rightsUnchanged(PlayerId player) {
+        List<Boolean> atOpen = rights(player);
+        return () -> rights(player).equals(atOpen);
+    }
+
+    private List<Boolean> rights(PlayerId player) {
+        Optional<PlayerId> who = Optional.of(player);
+        return List.of(
+                settings.panelEnabled(),
+                permissions.isAdmin(player),
+                mayOpenAdminPanel(player),
+                history.maySee(who),
+                snapshots.mayUse(who),
+                nodes.hasOwn(player, InputProbeCommand.PERMISSION),
+                playerAdmin.maySee(who),
+                diagnostics.maySee(who),
+                automation.mayManage(who));
     }
 
     private String nameOf(PlayerId player) {

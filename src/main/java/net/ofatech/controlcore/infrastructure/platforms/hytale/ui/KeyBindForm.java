@@ -5,11 +5,12 @@ import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
-import java.util.function.Function;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.keys.KeyBinds;
 import net.ofatech.controlcore.domain.model.text.Translator;
+import net.ofatech.controlcore.domain.ports.game.KeyDetection;
 import net.ofatech.controlcore.domain.result.Result;
 
 final class KeyBindForm {
@@ -29,7 +30,7 @@ final class KeyBindForm {
 
         void formToggled(UICommandBuilder update);
 
-        void detect(Function<String, String> applyKeys);
+        void detect(BiFunction<String, KeyDetection.Mode, String> applyKeys);
     }
 
     private record Draft(String name, String command, boolean asServer) {}
@@ -172,7 +173,7 @@ final class KeyBindForm {
                 action.value == null ? "" : action.value,
                 Boolean.TRUE.equals(action.checked));
         draft = Optional.of(typed);
-        host.detect(keys -> {
+        host.detect((keys, mode) -> {
             formKeys = KeyPicker.withDetected(keys, formKeys);
             UICommandBuilder update = new UICommandBuilder();
             update.set("#NewBindName.Value", typed.name());

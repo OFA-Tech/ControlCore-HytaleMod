@@ -24,6 +24,7 @@ import net.ofatech.controlcore.domain.ports.game.Scheduler;
 public final class KeyDetector implements PlayerInput.Listener {
 
     public static final Duration TIMEOUT = Duration.ofSeconds(10);
+    public static final Duration SCREEN_TIMEOUT = Duration.ofMinutes(5);
 
     public record Detected(String keys) {}
 
@@ -64,10 +65,6 @@ public final class KeyDetector implements PlayerInput.Listener {
         return start(player, false, done);
     }
 
-    public boolean pending(PlayerId player) {
-        return pending.containsKey(player);
-    }
-
     public void offer(PlayerId player, long token, Optional<Detected> result) {
         Pending current = pending.get(player);
         if (current != null && !current.fromGame() && current.token() == token) {
@@ -103,19 +100,25 @@ public final class KeyDetector implements PlayerInput.Listener {
     @Override
     public void held(PlayerId player, Set<KeySignal> now) {
         held.put(player, Set.copyOf(now));
+        Pending current = pending.get(player);
+        if (current != null) {
+            current.heldAtStart().retainAll(now);
+        }
         dispatcher.held(player, now);
     }
 
     private long start(PlayerId player, boolean fromGame, Consumer<Optional<Detected>> done) {
         long token = tokens.incrementAndGet();
-        Pending next = new Pending(token, fromGame, held.getOrDefault(player, Set.of()), done, new AtomicReference<>());
+        Set<KeySignal> heldAtStart = ConcurrentHashMap.newKeySet();
+        heldAtStart.addAll(held.getOrDefault(player, Set.of()));
+        Pending next = new Pending(token, fromGame, heldAtStart, done, new AtomicReference<>());
         Pending previous = pending.put(player, next);
         if (previous != null) {
             previous.stopTimer();
         }
-        if (fromGame) {
-            next.timeout().set(scheduler.runLater(TIMEOUT, () -> finish(player, next, Optional.empty())));
-        }
+        next.timeout()
+                .set(scheduler.runLater(
+                        fromGame ? TIMEOUT : SCREEN_TIMEOUT, () -> finish(player, next, Optional.empty())));
         return token;
     }
 

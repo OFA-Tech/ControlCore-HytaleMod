@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import net.ofatech.controlcore.domain.model.keys.GameActionMode;
+import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.text.Translator;
 
@@ -147,8 +148,12 @@ final class SettingRows {
                             element + " #GameAction",
                             event(PICK_GAME_ACTION, key, id).append(PanelAction.VALUE, element + " #GameAction.Value"));
                 });
-                events.addEventBinding(
-                        CustomUIEventBindingType.Activating, element + " #Detect", event(DETECT, key, id));
+                boolean locked = snapshot.access() == SettingAccess.READ_ONLY;
+                commands.set(element + " #Detect.Visible", !locked);
+                if (!locked) {
+                    events.addEventBinding(
+                            CustomUIEventBindingType.Activating, element + " #Detect", event(DETECT, key, id));
+                }
                 for (String part : List.of(" #Hold", " #Key")) {
                     events.addEventBinding(
                             CustomUIEventBindingType.ValueChanged,

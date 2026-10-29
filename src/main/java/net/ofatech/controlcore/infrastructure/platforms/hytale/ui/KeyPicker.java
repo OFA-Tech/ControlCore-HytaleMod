@@ -1,6 +1,7 @@
 package net.ofatech.controlcore.infrastructure.platforms.hytale.ui;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -147,6 +148,26 @@ final class KeyPicker {
         return NONE.equals(picked.hold())
                 ? key
                 : tr.t("controlcore.panel.keypick.hold." + picked.hold().toLowerCase(Locale.ROOT)) + " + " + key;
+    }
+
+    static boolean isGameAction(String keys) {
+        var parsed = KeyBinds.parse(keys);
+        return parsed.isSuccess()
+                && !parsed.value().combos().isEmpty()
+                && parsed.value().combos().getFirst().inputs().stream()
+                        .anyMatch(input ->
+                                input.signal(true).filter(KeySignal::isPress).isPresent());
+    }
+
+    static boolean sameFirstCombo(String a, String b) {
+        var first = KeyBinds.parse(a);
+        var second = KeyBinds.parse(b);
+        return first.isSuccess()
+                && second.isSuccess()
+                && !first.value().combos().isEmpty()
+                && !second.value().combos().isEmpty()
+                && new HashSet<>(first.value().combos().getFirst().inputs())
+                        .equals(new HashSet<>(second.value().combos().getFirst().inputs()));
     }
 
     static boolean heard(String keys) {

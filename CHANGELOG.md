@@ -37,7 +37,10 @@
   nothing there before.
 - **API 2.3.0:** new `Key` constants for the numpad (`NUMPAD_0`-`NUMPAD_9`, `NUMPAD_DIVIDE`, `NUMPAD_MULTIPLY`,
   `NUMPAD_MINUS`, `NUMPAD_PLUS`, `NUMPAD_ENTER`, `NUMPAD_PERIOD`) and `NUM_LOCK`, `PRINT_SCREEN`, `SCROLL_LOCK`, `PAUSE`,
-  `MENU`. Mods built for 2.0.0 to 2.2.0 keep working.
+  `MENU`; `Key.HOLDS` (the keys that can be held: Ctrl, Alt, Shift); `KeyCombo.write(input)` writes a key the way
+  `KeyCombo.parse` reads it back (digits as `1`-`9`/`0`, everything else by name, for example `NUMPAD_DIVIDE`).
+  `KeyCombo.toString()` now writes keys like `NUM_LOCK` by name instead of `NUM LOCK`. Mods built for 2.0.0 to 2.2.0
+  keep working.
 
 ## 0.18.0 - 2026-10-27
 

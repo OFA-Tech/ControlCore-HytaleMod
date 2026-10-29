@@ -11,13 +11,13 @@ final class SdlKeys {
 
     private static final int SCANCODE_BASE = 1073741824;
     private static final Map<Integer, Key> KEYS = new HashMap<>();
-    private static final Map<Integer, String> HOLDS = Map.of(
-            1073742048, "CTRL",
-            1073742049, "SHIFT",
-            1073742050, "ALT",
-            1073742052, "CTRL",
-            1073742053, "SHIFT",
-            1073742054, "ALT");
+    private static final Map<Integer, Key> HOLDS = Map.of(
+            1073742048, Key.CTRL,
+            1073742049, Key.SHIFT,
+            1073742050, Key.ALT,
+            1073742052, Key.CTRL,
+            1073742053, Key.SHIFT,
+            1073742054, Key.ALT);
 
     static {
         for (char letter = 'a'; letter <= 'z'; letter++) {
@@ -82,7 +82,7 @@ final class SdlKeys {
         return keycode >= 1073742048 && keycode <= 1073742055;
     }
 
-    static Optional<String> hold(int keycode) {
+    static Optional<Key> hold(int keycode) {
         return Optional.ofNullable(HOLDS.get(keycode));
     }
 

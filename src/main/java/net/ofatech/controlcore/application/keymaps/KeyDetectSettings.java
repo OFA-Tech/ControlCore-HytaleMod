@@ -5,13 +5,9 @@ import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.text.Text;
+import net.ofatech.controlcore.domain.ports.game.KeyDetection;
 
 public final class KeyDetectSettings {
-
-    public enum DetectMode {
-        GAME,
-        SCREEN
-    }
 
     static final String GAME = "game";
     static final String SCREEN = "screen";
@@ -50,9 +46,9 @@ public final class KeyDetectSettings {
                 .value();
     }
 
-    public DetectMode mode() {
+    public KeyDetection.Mode mode() {
         Setting<String> current = mode;
-        return current != null && SCREEN.equals(current.get()) ? DetectMode.SCREEN : DetectMode.GAME;
+        return current != null && SCREEN.equals(current.get()) ? KeyDetection.Mode.SCREEN : KeyDetection.Mode.GAME;
     }
 
     public boolean allKeys() {

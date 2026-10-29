@@ -127,13 +127,16 @@ class KeyDetectorTest {
     }
 
     @Test
-    void theScreenHasNoTimeoutSoALateKeyStillArrives() {
+    void theScreenWaitsLongerThanTheGameButNotForever() {
         long screen1 = detector.fromScreen(caio, results::add);
+        detector.offer(caio, screen1, Optional.of(new KeyDetector.Detected("NUMPAD_5")));
+        long screen2 = detector.fromScreen(caio, results::add);
 
         scheduler.runAll();
-        detector.offer(caio, screen1, Optional.of(new KeyDetector.Detected("NUMPAD_5")));
+        detector.offer(caio, screen2, Optional.of(new KeyDetector.Detected("NUMPAD_6")));
 
-        assertThat(results).containsExactly(Optional.of(new KeyDetector.Detected("NUMPAD_5")));
+        assertThat(results).containsExactly(Optional.of(new KeyDetector.Detected("NUMPAD_5")), Optional.empty());
+        assertThat(scheduler.entries).extracting(entry -> entry.delay).contains(KeyDetector.SCREEN_TIMEOUT);
     }
 
     @Test

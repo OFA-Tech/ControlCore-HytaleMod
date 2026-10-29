@@ -7,5 +7,5 @@ import net.ofatech.controlcore.domain.model.text.Translator;
 
 public interface KeyCapture {
 
-    void open(PlayerId player, Translator tr, Consumer<Optional<String>> doneOnTheWorldThread);
+    void open(PlayerId player, Translator tr, Consumer<Optional<String>> done);
 }

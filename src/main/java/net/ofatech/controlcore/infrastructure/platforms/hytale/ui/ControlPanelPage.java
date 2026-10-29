@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -227,32 +227,42 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         this.viewerId = PlayerId.of(player.getUuid());
         this.viewerName = player.getUsername();
         this.keyDetection = content.keyDetection();
-        this.keyDetect = new PanelKeyDetect(keyDetection, tr, new PanelKeyDetect.Host() {
-            @Override
-            public PlayerRef viewer() {
-                return playerRef;
-            }
+        this.keyDetect = new PanelKeyDetect(
+                keyDetection,
+                tr,
+                new PanelKeyDetect.Host() {
+                    @Override
+                    public PlayerRef viewer() {
+                        return playerRef;
+                    }
 
-            @Override
-            public CustomUIPage page() {
-                return ControlPanelPage.this;
-            }
+                    @Override
+                    public CustomUIPage page() {
+                        return ControlPanelPage.this;
+                    }
 
-            @Override
-            public void closePanel() {
-                close();
-            }
+                    @Override
+                    public void closePanel() {
+                        close();
+                    }
 
-            @Override
-            public void send(UICommandBuilder update) {
-                sendUpdate(update, false);
-            }
+                    @Override
+                    public void beforeReopen() {
+                        unsaved.clear();
+                        errors.clear();
+                    }
 
-            @Override
-            public String asViewer(Supplier<String> work) {
-                return ChangeContext.fromPanel(viewerId, viewerName, work);
-            }
-        });
+                    @Override
+                    public void send(UICommandBuilder update) {
+                        sendUpdate(update, false);
+                    }
+
+                    @Override
+                    public String asViewer(Supplier<String> work) {
+                        return ChangeContext.fromPanel(viewerId, viewerName, work);
+                    }
+                },
+                log);
         this.worlds = content.worlds();
         this.world = worlds.contains("default")
                 ? "default"
@@ -1180,9 +1190,18 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             }
             default -> {}
         }
+        if (SettingRows.SAVE.equals(name)) {
+            UICommandBuilder update = new UICommandBuilder();
+            Result<SettingSnapshot> saved = saveValue(key, section, action.id, action.value, false, update);
+            if (saved.isSuccess()) {
+                footer(update, section.saved(saved.value()));
+            }
+            sendUpdate(update, false);
+            return;
+        }
         SettingSnapshot before = latestOf(key, action.id);
         Result<SettingSnapshot> result = switch (name) {
-            case SettingRows.SAVE, SettingRows.CHOOSE -> section.save(action.id, action.value);
+            case SettingRows.CHOOSE -> section.save(action.id, action.value);
             case SettingRows.SLID ->
                 sliderValue(key, action)
                         .map(value -> section.save(action.id, value))
@@ -1209,6 +1228,29 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 })
                 .onFailure(error -> failed(key, action.id, tr.error(error), update));
         sendUpdate(update, false);
+    }
+
+    private Result<SettingSnapshot> saveValue(
+            PanelSection key,
+            SettingsSection section,
+            String id,
+            String value,
+            boolean controlAlreadyShowsValue,
+            UICommandBuilder update) {
+        SettingSnapshot before = latestOf(key, id);
+        Result<SettingSnapshot> result = section.save(id, value);
+        if (key == PanelSection.SERVER_CONFIG) {
+            showRestartNotice(update);
+        }
+        result.onSuccess(snapshot -> {
+                    Integer index = rowIndexes.get(key).get(snapshot.id());
+                    if (!controlAlreadyShowsValue && index != null) {
+                        showRowValue(key, section, index, snapshot, update);
+                    }
+                    succeeded(key, before, snapshot, true, update);
+                })
+                .onFailure(error -> failed(key, id, tr.error(error), update));
+        return result;
     }
 
     private void saveColored(PanelSection key, SettingsSection section, boolean reset, PanelAction action) {
@@ -1409,6 +1451,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private void detectOnRow(PanelSection key, SettingsSection section, PanelAction action) {
         SettingSnapshot current = latestOf(key, action.id);
         if (current == null || section.kind(current) != SettingsSection.Kind.KEYS) {
+            UICommandBuilder update = new UICommandBuilder();
+            footer(update, tr.t("controlcore.keys.detect.gone"));
+            sendUpdate(update, false);
             return;
         }
         if (current.access() == SettingAccess.READ_ONLY) {
@@ -1420,21 +1465,45 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         String id = action.id;
         keyDetect.start((keys, mode) -> {
             SettingSnapshot latest = latestOf(key, id);
-            if (latest == null || latest.access() == SettingAccess.READ_ONLY) {
+            if (latest == null) {
+                return tr.t("controlcore.keys.detect.gone");
+            }
+            if (latest.access() == SettingAccess.READ_ONLY) {
                 return tr.t("controlcore.keys.detect.locked");
             }
-            action.value = KeyPicker.withDetected(keys, latest.value());
-            handleSettingAction(key, section, SettingRows.SAVE, action);
-            SettingSnapshot saved = latestOf(key, id);
-            if (saved == null || !saved.value().equals(action.value)) {
-                return null;
-            }
-            String described = KeyPicker.describe(tr, keys, section.allKeys());
-            String text = mode == KeyDetection.Mode.SCREEN
-                    ? tr.t("controlcore.keys.detect.saved", "keys", described)
-                    : tr.t("controlcore.keys.detect.saved_game", "keys", described);
-            return KeyPicker.heard(keys) ? text : text + " " + tr.t("controlcore.keys.detect.unheard");
+            UICommandBuilder update = new UICommandBuilder();
+            Result<SettingSnapshot> saved =
+                    saveValue(key, section, id, KeyPicker.withDetected(keys, latest.value()), false, update);
+            String text =
+                    saved.isSuccess() ? detectedText(key, section, saved.value(), keys, mode) : tr.error(saved.error());
+            footer(update, text);
+            sendUpdate(update, false);
+            return null;
         });
+    }
+
+    private String detectedText(
+            PanelSection key, SettingsSection section, SettingSnapshot saved, String keys, KeyDetection.Mode mode) {
+        String described = KeyPicker.describe(tr, keys, section.allKeys());
+        StringBuilder text = new StringBuilder(
+                mode == KeyDetection.Mode.GAME || KeyPicker.isGameAction(keys)
+                        ? tr.t("controlcore.keys.detect.saved_game", "keys", described)
+                        : tr.t("controlcore.keys.detect.saved", "keys", described));
+        if (!KeyPicker.heard(keys)) {
+            text.append(' ').append(tr.t("controlcore.keys.detect.unheard"));
+        }
+        String prefix = key.name() + "|";
+        List<String> others = latest.entrySet().stream()
+                .filter(entry -> entry.getKey().startsWith(prefix))
+                .map(Map.Entry::getValue)
+                .filter(other -> !other.id().equals(saved.id()))
+                .filter(other -> KeyPicker.sameFirstCombo(other.value(), saved.value()))
+                .map(section::name)
+                .toList();
+        if (!others.isEmpty()) {
+            text.append(' ').append(tr.t("controlcore.keys.detect.also_used", "actions", String.join(", ", others)));
+        }
+        return text.toString();
     }
 
     private void stopListening() {
@@ -1727,8 +1796,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
 
         @Override
-        public void detect(Function<String, String> applyKeys) {
-            keyDetect.start((keys, mode) -> applyKeys.apply(keys));
+        public void detect(BiFunction<String, KeyDetection.Mode, String> applyKeys) {
+            keyDetect.start(applyKeys);
         }
 
         @Override

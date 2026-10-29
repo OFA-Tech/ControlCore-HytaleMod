@@ -17,17 +17,17 @@ public final class HytaleKeyCapture implements KeyCapture {
     }
 
     @Override
-    public void open(PlayerId player, Translator tr, Consumer<Optional<String>> doneOnTheWorldThread) {
+    public void open(PlayerId player, Translator tr, Consumer<Optional<String>> done) {
         boolean opening = HytalePages.inWorld(player.value())
                 .map(playerRef -> HytalePages.open(
                         playerRef,
-                        ref -> new KeyCapturePage(ref, tr, doneOnTheWorldThread),
+                        ref -> new KeyCapturePage(ref, tr, done),
                         log,
                         "the key capture screen",
-                        () -> doneOnTheWorldThread.accept(Optional.empty())))
+                        () -> done.accept(Optional.empty())))
                 .orElse(false);
         if (!opening) {
-            doneOnTheWorldThread.accept(Optional.empty());
+            done.accept(Optional.empty());
         }
     }
 }

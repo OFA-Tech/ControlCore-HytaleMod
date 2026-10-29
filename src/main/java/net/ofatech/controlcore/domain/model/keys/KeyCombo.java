@@ -23,6 +23,8 @@ import net.ofatech.controlcore.domain.result.Result;
  */
 public record KeyCombo(List<KeyInput> inputs) {
 
+    private static final Set<Key> DIGITS = EnumSet.range(Key.NUM_0, Key.NUM_9);
+
     private static final Map<String, KeyInput> ALIASES = Map.ofEntries(
             Map.entry("CONTROL", Key.CTRL),
             Map.entry("LCTRL", Key.CTRL),
@@ -175,7 +177,7 @@ public record KeyCombo(List<KeyInput> inputs) {
      * @throws NullPointerException if {@code input} is null
      */
     public static String write(KeyInput input) {
-        return input instanceof Key key && key.name().matches("NUM_\\d") ? key.label() : input.name();
+        return input instanceof Key key && DIGITS.contains(key) ? key.label() : input.name();
     }
 
     private static Optional<KeyInput> input(String part) {

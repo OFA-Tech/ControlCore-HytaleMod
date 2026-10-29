@@ -25,6 +25,7 @@ final class KeyCapturePage extends InteractiveCustomUIPage<KeyCapturePage.Event>
 
     static final String LAYOUT = "Pages/ControlCore/KeyCapture.ui";
     private static final Pattern KEYCODE = Pattern.compile("\"Keycode\"\\s*:\\s*(\\d{1,10})");
+    private static final Pattern CANCEL = Pattern.compile("\"Source\"\\s*:\\s*\"cancel\"");
     private static final Pattern REPEAT = Pattern.compile("\"Repeat\"\\s*:\\s*true");
 
     private final Consumer<Optional<String>> done;
@@ -52,7 +53,7 @@ final class KeyCapturePage extends InteractiveCustomUIPage<KeyCapturePage.Event>
 
     @Override
     public void handleDataEvent(@Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull String raw) {
-        if (raw.contains("\"cancel\"")) {
+        if (CANCEL.matcher(raw).find()) {
             finish(Optional.empty());
             return;
         }
@@ -74,9 +75,7 @@ final class KeyCapturePage extends InteractiveCustomUIPage<KeyCapturePage.Event>
             case KeyCaptureLogic.Outcome.Holding holding ->
                 update.set("#CaptureHint.Text", tr.t("controlcore.ui.keyCapture.holding", "keys", holding.holds()));
             case KeyCaptureLogic.Outcome.Unsupported unsupported ->
-                update.set(
-                        "#CaptureHint.Text",
-                        tr.t("controlcore.ui.keyCapture.unsupported", "code", unsupported.keycode()));
+                update.set("#CaptureHint.Text", tr.t("controlcore.ui.keyCapture.unsupported"));
             case KeyCaptureLogic.Outcome.Waiting waiting -> {}
         }
         sendUpdate(update, false);

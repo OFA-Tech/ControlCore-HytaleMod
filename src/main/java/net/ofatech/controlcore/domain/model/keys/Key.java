@@ -1,5 +1,6 @@
 package net.ofatech.controlcore.domain.model.keys;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -189,17 +190,17 @@ public enum Key implements KeyInput {
     /** Numpad 9 (written {@code NUMPAD 9}); not reported to servers. */
     NUMPAD_9("NUMPAD 9"),
     /** Numpad / key (written {@code NUMPAD DIVIDE}); not reported to servers. */
-    NUMPAD_DIVIDE("NUMPAD DIVIDE"),
+    NUMPAD_DIVIDE("NUMPAD /"),
     /** Numpad * key (written {@code NUMPAD MULTIPLY}); not reported to servers. */
-    NUMPAD_MULTIPLY("NUMPAD MULTIPLY"),
+    NUMPAD_MULTIPLY("NUMPAD *"),
     /** Numpad - key (written {@code NUMPAD MINUS}); not reported to servers. */
-    NUMPAD_MINUS("NUMPAD MINUS"),
+    NUMPAD_MINUS("NUMPAD -"),
     /** Numpad + key (written {@code NUMPAD PLUS}); not reported to servers. */
-    NUMPAD_PLUS("NUMPAD PLUS"),
+    NUMPAD_PLUS("NUMPAD +"),
     /** Numpad ENTER key (written {@code NUMPAD ENTER}); not reported to servers. */
     NUMPAD_ENTER("NUMPAD ENTER"),
     /** Numpad . key (written {@code NUMPAD PERIOD}); not reported to servers. */
-    NUMPAD_PERIOD("NUMPAD PERIOD"),
+    NUMPAD_PERIOD("NUMPAD ."),
     /** Num Lock key; not reported to servers. */
     NUM_LOCK("NUM LOCK"),
     /** Print Screen key; not reported to servers. */
@@ -220,6 +221,9 @@ public enum Key implements KeyInput {
     MOUSE_4("MOUSE 4"),
     /** Fifth (side) mouse button; not reported to servers. */
     MOUSE_5("MOUSE 5");
+
+    /** The keys that can be held while another key is pressed, in the order they are written: Ctrl, Alt, Shift. */
+    public static final List<Key> HOLDS = List.of(CTRL, ALT, SHIFT);
 
     private final String label;
     private final KeySignal signal;

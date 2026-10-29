@@ -1,19 +1,15 @@
 package net.ofatech.controlcore.infrastructure.platforms.hytale.ui;
 
-import com.hypixel.hytale.component.Ref;
-import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.CustomUIPage;
-import com.hypixel.hytale.server.core.modules.entity.damage.DeathComponent;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
-import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.game.KeyDetection;
+import net.ofatech.controlcore.domain.ports.system.Log;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.pages.HytalePages;
 
 final class PanelKeyDetect {
 
@@ -26,6 +22,8 @@ final class PanelKeyDetect {
 
         void closePanel();
 
+        void beforeReopen();
+
         void send(UICommandBuilder update);
 
         String asViewer(Supplier<String> work);
@@ -34,79 +32,59 @@ final class PanelKeyDetect {
     private final KeyDetection detection;
     private final Translator tr;
     private final Host host;
+    private final Log log;
 
-    PanelKeyDetect(KeyDetection detection, Translator tr, Host host) {
+    PanelKeyDetect(KeyDetection detection, Translator tr, Host host, Log log) {
         this.detection = detection;
         this.tr = tr;
         this.host = host;
+        this.log = log;
     }
 
     void start(BiFunction<String, KeyDetection.Mode, String> applyKeys) {
-        AtomicReference<KeyDetection.Mode> used = new AtomicReference<>();
-        Optional<KeyDetection.Mode> mode =
-                detection.detect(result -> onWorldThread(() -> finish(used.get(), result, applyKeys)));
-        if (mode.isEmpty()) {
-            UICommandBuilder update = new UICommandBuilder();
-            update.set(FOOTER, tr.t("controlcore.keys.detect.busy"));
-            host.send(update);
-            return;
-        }
-        used.set(mode.get());
-        if (mode.get() == KeyDetection.Mode.GAME) {
+        KeyDetection.Mode[] used = new KeyDetection.Mode[1];
+        used[0] = detection.detect(
+                result -> HytalePages.onWorldThread(host.viewer(), () -> finish(used[0], result, applyKeys)));
+        if (used[0] == KeyDetection.Mode.GAME) {
             host.closePanel();
         }
     }
 
     private void finish(
             KeyDetection.Mode mode, Optional<String> result, BiFunction<String, KeyDetection.Mode, String> applyKeys) {
-        if (!detection.stillAllowed()) {
-            detection.tell(tr.t("controlcore.keys.detect.toast_title"), tr.t("controlcore.keys.detect.rights_changed"));
-            return;
-        }
-        if (!reopen()) {
-            result.ifPresent(keys -> detection.tell(
-                    tr.t("controlcore.keys.detect.toast_title"),
-                    tr.t("controlcore.keys.detect.not_saved", "keys", keys)));
-            return;
-        }
-        String text = result.map(keys -> host.asViewer(() -> applyKeys.apply(keys, mode)))
-                .orElseGet(() -> mode == KeyDetection.Mode.SCREEN
-                        ? tr.t("controlcore.keys.detect.cancelled")
-                        : tr.t("controlcore.keys.detect.none", "seconds", 10));
-        if (text != null) {
-            UICommandBuilder update = new UICommandBuilder();
-            update.set(FOOTER, text);
-            host.send(update);
+        try {
+            if (!detection.rightsUnchanged()) {
+                HytalePages.tell(host.viewer(), tr.t("controlcore.keys.detect.rights_changed"));
+                return;
+            }
+            if (result.isEmpty() && mode == KeyDetection.Mode.GAME) {
+                HytalePages.tell(
+                        host.viewer(), tr.t("controlcore.keys.detect.none", "seconds", detection.timeoutSeconds()));
+                return;
+            }
+            host.beforeReopen();
+            HytalePages.Reopen reopened = HytalePages.reopenIfFree(host.viewer(), host.page());
+            if (reopened != HytalePages.Reopen.DONE) {
+                result.ifPresent(keys -> HytalePages.tell(host.viewer(), notSaved(reopened, keys)));
+                return;
+            }
+            String text = result.map(keys -> host.asViewer(() -> applyKeys.apply(keys, mode)))
+                    .orElseGet(() -> tr.t("controlcore.keys.detect.cancelled"));
+            if (text != null) {
+                UICommandBuilder update = new UICommandBuilder();
+                update.set(FOOTER, text);
+                host.send(update);
+            }
+        } catch (RuntimeException e) {
+            log.error("Detect key failed for " + host.viewer().getUsername(), e);
         }
     }
 
-    private boolean reopen() {
-        Ref<EntityStore> ref = host.viewer().getReference();
-        if (ref == null || !ref.isValid()) {
-            return false;
-        }
-        Store<EntityStore> store = ref.getStore();
-        Player player = store.getComponent(ref, Player.getComponentType());
-        if (player == null || store.getComponent(ref, DeathComponent.getComponentType()) != null) {
-            return false;
-        }
-        CustomUIPage current = player.getPageManager().getCustomPage();
-        boolean otherScreen = (current != null && current != host.page())
-                || player.getPageManager().getActiveServersidePage() != null
-                || !player.getWindowManager().getWindows().isEmpty();
-        if (otherScreen) {
-            return false;
-        }
-        if (current != host.page()) {
-            player.getPageManager().openCustomPage(ref, store, host.page());
-        }
-        return true;
-    }
-
-    private void onWorldThread(Runnable work) {
-        Ref<EntityStore> ref = host.viewer().getReference();
-        if (ref != null && ref.isValid()) {
-            ref.getStore().getExternalData().getWorld().execute(work);
-        }
+    private String notSaved(HytalePages.Reopen reason, String keys) {
+        return switch (reason) {
+            case DEAD -> tr.t("controlcore.keys.detect.not_saved_dead", "keys", keys);
+            case BUSY -> tr.t("controlcore.keys.detect.not_saved", "keys", keys);
+            default -> tr.t("controlcore.keys.detect.not_saved_gone", "keys", keys);
+        };
     }
 }
