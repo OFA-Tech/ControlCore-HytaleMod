@@ -1154,3 +1154,4 @@ keys.detect.timed_out = Detect cancelled: no key within {seconds} s. Open the pa
 errors.keys.server_only_admins = Only admins can change the server's keys and binds.
 keys.detect.timed_out_here = Detect cancelled: no key within {seconds} s. Press Detect key to try again.
 keys.detect.screen_timed_out = Detect cancelled: no key within {minutes} minutes.
+keys.detect.rights_changed_cancelled = Detect cancelled: your permissions changed. Open the panel again.

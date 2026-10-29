@@ -50,6 +50,25 @@ class SnapshotRuntimeTest extends RuntimeTestBase {
     }
 
     @Test
+    void someoneWithOnlyTheSnapshotsNodeCannotRestoreKeysOrPermissions() {
+        run("cc-keybind-add", Map.of("name", "warp", "keys", "ctrl+r", "command", "warp spawn"));
+        run("cc-set", Map.of("id", WELCOME, "value", "Saved"));
+        assertThat(run("cc-snapshot-save", Map.of("name", "base")).isSuccess()).isTrue();
+        run("cc-keybind-remove", Map.of("name", "warp"));
+        run("cc-set", Map.of("id", WELCOME, "value", "Changed"));
+        PlayerInfo moderator = platform.players.join("Mod");
+        platform.deniedNodesFor.put(moderator.id(), java.util.List.of("settings", "admin"));
+
+        var restored = platform.commands.run("cc-snapshot-restore", moderator, Map.of("name", "base"));
+
+        assertThat(restored.isSuccess()).as(restored.toString()).isTrue();
+        assertThat(platform.customKeyBinds.all())
+                .extracting(bind -> bind.name())
+                .doesNotContain("warp");
+        assertThat(value(WELCOME)).isEqualTo("Saved");
+    }
+
+    @Test
     void restoringAllPutsEverythingBack() {
         run("cc-set", Map.of("id", WELCOME, "value", "Saved"));
         run("cc-keybind-add", Map.of("name", "warp", "keys", "ctrl+r", "command", "warp spawn"));

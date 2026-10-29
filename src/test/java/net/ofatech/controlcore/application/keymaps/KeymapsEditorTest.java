@@ -10,6 +10,7 @@ import net.ofatech.controlcore.application.history.ChangeRecorder;
 import net.ofatech.controlcore.application.settings.ModNames;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.model.keys.GameActionMode;
 import net.ofatech.controlcore.domain.model.keys.Key;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
@@ -95,16 +96,19 @@ class KeymapsEditorTest {
         boolean[] admin = {true};
         KeymapsEditor panel = editor.viewedBy(alice, () -> admin[0]);
         assertThat(panel.write(HOME, Optional.empty(), "ctrl+f").isSuccess()).isTrue();
+        assertThat(panel.add("warp", "ctrl+r", "warp spawn", false).isSuccess()).isTrue();
 
         admin[0] = false;
 
-        assertThat(panel.write(HOME, Optional.empty(), "alt+3").error().code()).isEqualTo("Keys.ServerOnlyAdmins");
-        assertThat(panel.reset(HOME, Optional.empty()).isFailure()).isTrue();
-        assertThat(panel.add("warp", "ctrl+r", "warp spawn", false).isFailure()).isTrue();
-        assertThat(panel.remove("warp").isFailure()).isTrue();
-        assertThat(panel.setGameAction(HOME, net.ofatech.controlcore.domain.model.keys.GameActionMode.REPLACE)
-                        .isFailure())
-                .isTrue();
+        String refused = "Keys.ServerOnlyAdmins";
+        assertThat(panel.write(HOME, Optional.empty(), "alt+3").error().code()).isEqualTo(refused);
+        assertThat(panel.reset(HOME, Optional.empty()).error().code()).isEqualTo(refused);
+        assertThat(panel.add("home2", "ctrl+e", "home", false).error().code()).isEqualTo(refused);
+        assertThat(panel.remove("warp").error().code()).isEqualTo(refused);
+        assertThat(panel.setGameAction(HOME, GameActionMode.REPLACE).error().code())
+                .isEqualTo(refused);
+        assertThat(panel.find("warp")).as("the bind is still there").isPresent();
+        assertThat(panel.gameAction(HOME)).isNotEqualTo(GameActionMode.REPLACE);
         assertThat(value(Optional.empty())).isEqualTo("CTRL + F");
         assertThat(panel.write(HOME, Optional.of(alice), "alt+3").isSuccess())
                 .as("her own keys still work")

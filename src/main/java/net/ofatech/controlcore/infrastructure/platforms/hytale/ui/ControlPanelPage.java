@@ -443,7 +443,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                     SettingRows.build(key, section, row, element, customBind, gameAction, commands, events);
                     String typed = unsaved.get(shownKey(key, row.id()));
                     if (typed != null && SettingRows.tracksTyping(row.kind())) {
-                        commands.set(element + " #Input.Value", typed);
+                        SettingSnapshot shown = row.snapshot();
+                        SettingRows.showValue(
+                                section,
+                                row.kind(),
+                                element,
+                                new SettingSnapshot(shown.definition(), typed, shown.overridden(), shown.access()),
+                                commands);
                     }
                     showHistoryLink(key, element, row.id(), commands, events);
                     if (SettingRows.canUndo(row)) {
@@ -1019,9 +1025,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         String name = action.name();
         boolean serverKeys = KeyBindForm.changesServerBinds(name)
                 || PanelSection.SERVER_KEYMAPS.name().equals(action.section);
-        if (serverKeys
-                && sections.containsKey(PanelSection.SERVER_KEYMAPS)
-                && !rights.get().admin()) {
+        if (serverKeys && sections.containsKey(PanelSection.SERVER_KEYMAPS) && !stillAdmin.getAsBoolean()) {
             UICommandBuilder update = new UICommandBuilder();
             footer(update, tr.t("controlcore.panel.no_longer_admin"));
             sendUpdate(update, false);
@@ -1333,6 +1337,12 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         UICommandBuilder update = new UICommandBuilder();
         if (fillField) {
             update.set(key.row(index) + " #Input.Value", hex);
+            SettingSnapshot snapshot = latestOf(key, action.id);
+            if (snapshot != null && !snapshot.value().equalsIgnoreCase(hex)) {
+                unsaved.put(shownKey(key, snapshot.id()), hex);
+                showState(key, index, snapshot, update);
+                showLegend(update);
+            }
         }
         footer(update, tr.t("controlcore.panel.color_picked", "color", hex));
         sendUpdate(update, false);

@@ -1154,3 +1154,4 @@ keys.detect.timed_out = Detecção cancelada: nenhuma tecla em {seconds} s. Abra
 errors.keys.server_only_admins = Só admins podem mudar as teclas e atalhos do servidor.
 keys.detect.timed_out_here = Detecção cancelada: nenhuma tecla em {seconds} s. Aperte Detectar tecla para tentar de novo.
 keys.detect.screen_timed_out = Detecção cancelada: nenhuma tecla em {minutes} minutos.
+keys.detect.rights_changed_cancelled = Detecção cancelada: suas permissões mudaram. Abra o painel de novo.

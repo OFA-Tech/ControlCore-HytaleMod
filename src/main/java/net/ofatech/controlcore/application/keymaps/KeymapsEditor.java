@@ -83,7 +83,9 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
     @Override
     public Result<SettingSnapshot> write(SettingId id, Optional<PlayerId> player, String text) {
         if (player.isEmpty()) {
-            return serverChange().flatMap(ok -> keymaps.bindServer(id, text)).flatMap(binds -> read(id, player));
+            return serverChange()
+                    .flatMap(nothing -> keymaps.bindServer(id, text))
+                    .flatMap(binds -> read(id, player));
         }
         return player(player).flatMap(viewer -> keymaps.bind(id, viewer, text).flatMap(binds -> read(id, player)));
     }
@@ -91,7 +93,9 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
     @Override
     public Result<SettingSnapshot> reset(SettingId id, Optional<PlayerId> player) {
         if (player.isEmpty()) {
-            return serverChange().flatMap(ok -> keymaps.resetServerBind(id)).flatMap(binds -> read(id, player));
+            return serverChange()
+                    .flatMap(nothing -> keymaps.resetServerBind(id))
+                    .flatMap(binds -> read(id, player));
         }
         return player(player).flatMap(viewer -> keymaps.resetBind(id, viewer).flatMap(binds -> read(id, player)));
     }
@@ -99,7 +103,7 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
     @Override
     public Result<String> add(String name, String keys, String command, boolean runAsServer) {
         return serverChange()
-                .flatMap(ok -> keymaps.addCustom(name, keys, command, runAsServer))
+                .flatMap(nothing -> keymaps.addCustom(name, keys, command, runAsServer))
                 .map(action -> KeymapsText.created(tr, action));
     }
 
@@ -110,7 +114,9 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
 
     @Override
     public Result<String> remove(String name) {
-        return serverChange().flatMap(ok -> keymaps.removeCustom(name)).map(action -> KeymapsText.removed(tr, action));
+        return serverChange()
+                .flatMap(nothing -> keymaps.removeCustom(name))
+                .map(action -> KeymapsText.removed(tr, action));
     }
 
     @Override
@@ -191,12 +197,12 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
 
     @Override
     public Result<GameActionMode> setGameAction(SettingId action, GameActionMode mode) {
-        return serverChange().flatMap(ok -> keymaps.setGameAction(action, mode));
+        return serverChange().flatMap(nothing -> keymaps.setGameAction(action, mode));
     }
 
-    private Result<Boolean> serverChange() {
+    private Result<Void> serverChange() {
         return mayChangeServer.getAsBoolean()
-                ? Result.success(true)
+                ? Result.success(null)
                 : Result.failure(Error.forbidden(
                         "Keys.ServerOnlyAdmins",
                         Text.key(

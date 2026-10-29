@@ -248,7 +248,8 @@ public final class SnapshotService {
         if (allowed.isFailure()) {
             return Result.failure(allowed.error());
         }
-        return find(rawName).map(snapshot -> differences(snapshot, tr));
+        boolean admin = who.isEmpty() || policy.isAdmin(who.get());
+        return find(rawName).map(snapshot -> differences(snapshot, tr, admin));
     }
 
     public SnapshotsView.Preview preview(Plan plan, Translator tr) {
@@ -549,7 +550,12 @@ public final class SnapshotService {
     }
 
     Plan differences(Snapshot snapshot, Translator tr) {
+        return differences(snapshot, tr, true);
+    }
+
+    private Plan differences(Snapshot snapshot, Translator tr, boolean adminParts) {
         List<Change> changes = new ArrayList<>();
+        List<Change> adminOnly = adminParts ? changes : new ArrayList<>();
         int[] skipped = {0};
         if (snapshot.has(Part.CONFIG) || snapshot.has(Part.WORLDS)) {
             snapshot.config().forEach((id, value) -> {
@@ -618,7 +624,7 @@ public final class SnapshotService {
                     .count();
         }
         if (snapshot.has(Part.KEYS)) {
-            keyChanges(snapshot, tr, changes);
+            keyChanges(snapshot, tr, adminOnly);
         }
         if (snapshot.has(Part.PERMISSIONS)) {
             Map<String, SettingPermission> current = permissionStore.all();
@@ -632,7 +638,7 @@ public final class SnapshotService {
                 SettingPermission now = current.getOrDefault(target, SettingPermission.INHERIT);
                 SettingPermission then = snapshot.permissions().getOrDefault(target, SettingPermission.INHERIT);
                 if (!now.equals(then)) {
-                    changes.add(new Change(
+                    adminOnly.add(new Change(
                             history.what(Kind.PERMISSION, target, tr),
                             history.shown(Kind.PERMISSION, HistoryValues.rule(now), tr),
                             history.shown(Kind.PERMISSION, HistoryValues.rule(then), tr),
@@ -660,6 +666,9 @@ public final class SnapshotService {
         }
         if (snapshot.has(Part.PLAYERS)) {
             playerChanges(snapshot, tr, changes, skipped);
+        }
+        if (!adminParts) {
+            skipped[0] += adminOnly.size();
         }
         return new Plan(snapshot, changes, skipped[0]);
     }

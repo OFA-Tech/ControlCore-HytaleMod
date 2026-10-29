@@ -6,7 +6,6 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import net.ofatech.controlcore.domain.model.PanelRights;
 import net.ofatech.controlcore.domain.model.text.Translator;
@@ -53,20 +52,17 @@ final class PanelKeyDetect {
 
     void start(Target target, BiFunction<String, KeyDetection.Mode, String> applyKeys) {
         KeyDetection.Mode mode = detection.mode();
-        Function<PanelRights, Object> relevant =
-                target == Target.OWN_KEY ? PanelRights::panelEnabled : current -> current;
-        Object atStart = relevant.apply(rights.get());
+        PanelRights atStart = rights.get();
         long startedAt = System.nanoTime();
+        long timeout =
+                mode == KeyDetection.Mode.GAME ? detection.gameTimeoutSeconds() : detection.screenTimeoutSeconds();
         detection.detect(
                 mode,
                 result -> HytalePages.onWorldThread(host.viewer(), () -> {
-                    boolean rightsUnchanged = relevant.apply(rights.get()).equals(atStart);
-                    boolean timedOut = System.nanoTime() - startedAt
-                            >= TimeUnit.SECONDS.toNanos(
-                                    mode == KeyDetection.Mode.GAME
-                                            ? detection.gameTimeoutSeconds()
-                                            : detection.screenTimeoutSeconds());
-                    finish(mode, result, target == Target.BIND_FORM, rightsUnchanged, timedOut, applyKeys);
+                    boolean stillAllowed = nothingLost(atStart, rights.get());
+                    boolean timedOut =
+                            timeout > 0 && System.nanoTime() - startedAt >= TimeUnit.SECONDS.toNanos(timeout);
+                    finish(mode, result, target == Target.BIND_FORM, stillAllowed, timedOut, applyKeys);
                 }));
         if (mode == KeyDetection.Mode.GAME) {
             host.closePanel();
@@ -77,12 +73,17 @@ final class PanelKeyDetect {
             KeyDetection.Mode mode,
             Optional<String> result,
             boolean reopenWithoutKey,
-            boolean rightsUnchanged,
+            boolean stillAllowed,
             boolean timedOut,
             BiFunction<String, KeyDetection.Mode, String> applyKeys) {
         try {
-            if (result.isPresent() && !rightsUnchanged) {
-                HytalePages.tell(host.viewer(), tr.t("controlcore.keys.detect.rights_changed"));
+            if (!stillAllowed) {
+                HytalePages.tell(
+                        host.viewer(),
+                        tr.t(
+                                result.isPresent()
+                                        ? "controlcore.keys.detect.rights_changed"
+                                        : "controlcore.keys.detect.rights_changed_cancelled"));
                 return;
             }
             if (result.isEmpty() && mode == KeyDetection.Mode.GAME && !reopenWithoutKey) {
@@ -107,6 +108,27 @@ final class PanelKeyDetect {
         } catch (RuntimeException e) {
             log.error("Detect key failed for " + host.viewer().getUsername(), e);
         }
+    }
+
+    static boolean nothingLost(PanelRights before, PanelRights now) {
+        boolean[][] pairs = {
+            {before.admin(), now.admin()},
+            {before.adminPanel(), now.adminPanel()},
+            {before.adminPanel() && before.panelEnabled(), now.panelEnabled()},
+            {before.history(), now.history()},
+            {before.rollback(), now.rollback()},
+            {before.snapshots(), now.snapshots()},
+            {before.inputProbe(), now.inputProbe()},
+            {before.players(), now.players()},
+            {before.diagnostics(), now.diagnostics()},
+            {before.automation(), now.automation()}
+        };
+        for (boolean[] pair : pairs) {
+            if (pair[0] && !pair[1]) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private String cancelled(KeyDetection.Mode mode, boolean timedOut) {

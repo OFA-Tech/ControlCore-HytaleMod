@@ -21,6 +21,7 @@ final class KeyBindForm {
     static final String REMOVE = "RemoveBind";
     static final String TOGGLE = "ToggleBindForm";
     static final String DETECT = "DetectBindKey";
+    private static final Set<String> CHANGES = Set.of(ADD, EDIT, REMOVE, DETECT);
 
     private static final String STATUS = "#FooterStatus.Text";
 
@@ -81,8 +82,6 @@ final class KeyBindForm {
                 .append(PanelAction.VALUE, "#NewBindCommand.Value")
                 .append(PanelAction.CHECKED, "#NewBindAsServer.Value");
     }
-
-    private static final Set<String> CHANGES = Set.of(ADD, EDIT, REMOVE, DETECT);
 
     static boolean changesServerBinds(String name) {
         return CHANGES.contains(name);
