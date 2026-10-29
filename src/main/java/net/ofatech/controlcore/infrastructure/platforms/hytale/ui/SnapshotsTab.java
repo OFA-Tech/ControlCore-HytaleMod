@@ -59,6 +59,9 @@ final class SnapshotsTab {
         this.view = view;
         this.tr = tr;
         this.host = host;
+        if (!view.admin()) {
+            parts.removeAll(EnumSet.of(Part.KEYS, Part.PERMISSIONS, Part.MODS));
+        }
     }
 
     void build(UICommandBuilder commands, UIEventBuilder events) {
@@ -133,7 +136,8 @@ final class SnapshotsTab {
                             entry.profile()
                                     ? "controlcore.panel.snapshots.is_profile"
                                     : "controlcore.panel.snapshots.make_profile"));
-            commands.set(row + " #Delete.Visible", !entry.profile());
+            commands.set(row + " #Delete.Visible", !entry.profile() && !entry.locked());
+            commands.set(row + " #Profile.Visible", !entry.locked());
             events.addEventBinding(
                     CustomUIEventBindingType.Activating,
                     row + " #Profile",

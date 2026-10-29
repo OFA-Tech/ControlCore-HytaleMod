@@ -179,16 +179,19 @@ public final class ProfileService {
         if (current.isEmpty()) {
             return tr.t("controlcore.profiles.status.none");
         }
-        Result<SnapshotService.Plan> plan = plan(current.get(), who, tr);
+        Result<SnapshotService.Plan> plan = plan(current.get(), Optional.empty(), tr);
         if (plan.isFailure()) {
             active.set(Optional.empty());
             return tr.t("controlcore.profiles.status.none");
         }
+        plan = Result.success(snapshots.forViewer(plan.value(), who));
         int changed = plan.value().changes().size();
         String shown = displayName(current.get(), tr);
-        return changed == 0
+        String text = changed == 0
                 ? tr.t("controlcore.profiles.status.matches", "name", shown)
                 : tr.t("controlcore.profiles.status.changed", "name", shown, "count", changed);
+        int adminOnly = plan.value().adminOnly();
+        return adminOnly == 0 ? text : text + " " + tr.t("controlcore.profiles.status.admin_only", "count", adminOnly);
     }
 
     public Result<SnapshotsView.Preview> preview(String id, Optional<PlayerId> who, Translator tr) {

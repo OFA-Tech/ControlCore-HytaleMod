@@ -9,7 +9,7 @@ import net.ofatech.controlcore.domain.result.Result;
 
 public interface SnapshotsView {
 
-    record Entry(String name, String when, String who, String parts, boolean profile) {}
+    record Entry(String name, String when, String who, String parts, boolean profile, boolean locked) {}
 
     record ModChoice(String id, String name) {}
 
@@ -24,7 +24,7 @@ public interface SnapshotsView {
 
         public List<String> allLines(Translator tr) {
             List<String> all = new ArrayList<>(lines);
-            if (adminOnly > 0) {
+            if (adminOnly > 0 && changes > 0) {
                 all.add(tr.t("controlcore.snapshots.preview.admin_only", "count", adminOnly));
             }
             if (skipped > 0) {
@@ -35,6 +35,8 @@ public interface SnapshotsView {
     }
 
     List<Entry> list();
+
+    boolean admin();
 
     List<ModChoice> mods();
 

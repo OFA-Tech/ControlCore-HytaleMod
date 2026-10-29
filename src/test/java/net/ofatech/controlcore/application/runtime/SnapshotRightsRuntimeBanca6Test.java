@@ -69,6 +69,24 @@ class SnapshotRightsRuntimeBanca6Test extends RuntimeTestBase {
     }
 
     @Test
+    void moderatorRestoreLeavesModsAsTheAdminSetThem() {
+        platform.modCatalog.add("Someone:Extra", false);
+        ok(as(admin, "cc-snapshot-save", Map.of("name", "mods")));
+        platform.modCatalog.setEnabled("Someone:Extra", false);
+
+        String restored = ok(as(moderator, "cc-snapshot-restore", Map.of("name", "mods")));
+
+        assertThat(restored).contains("left out");
+        assertThat(platform.modCatalog.mods())
+                .filteredOn(mod -> mod.id().equals("Someone:Extra"))
+                .allMatch(mod -> !mod.enabledAfterRestart());
+        ok(as(admin, "cc-snapshot-restore", Map.of("name", "mods")));
+        assertThat(platform.modCatalog.mods())
+                .filteredOn(mod -> mod.id().equals("Someone:Extra"))
+                .allMatch(mod -> mod.enabledAfterRestart());
+    }
+
+    @Test
     void moderatorRestoreSkipsKeysAndPermissionsButRestoresTheRest() {
         savedThenChanged("base");
 
@@ -91,7 +109,7 @@ class SnapshotRightsRuntimeBanca6Test extends RuntimeTestBase {
         assertThat(adminDiff).doesNotContain("skipped");
         assertThat(modDiff).contains("Changed -> Saved").doesNotContain("warp").doesNotContain("extra");
         assertThat(modDiff)
-                .contains("3 change(s) to keys or permissions are left out")
+                .contains("3 change(s) to keys, permissions or mods are left out")
                 .doesNotContain("saved value(s) are skipped");
     }
 
@@ -178,7 +196,7 @@ class SnapshotRightsRuntimeBanca6Test extends RuntimeTestBase {
         platform.snapshots.save(platform.snapshots.snapshots.get("staff").asProfile(true));
         String switched = ok(as(moderator, "cc-profile", Map.of("profile", "staff")));
 
-        assertThat(switched).contains("3 change(s) to keys or permissions are left out");
+        assertThat(switched).contains("3 change(s) to keys, permissions or mods are left out");
         assertThat(ok(as(moderator, "cc-profiles", Map.of())))
                 .contains("Active profile: staff")
                 .contains("Everything still matches it");
@@ -192,7 +210,7 @@ class SnapshotRightsRuntimeBanca6Test extends RuntimeTestBase {
 
         assertThat(restored)
                 .contains("1 change(s), 0 failed")
-                .contains("3 change(s) to keys or permissions are left out");
+                .contains("3 change(s) to keys, permissions or mods are left out");
     }
 
     @Test
@@ -203,8 +221,8 @@ class SnapshotRightsRuntimeBanca6Test extends RuntimeTestBase {
         String modDiff = ok(as(moderator, "cc-snapshot-diff", Map.of("name", "keysonly")));
 
         assertThat(modDiff)
-                .contains("only differs in keys or permissions")
-                .contains("1 change(s) to keys or permissions are left out")
+                .contains("only differs in keys, permissions or mods")
+                .doesNotContain("left out")
                 .doesNotContain("nothing to restore");
     }
 

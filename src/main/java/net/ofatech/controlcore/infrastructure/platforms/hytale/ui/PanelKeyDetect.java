@@ -85,9 +85,11 @@ final class PanelKeyDetect {
                 HytalePages.tell(
                         host.viewer(),
                         tr.t(
-                                result.isPresent()
-                                        ? "controlcore.keys.detect.rights_changed"
-                                        : "controlcore.keys.detect.rights_changed_cancelled"));
+                                panelGone
+                                        ? "controlcore.keys.detect.no_panel_anymore"
+                                        : result.isPresent()
+                                                ? "controlcore.keys.detect.rights_changed"
+                                                : "controlcore.keys.detect.rights_changed_cancelled"));
                 return;
             }
             if (result.isEmpty() && mode == KeyDetection.Mode.GAME && !reopenWithoutKey) {

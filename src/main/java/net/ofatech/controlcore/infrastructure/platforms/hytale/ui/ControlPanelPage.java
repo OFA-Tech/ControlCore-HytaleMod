@@ -442,7 +442,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                             : Optional.empty();
                     SettingRows.build(key, section, row, element, customBind, gameAction, commands, events);
                     String typed = unsaved.get(shownKey(key, row.id()));
-                    if (typed != null && SettingRows.tracksTyping(row.kind()) && !showsNumber(row.kind(), typed)) {
+                    if (typed != null && SettingRows.tracksTyping(row.kind()) && !canShowTyped(row.kind(), typed)) {
                         commands.set(element + " #Input.Value", typed);
                     } else if (typed != null && SettingRows.tracksTyping(row.kind())) {
                         SettingSnapshot shown = row.snapshot();
@@ -729,7 +729,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         String text = action.value == null ? "" : action.value;
         boolean wasUnsaved = unsaved.containsKey(shownKey);
         UICommandBuilder update = new UICommandBuilder();
-        markTyped(key, index, snapshot, text, snapshot.value().equals(text), update);
+        markTyped(
+                key,
+                index,
+                snapshot,
+                text,
+                sameShown(sections.get(key).kind(snapshot), snapshot.value(), text),
+                update);
         if (wasUnsaved != unsaved.containsKey(shownKey)) {
             sendUpdate(update, false);
         }
@@ -1371,22 +1377,36 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         } else {
             unsaved.put(shownKey, text);
         }
-        if (wasUnsaved == !same) {
+        boolean nowUnsaved = !same;
+        if (wasUnsaved == nowUnsaved) {
             return;
         }
         showState(key, index, snapshot, update);
         showLegend(update);
     }
 
-    private static boolean showsNumber(SettingsSection.Kind kind, String text) {
+    private static boolean canShowTyped(SettingsSection.Kind kind, String text) {
         if (kind != SettingsSection.Kind.INTEGER && kind != SettingsSection.Kind.DECIMAL) {
             return true;
         }
         try {
-            return Double.isFinite(Double.parseDouble(text.strip()));
+            new java.math.BigDecimal(text.strip());
+            return true;
         } catch (NumberFormatException e) {
             return false;
         }
+    }
+
+    private static boolean sameShown(SettingsSection.Kind kind, String saved, String shown) {
+        return switch (kind) {
+            case INTEGER, DECIMAL -> sameNumber(saved, shown);
+            case COLOR -> {
+                String a = SettingRows.pickedHex(saved);
+                String b = SettingRows.pickedHex(shown);
+                yield a != null && b != null ? a.equalsIgnoreCase(b) : saved.equals(shown);
+            }
+            default -> saved.equals(shown);
+        };
     }
 
     private static boolean sameNumber(String saved, String shown) {
