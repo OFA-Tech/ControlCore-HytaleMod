@@ -25,6 +25,9 @@
 - **Admins are protected:** a moderator with only these nodes can't kick, mute, freeze, bring, ban or take off the whitelist an admin; only admins can.
 - New filters **Muted** and **Frozen**; what you type in **+ Player action** is kept while the list updates.
   `ofatech.controlcore.bans` still covers bans.
+- **API 2.3.0:** new `Key` constants for the numpad (`NUMPAD_0`-`NUMPAD_9`, `NUMPAD_DIVIDE`, `NUMPAD_MULTIPLY`,
+  `NUMPAD_MINUS`, `NUMPAD_PLUS`, `NUMPAD_ENTER`, `NUMPAD_PERIOD`) and `NUM_LOCK`, `PRINT_SCREEN`, `SCROLL_LOCK`, `PAUSE`,
+  `MENU`. Mods built for 2.0.0 to 2.2.0 keep working.
 
 ## 0.18.0 - 2026-10-27
 

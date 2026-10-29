@@ -54,6 +54,16 @@ class KeyModelTest {
     }
 
     @Test
+    void numpadKeysParseAndPrint() {
+        assertThat(KeyCombo.parse("ctrl+numpad_5").value().toString()).isEqualTo("CTRL + NUMPAD_5");
+        assertThat(KeyCombo.parse("NUMPAD 5").value().inputs()).containsExactly(Key.NUMPAD_5);
+        assertThat(KeyCombo.parse("numpad_plus").value().inputs()).containsExactly(Key.NUMPAD_PLUS);
+        assertThat(Key.NUMPAD_5.label()).isEqualTo("NUMPAD 5");
+        assertThat(Key.PRINT_SCREEN.signal(true)).isEmpty();
+        assertThat(KeyCombo.parse("numpad_5").value().trigger().error().code()).isEqualTo("Keys.NotDetectable");
+    }
+
+    @Test
     void triggersFireOnTheirPressWhileHeldKeysAreDown() {
         KeyTrigger ctrlF = KeyCombo.of(Key.CTRL, Key.F).trigger().value();
         assertThat(ctrlF.firesOn(KeySignal.USE, Set.of(KeySignal.CROUCHING, KeySignal.MOVING)))

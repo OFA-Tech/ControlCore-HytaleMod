@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface ControlCoreApi {
 
     /** Version of this API contract (semantic versioning), for example {@code "2.0.0"}. */
-    String VERSION = "2.2.0";
+    String VERSION = "2.3.0";
 
     /**
      * Returns the running API; use it when ControlCore is a required dependency.
