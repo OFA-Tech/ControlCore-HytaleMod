@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Built and tested on Hytale server 0.7.5; 0.7.2 to 0.7.4 are still supported (`>=0.7.2 <0.8.0`). 0.7.5 only
+  tightens network packet checks and updates translations; nothing ControlCore uses changed.
+
 ### Added
 - **Players** (Server Configs -> Players, replaces Bans): everyone who has played here, is online or is banned, with
   head, name, UUID, an Online / Offline / Banned badge and a status line (world, game mode, ping and playtime, or when

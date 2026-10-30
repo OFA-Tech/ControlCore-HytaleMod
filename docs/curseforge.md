@@ -7,7 +7,7 @@ Text to paste when creating the CurseForge project and uploading a file. Upload 
 - **Summary (max 255):** An in-game control panel for server owners: edit config.json, mod settings, player
   preferences, permissions and key binds for commands.
 - **Categories:** Utility, Quality of Life, Library
-- **Game version:** Hytale 0.7 (0.7.2 to 0.7.4)
+- **Game version:** Hytale 0.7 (0.7.2 to 0.7.5)
 - **Release type:** Beta for 0.x
 - **License:** MIT
 - **Source:** https://github.com/OFA-Tech/ControlCore-HytaleMod
@@ -18,7 +18,7 @@ Paste into the project's Description (Markdown). The images are the project's ow
 
 **ControlCore** is an in-game control panel for Hytale servers. Edit `config.json`, mod settings, player preferences, permissions and key binds without leaving the game, and give other mods one shared place for their settings.
 
-> **Beta.** Requires a Hytale server **0.7.2 or newer 0.7.x** (tested on 0.7.4). Back up `mods/OFATech_ControlCore/` before updating.
+> **Beta.** Requires a Hytale server **0.7.2 or newer 0.7.x** (tested on 0.7.5). Back up `mods/OFATech_ControlCore/` before updating.
 
 ![The ControlCore panel: Server Configs with the legend](https://media.forgecdn.net/attachments/2100/29/server-configs-png.png)
 
