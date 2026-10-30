@@ -1,5 +1,6 @@
 package net.ofatech.controlcore.domain.model.keys;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -168,6 +169,48 @@ public enum Key implements KeyInput {
     PERIOD("."),
     /** Slash key ({@code /}); not reported to servers. */
     SLASH("/"),
+    /** Numpad 0 (written {@code NUMPAD_0}, shown {@code NUMPAD 0}); not reported to servers. */
+    NUMPAD_0("NUMPAD 0"),
+    /** Numpad 1 (written {@code NUMPAD_1}, shown {@code NUMPAD 1}); not reported to servers. */
+    NUMPAD_1("NUMPAD 1"),
+    /** Numpad 2 (written {@code NUMPAD_2}, shown {@code NUMPAD 2}); not reported to servers. */
+    NUMPAD_2("NUMPAD 2"),
+    /** Numpad 3 (written {@code NUMPAD_3}, shown {@code NUMPAD 3}); not reported to servers. */
+    NUMPAD_3("NUMPAD 3"),
+    /** Numpad 4 (written {@code NUMPAD_4}, shown {@code NUMPAD 4}); not reported to servers. */
+    NUMPAD_4("NUMPAD 4"),
+    /** Numpad 5 (written {@code NUMPAD_5}, shown {@code NUMPAD 5}); not reported to servers. */
+    NUMPAD_5("NUMPAD 5"),
+    /** Numpad 6 (written {@code NUMPAD_6}, shown {@code NUMPAD 6}); not reported to servers. */
+    NUMPAD_6("NUMPAD 6"),
+    /** Numpad 7 (written {@code NUMPAD_7}, shown {@code NUMPAD 7}); not reported to servers. */
+    NUMPAD_7("NUMPAD 7"),
+    /** Numpad 8 (written {@code NUMPAD_8}, shown {@code NUMPAD 8}); not reported to servers. */
+    NUMPAD_8("NUMPAD 8"),
+    /** Numpad 9 (written {@code NUMPAD_9}, shown {@code NUMPAD 9}); not reported to servers. */
+    NUMPAD_9("NUMPAD 9"),
+    /** Numpad / key (written {@code NUMPAD_DIVIDE}, shown {@code NUMPAD /}); not reported to servers. */
+    NUMPAD_DIVIDE("NUMPAD /"),
+    /** Numpad * key (written {@code NUMPAD_MULTIPLY}, shown {@code NUMPAD *}); not reported to servers. */
+    NUMPAD_MULTIPLY("NUMPAD *"),
+    /** Numpad - key (written {@code NUMPAD_MINUS}, shown {@code NUMPAD -}); not reported to servers. */
+    NUMPAD_MINUS("NUMPAD -"),
+    /** Numpad + key (written {@code NUMPAD_PLUS}, shown {@code NUMPAD +}); not reported to servers. */
+    NUMPAD_PLUS("NUMPAD +"),
+    /** Numpad ENTER key (written {@code NUMPAD_ENTER}, shown {@code NUMPAD ENTER}); not reported to servers. */
+    NUMPAD_ENTER("NUMPAD ENTER"),
+    /** Numpad . key (written {@code NUMPAD_PERIOD}, shown {@code NUMPAD .}); not reported to servers. */
+    NUMPAD_PERIOD("NUMPAD ."),
+    /** Num Lock key; not reported to servers. */
+    NUM_LOCK("NUM LOCK"),
+    /** Print Screen key; not reported to servers. */
+    PRINT_SCREEN("PRINT SCREEN"),
+    /** Scroll Lock key; not reported to servers. */
+    SCROLL_LOCK("SCROLL LOCK"),
+    /** Pause key; not reported to servers. */
+    PAUSE("PAUSE"),
+    /** Menu (application) key; not reported to servers. */
+    MENU("MENU"),
     /** Left mouse button; noticed as {@link KeySignal#PRIMARY}, the primary action by default. */
     MOUSE_LEFT("MOUSE LEFT", KeySignal.PRIMARY),
     /** Right mouse button; noticed as {@link KeySignal#SECONDARY}, the secondary action by default. */
@@ -178,6 +221,9 @@ public enum Key implements KeyInput {
     MOUSE_4("MOUSE 4"),
     /** Fifth (side) mouse button; not reported to servers. */
     MOUSE_5("MOUSE 5");
+
+    /** The keys that can be held while another key is pressed, in the order they are written: Ctrl, Alt, Shift. */
+    public static final List<Key> HOLDS = List.of(CTRL, ALT, SHIFT);
 
     private final String label;
     private final KeySignal signal;
@@ -207,6 +253,15 @@ public enum Key implements KeyInput {
     @Override
     public String label() {
         return label != null ? label : name();
+    }
+
+    /**
+     * Whether a server can hear this key during play.
+     *
+     * @return {@code true} when the key sends a game action the server receives, alone or held with another key
+     */
+    public boolean heardByServer() {
+        return signal(false).isPresent() || signal(true).isPresent();
     }
 
     /**

@@ -1,0 +1,37 @@
+$C = "../../Common.ui";
+
+@NoteStyle = (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #878e9c, Wrap: true);
+
+$C.@PageOverlay {
+  LayoutMode: Middle;
+
+  $C.@DecoratedContainer {
+    Anchor: (Width: 520);
+
+    #Title {
+      $C.@Title {
+        @Text = %controlcore.ui.keyCapture.title;
+      }
+    }
+
+    #Content {
+      LayoutMode: Top;
+      Padding: (Full: 16);
+
+      Label #CaptureHint {
+        Text: %controlcore.ui.keyCapture.hint;
+        Style: @NoteStyle;
+        Anchor: (Bottom: 10);
+      }
+
+      $C.@TextField #CaptureInput {
+        AutoFocus: true;
+        Anchor: (Height: 34, Bottom: 12);
+      }
+
+      $C.@TextButton #CaptureCancel {
+        @Text = %controlcore.ui.keyCapture.cancel;
+      }
+    }
+  }
+}

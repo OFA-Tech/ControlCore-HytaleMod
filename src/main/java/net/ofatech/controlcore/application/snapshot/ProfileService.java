@@ -29,6 +29,8 @@ import net.ofatech.controlcore.domain.result.Result;
 
 public final class ProfileService {
 
+    static final String NOT_A_PROFILE = "Profiles.NotAProfile";
+
     public static final String BUILT_IN = "@";
 
     enum Preset {
@@ -118,7 +120,7 @@ public final class ProfileService {
 
             @Override
             public String status() {
-                return ProfileService.this.status(tr);
+                return ProfileService.this.status(who, tr);
             }
 
             @Override
@@ -174,21 +176,30 @@ public final class ProfileService {
         return entries;
     }
 
-    public String status(Translator tr) {
+    public String status(Optional<PlayerId> who, Translator tr) {
         Optional<String> current = active.get();
-        if (current.isEmpty()) {
+        if (current.isEmpty() || !snapshots.mayUse(who)) {
             return tr.t("controlcore.profiles.status.none");
         }
         Result<SnapshotService.Plan> plan = plan(current.get(), Optional.empty(), tr);
         if (plan.isFailure()) {
-            active.set(Optional.empty());
+            String code = plan.error().code();
+            if (code.equals(SnapshotService.UNKNOWN) || code.equals(NOT_A_PROFILE)) {
+                active.set(Optional.empty());
+            }
             return tr.t("controlcore.profiles.status.none");
         }
+        plan = Result.success(snapshots.forViewer(plan.value(), who));
         int changed = plan.value().changes().size();
         String shown = displayName(current.get(), tr);
-        return changed == 0
+        int adminOnly = plan.value().adminOnly();
+        if (changed == 0 && adminOnly > 0) {
+            return tr.t("controlcore.profiles.status.matches_yours", "name", shown, "count", adminOnly);
+        }
+        String text = changed == 0
                 ? tr.t("controlcore.profiles.status.matches", "name", shown)
                 : tr.t("controlcore.profiles.status.changed", "name", shown, "count", changed);
+        return adminOnly == 0 ? text : text + " " + tr.t("controlcore.profiles.status.admin_only", "count", adminOnly);
     }
 
     public Result<SnapshotsView.Preview> preview(String id, Optional<PlayerId> who, Translator tr) {
@@ -199,7 +210,7 @@ public final class ProfileService {
         return plan(id, who, tr).map(plan -> {
             SnapshotsView.Preview preview = snapshots.preview(plan, tr);
             return new SnapshotsView.Preview(
-                    displayName(id, tr), preview.lines(), preview.changes(), preview.skipped());
+                    displayName(id, tr), preview.lines(), preview.changes(), preview.skipped(), preview.adminOnly());
         });
     }
 
@@ -238,14 +249,14 @@ public final class ProfileService {
             return Result.success(
                     preset.get() == Preset.VANILLA
                             ? snapshots.defaultsPlan(snapshot, tr)
-                            : snapshots.differences(snapshot, tr));
+                            : snapshots.differences(snapshot, tr, who));
         }
         return snapshots
                 .plan(id, who, tr)
                 .flatMap(plan -> plan.snapshot().profile()
                         ? Result.success(plan)
                         : Result.failure(Error.validation(
-                                "Profiles.NotAProfile",
+                                NOT_A_PROFILE,
                                 Text.key("controlcore.errors.profiles.not_profile", "{name} is not a profile.")
                                         .with("name", plan.snapshot().name()))));
     }

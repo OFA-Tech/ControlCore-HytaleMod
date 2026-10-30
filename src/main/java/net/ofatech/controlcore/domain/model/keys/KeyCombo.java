@@ -23,6 +23,8 @@ import net.ofatech.controlcore.domain.result.Result;
  */
 public record KeyCombo(List<KeyInput> inputs) {
 
+    private static final Set<Key> DIGITS = EnumSet.range(Key.NUM_0, Key.NUM_9);
+
     private static final Map<String, KeyInput> ALIASES = Map.ofEntries(
             Map.entry("CONTROL", Key.CTRL),
             Map.entry("LCTRL", Key.CTRL),
@@ -145,7 +147,7 @@ public record KeyCombo(List<KeyInput> inputs) {
                     "Keys.NotDetectable",
                     Text.key(
                                     "controlcore.errors.keys.not_detectable",
-                                    "Hytale does not tell servers about {missing} yet.")
+                                    "Hytale does not tell servers about {missing} yet. Give it a game action in Hytale's Controls and use Detect key.")
                             .with("missing", String.join(", ", missing))));
         }
         if (held.contains(KeySignal.MOVING) && held.contains(KeySignal.STANDING_STILL)) {
@@ -163,11 +165,19 @@ public record KeyCombo(List<KeyInput> inputs) {
      */
     @Override
     public String toString() {
-        return inputs.stream().map(KeyCombo::written).collect(Collectors.joining(" + "));
+        return inputs.stream().map(KeyCombo::write).collect(Collectors.joining(" + "));
     }
 
-    private static String written(KeyInput input) {
-        return input instanceof Key key && key.name().startsWith("NUM_") ? key.label() : input.name();
+    /**
+     * Writes one input the way {@link #parse} reads it back: digit keys as {@code 1}-{@code 9} and {@code 0}, every
+     * other input by its name, for example {@code NUMPAD_5}.
+     *
+     * @param input the key or game action
+     * @return the written input
+     * @throws NullPointerException if {@code input} is null
+     */
+    public static String write(KeyInput input) {
+        return input instanceof Key key && DIGITS.contains(key) ? key.label() : input.name();
     }
 
     private static Optional<KeyInput> input(String part) {

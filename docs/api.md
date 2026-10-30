@@ -194,7 +194,8 @@ api.keymaps().register(KeyAction.of("admintools", "announce")
         .defaultKeys(Key.CTRL, Key.O));
 ```
 
-- **Inputs** are `Key`s (every keyboard key and mouse button) and `GameAction`s (`CROUCH`, `SPRINT`,
+- **Inputs** are `Key`s (every keyboard key and mouse button; since API 2.3.0 also the numpad as `NUMPAD_0`-`NUMPAD_9`,
+  `NUMPAD_PLUS`, ..., and `NUM_LOCK`, `PRINT_SCREEN`, `SCROLL_LOCK`, `PAUSE`, `MENU`) and `GameAction`s (`CROUCH`, `SPRINT`,
   `WALK_FORWARD`, `ABILITY_1`, `HOTBAR_3`, ...). Players write them as text: `ctrl+f`, `alt+3 | mouse_middle`,
   `crouch+interact`, `none`.
 - **What the server can detect.** Hytale clients never send raw keys, only actions. Detected during play:
@@ -309,8 +310,8 @@ keep working; use `>=0.16.0` in your manifest when you call these.
        }
    }
    dependencies {
-       compileOnly("net.ofatech:controlcore:0.18.0")
-       vineImplementation("net.ofatech:controlcore:0.18.0") // run it in your dev server (not vineMod: see docs/platforms.md)
+       compileOnly("net.ofatech:controlcore:0.19.0")
+       vineImplementation("net.ofatech:controlcore:0.19.0") // run it in your dev server (not vineMod: see docs/platforms.md)
    }
    ```
 2. **Manifest.** Use `manifest_dependencies = OFATech:ControlCore=>=0.10.0`, or

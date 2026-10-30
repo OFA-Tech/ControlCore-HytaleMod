@@ -1,6 +1,7 @@
 package net.ofatech.controlcore.application.snapshot;
 
 import com.google.auto.service.AutoService;
+import java.util.Optional;
 import net.ofatech.controlcore.application.component.ModCommand;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.ports.command.ArgType;
@@ -33,14 +34,17 @@ public final class SaveSnapshotCommand implements ModCommand {
 
     @Override
     public Result<Reply> execute(CommandContext context) {
-        String parts = context.arg("parts").map(Object::toString).orElse("all");
-        return SnapshotCommands.parts(parts)
+        Optional<String> asked = context.arg("parts").map(Object::toString);
+        boolean replacing = snapshots.exists(context.string("name"));
+        return SnapshotCommands.parts(asked.orElse("all"))
                 .flatMap(selection -> snapshots.save(
                         context.string("name"),
-                        selection.parts(),
+                        asked.isPresent()
+                                ? selection.parts()
+                                : snapshots.allowedParts(selection.parts(), SnapshotCommands.who(context)),
                         selection.mods(),
                         SnapshotCommands.who(context),
                         SnapshotCommands.actor(context)))
-                .map(saved -> Reply.of(snapshots.savedText(saved, texts.forSender(context.sender()))));
+                .map(saved -> Reply.of(snapshots.savedText(saved, replacing, texts.forSender(context.sender()))));
     }
 }

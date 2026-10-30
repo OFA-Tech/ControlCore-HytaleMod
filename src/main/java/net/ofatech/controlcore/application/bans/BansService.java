@@ -2,8 +2,6 @@ package net.ofatech.controlcore.application.bans;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -14,6 +12,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.ofatech.controlcore.api.Setting;
@@ -21,10 +20,12 @@ import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.history.ChangeContext;
 import net.ofatech.controlcore.application.history.ChangeHistory;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
+import net.ofatech.controlcore.application.text.PlainText;
 import net.ofatech.controlcore.application.text.Texts;
+import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.PlayerId;
-import net.ofatech.controlcore.domain.model.bans.BansView;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
+import net.ofatech.controlcore.domain.model.players.PlayersView;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.text.Text;
@@ -42,9 +43,9 @@ public final class BansService {
     public static final String TARGET = "ban:";
     static final List<String> LENGTHS = List.of("permanent", "1h", "1d", "7d", "30d");
 
-    private static final DateTimeFormatter WHEN = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final Pattern LENGTH = Pattern.compile("(\\d{1,4})\\s*([mhdw])");
     private static final String SEPARATOR = "\u001f";
+    private static final Duration RETRY_UNKNOWN = Duration.ofMinutes(10);
 
     private final Bans bans;
     private final ChangeHistory history;
@@ -54,6 +55,7 @@ public final class BansService {
     private final Clock clock;
     private final Map<PlayerId, String> names = new ConcurrentHashMap<>();
     private final Set<PlayerId> asked = ConcurrentHashMap.newKeySet();
+    private final Map<PlayerId, Instant> notFound = new ConcurrentHashMap<>();
     private final Map<PlayerId, String> lastSeen = new ConcurrentHashMap<>();
     private volatile boolean seen;
     private final Setting<Boolean> heads;
@@ -71,8 +73,8 @@ public final class BansService {
                         .named(Text.key("controlcore.settings.player_heads.name", "Show player heads"))
                         .describedAs(Text.key(
                                 "controlcore.settings.player_heads.desc",
-                                "Shows each player's head in the Bans list. The pictures come from hyvatar.io, which"
-                                        + " gets the player names; turn off to show only initials."))
+                                "Shows player heads in the Players list. The pictures come from hyvatar.io, which gets"
+                                        + " the name of every player listed there; turn off to show only initials."))
                         .inCategory(Text.key("controlcore.settings.category.bans", "Bans")))
                 .value();
         this.history = history;
@@ -82,7 +84,7 @@ public final class BansService {
         this.clock = clock;
     }
 
-    private final java.util.List<Runnable> listeners = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private final List<Runnable> listeners = new CopyOnWriteArrayList<>();
 
     private void changed() {
         for (Runnable listener : listeners) {
@@ -92,6 +94,11 @@ public final class BansService {
                 listeners.remove(listener);
             }
         }
+    }
+
+    public Subscription onChange(Runnable listener) {
+        listeners.add(listener);
+        return () -> listeners.remove(listener);
     }
 
     public boolean mayManage(Optional<PlayerId> who) {
@@ -104,6 +111,18 @@ public final class BansService {
         }
     }
 
+    public CompletableFuture<Optional<PlayerId>> lookup(String nameOrId) {
+        String input = nameOrId == null ? "" : nameOrId.strip();
+        if (input.isEmpty()) {
+            return CompletableFuture.completedFuture(Optional.empty());
+        }
+        return bans.lookup(input)
+                .thenApply(profile -> profile.map(found -> {
+                    remember(found.id(), found.name());
+                    return found.id();
+                }));
+    }
+
     public Optional<String> knownName(PlayerId id) {
         return Optional.ofNullable(names.get(id));
     }
@@ -113,8 +132,17 @@ public final class BansService {
         if (known != null) {
             return CompletableFuture.completedFuture(Optional.of(known));
         }
+        Instant failed = notFound.get(id);
+        if (failed != null && failed.plus(RETRY_UNKNOWN).isAfter(clock.now())) {
+            return CompletableFuture.completedFuture(Optional.empty());
+        }
         return bans.nameOf(id).thenApply(found -> {
-            found.ifPresent(name -> remember(id, name));
+            if (found.isPresent()) {
+                remember(id, found.get());
+                notFound.remove(id);
+            } else {
+                notFound.put(id, clock.now());
+            }
             return found;
         });
     }
@@ -166,7 +194,21 @@ public final class BansService {
     }
 
     public String when(Instant instant) {
-        return WHEN.format(instant.atZone(ZoneId.systemDefault()));
+        return PlainText.when(instant);
+    }
+
+    private static Error unknownPlayer(String input) {
+        return Error.notFound(
+                "Bans.UnknownPlayer",
+                Text.key("controlcore.errors.bans.unknown_player", "No Hytale player is called {player}.")
+                        .with("player", PlainText.oneLine(input, PlainText.MAX_SHOWN_INPUT)));
+    }
+
+    public static Error protectedAdmin(String player) {
+        return Error.forbidden(
+                "Players.ProtectedAdmin",
+                Text.key("controlcore.errors.players.protected_admin", "Only admins can do that to {player}.")
+                        .with("player", player));
     }
 
     public CompletableFuture<Result<String>> ban(
@@ -183,63 +225,71 @@ public final class BansService {
             return CompletableFuture.completedFuture(Result.failure(Error.validation(
                     "Bans.NoPlayer", Text.key("controlcore.errors.bans.no_player", "Type a player name first."))));
         }
+        if (input.length() > PlainText.MAX_SHOWN_INPUT) {
+            return CompletableFuture.completedFuture(Result.failure(unknownPlayer(input)));
+        }
         ChangeContext.Attribution attribution = ChangeContext.current();
         return bans.lookup(input)
                 .thenApply(profile -> ChangeContext.as(attribution, () -> {
                     if (profile.isEmpty()) {
-                        return Result.<String>failure(Error.notFound(
-                                "Bans.UnknownPlayer",
-                                Text.key(
-                                                "controlcore.errors.bans.unknown_player",
-                                                "No Hytale player is called {player}.")
-                                        .with("player", input)));
+                        return Result.<String>failure(unknownPlayer(input));
                     }
                     PlayerId target = profile.get().id();
                     remember(target, profile.get().name());
-                    if (find(target).filter(ban -> ban.inEffect(clock.now())).isPresent()) {
-                        return Result.<String>failure(Error.validation(
-                                "Bans.AlreadyBanned",
-                                Text.key("controlcore.errors.bans.already", "{player} is already banned.")
-                                        .with("player", name(target))));
-                    }
-                    if (who.isPresent() && who.get().equals(target)) {
-                        return Result.<String>failure(Error.validation(
-                                "Bans.Self", Text.key("controlcore.errors.bans.self", "You can't ban yourself.")));
-                    }
-                    Instant now = clock.now();
-                    Ban ban = new Ban(
-                            target, who, now, duration.value().map(now::plus), reason == null ? "" : reason.strip());
-                    String before = find(target).map(BansService::encode).orElse("");
-                    if (!bans.ban(ban)) {
-                        return Result.<String>failure(Error.failure(
-                                "Bans.Failed",
-                                Text.key("controlcore.errors.bans.failed", "The ban list could not be changed.")));
-                    }
-                    String after = encode(ban);
-                    lastSeen.put(target, after);
-                    history.record(Kind.BAN, target(target), before, after, false);
-                    changed();
-                    return Result.success(tr.t(
-                            "controlcore.bans.banned",
-                            "player",
-                            name(target),
-                            "length",
-                            ban.expires()
-                                    .map(end -> tr.t("controlcore.bans.until", "when", when(end)))
-                                    .orElse(tr.t("controlcore.bans.permanent"))));
+                    return commitBan(who, target, duration.value(), reason, tr);
                 }));
     }
 
-    public Result<String> unban(Optional<PlayerId> who, String player, Translator tr) {
+    private synchronized Result<String> commitBan(
+            Optional<PlayerId> who, PlayerId target, Optional<Duration> length, String reason, Translator tr) {
+        if (who.isPresent() && who.get().equals(target)) {
+            return Result.failure(
+                    Error.validation("Bans.Self", Text.key("controlcore.errors.bans.self", "You can't ban yourself.")));
+        }
+        if (who.isPresent() && !policy.isAdmin(who.get()) && policy.isAdmin(target)) {
+            return Result.failure(protectedAdmin(name(target)));
+        }
+        if (find(target).filter(ban -> ban.inEffect(clock.now())).isPresent()) {
+            return Result.failure(Error.validation(
+                    "Bans.AlreadyBanned",
+                    Text.key("controlcore.errors.bans.already", "{player} is already banned.")
+                            .with("player", name(target))));
+        }
+        Instant now = clock.now();
+        Ban ban = new Ban(target, who, now, length.map(now::plus), PlainText.oneLine(reason, PlainText.MAX_REASON));
+        String before = find(target).map(BansService::encode).orElse("");
+        if (!bans.ban(ban)) {
+            return Result.failure(Error.failure(
+                    "Bans.Failed", Text.key("controlcore.errors.bans.failed", "The ban list could not be changed.")));
+        }
+        String after = encode(ban);
+        lastSeen.put(target, after);
+        history.record(Kind.BAN, target(target), before, after, false);
+        changed();
+        return Result.success(tr.t(
+                "controlcore.bans.banned",
+                "player",
+                name(target),
+                "length",
+                ban.expires()
+                        .map(end -> tr.t("controlcore.bans.until", "when", when(end)))
+                        .orElse(tr.t("controlcore.bans.permanent"))));
+    }
+
+    public synchronized Result<String> unban(Optional<PlayerId> who, String player, Translator tr) {
         if (!mayManage(who)) {
             return Result.failure(forbidden());
+        }
+        if (player == null || player.isBlank()) {
+            return Result.failure(Error.validation(
+                    "Bans.NoPlayer", Text.key("controlcore.errors.bans.no_player", "Type a player name first.")));
         }
         Optional<Ban> found = matching(player);
         if (found.isEmpty()) {
             return Result.failure(Error.notFound(
                     "Bans.NotBanned",
                     Text.key("controlcore.errors.bans.not_banned", "{player} is not banned.")
-                            .with("player", player == null ? "" : player.strip())));
+                            .with("player", PlainText.oneLine(player, PlainText.MAX_SHOWN_INPUT))));
         }
         Ban ban = found.get();
         if (!bans.unban(ban.target())) {
@@ -351,62 +401,17 @@ public final class BansService {
                 : tr.t("controlcore.history.value.banned_reason", "length", length, "reason", ban.reason());
     }
 
-    public BansView viewedBy(PlayerId viewer) {
-        Translator tr = texts.forPlayer(Optional.of(viewer));
-        Optional<PlayerId> who = Optional.of(viewer);
-        return new BansView() {
-            @Override
-            public List<Entry> list() {
-                Instant now = clock.now();
-                return all().stream()
-                        .map(ban -> new Entry(
-                                ban.target().value().toString(),
-                                knownName(ban.target()).orElse(""),
-                                details(ban, tr),
-                                ban.inEffect(now)))
-                        .toList();
-            }
-
-            @Override
-            public CompletableFuture<Optional<String>> resolve(String id) {
-                try {
-                    return BansService.this.resolve(PlayerId.of(UUID.fromString(id)));
-                } catch (IllegalArgumentException e) {
-                    return CompletableFuture.completedFuture(Optional.empty());
-                }
-            }
-
-            @Override
-            public boolean showHeads() {
-                return heads.get();
-            }
-
-            @Override
-            public List<Length> lengths() {
-                return LENGTHS.stream()
-                        .map(id -> new Length(id, tr.t("controlcore.bans.length." + id)))
-                        .toList();
-            }
-
-            @Override
-            public CompletableFuture<Result<String>> ban(String player, String length, String reason) {
-                return BansService.this.ban(who, player, length, reason, tr);
-            }
-
-            @Override
-            public net.ofatech.controlcore.domain.event.Subscription onChange(Runnable listener) {
-                listeners.add(listener);
-                return () -> listeners.remove(listener);
-            }
-
-            @Override
-            public Result<String> unban(String id) {
-                return BansService.this.unban(who, id, tr);
-            }
-        };
+    public List<PlayersView.Choice> lengths(Translator tr) {
+        return LENGTHS.stream()
+                .map(id -> new PlayersView.Choice(id, tr.t("controlcore.bans.length." + id)))
+                .toList();
     }
 
-    static Result<Optional<Duration>> duration(String text) {
+    public boolean showHeads() {
+        return heads.get();
+    }
+
+    public static Result<Optional<Duration>> duration(String text) {
         String value = text == null ? "" : text.strip().toLowerCase(Locale.ROOT);
         if (value.isEmpty() || value.equals("permanent") || value.equals("perm") || value.equals("forever")) {
             return Result.success(Optional.empty());

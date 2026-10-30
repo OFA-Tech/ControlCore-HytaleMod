@@ -45,6 +45,7 @@ class LanguageFilesTest {
                 || key.equals("controlcore.tabs")
                 || key.equals("controlcore.hud.rules")
                 || key.equals("controlcore.notifications.corners")
+                || key.equals("controlcore.keys.detect_modes")
                 || key.equals("controlcore.notifications.places"));
         assertThat(used).isNotEmpty();
         assertThat(english).containsAll(used);

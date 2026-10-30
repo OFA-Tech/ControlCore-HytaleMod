@@ -59,6 +59,9 @@ final class SnapshotsTab {
         this.view = view;
         this.tr = tr;
         this.host = host;
+        if (!view.admin()) {
+            parts.removeIf(Part::adminOnly);
+        }
     }
 
     void build(UICommandBuilder commands, UIEventBuilder events) {
@@ -133,7 +136,8 @@ final class SnapshotsTab {
                             entry.profile()
                                     ? "controlcore.panel.snapshots.is_profile"
                                     : "controlcore.panel.snapshots.make_profile"));
-            commands.set(row + " #Delete.Visible", !entry.profile());
+            commands.set(row + " #Delete.Visible", !entry.profile() && !entry.locked());
+            commands.set(row + " #Profile.Visible", view.admin() || (!entry.locked() && !entry.profile()));
             events.addEventBinding(
                     CustomUIEventBindingType.Activating,
                     row + " #Profile",
@@ -221,7 +225,11 @@ final class SnapshotsTab {
         if (!armedDeleteAll) {
             armedDeleteAll = true;
             UICommandBuilder update = new UICommandBuilder();
-            update.set("#FooterStatus.Text", tr.t("controlcore.panel.snapshots.confirm_delete_all"));
+            int kept = view.keptForAdmins();
+            update.set(
+                    "#FooterStatus.Text",
+                    tr.t("controlcore.panel.snapshots.confirm_delete_all")
+                            + (kept == 0 ? "" : " " + tr.t("controlcore.panel.snapshots.will_keep", "count", kept)));
             update.set("#SnapshotsDeleteAll.Text", tr.t("controlcore.panel.confirm"));
             host.send(update);
             return;
@@ -265,20 +273,8 @@ final class SnapshotsTab {
         }
         SnapshotsView.Preview preview = result.value();
         previewing = Optional.of(preview.name());
-        List<String> lines = new ArrayList<>(preview.lines());
-        if (preview.skipped() > 0) {
-            lines.add(tr.t("controlcore.snapshots.preview.skipped", "count", preview.skipped()));
-        }
-        update.set(
-                "#SnapshotPreviewTitle.Text",
-                tr.t(
-                        preview.changes() == 0
-                                ? "controlcore.snapshots.preview.same"
-                                : "controlcore.snapshots.preview.header",
-                        "name",
-                        preview.name(),
-                        "count",
-                        preview.changes()));
+        List<String> lines = preview.allLines(tr);
+        update.set("#SnapshotPreviewTitle.Text", preview.title(tr));
         update.set("#SnapshotPreviewText.Text", String.join("\n", lines));
         update.set("#SnapshotRestore.Visible", preview.changes() > 0);
         update.set("#SnapshotRestoreSafe.Visible", preview.changes() > 0);

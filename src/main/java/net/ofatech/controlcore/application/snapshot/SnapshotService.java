@@ -57,6 +57,8 @@ import net.ofatech.controlcore.domain.result.Result;
 
 public final class SnapshotService {
 
+    static final String UNKNOWN = "Snapshots.Unknown";
+
     public static final String NODE = "snapshots";
     static final int PREVIEW_LINES = 80;
 
@@ -111,9 +113,80 @@ public final class SnapshotService {
         this.log = log;
     }
 
-    record Change(String what, String current, String target, Supplier<Result<?>> apply) {}
+    record Change(String what, String current, String target, Supplier<Result<?>> apply, boolean adminOnly) {
 
-    public record Plan(Snapshot snapshot, List<Change> changes, int skipped) {}
+        Change(String what, String current, String target, Supplier<Result<?>> apply) {
+            this(what, current, target, apply, false);
+        }
+
+        Change onlyForAdmins() {
+            return new Change(what, current, target, apply, true);
+        }
+    }
+
+    public record Plan(Snapshot snapshot, List<Change> changes, int skipped, int adminOnly) {
+
+        public Plan(Snapshot snapshot, List<Change> changes, int skipped) {
+            this(snapshot, changes, skipped, 0);
+        }
+
+        Plan forViewer(boolean admin) {
+            if (admin) {
+                return this;
+            }
+            List<Change> allowed =
+                    changes.stream().filter(change -> !change.adminOnly()).toList();
+            return new Plan(snapshot, allowed, skipped, adminOnly + changes.size() - allowed.size());
+        }
+    }
+
+    private boolean isAdmin(Optional<PlayerId> who) {
+        return who.isEmpty() || policy.isAdmin(who.get());
+    }
+
+    private Result<Boolean> mayChange(Snapshot snapshot, Optional<PlayerId> who) {
+        if (isAdmin(who) || snapshot.parts().stream().noneMatch(Part::adminOnly)) {
+            return Result.success(true);
+        }
+        return Result.failure(Error.forbidden(
+                "Snapshots.AdminParts",
+                Text.key(
+                                "controlcore.errors.snapshots.admin_parts",
+                                "Only admins can delete, replace or (un)mark as profile '{name}': it holds keys, permissions or mods.")
+                        .with("name", snapshot.name())));
+    }
+
+    private Result<Boolean> mayChangeProfile(Snapshot snapshot, Optional<PlayerId> who) {
+        if (snapshot.profile() && !isAdmin(who)) {
+            return Result.failure(Error.forbidden(
+                    "Snapshots.ProfileReplace",
+                    Text.key(
+                                    "controlcore.errors.snapshots.profile_replace",
+                                    "'{name}' is a profile; only admins can replace, delete or unmark it.")
+                            .with("name", snapshot.name())));
+        }
+        return mayChange(snapshot, who);
+    }
+
+    Plan forViewer(Plan plan, Optional<PlayerId> who) {
+        return plan.forViewer(isAdmin(who));
+    }
+
+    public boolean locked(Snapshot snapshot, Optional<PlayerId> who) {
+        return mayChange(snapshot, who).isFailure();
+    }
+
+    public int keptForAdmins(Optional<PlayerId> who) {
+        return (int) store.all().stream()
+                .filter(snapshot -> !snapshot.profile() && locked(snapshot, who))
+                .count();
+    }
+
+    public String deletedText(int deleted, Optional<PlayerId> who, Translator tr) {
+        String text = tr.t("controlcore.snapshots.deleted_all", "count", deleted);
+        int kept = keptForAdmins(who);
+        return kept == 0 ? text : text + " " + tr.t("controlcore.snapshots.kept_for_admins", "count", kept);
+    }
 
     public boolean mayUse(Optional<PlayerId> who) {
         return who.isEmpty() || policy.isAdmin(who.get()) || permissions.hasOwn(who.get(), NODE);
@@ -136,8 +209,19 @@ public final class SnapshotService {
                                 when(snapshot),
                                 snapshot.createdBy(),
                                 partsText(snapshot, tr),
-                                snapshot.profile()))
+                                snapshot.profile(),
+                                locked(snapshot, who)))
                         .toList();
+            }
+
+            @Override
+            public boolean admin() {
+                return isAdmin(who);
+            }
+
+            @Override
+            public int keptForAdmins() {
+                return SnapshotService.this.keptForAdmins(who);
             }
 
             @Override
@@ -147,9 +231,10 @@ public final class SnapshotService {
 
             @Override
             public Result<String> save(String snapshotName, Set<Part> parts, Optional<String> mod) {
+                boolean replacing = exists(snapshotName);
                 return SnapshotService.this
                         .save(snapshotName, parts, mod.map(Set::of).orElse(Set.of()), who, actor)
-                        .map(saved -> savedText(saved, tr));
+                        .map(saved -> savedText(saved, replacing, tr));
             }
 
             @Override
@@ -181,9 +266,7 @@ public final class SnapshotService {
 
             @Override
             public Result<String> deleteAll() {
-                return SnapshotService.this
-                        .deleteAll(who)
-                        .map(count -> tr.t("controlcore.snapshots.deleted_all", "count", count));
+                return SnapshotService.this.deleteAll(who).map(count -> deletedText(count, who, tr));
             }
 
             @Override
@@ -200,7 +283,9 @@ public final class SnapshotService {
         if (allowed.isFailure()) {
             return Result.failure(allowed.error());
         }
-        return find(rawName).flatMap(snapshot -> store.save(snapshot.asProfile(profile)));
+        return find(rawName)
+                .flatMap(snapshot -> mayChangeProfile(snapshot, who).map(ok -> snapshot))
+                .flatMap(snapshot -> store.save(snapshot.asProfile(profile)));
     }
 
     public Result<Integer> deleteAll(Optional<PlayerId> who) {
@@ -210,7 +295,7 @@ public final class SnapshotService {
         }
         int deleted = 0;
         for (Snapshot snapshot : store.all()) {
-            if (!snapshot.profile() && store.delete(snapshot.name())) {
+            if (!snapshot.profile() && mayChange(snapshot, who).isSuccess() && store.delete(snapshot.name())) {
                 deleted++;
             }
         }
@@ -220,7 +305,13 @@ public final class SnapshotService {
 
     public Result<Snapshot> saveBefore(
             String base, Set<Part> parts, Set<String> onlyMods, Optional<PlayerId> who, Actor actor) {
-        return save(safetyName(base), parts, onlyMods, who, actor);
+        return save(safetyName(base), allowedParts(parts, who), onlyMods, who, actor);
+    }
+
+    public Set<Part> allowedParts(Set<Part> parts, Optional<PlayerId> who) {
+        return isAdmin(who)
+                ? parts
+                : parts.stream().filter(part -> !part.adminOnly()).collect(Collectors.toSet());
     }
 
     public Result<Snapshot> save(
@@ -234,8 +325,23 @@ public final class SnapshotService {
                     "Snapshots.NoParts",
                     Text.key("controlcore.errors.snapshots.no_parts", "Choose at least one part to save.")));
         }
+        if (!isAdmin(who) && parts.stream().anyMatch(Part::adminOnly)) {
+            return Result.failure(Error.forbidden(
+                    "Snapshots.AdminParts",
+                    Text.key(
+                            "controlcore.errors.snapshots.admin_parts_save",
+                            "Leave out Keys, Permissions and Mods: only admins can save them in a snapshot.")));
+        }
         return Snapshot.validName(rawName).flatMap(name -> {
-            Snapshot snapshot = capture(name, parts, onlyMods, actor);
+            Optional<Snapshot> existing = store.find(name);
+            if (existing.isPresent()) {
+                Result<Boolean> mayReplace = mayChangeProfile(existing.get(), who);
+                if (mayReplace.isFailure()) {
+                    return Result.failure(mayReplace.error());
+                }
+            }
+            Snapshot captured = capture(name, parts, onlyMods, actor);
+            Snapshot snapshot = existing.map(Snapshot::profile).orElse(false) ? captured.asProfile(true) : captured;
             return store.save(snapshot).map(saved -> {
                 log.info(actor.name() + " saved snapshot " + name + " (" + partsList(saved) + ")");
                 return saved;
@@ -248,7 +354,7 @@ public final class SnapshotService {
         if (allowed.isFailure()) {
             return Result.failure(allowed.error());
         }
-        return find(rawName).map(snapshot -> differences(snapshot, tr));
+        return find(rawName).map(snapshot -> differences(snapshot, tr, who));
     }
 
     public SnapshotsView.Preview preview(Plan plan, Translator tr) {
@@ -271,7 +377,7 @@ public final class SnapshotService {
                     change.target()));
         }
         return new SnapshotsView.Preview(
-                plan.snapshot().name(), lines, plan.changes().size(), plan.skipped());
+                plan.snapshot().name(), lines, plan.changes().size(), plan.skipped(), plan.adminOnly());
     }
 
     public Result<String> restore(
@@ -287,7 +393,9 @@ public final class SnapshotService {
     public Result<String> apply(
             Plan plan, Optional<String> saveFirstAs, Optional<PlayerId> who, Actor actor, Translator tr) {
         String safety = "";
-        if (saveFirstAs.isPresent()) {
+        boolean nothingToBackUp =
+                !isAdmin(who) && plan.snapshot().parts().stream().allMatch(Part::adminOnly);
+        if (saveFirstAs.isPresent() && !nothingToBackUp) {
             Result<Snapshot> saved = saveBefore(
                     saveFirstAs.get(), plan.snapshot().parts(), plan.snapshot().mods(), who, actor);
             if (saved.isFailure()) {
@@ -299,10 +407,11 @@ public final class SnapshotService {
                             "name",
                             saved.value().name());
         }
+        Plan allowed = plan.forViewer(isAdmin(who));
         List<String> failures = new ArrayList<>();
         int applied = ChangeContext.restoringSnapshot(actor, () -> {
             int done = 0;
-            for (Change change : plan.changes()) {
+            for (Change change : allowed.changes()) {
                 Result<?> result;
                 try {
                     result = change.apply().get();
@@ -332,6 +441,9 @@ public final class SnapshotService {
         if (!failures.isEmpty()) {
             text += " " + tr.t("controlcore.snapshots.first_failure", "failure", failures.getFirst());
         }
+        if (allowed.adminOnly() > 0) {
+            text += " " + tr.t("controlcore.snapshots.preview.admin_only", "count", allowed.adminOnly());
+        }
         return Result.success(text + safety);
     }
 
@@ -340,11 +452,13 @@ public final class SnapshotService {
         if (allowed.isFailure()) {
             return Result.failure(allowed.error());
         }
-        return find(rawName).map(snapshot -> {
-            store.delete(snapshot.name());
-            log.info("Deleted snapshot " + snapshot.name());
-            return snapshot.name();
-        });
+        return find(rawName)
+                .flatMap(snapshot -> mayChangeProfile(snapshot, who).map(ok -> snapshot))
+                .map(snapshot -> {
+                    store.delete(snapshot.name());
+                    log.info("Deleted snapshot " + snapshot.name());
+                    return snapshot.name();
+                });
     }
 
     public String when(Snapshot snapshot) {
@@ -361,6 +475,20 @@ public final class SnapshotService {
             names.add(name);
         }
         return String.join(", ", names);
+    }
+
+    public boolean exists(String rawName) {
+        return Snapshot.validName(rawName)
+                .map(name -> store.find(name).isPresent())
+                .orElse(false);
+    }
+
+    public String savedText(Snapshot snapshot, boolean replaced, Translator tr) {
+        if (!replaced) {
+            return savedText(snapshot, tr);
+        }
+        String text = tr.t("controlcore.snapshots.replaced", "name", snapshot.name(), "parts", partsText(snapshot, tr));
+        return snapshot.profile() ? text + " " + tr.t("controlcore.snapshots.still_profile") : text;
     }
 
     public String savedText(Snapshot snapshot, Translator tr) {
@@ -385,7 +513,7 @@ public final class SnapshotService {
                 .flatMap(name -> store.find(name)
                         .<Result<Snapshot>>map(Result::success)
                         .orElseGet(() -> Result.failure(Error.notFound(
-                                "Snapshots.Unknown",
+                                UNKNOWN,
                                 Text.key("controlcore.errors.snapshots.unknown", "There is no snapshot {name}.")
                                         .with("name", name)))));
     }
@@ -548,8 +676,13 @@ public final class SnapshotService {
                 false);
     }
 
-    Plan differences(Snapshot snapshot, Translator tr) {
+    Plan differences(Snapshot snapshot, Translator tr, Optional<PlayerId> who) {
+        return differences(snapshot, tr).forViewer(isAdmin(who));
+    }
+
+    private Plan differences(Snapshot snapshot, Translator tr) {
         List<Change> changes = new ArrayList<>();
+        List<Change> adminOnly = new ArrayList<>();
         int[] skipped = {0};
         if (snapshot.has(Part.CONFIG) || snapshot.has(Part.WORLDS)) {
             snapshot.config().forEach((id, value) -> {
@@ -618,7 +751,7 @@ public final class SnapshotService {
                     .count();
         }
         if (snapshot.has(Part.KEYS)) {
-            keyChanges(snapshot, tr, changes);
+            keyChanges(snapshot, tr, adminOnly);
         }
         if (snapshot.has(Part.PERMISSIONS)) {
             Map<String, SettingPermission> current = permissionStore.all();
@@ -632,7 +765,7 @@ public final class SnapshotService {
                 SettingPermission now = current.getOrDefault(target, SettingPermission.INHERIT);
                 SettingPermission then = snapshot.permissions().getOrDefault(target, SettingPermission.INHERIT);
                 if (!now.equals(then)) {
-                    changes.add(new Change(
+                    adminOnly.add(new Change(
                             history.what(Kind.PERMISSION, target, tr),
                             history.shown(Kind.PERMISSION, HistoryValues.rule(now), tr),
                             history.shown(Kind.PERMISSION, HistoryValues.rule(then), tr),
@@ -650,7 +783,7 @@ public final class SnapshotService {
                 if (entry == null || !entry.manageable()) {
                     skipped[0]++;
                 } else if (entry.mod().enabledAfterRestart() != wanted) {
-                    changes.add(new Change(
+                    adminOnly.add(new Change(
                             entry.mod().name(),
                             history.shown(Kind.MOD, Boolean.toString(!wanted), tr),
                             history.shown(Kind.MOD, Boolean.toString(wanted), tr),
@@ -661,6 +794,7 @@ public final class SnapshotService {
         if (snapshot.has(Part.PLAYERS)) {
             playerChanges(snapshot, tr, changes, skipped);
         }
+        adminOnly.forEach(change -> changes.add(change.onlyForAdmins()));
         return new Plan(snapshot, changes, skipped[0]);
     }
 

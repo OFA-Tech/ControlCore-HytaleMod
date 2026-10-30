@@ -46,6 +46,10 @@ public record Snapshot(
             return name().toLowerCase(Locale.ROOT);
         }
 
+        public boolean adminOnly() {
+            return this == KEYS || this == PERMISSIONS || this == MODS;
+        }
+
         public static Optional<Part> of(String text) {
             return Arrays.stream(values())
                     .filter(part -> part.id().equalsIgnoreCase(text == null ? "" : text.strip()))

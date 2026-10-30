@@ -2,6 +2,56 @@
 
 ## Unreleased
 
+## 0.19.0 - 2026-10-29
+
+Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.5. The API for other mods
+is now **2.3.0** (new: numpad keys, `Key.HOLDS`, `KeyCombo.write`); mods built for 2.0.0 and later keep working.
+No migration needed; **Bans** in Server Configs is now part of **Players**.
+
+- Built and tested on Hytale server 0.7.5; 0.7.2 to 0.7.4 are still supported. 0.7.5 only tightens network packet
+  checks and updates translations; nothing ControlCore uses changed.
+
+### Added
+- **Players** (Server Configs -> Players, replaces Bans): everyone who has played here, is online or is banned, with
+  head, name, UUID, an Online / Offline / Banned badge and a status line (world, game mode, ping and playtime, or when
+  they were last seen). Filter Everyone / Online / Offline / Banned and search by name or UUID.
+- Buttons per player: **Game mode** (Adventure <-> Creative), **Teleport to**, **Bring**, **Kick** (press twice, the
+  reason field is the message), **Ban** and **Unban**. Players get a toast when an admin changes their game mode or
+  brings them.
+- Game mode changes and kicks are recorded in History under the new **Players** filter; game mode changes can be
+  rolled back.
+- **+ Player action** form (opens and closes like the bind form): ban, unban, kick, add to or remove from the
+  **whitelist**, make or remove **operators**, add players to or remove them from **Hytale permission groups**, and give
+  or take a group's **permission nodes** (the form lists the group's own permissions). Rows show **Whitelist** and
+  **Operator** badges and the player's groups; filters **Whitelisted** and **Operators**. All of it is in History and
+  can be rolled back. Operators and groups are admin-only.
+- **Mute** (for a length, kept after restarts) and **Freeze** (until unfrozen, also after leaving and joining again) in the form, with
+  **Muted** and **Frozen** badges, toasts for the player, and History with rollback.
+- **Details** page per player (**< Back** returns): status, groups, whitelist, first join, ban, mute, freeze, their
+  recent messages and, while online, their inventory. **Recent chat** shows the last 50 messages (memory only).
+- New permission nodes: `ofatech.controlcore.players` (see the list), `.players.gamemode`, `.players.teleport`,
+  `.players.kick`, `.players.whitelist`, `.players.mute`, `.players.freeze` and `.players.inventory`.
+- **Admins are protected:** a moderator with only these nodes can't kick, mute, freeze, bring, ban or take off the whitelist an admin; only admins can.
+- New filters **Muted** and **Frozen**; what you type in **+ Player action** is kept while the list updates.
+  `ofatech.controlcore.bans` still covers bans.
+- **Detect key** on every key row and in the **New bind** form: press it, then press the key. Two ways, chosen in
+  **Mod Settings -> ControlCore: Keymaps**: **From the game** (default; the panel closes, a toast asks for the key, the
+  server takes the next game action you send) or a **Capture screen** that reads any key, numpad included (with **Show every keyboard key in key lists** off, it
+  only accepts keys the server can hear and asks for another one otherwise). The panel
+  comes back on the same tab with the key saved or filled in.
+- **Show every keyboard key in key lists** (off by default): the Key dropdown lists the whole keyboard; keys the server
+  can't hear yet are marked, and binds on them explain how to make them work (give the key a game action in Hytale's
+  Controls and use Detect key).
+- Binds saved from the **New bind** form now keep keys the dropdowns can't show instead of losing them.
+- **Keys work in singleplayer worlds** (and player-hosted ones): binds, Ctrl+F for `/prefs` and the input probe did
+  nothing there before.
+- **API 2.3.0:** new `Key` constants for the numpad (`NUMPAD_0`-`NUMPAD_9`, `NUMPAD_DIVIDE`, `NUMPAD_MULTIPLY`,
+  `NUMPAD_MINUS`, `NUMPAD_PLUS`, `NUMPAD_ENTER`, `NUMPAD_PERIOD`) and `NUM_LOCK`, `PRINT_SCREEN`, `SCROLL_LOCK`, `PAUSE`,
+  `MENU`; `Key.HOLDS` (the keys that can be held: Ctrl, Alt, Shift); `KeyCombo.write(input)` writes a key the way
+  `KeyCombo.parse` reads it back (digits as `1`-`9`/`0`, everything else by name, for example `NUMPAD_DIVIDE`).
+  `KeyCombo.toString()` now writes keys like `NUM_LOCK` by name instead of `NUM LOCK`. Mods built for 2.0.0 to 2.2.0
+  keep working.
+
 ## 0.18.0 - 2026-10-27
 
 Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.4. The API for other mods

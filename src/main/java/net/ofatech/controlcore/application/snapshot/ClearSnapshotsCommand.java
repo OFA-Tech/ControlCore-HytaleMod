@@ -29,7 +29,7 @@ public final class ClearSnapshotsCommand implements ModCommand {
     public Result<Reply> execute(CommandContext context) {
         return snapshots
                 .deleteAll(SnapshotCommands.who(context))
-                .map(count -> Reply.of(
-                        texts.forSender(context.sender()).t("controlcore.snapshots.deleted_all", "count", count)));
+                .map(count -> Reply.of(snapshots.deletedText(
+                        count, SnapshotCommands.who(context), texts.forSender(context.sender()))));
     }
 }

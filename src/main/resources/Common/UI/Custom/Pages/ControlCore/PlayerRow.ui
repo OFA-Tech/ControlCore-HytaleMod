@@ -1,0 +1,181 @@
+$C = "../../Common.ui";
+
+Group {
+  LayoutMode: Top;
+  Padding: (Top: 8, Bottom: 0);
+
+  Group {
+    LayoutMode: Left;
+    Anchor: (Height: 40);
+
+    Group #AvatarBox {
+      Anchor: (Width: 36, Height: 36, Top: 2, Right: 12);
+
+      Group #Avatar0 {
+        Anchor: (Full: 0);
+        Background: #2f5d8a;
+        Visible: true;
+      }
+
+      Group #Avatar1 {
+        Anchor: (Full: 0);
+        Background: #3f6e3c;
+        Visible: false;
+      }
+
+      Group #Avatar2 {
+        Anchor: (Full: 0);
+        Background: #6b5422;
+        Visible: false;
+      }
+
+      Group #Avatar3 {
+        Anchor: (Full: 0);
+        Background: #7a3e5c;
+        Visible: false;
+      }
+
+      Group #Avatar4 {
+        Anchor: (Full: 0);
+        Background: #2a6b6b;
+        Visible: false;
+      }
+
+      Group #Avatar5 {
+        Anchor: (Full: 0);
+        Background: #5a4a8a;
+        Visible: false;
+      }
+
+      Group #Avatar6 {
+        Anchor: (Full: 0);
+        Background: #8a5a2f;
+        Visible: false;
+      }
+
+      Group #Avatar7 {
+        Anchor: (Full: 0);
+        Background: #4a5866;
+        Visible: false;
+      }
+
+      Group #Head {
+        Anchor: (Full: 0);
+        Visible: false;
+      }
+
+      Label #Initial {
+        Anchor: (Full: 0);
+        Style: (...$C.@DefaultLabelStyle, FontSize: 18, TextColor: #f2efe6, RenderBold: true, HorizontalAlignment: Center, VerticalAlignment: Center);
+      }
+    }
+
+    Label #Name {
+      Anchor: (Width: 220);
+      Style: (...$C.@DefaultLabelStyle, FontSize: 15, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center);
+    }
+
+    Label #Uuid {
+      FlexWeight: 1;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #5f7383, VerticalAlignment: Center);
+    }
+
+    Label #OnlineBadge {
+      Text: %controlcore.ui.players.online;
+      Anchor: (Height: 22, Top: 9, Right: 8);
+      Padding: (Horizontal: 8);
+      Background: #3f6e3c;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+    }
+    Label #OfflineBadge {
+      Text: %controlcore.ui.players.offline;
+      Anchor: (Height: 22, Top: 9, Right: 8);
+      Padding: (Horizontal: 8);
+      Background: #4a5866;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+    }
+    Label #BannedBadge {
+      Text: %controlcore.ui.players.banned;
+      Anchor: (Height: 22, Top: 9, Right: 8);
+      Padding: (Horizontal: 8);
+      Background: #8a2f2f;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+    }
+    Label #WhitelistBadge {
+      Text: %controlcore.ui.players.whitelisted;
+      Visible: false;
+      Anchor: (Height: 22, Top: 9, Right: 8);
+      Padding: (Horizontal: 8);
+      Background: #2a6b6b;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+    }
+    Label #OpBadge {
+      Text: %controlcore.ui.players.operator;
+      Visible: false;
+      Anchor: (Height: 22, Top: 9, Right: 8);
+      Padding: (Horizontal: 8);
+      Background: #8a6a22;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+    }
+    Label #MutedBadge {
+      Text: %controlcore.ui.players.muted;
+      Visible: false;
+      Anchor: (Height: 22, Top: 9, Right: 8);
+      Padding: (Horizontal: 8);
+      Background: #6b4a8a;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+    }
+    Label #FrozenBadge {
+      Text: %controlcore.ui.players.frozen;
+      Visible: false;
+      Anchor: (Height: 22, Top: 9, Right: 8);
+      Padding: (Horizontal: 8);
+      Background: #3d6f9e;
+      Style: (...$C.@DefaultLabelStyle, FontSize: 11, TextColor: #f2efe6, RenderBold: true, RenderUppercase: true, VerticalAlignment: Center);
+    }
+    $C.@SmallTertiaryTextButton #Details {
+      @Text = %controlcore.ui.players.details;
+      Anchor: (Width: 110, Height: 32, Top: 4, Left: 6);
+    }
+    $C.@SmallTertiaryTextButton #GameMode {
+      @Text = %controlcore.ui.players.gameMode;
+      Anchor: (Width: 150, Height: 32, Top: 4, Left: 6);
+    }
+    $C.@SmallTertiaryTextButton #TeleportTo {
+      @Text = %controlcore.ui.players.teleportTo;
+      Anchor: (Width: 140, Height: 32, Top: 4, Left: 6);
+    }
+    $C.@SmallTertiaryTextButton #Bring {
+      @Text = %controlcore.ui.players.bring;
+      Anchor: (Width: 110, Height: 32, Top: 4, Left: 6);
+    }
+    $C.@SmallTertiaryTextButton #Kick {
+      @Text = %controlcore.ui.players.kick;
+      Anchor: (Width: 110, Height: 32, Top: 4, Left: 6);
+    }
+    $C.@SmallTertiaryTextButton #Ban {
+      @Text = %controlcore.ui.players.ban;
+      Anchor: (Width: 110, Height: 32, Top: 4, Left: 6);
+    }
+    $C.@SmallTertiaryTextButton #Unban {
+      @Text = %controlcore.ui.players.unban;
+      Anchor: (Width: 120, Height: 32, Top: 4, Left: 6);
+    }
+  }
+
+  Label #Status {
+    Anchor: (Left: 48, Top: 1);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #9fb0bd, Wrap: true);
+  }
+
+  Label #BanInfo {
+    Visible: false;
+    Anchor: (Left: 48, Top: 2);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 13, TextColor: #d98c8c, Wrap: true);
+  }
+
+  Group {
+    Anchor: (Height: 1, Top: 9);
+    Background: #263c4c;
+  }
+}

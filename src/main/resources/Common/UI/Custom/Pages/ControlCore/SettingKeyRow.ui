@@ -26,6 +26,11 @@ Group {
       Anchor: (Width: 200);
     }
 
+    $C.@SmallTertiaryTextButton #Detect {
+      @Text = %controlcore.ui.keys.detect;
+      Anchor: (Width: 120, Height: 32, Left: 6);
+    }
+
     Group {
       FlexWeight: 1;
     }

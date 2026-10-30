@@ -1,0 +1,6 @@
+$C = "../../Common.ui";
+
+Label {
+  Anchor: (Bottom: 3);
+  Style: (...$C.@DefaultLabelStyle, FontSize: 14, TextColor: #c8d2da, Wrap: true);
+}

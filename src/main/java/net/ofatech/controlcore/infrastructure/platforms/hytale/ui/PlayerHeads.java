@@ -8,6 +8,7 @@ import com.hypixel.hytale.protocol.packets.setup.AssetPart;
 import com.hypixel.hytale.protocol.packets.setup.RequestCommonAssetsRebuild;
 import com.hypixel.hytale.server.core.asset.common.CommonAsset;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -33,6 +34,8 @@ final class PlayerHeads {
     private static final Duration KEEP = Duration.ofHours(6);
     private static final Duration RETRY = Duration.ofMinutes(10);
     private static final byte[] PNG = {(byte) 0x89, 'P', 'N', 'G'};
+    private static final int MAX_BYTES = 256 * 1024;
+    private static final int MAX_PICTURES = 512;
     private static final HttpClient HTTP =
             HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     private static final Map<String, Picture> PICTURES = new ConcurrentHashMap<>();
@@ -126,6 +129,12 @@ final class PlayerHeads {
             return known.png();
         }
         Optional<byte[]> png = download(key);
+        if (PICTURES.size() >= MAX_PICTURES) {
+            PICTURES.values().removeIf(picture -> picture.until() <= now);
+            if (PICTURES.size() >= MAX_PICTURES) {
+                PICTURES.clear();
+            }
+        }
         PICTURES.put(key, new Picture(png, now + (png.isPresent() ? KEEP : RETRY).toMillis()));
         return png;
     }
@@ -138,9 +147,15 @@ final class PlayerHeads {
                     .header("Accept", "image/png")
                     .GET()
                     .build();
-            HttpResponse<byte[]> response = HTTP.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            byte[] body = response.body();
-            if (response.statusCode() != 200 || body == null || body.length < PNG.length) {
+            HttpResponse<InputStream> response = HTTP.send(request, HttpResponse.BodyHandlers.ofInputStream());
+            byte[] body;
+            try (InputStream stream = response.body()) {
+                if (response.statusCode() != 200) {
+                    return Optional.empty();
+                }
+                body = stream.readNBytes(MAX_BYTES + 1);
+            }
+            if (body.length < PNG.length || body.length > MAX_BYTES) {
                 return Optional.empty();
             }
             for (int index = 0; index < PNG.length; index++) {

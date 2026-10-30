@@ -1,12 +1,5 @@
 package net.ofatech.controlcore.infrastructure.platforms.hytale.ui;
 
-import com.hypixel.hytale.component.Ref;
-import com.hypixel.hytale.component.Store;
-import com.hypixel.hytale.server.core.entity.entities.Player;
-import com.hypixel.hytale.server.core.universe.PlayerRef;
-import com.hypixel.hytale.server.core.universe.Universe;
-import com.hypixel.hytale.server.core.universe.world.World;
-import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import net.ofatech.controlcore.domain.model.ControlPanelContent;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -15,6 +8,7 @@ import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.pages.HytalePages;
 
 public final class HytaleControlPanelView implements ControlPanelView {
 
@@ -26,27 +20,19 @@ public final class HytaleControlPanelView implements ControlPanelView {
 
     @Override
     public Result<Void> open(PlayerId player, ControlPanelRequest request, ControlPanelContent content) {
-        PlayerRef playerRef = Universe.get().getPlayer(player.value());
-        Ref<EntityStore> entity = playerRef != null ? playerRef.getReference() : null;
-        if (entity == null || !entity.isValid()) {
+        boolean opening = HytalePages.inWorld(player.value())
+                .map(playerRef -> HytalePages.open(
+                        playerRef,
+                        ref -> new ControlPanelPage(ref, request, content, log),
+                        log,
+                        "the control panel",
+                        () -> {}))
+                .orElse(false);
+        if (!opening) {
             return Result.failure(Error.notFound(
                     "ControlPanel.PlayerNotFound",
                     Text.key("controlcore.errors.controlpanel.player_not_in_world", "That player is not in a world.")));
         }
-        Store<EntityStore> store = entity.getStore();
-        World world = store.getExternalData().getWorld();
-        world.execute(() -> {
-            try {
-                Player component = store.getComponent(entity, Player.getComponentType());
-                if (component != null && entity.isValid()) {
-                    component
-                            .getPageManager()
-                            .openCustomPage(entity, store, new ControlPanelPage(playerRef, request, content, log));
-                }
-            } catch (RuntimeException e) {
-                log.error("Could not open the control panel for " + playerRef.getUsername(), e);
-            }
-        });
         return Result.success();
     }
 }

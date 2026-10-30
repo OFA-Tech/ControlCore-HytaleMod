@@ -58,13 +58,44 @@ They come from the world's own `universe/worlds/<world>/config.json` and apply a
 - **Movement:** player speed and jump strength for this world, in %; 0 uses the server-wide value from Mod Settings.
 - **Advanced (read-only):** seed, gameplay config, delete when removed.
 
-#### Bans
+#### Players
 
-The **Bans** switch lists every ban in `bans.json`: the player, when and by whom, how long (permanent, until a date,
-or expired) and the reason. **Unban** lifts a ban (press it twice). The form on top bans a player by name or UUID,
-even when they are offline, permanently or for 1 hour, 1 day, 7 days or 30 days, with an optional reason; an online
-player is kicked at once. Admins have it; give `ofatech.controlcore.bans` to let others manage bans. Bans made with
-Hytale's own `/ban` and `/unban` appear here too, and every ban and unban is in History.
+The **Players** switch lists everyone who has played on the server, everyone online, banned or on the whitelist, with
+their head, name and UUID, badges (**Online** or **Offline**, **Banned**, **Whitelist**, **Operator**), and a status
+line: the world, game mode, ping, playtime and Hytale groups for players online, or when they were last seen. A dropdown
+shows **Everyone**, **Online**, **Offline**, **Banned**, **Whitelisted** or **Operators**, and the search box finds a
+name or UUID.
+
+Buttons on each row:
+
+- **Details** opens a page about the player (**< Back** returns): UUID, status, groups, whitelist, first join, ban,
+  mute and freeze, their recent chat messages and, while they are online, their inventory (needs
+  `ofatech.controlcore.players.inventory`).
+
+- **Game mode** switches the player between Adventure and Creative. The player gets a toast, and History keeps the
+  change so it can be rolled back.
+- **Teleport to** takes you to the player, **Bring** brings them to you (also across worlds).
+- **Kick** (press twice) disconnects the player with the text in the reason field as the message. It is in History
+  but can't be undone.
+- **Ban** bans the player with the length and reason chosen in the form; **Unban** (press twice) lifts a ban.
+
+**+ Player action** opens a form (and **Close form** folds it away): pick **Ban**, **Unban**, **Kick**, **Add to /
+Remove from whitelist**, **Make / Remove operator**, **Add to / Remove from group**, or **Give / Take a permission** for
+a group (the form then lists that group's own permissions), **Mute** / **Unmute** (for a length, like bans; muted
+players' messages are blocked and they are told so) or **Freeze** / **Unfreeze** (an online player can't move or
+jump until unfrozen or until they leave), type a
+name or UUID and press **Apply**. Bans work for offline players too, permanently or for 1 hour, 1 day, 7 days or 30
+days, with an optional reason; an online player is kicked at once. **Ban** on a row opens the form with that player
+filled in. Bans made with Hytale's own `/ban` and `/unban` appear here too, and every ban and unban is in History.
+
+Admins can do everything. Others need `ofatech.controlcore.players` to see the list, plus
+`ofatech.controlcore.players.gamemode`, `ofatech.controlcore.players.teleport` or `ofatech.controlcore.players.kick`
+for each button, `ofatech.controlcore.players.whitelist` for the whitelist, `.players.mute`, `.players.freeze` and
+`.players.inventory` for those, and `ofatech.controlcore.bans` for bans. **Recent chat** shows the last 50 messages
+since the server started (kept in memory only).
+Operators and groups can only be changed by admins, because adding someone to `hytale:Admin` gives them everything.
+Whether joining needs the whitelist is the **Require join permission** key in config.json. All of these changes are in
+History and can be rolled back. Moderators can't use these actions on an admin; only admins can. A freeze stays until it is lifted, even if the player leaves and joins again; an offline player can be frozen and is held in place when they join. Nobody can lift their own mute or freeze or take themselves off the whitelist; another admin or the console has to. Mute only blocks normal chat messages; commands from other mods that send messages are not covered.
 
 World ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`, so `/cc-get`, `/cc-set`,
 permissions, History and snapshots work on them like on `config.json` keys.

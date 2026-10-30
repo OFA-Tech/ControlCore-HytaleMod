@@ -37,6 +37,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.ports.game.Bans;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
+import net.ofatech.controlcore.domain.ports.game.KeyDetections;
 import net.ofatech.controlcore.domain.ports.game.Worlds;
 import net.ofatech.controlcore.domain.result.ErrorType;
 import net.ofatech.controlcore.domain.result.Result;
@@ -120,6 +121,74 @@ class ControlPanelServiceTest {
                 TestTexts.of(registry, players),
                 new FakeClock(),
                 registry);
+        var sessions = new SessionService(new FakePlayerData(), players, new FakeClock());
+        var notifications = new NotificationService(
+                new FakeMessenger(),
+                players,
+                policy,
+                new net.ofatech.controlcore.fakes.FakeOverlayDisplay(),
+                new net.ofatech.controlcore.fakes.FakeScheduler(),
+                registry,
+                new net.ofatech.controlcore.application.hud.HudService(
+                        registry,
+                        (player, hide, show) -> {},
+                        players,
+                        player -> net.ofatech.controlcore.domain.ports.game.PlayerContext.Context.UNKNOWN,
+                        log));
+        var playerData = new FakePlayerData();
+        var access = new net.ofatech.controlcore.fakes.FakeAccessLists();
+        var playerAdminPort = new net.ofatech.controlcore.fakes.FakePlayerAdmin();
+        var texts = TestTexts.of(registry, players);
+        var playersChanges = new net.ofatech.controlcore.application.players.PlayersChanges(bans, log);
+        var guard = new net.ofatech.controlcore.application.players.PlayerGuard(policy, (player, node) -> true, bans);
+        var directory =
+                new net.ofatech.controlcore.application.players.PlayerDirectory(players, playerData, bans, access);
+        var chat = new net.ofatech.controlcore.application.players.RecentChat(
+                net.ofatech.controlcore.domain.ports.game.ChatGate.NONE, new FakeClock());
+        var notices =
+                new net.ofatech.controlcore.application.players.PlayerNotices(directory, texts, notifications, log);
+        var moderation = new net.ofatech.controlcore.application.players.PlayerModeration(
+                directory,
+                guard,
+                notices,
+                playerData,
+                playerAdminPort,
+                new net.ofatech.controlcore.application.worlds.WorldsService(
+                        registry,
+                        serverConfig,
+                        Worlds.NONE,
+                        net.ofatech.controlcore.domain.ports.game.PlayerTuning.NONE,
+                        players,
+                        new net.ofatech.controlcore.fakes.FakeScheduler()),
+                changes,
+                new FakeClock(),
+                new net.ofatech.controlcore.fakes.FakeScheduler(),
+                playersChanges);
+        var playerAccess = new net.ofatech.controlcore.application.players.PlayerAccess(
+                directory, guard, access, changes, playersChanges);
+        var control = new net.ofatech.controlcore.application.players.PlayerControl(
+                directory, guard, notices, playerAdminPort, changes, playersChanges, log);
+        var listing = new net.ofatech.controlcore.application.players.PlayerListing(
+                players,
+                playerData,
+                directory,
+                moderation,
+                playerAdminPort,
+                access,
+                sessions,
+                bans,
+                chat,
+                new FakeClock());
+        var playerAdmin = new net.ofatech.controlcore.application.players.PlayersService(
+                playersChanges,
+                guard,
+                listing,
+                moderation,
+                playerAccess,
+                control,
+                bans,
+                texts,
+                net.ofatech.controlcore.domain.ports.game.ChatGate.NONE);
         var history = new HistoryEditor(
                 changes,
                 registry,
@@ -130,6 +199,7 @@ class ControlPanelServiceTest {
                 (player, node) -> true,
                 TestTexts.of(registry, players),
                 bans,
+                new net.ofatech.controlcore.application.players.PlayerHistory(moderation, playerAccess, control, texts),
                 new FakeClock());
         var snapshots = new SnapshotService(
                 new FakeSnapshotStore(),
@@ -153,20 +223,8 @@ class ControlPanelServiceTest {
                 new FakeAutomationRuleStore(),
                 new AutomationSettings(registry),
                 new ActionRegistry(),
-                new SessionService(new FakePlayerData(), players, new FakeClock()),
-                new NotificationService(
-                        new FakeMessenger(),
-                        players,
-                        policy,
-                        new net.ofatech.controlcore.fakes.FakeOverlayDisplay(),
-                        new net.ofatech.controlcore.fakes.FakeScheduler(),
-                        registry,
-                        new net.ofatech.controlcore.application.hud.HudService(
-                                registry,
-                                (player, hide, show) -> {},
-                                players,
-                                player -> net.ofatech.controlcore.domain.ports.game.PlayerContext.Context.UNKNOWN,
-                                log)),
+                sessions,
+                notifications,
                 new RecordingCommandRunner(),
                 profiles,
                 registry,
@@ -185,13 +243,14 @@ class ControlPanelServiceTest {
                 builtIn,
                 registry,
                 serverConfig,
-                bans,
+                playerAdmin,
                 new KeymapsEditor(keyRegistry, TestTexts.of(registry, players), modNames),
                 policy,
                 TestTexts.of(registry, players),
                 mods,
                 new PermissionsEditor(registry, serverConfig, policy),
                 probe,
+                KeyDetections.NONE,
                 (player, node) -> !node.equals("debug") || debugAllowed,
                 history,
                 snapshots,

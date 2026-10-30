@@ -25,6 +25,7 @@ public record ChangeRecord(
         PERMISSION,
         MOD,
         BAN,
+        PLAYER,
         GAME_ACTION
     }
 

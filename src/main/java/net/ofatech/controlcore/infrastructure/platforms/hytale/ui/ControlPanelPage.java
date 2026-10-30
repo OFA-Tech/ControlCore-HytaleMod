@@ -5,6 +5,7 @@ import com.hypixel.hytale.component.Store;
 import com.hypixel.hytale.protocol.packets.interface_.CustomPageLifetime;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.entity.entities.Player;
+import com.hypixel.hytale.server.core.entity.entities.player.pages.CustomUIPage;
 import com.hypixel.hytale.server.core.entity.entities.player.pages.InteractiveCustomUIPage;
 import com.hypixel.hytale.server.core.ui.Anchor;
 import com.hypixel.hytale.server.core.ui.DropdownEntryInfo;
@@ -29,6 +30,9 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiFunction;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -39,6 +43,7 @@ import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.ControlPanelContent;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
 import net.ofatech.controlcore.domain.model.ControlPanelTab;
+import net.ofatech.controlcore.domain.model.PanelRights;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.keys.GameActionMode;
@@ -53,6 +58,7 @@ import net.ofatech.controlcore.domain.model.snapshot.SnapshotsView;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
+import net.ofatech.controlcore.domain.ports.game.KeyDetection;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -77,8 +83,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private static final String LEGEND_ALL = "#LegendAll";
     private static final String SERVER_MODE_CONFIG = "ServerMode:Config";
     private static final String SERVER_MODE_WORLDS = "ServerMode:Worlds";
-    private static final String SERVER_MODE_BANS = "ServerMode:Bans";
+    private static final String SERVER_MODE_PLAYERS = "ServerMode:Players";
     private static final String SERVER_WORLD = "ServerWorld";
+    private static final long PLAYERS_REFRESH_DELAY_MILLIS = 750;
 
     private enum Tab {
         SERVER(ControlPanelTab.SERVER_CONFIGS, "#ServerTab", "#ServerTabButton"),
@@ -141,7 +148,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private final Map<PanelSection, List<SettingsSection.Entry>> built = new EnumMap<>(PanelSection.class);
     private final Map<PanelSection, SettingSearch> searches = new EnumMap<>(PanelSection.class);
     private final Map<String, String> errors = new HashMap<>();
-    private final Set<String> unsaved = new HashSet<>();
+    private final Map<String, String> unsaved = new HashMap<>();
     private final Map<String, String> undo = new HashMap<>();
     private final Set<String> undoRows = new HashSet<>();
     private Set<String> restartNames = Set.of();
@@ -169,13 +176,18 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private final Optional<InputProbe> probe;
     private final PlayerId viewerId;
     private final String viewerName;
+    private final KeyDetection keyDetection;
+    private final PanelKeyDetect keyDetect;
+    private final Supplier<PanelRights> rights;
+    private final BooleanSupplier stillAdmin;
 
     private Tab selected;
     private final List<String> worlds;
     private boolean showingWorlds;
-    private boolean showingBans;
-    private final Optional<BansTab> bansTab;
+    private boolean showingPlayers;
+    private final Optional<PlayersTab> playersTab;
     private boolean replied;
+    private final AtomicBoolean playersRefreshPending = new AtomicBoolean();
     private String world;
     private boolean editingServerKeys = true;
 
@@ -189,8 +201,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         ControlPanelRequest shownSections = request.isEmpty() ? ControlPanelRequest.PLAYER_PREFERENCES : request;
         this.customKeyBinds = content.customKeyBinds();
         boolean manageKeys = content.manageKeys() && shownSections.includeRegisteredActions();
-        this.bindForm =
-                manageKeys ? Optional.of(new KeyBindForm(content.customKeyBinds(), tr, hooks)) : Optional.empty();
+        this.bindForm = manageKeys
+                ? Optional.of(new KeyBindForm(content.customKeyBinds(), tr, hooks, content.keyDetection()::allKeys))
+                : Optional.empty();
         this.permissionsTab = shownSections.includeServerSettings()
                 ? content.permissions().map(view -> new PermissionsTab(view, tr, hooks))
                 : Optional.empty();
@@ -211,12 +224,46 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 ? content.automation().map(view -> new AutomationTab(view, tr, hooks))
                 : Optional.empty();
         this.historyMode = historyTab.isPresent() ? HistoryMode.CHANGES : HistoryMode.SNAPSHOTS;
-        this.bansTab = shownSections.includeServerSettings()
-                ? content.bans().map(view -> new BansTab(view, tr, hooks))
+        this.playersTab = shownSections.includeServerSettings()
+                ? content.players().map(view -> new PlayersTab(view, tr, hooks, log))
                 : Optional.empty();
         this.probe = manageKeys ? content.debug() : Optional.empty();
         this.viewerId = PlayerId.of(player.getUuid());
         this.viewerName = player.getUsername();
+        this.keyDetection = content.keyDetection();
+        this.rights = content.rights();
+        this.stillAdmin = content.stillAdmin();
+        this.keyDetect = new PanelKeyDetect(
+                keyDetection,
+                rights,
+                tr,
+                new PanelKeyDetect.Host() {
+                    @Override
+                    public PlayerRef viewer() {
+                        return playerRef;
+                    }
+
+                    @Override
+                    public CustomUIPage page() {
+                        return ControlPanelPage.this;
+                    }
+
+                    @Override
+                    public void closePanel() {
+                        close();
+                    }
+
+                    @Override
+                    public void send(UICommandBuilder update) {
+                        sendUpdate(update, false);
+                    }
+
+                    @Override
+                    public String asViewer(Supplier<String> work) {
+                        return ChangeContext.fromPanel(viewerId, viewerName, work);
+                    }
+                },
+                log);
         this.worlds = content.worlds();
         this.world = worlds.contains("default")
                 ? "default"
@@ -269,7 +316,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                             SettingScope.PLAYER,
                             viewer,
                             tr.t("controlcore.panel.empty.keymaps"),
-                            tr));
+                            tr,
+                            content.keyDetection()::allKeys));
         }
         if (manageKeys) {
             sections.put(
@@ -279,7 +327,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                             SettingScope.SERVER,
                             viewer,
                             tr.t("controlcore.panel.empty.server_keymaps"),
-                            tr));
+                            tr,
+                            content.keyDetection()::allKeys));
         }
         content.focus().ifPresent(this::focusMod);
     }
@@ -308,7 +357,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         profilesTab.ifPresent(tab -> tab.build(commands, events));
         healthTab.ifPresent(tab -> tab.build(commands, events));
         automationTab.ifPresent(tab -> tab.build(commands, events));
-        bansTab.ifPresent(tab -> tab.build(commands, events));
+        playersTab.ifPresent(tab -> tab.build(commands, events));
         armedDefaults = Optional.empty();
         events.addEventBinding(
                 CustomUIEventBindingType.Activating,
@@ -359,7 +408,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         if (subscriptions.isEmpty()) {
             sections.forEach((key, section) ->
                     subscriptions.add(section.listen(change -> onSettingChanged(key, section, change))));
-            bansTab.ifPresent(tab -> subscriptions.add(tab.view().onChange(this::onBansChanged)));
+            playersTab.ifPresent(tab -> subscriptions.add(tab.view().onChange(this::refreshPlayers)));
         }
     }
 
@@ -392,6 +441,18 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                             ? Optional.of(customKeyBinds.gameAction(row.id()))
                             : Optional.empty();
                     SettingRows.build(key, section, row, element, customBind, gameAction, commands, events);
+                    String typed = unsaved.get(shownKey(key, row.id()));
+                    if (typed != null && SettingRows.tracksTyping(row.kind()) && !sliderCanFollow(row.kind(), typed)) {
+                        commands.set(element + " #Input.Value", typed);
+                    } else if (typed != null && SettingRows.tracksTyping(row.kind())) {
+                        SettingSnapshot shown = row.snapshot();
+                        SettingRows.showValue(
+                                section,
+                                row.kind(),
+                                element,
+                                new SettingSnapshot(shown.definition(), typed, shown.overridden(), shown.access()),
+                                commands);
+                    }
                     showHistoryLink(key, element, row.id(), commands, events);
                     if (SettingRows.canUndo(row)) {
                         undoRows.add(shownKey(key, row.id()));
@@ -441,22 +502,22 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private void buildServerMode(UICommandBuilder commands, UIEventBuilder events) {
         commands.set(
                 "#ServerModeButtons.Visible",
-                sections.containsKey(PanelSection.SERVER_CONFIG) && (!worlds.isEmpty() || bansTab.isPresent()));
+                sections.containsKey(PanelSection.SERVER_CONFIG) && (!worlds.isEmpty() || playersTab.isPresent()));
         commands.set("#ServerModeWorlds.Visible", !worlds.isEmpty());
-        commands.set("#ServerModeBans.Visible", bansTab.isPresent());
+        commands.set("#ServerModePlayers.Visible", playersTab.isPresent());
         commands.set(
                 "#ServerWorld.Entries",
                 worlds.stream()
                         .map(name -> new DropdownEntryInfo(LocalizableString.fromString(name), name))
                         .toList());
         commands.set("#ServerWorld.Value", world);
-        if (!worlds.isEmpty() || bansTab.isPresent()) {
+        if (!worlds.isEmpty() || playersTab.isPresent()) {
             commands.setObject("#ServerList.Anchor", height(540));
         }
         events.addEventBinding(
                 CustomUIEventBindingType.Activating,
-                "#ServerModeBans",
-                EventData.of(PanelAction.KEY, SERVER_MODE_BANS));
+                "#ServerModePlayers",
+                EventData.of(PanelAction.KEY, SERVER_MODE_PLAYERS));
         events.addEventBinding(
                 CustomUIEventBindingType.Activating,
                 "#ServerModeConfig",
@@ -473,15 +534,15 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     }
 
     private void showServerMode(UICommandBuilder commands) {
-        boolean config = !showingWorlds && !showingBans;
+        boolean config = !showingWorlds && !showingPlayers;
         commands.set("#ServerModeConfig.Style", Value.ref(LAYOUT, config ? "SegmentOnStyle" : "SegmentStyle"));
         commands.set("#ServerModeWorlds.Style", Value.ref(LAYOUT, showingWorlds ? "SegmentOnStyle" : "SegmentStyle"));
-        commands.set("#ServerModeBans.Style", Value.ref(LAYOUT, showingBans ? "SegmentOnStyle" : "SegmentStyle"));
+        commands.set("#ServerModePlayers.Style", Value.ref(LAYOUT, showingPlayers ? "SegmentOnStyle" : "SegmentStyle"));
         commands.set("#ServerWorld.Visible", showingWorlds);
         commands.set("#ServerIntro.Visible", config);
         commands.set("#WorldsIntro.Visible", showingWorlds);
-        commands.set("#ServerRows.Visible", !showingBans);
-        commands.set("#BansPanel.Visible", showingBans);
+        commands.set("#ServerRows.Visible", !showingPlayers);
+        commands.set("#PlayersPanel.Visible", showingPlayers);
     }
 
     private void refreshServerScope() {
@@ -557,7 +618,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         if (errors.containsKey(shownKey)) {
             return SettingRows.State.ERROR;
         }
-        if (unsaved.contains(shownKey)) {
+        if (unsaved.containsKey(shownKey)) {
             return SettingRows.State.UNSAVED;
         }
         return snapshot.value().equals(snapshot.definition().formattedDefault())
@@ -579,7 +640,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
     private Optional<PanelSection> currentSection() {
         PanelSection key = switch (selected) {
-            case SERVER -> showingBans ? null : PanelSection.SERVER_CONFIG;
+            case SERVER -> showingPlayers ? null : PanelSection.SERVER_CONFIG;
             case SETTINGS -> PanelSection.SETTINGS;
             case PLAYER -> PanelSection.PREFS;
             case KEYMAP ->
@@ -665,19 +726,19 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             return;
         }
         String shownKey = shownKey(key, snapshot.id());
-        boolean changed = !snapshot.value().equals(action.value == null ? "" : action.value);
-        if (changed == unsaved.contains(shownKey)) {
-            return;
-        }
-        if (changed) {
-            unsaved.add(shownKey);
-        } else {
-            unsaved.remove(shownKey);
-        }
+        String text = action.value == null ? "" : action.value;
+        boolean wasUnsaved = unsaved.containsKey(shownKey);
         UICommandBuilder update = new UICommandBuilder();
-        showState(key, index, snapshot, update);
-        showLegend(update);
-        sendUpdate(update, false);
+        markTyped(
+                key,
+                index,
+                snapshot,
+                text,
+                sameShown(sections.get(key).kind(snapshot), snapshot.value(), text),
+                update);
+        if (wasUnsaved != unsaved.containsKey(shownKey)) {
+            sendUpdate(update, false);
+        }
     }
 
     private void undoChange(PanelSection key, SettingsSection section, PanelAction action) {
@@ -928,7 +989,15 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     public void handleDataEvent(
             @Nonnull Ref<EntityStore> ref, @Nonnull Store<EntityStore> store, @Nonnull PanelAction action) {
         replied = false;
-        ChangeContext.fromPanel(viewerId, viewerName, () -> handle(action));
+        try {
+            ChangeContext.fromPanel(viewerId, viewerName, () -> handle(action));
+        } catch (RuntimeException e) {
+            log.error("A control panel action of " + viewerName + " failed: " + action.name(), e);
+            UICommandBuilder update = new UICommandBuilder();
+            update.set("#FooterStatus.Text", tr.t("controlcore.panel.failed"));
+            sendUpdate(update, false);
+            return;
+        }
         if (!replied) {
             sendUpdate(new UICommandBuilder(), false);
         }
@@ -954,6 +1023,14 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
     private void handle(PanelAction action) {
         String name = action.name();
+        boolean serverKeys = KeyBindForm.changesServerBinds(name)
+                || PanelSection.SERVER_KEYMAPS.name().equals(action.section);
+        if (serverKeys && sections.containsKey(PanelSection.SERVER_KEYMAPS) && !stillAdmin.getAsBoolean()) {
+            UICommandBuilder update = new UICommandBuilder();
+            footer(update, tr.t("controlcore.panel.no_longer_admin"));
+            sendUpdate(update, false);
+            return;
+        }
         if (bindForm.map(form -> form.handle(action)).orElse(false)
                 || modsTab.handle(action)
                 || permissionsTab.map(tab -> tab.handle(action)).orElse(false)
@@ -962,7 +1039,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 || profilesTab.map(tab -> tab.handle(action)).orElse(false)
                 || healthTab.map(tab -> tab.handle(action)).orElse(false)
                 || automationTab.map(tab -> tab.handle(action)).orElse(false)
-                || bansTab.map(tab -> tab.handle(action)).orElse(false)) {
+                || playersTab.map(tab -> tab.handle(action)).orElse(false)) {
             return;
         }
         if (CLOSE.equals(name)) {
@@ -984,9 +1061,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             sendUpdate(update, false);
         } else if (SERVER_MODE_CONFIG.equals(name)
                 || SERVER_MODE_WORLDS.equals(name)
-                || SERVER_MODE_BANS.equals(name)) {
+                || SERVER_MODE_PLAYERS.equals(name)) {
             showingWorlds = SERVER_MODE_WORLDS.equals(name) && !worlds.isEmpty();
-            showingBans = SERVER_MODE_BANS.equals(name) && bansTab.isPresent();
+            showingPlayers = SERVER_MODE_PLAYERS.equals(name) && playersTab.isPresent();
             refreshServerScope();
         } else if (SERVER_WORLD.equals(name)) {
             if (action.value != null && worlds.contains(action.value)) {
@@ -1111,6 +1188,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 pickGameAction(key, action);
                 return;
             }
+            case SettingRows.DETECT -> {
+                detectOnRow(key, section, action);
+                return;
+            }
             case SettingRows.PICK_KEYS -> {
                 SettingSnapshot current = latestOf(key, action.id);
                 if (current == null) {
@@ -1130,35 +1211,52 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             }
             default -> {}
         }
-        SettingSnapshot before = latestOf(key, action.id);
-        Result<SettingSnapshot> result = switch (name) {
-            case SettingRows.SAVE, SettingRows.CHOOSE -> section.save(action.id, action.value);
+        Supplier<Result<SettingSnapshot>> change = switch (name) {
+            case SettingRows.SAVE, SettingRows.CHOOSE -> () -> section.save(action.id, action.value);
             case SettingRows.SLID ->
                 sliderValue(key, action)
-                        .map(value -> section.save(action.id, value))
+                        .<Supplier<Result<SettingSnapshot>>>map(value -> () -> section.save(action.id, value))
                         .orElse(null);
-            case SettingRows.CHECK -> section.check(action.id, action.checked);
-            case SettingRows.RESET -> section.reset(action.id);
+            case SettingRows.CHECK -> () -> section.check(action.id, action.checked);
+            case SettingRows.RESET -> () -> section.reset(action.id);
             default -> null;
         };
-        if (result == null) {
+        if (change == null) {
             return;
         }
         boolean controlAlreadyShowsValue = SettingRows.CHECK.equals(name) || SettingRows.CHOOSE.equals(name);
         UICommandBuilder update = new UICommandBuilder();
+        Result<SettingSnapshot> saved = saveValue(key, section, action.id, change, controlAlreadyShowsValue, update);
+        if (saved.isSuccess()) {
+            String note = section.kind(saved.value()) == SettingsSection.Kind.KEYS
+                    ? conflictNote(key, section, saved.value())
+                    : "";
+            footer(update, section.saved(saved.value()) + note);
+        }
+        sendUpdate(update, false);
+    }
+
+    private Result<SettingSnapshot> saveValue(
+            PanelSection key,
+            SettingsSection section,
+            String id,
+            Supplier<Result<SettingSnapshot>> change,
+            boolean controlAlreadyShowsValue,
+            UICommandBuilder update) {
+        SettingSnapshot before = latestOf(key, id);
+        Result<SettingSnapshot> result = change.get();
         if (key == PanelSection.SERVER_CONFIG) {
             showRestartNotice(update);
         }
         result.onSuccess(snapshot -> {
-                    footer(update, section.saved(snapshot));
                     Integer index = rowIndexes.get(key).get(snapshot.id());
                     if (!controlAlreadyShowsValue && index != null) {
                         showRowValue(key, section, index, snapshot, update);
                     }
                     succeeded(key, before, snapshot, true, update);
                 })
-                .onFailure(error -> failed(key, action.id, tr.error(error), update));
-        sendUpdate(update, false);
+                .onFailure(error -> failed(key, id, tr.error(error), update));
+        return result;
     }
 
     private void saveColored(PanelSection key, SettingsSection section, boolean reset, PanelAction action) {
@@ -1239,6 +1337,16 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         UICommandBuilder update = new UICommandBuilder();
         if (fillField) {
             update.set(key.row(index) + " #Input.Value", hex);
+            SettingSnapshot snapshot = latestOf(key, action.id);
+            if (snapshot != null) {
+                markTyped(
+                        key,
+                        index,
+                        snapshot,
+                        hex,
+                        sameShown(sections.get(key).kind(snapshot), snapshot.value(), hex),
+                        update);
+            }
         }
         footer(update, tr.t("controlcore.panel.color_picked", "color", hex));
         sendUpdate(update, false);
@@ -1252,7 +1360,87 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
         UICommandBuilder update = new UICommandBuilder();
         update.set(key.row(index) + " #Input.Value", value.get());
+        SettingSnapshot snapshot = latestOf(key, action.id);
+        if (snapshot != null) {
+            markTyped(
+                    key,
+                    index,
+                    snapshot,
+                    value.get(),
+                    sameShown(sections.get(key).kind(snapshot), snapshot.value(), value.get()),
+                    update);
+        }
         sendUpdate(update, false);
+    }
+
+    private void markTyped(
+            PanelSection key, int index, SettingSnapshot snapshot, String text, boolean same, UICommandBuilder update) {
+        String shownKey = shownKey(key, snapshot.id());
+        boolean wasUnsaved = unsaved.containsKey(shownKey);
+        if (same) {
+            unsaved.remove(shownKey);
+        } else {
+            unsaved.put(shownKey, text);
+        }
+        boolean nowUnsaved = !same;
+        if (wasUnsaved == nowUnsaved) {
+            return;
+        }
+        showState(key, index, snapshot, update);
+        showLegend(update);
+    }
+
+    private static boolean sliderCanFollow(SettingsSection.Kind kind, String text) {
+        if (kind != SettingsSection.Kind.INTEGER && kind != SettingsSection.Kind.DECIMAL) {
+            return true;
+        }
+        try {
+            new java.math.BigDecimal(text.strip());
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private static boolean sameShown(SettingsSection.Kind kind, String saved, String shown) {
+        return switch (kind) {
+            case INTEGER -> sameWhole(saved, shown);
+            case DECIMAL -> sameNumber(saved, shown);
+            case COLOR -> {
+                Optional<String> a = colour(saved);
+                Optional<String> b = colour(shown);
+                yield a.isPresent() && a.equals(b);
+            }
+            default -> saved.equals(shown);
+        };
+    }
+
+    private static boolean sameWhole(String saved, String shown) {
+        try {
+            return Long.parseLong(saved.strip()) == Long.parseLong(shown.strip());
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    private static Optional<String> colour(String text) {
+        String hex = text.strip().toLowerCase(Locale.ROOT);
+        hex = hex.startsWith("#") ? hex.substring(1) : hex;
+        if (!hex.matches("[0-9a-f]{3}|[0-9a-f]{6}")) {
+            return Optional.empty();
+        }
+        if (hex.length() == 3) {
+            hex = "" + hex.charAt(0) + hex.charAt(0) + hex.charAt(1) + hex.charAt(1) + hex.charAt(2) + hex.charAt(2);
+        }
+        return Optional.of(hex);
+    }
+
+    private static boolean sameNumber(String saved, String shown) {
+        try {
+            return new java.math.BigDecimal(saved.strip()).compareTo(new java.math.BigDecimal(shown.strip())) == 0;
+        } catch (NumberFormatException e) {
+            return saved.equals(shown);
+        }
     }
 
     private Optional<String> sliderValue(PanelSection key, PanelAction action) {
@@ -1319,24 +1507,33 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
     }
 
-    private void onBansChanged() {
-        Ref<EntityStore> ref = playerRef.getReference();
-        if (ref == null || !ref.isValid()) {
-            stopListening();
+    private void refreshPlayers() {
+        if (!playersRefreshPending.compareAndSet(false, true)) {
             return;
         }
-        Store<EntityStore> store = ref.getStore();
-        store.getExternalData().getWorld().execute(() -> {
-            try {
-                if (!isOpen(ref, store)) {
-                    stopListening();
-                } else if (showingBans) {
-                    rebuild();
-                }
-            } catch (RuntimeException e) {
-                log.error("Could not refresh the bans list of " + playerRef.getUsername(), e);
-            }
-        });
+        CompletableFuture.delayedExecutor(PLAYERS_REFRESH_DELAY_MILLIS, TimeUnit.MILLISECONDS)
+                .execute(() -> {
+                    Ref<EntityStore> ref = playerRef.getReference();
+                    if (ref == null || !ref.isValid()) {
+                        playersRefreshPending.set(false);
+                        stopListening();
+                        return;
+                    }
+                    Store<EntityStore> store = ref.getStore();
+                    store.getExternalData().getWorld().execute(() -> {
+                        playersRefreshPending.set(false);
+                        try {
+                            if (!isOpen(ref, store)) {
+                                stopListening();
+                            } else if (showingPlayers
+                                    && playersTab.map(PlayersTab::refreshNow).orElse(false)) {
+                                rebuild();
+                            }
+                        } catch (RuntimeException e) {
+                            log.error("Could not refresh the Players list of " + playerRef.getUsername(), e);
+                        }
+                    });
+                });
     }
 
     private boolean isOpen(Ref<EntityStore> ref, Store<EntityStore> store) {
@@ -1345,6 +1542,72 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
         Player player = store.getComponent(ref, Player.getComponentType());
         return player != null && player.getPageManager().getCustomPage() == this;
+    }
+
+    private void detectOnRow(PanelSection key, SettingsSection section, PanelAction action) {
+        SettingSnapshot current = latestOf(key, action.id);
+        if (current == null || section.kind(current) != SettingsSection.Kind.KEYS) {
+            UICommandBuilder update = new UICommandBuilder();
+            footer(update, tr.t("controlcore.keys.detect.gone"));
+            sendUpdate(update, false);
+            return;
+        }
+        if (current.access() == SettingAccess.READ_ONLY) {
+            UICommandBuilder update = new UICommandBuilder();
+            footer(update, tr.t("controlcore.keys.detect.locked"));
+            sendUpdate(update, false);
+            return;
+        }
+        String id = action.id;
+        keyDetect.start(
+                key == PanelSection.SERVER_KEYMAPS ? PanelKeyDetect.Target.SERVER_KEY : PanelKeyDetect.Target.OWN_KEY,
+                (keys, mode) -> {
+                    SettingSnapshot latest = latestOf(key, id);
+                    if (latest == null) {
+                        return tr.t("controlcore.keys.detect.gone");
+                    }
+                    if (latest.access() == SettingAccess.READ_ONLY) {
+                        return tr.t("controlcore.keys.detect.locked");
+                    }
+                    UICommandBuilder update = new UICommandBuilder();
+                    String value = KeyPicker.withDetected(keys, latest.value());
+                    Result<SettingSnapshot> saved =
+                            saveValue(key, section, id, () -> section.save(id, value), false, update);
+                    String text = saved.isSuccess()
+                            ? detectedText(key, section, saved.value(), keys, mode)
+                            : tr.error(saved.error());
+                    footer(update, text);
+                    sendUpdate(update, false);
+                    return null;
+                });
+    }
+
+    private String detectedText(
+            PanelSection key, SettingsSection section, SettingSnapshot saved, String keys, KeyDetection.Mode mode) {
+        String described = KeyPicker.describe(tr, keys);
+        StringBuilder text = new StringBuilder(
+                mode == KeyDetection.Mode.GAME || KeyPicker.followsGameAction(keys)
+                        ? tr.t("controlcore.keys.detect.saved_game", "keys", described)
+                        : tr.t("controlcore.keys.detect.saved", "keys", described));
+        if (!KeyPicker.heard(keys)) {
+            text.append(' ').append(tr.t("controlcore.keys.detect.unheard"));
+        }
+        text.append(conflictNote(key, section, saved));
+        return text.toString();
+    }
+
+    private String conflictNote(PanelSection key, SettingsSection section, SettingSnapshot saved) {
+        List<String> others = rowIndexes.getOrDefault(key, Map.of()).entrySet().stream()
+                .sorted(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .filter(id -> !id.equals(saved.id()))
+                .map(id -> latest.get(shownKey(key, id)))
+                .filter(other -> other != null && KeyPicker.sharesKeys(other.value(), saved.value()))
+                .map(section::name)
+                .toList();
+        return others.isEmpty()
+                ? ""
+                : " " + tr.t("controlcore.keys.detect.also_used", "actions", String.join(", ", others));
     }
 
     private void stopListening() {
@@ -1536,6 +1799,10 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
     private void pickGameAction(PanelSection key, PanelAction action) {
         UICommandBuilder update = new UICommandBuilder();
+        if (key != PanelSection.SERVER_KEYMAPS || bindForm.isEmpty()) {
+            sendUpdate(update, false);
+            return;
+        }
         Result<SettingId> id = SettingId.parse(action.id == null ? "" : action.id);
         Integer index = indexOf(key, action.id);
         if (id.isSuccess()) {
@@ -1600,7 +1867,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                     ProfilesTab.Host,
                     HealthTab.Host,
                     AutomationTab.Host,
-                    BansTab.Host {
+                    PlayersTab.Host {
 
         @Override
         public PlayerRef viewer() {
@@ -1634,6 +1901,11 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         @Override
         public void formToggled(UICommandBuilder update) {
             listHeights(update);
+        }
+
+        @Override
+        public void detect(BiFunction<String, KeyDetection.Mode, String> applyKeys) {
+            keyDetect.start(PanelKeyDetect.Target.BIND_FORM, applyKeys);
         }
 
         @Override

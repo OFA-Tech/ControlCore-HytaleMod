@@ -101,7 +101,7 @@ and per player `controlcore:show-welcome-message`, `controlcore:panel-start-tab`
 `Settings.json` in the mod's data folder holds `ControlPanelEnabled` (default `true`), the default of
 `controlcore:control-panel-enabled`; changed values live in `SettingValues.json`.
 
-Built on Hytale server **0.7.4** (runs on `>=0.7.2 <0.8.0`), Java 25, Gradle 9.8.1 and
+Built on Hytale server **0.7.5** (runs on `>=0.7.2 <0.8.0`), Java 25, Gradle 9.8.1 and
 [`com.azuredoom.hytale-tools`](https://github.com/AzureDoom/Hytale-Gradle-Plugin).
 
 ## Installing
@@ -175,6 +175,20 @@ Its pages live in [wiki/](wiki) and are published to the GitHub wiki on every pu
    `net.ofatech:controlcore` to GitHub Packages and creates a GitHub release with the jar and that version's
    changelog section. Versions below 1.0.0 (and `-rc.N` style suffixes) are marked as pre-releases.
 4. Upload the same jar to CurseForge with the text in [docs/curseforge.md](docs/curseforge.md).
+
+## Credits
+
+- **Hytale** by Hypixel Studios. ControlCore is a fan-made server mod and is not affiliated with Hypixel Studios.
+- **[CustomInventory](https://github.com/SupremoSama/Hytale-CustomInventory)** by SupremoSama (CC0): ControlCore adds
+  a button to its inventory screen when it is installed, and learned from its transport-independent packet hooks.
+- **[hyvatar.io](https://hyvatar.io)** renders the player heads in Players (turn off with `controlcore:player-heads`).
+  The idea of sending heads as runtime assets came from **HyUI**.
+
+## AI disclosure
+
+ControlCore is designed, reviewed and tested in game by its author. Most of the code, docs and translations were
+written with AI assistance (Claude by Anthropic, through OpenCode), and every release goes through an AI review
+panel and the author's in-game tests. No generated art or audio is shipped; the icon is a hand-drawn SVG.
 
 ## License
 

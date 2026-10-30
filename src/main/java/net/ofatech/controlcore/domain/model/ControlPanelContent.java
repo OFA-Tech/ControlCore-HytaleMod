@@ -2,14 +2,15 @@ package net.ofatech.controlcore.domain.model;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import net.ofatech.controlcore.domain.guard.Guard;
 import net.ofatech.controlcore.domain.model.automation.AutomationView;
-import net.ofatech.controlcore.domain.model.bans.BansView;
 import net.ofatech.controlcore.domain.model.diagnostics.DiagnosticsView;
 import net.ofatech.controlcore.domain.model.history.HistoryView;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
+import net.ofatech.controlcore.domain.model.players.PlayersView;
 import net.ofatech.controlcore.domain.model.settings.PermissionsView;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.model.snapshot.ProfilesView;
@@ -17,6 +18,7 @@ import net.ofatech.controlcore.domain.model.snapshot.SnapshotsView;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
+import net.ofatech.controlcore.domain.ports.game.KeyDetection;
 
 public record ControlPanelContent(
         ServerSettings server,
@@ -35,10 +37,13 @@ public record ControlPanelContent(
         Optional<InputProbe> debug,
         Optional<String> focus,
         List<String> worlds,
-        Optional<BansView> bans,
+        Optional<PlayersView> players,
         Optional<ProfilesView> profiles,
         Optional<DiagnosticsView> diagnostics,
-        Optional<AutomationView> automation) {
+        Optional<AutomationView> automation,
+        KeyDetection keyDetection,
+        Supplier<PanelRights> rights,
+        BooleanSupplier stillAdmin) {
 
     public ControlPanelContent {
         Guard.notNull(server, "server");
@@ -56,9 +61,12 @@ public record ControlPanelContent(
         Guard.notNull(debug, "debug");
         Guard.notNull(focus, "focus");
         worlds = List.copyOf(worlds);
-        Guard.notNull(bans, "bans");
+        Guard.notNull(players, "players");
         Guard.notNull(profiles, "profiles");
         Guard.notNull(diagnostics, "diagnostics");
         Guard.notNull(automation, "automation");
+        Guard.notNull(keyDetection, "keyDetection");
+        Guard.notNull(rights, "rights");
+        Guard.notNull(stillAdmin, "stillAdmin");
     }
 }

@@ -299,8 +299,8 @@ $C.@PageOverlay {
                 Anchor: (Width: 180, Right: 2);
               }
 
-              TextButton #ServerModeBans {
-                Text: %controlcore.ui.server.modeBans;
+              TextButton #ServerModePlayers {
+                Text: %controlcore.ui.server.modePlayers;
                 Style: @SegmentStyle;
                 Anchor: (Width: 180, Right: 12);
               }
@@ -363,62 +363,149 @@ $C.@PageOverlay {
             }
             }
 
-            Group #BansPanel {
+            Group #PlayersPanel {
               LayoutMode: Top;
               Visible: false;
 
               Label {
-                Text: %controlcore.ui.bans.intro;
+                Text: %controlcore.ui.players.intro;
                 Style: @NoteStyle;
                 Anchor: (Bottom: 8);
               }
 
-              Group {
+              Group #PlayerActionForm {
                 LayoutMode: Top;
+                Visible: false;
                 Anchor: (Bottom: 10);
                 Background: #182a37;
                 Padding: (Full: 10);
 
-                Label {
-                  Text: %controlcore.ui.bans.title;
-                  Style: @SubsectionTitleStyle;
-                  Anchor: (Height: 20, Bottom: 6);
+                Group {
+                  LayoutMode: Left;
+                  Anchor: (Height: 30, Bottom: 6);
+
+                  Label {
+                    Text: %controlcore.ui.players.actionTitle;
+                    Style: @SubsectionTitleStyle;
+                    FlexWeight: 1;
+                  }
+
+                  $C.@SmallTertiaryTextButton #PlayerActionClose {
+                    @Text = %controlcore.ui.players.closeForm;
+                    Anchor: (Width: 150, Height: 30);
+                  }
                 }
 
                 Group {
                   LayoutMode: Left;
                   Anchor: (Height: 38);
 
-                  $C.@TextField #BanPlayer {
+                  $C.@DropdownBox #PlayerActionKind {
+                    Anchor: (Width: 230, Right: 6);
+                  }
+
+                  $C.@DropdownBox #PlayerActionGroup {
+                    Visible: false;
+                    Anchor: (Width: 180, Right: 6);
+                  }
+
+                  $C.@TextField #PlayerActionPlayer {
                     Anchor: (Width: 220, Right: 6);
                   }
 
-                  $C.@DropdownBox #BanLength {
-                    Anchor: (Width: 170, Right: 6);
-                  }
-
-                  $C.@TextField #BanReason {
+                  $C.@TextField #PlayerActionNode {
+                    Visible: false;
                     FlexWeight: 1;
                   }
 
-                  $C.@SmallSecondaryTextButton #BanAdd {
-                    @Text = %controlcore.ui.bans.add;
+                  $C.@DropdownBox #PlayerActionLength {
+                    Anchor: (Width: 170, Right: 6);
+                  }
+
+                  $C.@TextField #PlayerActionReason {
+                    FlexWeight: 1;
+                  }
+
+                  $C.@SmallSecondaryTextButton #PlayerActionApply {
+                    @Text = %controlcore.ui.players.apply;
                     Anchor: (Width: 130, Height: 34, Left: 6);
                   }
                 }
+
+                Label #PlayerActionNote {
+                  Visible: false;
+                  Style: (...@NoteStyle, Wrap: true);
+                  Anchor: (Top: 6);
+                }
               }
 
-              Label #BansEmpty {
-                Text: %controlcore.ui.bans.empty;
+              Group #PlayerFilterRow {
+                LayoutMode: Left;
+                Anchor: (Height: 34, Bottom: 8);
+
+                $C.@DropdownBox #PlayerFilter {
+                  Anchor: (Width: 200, Right: 6);
+                }
+
+                $C.@TextField #PlayersSearch {
+                  FlexWeight: 1;
+                }
+
+                Label #PlayerCount {
+                  Style: @CountStyle;
+                  Anchor: (Width: 110, Left: 10);
+                }
+
+                $C.@SmallTertiaryTextButton #PlayerChat {
+                  @Text = %controlcore.ui.players.recentChat;
+                  Anchor: (Width: 150, Height: 32, Left: 6);
+                }
+
+                $C.@SmallSecondaryTextButton #PlayerActionNew {
+                  @Text = %controlcore.ui.players.newAction;
+                  Anchor: (Width: 210, Height: 32, Left: 6);
+                }
+              }
+
+              Label #PlayerListEmpty {
+                Text: %controlcore.ui.players.empty;
                 Style: @NoteStyle;
                 Visible: false;
               }
 
-              Group #BanList {
+              Group #PlayersRows {
                 LayoutMode: TopScrolling;
                 ScrollbarStyle: $C.@DefaultScrollbarStyle;
-                Anchor: (Height: 440);
+                Anchor: (Height: 400);
                 Padding: (Right: 10);
+              }
+
+              Group #PlayerDetails {
+                LayoutMode: Top;
+                Visible: false;
+
+                Group {
+                  LayoutMode: Left;
+                  Anchor: (Height: 34, Bottom: 8);
+
+                  $C.@SmallTertiaryTextButton #PlayerDetailsBack {
+                    @Text = %controlcore.ui.players.back;
+                    Anchor: (Width: 120, Height: 32);
+                  }
+
+                  Label #PlayerDetailsTitle {
+                    Style: (...@SubsectionTitleStyle, FontSize: 15, VerticalAlignment: Center);
+                    Anchor: (Left: 12);
+                    FlexWeight: 1;
+                  }
+                }
+
+                Group #PlayerDetailsBody {
+                  LayoutMode: TopScrolling;
+                  ScrollbarStyle: $C.@DefaultScrollbarStyle;
+                  Anchor: (Height: 470);
+                  Padding: (Right: 10);
+                }
               }
             }
           }
@@ -546,6 +633,12 @@ $C.@PageOverlay {
               }
             }
 
+            Label #KeymapTip {
+              Text: %controlcore.ui.keymaps.tip;
+              Style: @NoteStyle;
+              Anchor: (Bottom: 8);
+            }
+
             Group #ServerKeymaps {
               LayoutMode: Top;
               Visible: false;
@@ -583,6 +676,11 @@ $C.@PageOverlay {
 
                   $C.@DropdownBox #NewBindKey {
                     Anchor: (Width: 180, Right: 6);
+                  }
+
+                  $C.@SmallTertiaryTextButton #NewBindDetect {
+                    @Text = %controlcore.ui.keys.detect;
+                    Anchor: (Width: 120, Height: 32, Right: 6);
                   }
 
                   $C.@TextField #NewBindCommand {

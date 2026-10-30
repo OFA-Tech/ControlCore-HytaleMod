@@ -184,6 +184,36 @@ final class PanelAction {
                     (action, value) -> action.rule.put("A7Value", value),
                     action -> action.rule.get("A7Value"))
             .add()
+            .append(
+                    new KeyedCodec<>("@PlayerActionKind", Codec.STRING),
+                    (action, value) -> action.form.put("Kind", value),
+                    action -> action.form.get("Kind"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@PlayerActionGroup", Codec.STRING),
+                    (action, value) -> action.form.put("Group", value),
+                    action -> action.form.get("Group"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@PlayerActionPlayer", Codec.STRING),
+                    (action, value) -> action.form.put("Player", value),
+                    action -> action.form.get("Player"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@PlayerActionNode", Codec.STRING),
+                    (action, value) -> action.form.put("Node", value),
+                    action -> action.form.get("Node"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@PlayerActionLength", Codec.STRING),
+                    (action, value) -> action.form.put("Length", value),
+                    action -> action.form.get("Length"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@PlayerActionReason", Codec.STRING),
+                    (action, value) -> action.form.put("Reason", value),
+                    action -> action.form.get("Reason"))
+            .add()
             .build();
 
     String name;
@@ -200,6 +230,7 @@ final class PanelAction {
     String filter;
     String match;
     final java.util.Map<String, String> rule = new java.util.HashMap<>();
+    final java.util.Map<String, String> form = new java.util.HashMap<>();
 
     static String ruleKey(String field) {
         return "@Rule" + field;
@@ -207,6 +238,15 @@ final class PanelAction {
 
     String rule(String field) {
         String value = rule.get(field);
+        return value == null ? "" : value;
+    }
+
+    static String formKey(String field) {
+        return "@PlayerAction" + field;
+    }
+
+    String form(String field) {
+        String value = form.get(field);
         return value == null ? "" : value;
     }
 

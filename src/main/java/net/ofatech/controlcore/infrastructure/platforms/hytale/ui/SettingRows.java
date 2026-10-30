@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import net.ofatech.controlcore.domain.model.keys.GameActionMode;
+import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.text.Translator;
 
@@ -44,6 +45,7 @@ final class SettingRows {
     private static final String KEY_ROW = "Pages/ControlCore/SettingKeyRow.ui";
     static final String PICK_KEYS = "PickKeys";
     static final String PICK_GAME_ACTION = "PickGameAction";
+    static final String DETECT = "DetectKey";
 
     private SettingRows() {}
 
@@ -81,10 +83,11 @@ final class SettingRows {
         commands.set(element + " #Count.Text", count);
     }
 
-    static void showKeys(Translator tr, String hold, String key, String value, UICommandBuilder commands) {
-        KeyPicker.Picked picked = KeyPicker.read(value);
+    static void showKeys(
+            Translator tr, String hold, String key, String value, boolean allKeys, UICommandBuilder commands) {
+        KeyPicker.Picked picked = KeyPicker.read(value, allKeys);
         commands.set(hold + ".Entries", entries(KeyPicker.holds(tr)));
-        commands.set(key + ".Entries", entries(KeyPicker.keys(tr, picked)));
+        commands.set(key + ".Entries", entries(KeyPicker.keys(tr, picked, allKeys)));
         commands.set(hold + ".Value", picked.hold());
         commands.set(key + ".Value", picked.key());
     }
@@ -145,6 +148,12 @@ final class SettingRows {
                             element + " #GameAction",
                             event(PICK_GAME_ACTION, key, id).append(PanelAction.VALUE, element + " #GameAction.Value"));
                 });
+                boolean locked = snapshot.access() == SettingAccess.READ_ONLY;
+                commands.set(element + " #Detect.Visible", !locked);
+                if (!locked) {
+                    events.addEventBinding(
+                            CustomUIEventBindingType.Activating, element + " #Detect", event(DETECT, key, id));
+                }
                 for (String part : List.of(" #Hold", " #Key")) {
                     events.addEventBinding(
                             CustomUIEventBindingType.ValueChanged,
@@ -280,7 +289,13 @@ final class SettingRows {
         String input = element + " #Input";
         switch (kind) {
             case KEYS ->
-                showKeys(section.translator(), element + " #Hold", element + " #Key", snapshot.value(), commands);
+                showKeys(
+                        section.translator(),
+                        element + " #Hold",
+                        element + " #Key",
+                        snapshot.value(),
+                        section.allKeys(),
+                        commands);
             case TEXT, CHOICE -> commands.set(input + ".Value", snapshot.value());
             case COLOR -> {
                 commands.set(input + ".Value", snapshot.value());

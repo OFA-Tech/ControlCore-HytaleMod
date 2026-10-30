@@ -8,8 +8,6 @@ import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChain;
 import com.hypixel.hytale.protocol.packets.interaction.SyncInteractionChains;
 import com.hypixel.hytale.protocol.packets.interface_.ChatMessage;
 import com.hypixel.hytale.protocol.packets.player.ClientMovement;
-import com.hypixel.hytale.server.core.io.adapter.PacketAdapters;
-import com.hypixel.hytale.server.core.io.adapter.PacketFilter;
 import com.hypixel.hytale.server.core.io.adapter.PlayerPacketFilter;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import java.util.ArrayList;
@@ -33,29 +31,25 @@ public final class HytalePlayerInput implements PlayerInput, PlayerPacketFilter 
             Set.of("gm a", "gm c", "gm adventure", "gm creative", "gamemode a", "gamemode c");
 
     private final Log log;
+    private final InboundPacketHooks hooks;
     private final Map<UUID, State> states = new ConcurrentHashMap<>();
     private volatile Listener listener;
-    private PacketFilter registration;
 
-    public HytalePlayerInput(Log log) {
+    public HytalePlayerInput(Log log, InboundPacketHooks hooks) {
         this.log = log;
+        this.hooks = hooks;
     }
 
     @Override
     public synchronized void listen(Listener listener) {
         this.listener = listener;
-        if (registration == null) {
-            registration = PacketAdapters.registerInbound(this);
-        }
+        hooks.add(this);
     }
 
     @Override
     public synchronized void stop() {
         listener = null;
-        if (registration != null) {
-            PacketAdapters.deregisterInbound(registration);
-            registration = null;
-        }
+        hooks.remove(this);
         states.clear();
     }
 

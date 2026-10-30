@@ -14,18 +14,22 @@ public final class KeymapsModule implements FeatureModule {
     static final String OPEN_PREFERENCES = "open-preferences";
 
     private final KeymapRegistry keymaps;
-    private final KeyDispatcher dispatcher;
+    private final KeyDetector detector;
+    private final KeyDetectSettings detectSettings;
     private final PlayerInput input;
 
-    public KeymapsModule(KeymapRegistry keymaps, KeyDispatcher dispatcher, PlayerInput input) {
+    public KeymapsModule(
+            KeymapRegistry keymaps, KeyDetector detector, PlayerInput input, KeyDetectSettings detectSettings) {
         this.keymaps = keymaps;
-        this.dispatcher = dispatcher;
+        this.detector = detector;
+        this.detectSettings = detectSettings;
         this.input = input;
     }
 
     @Override
     public void setup(ModuleContext context) {
         keymaps.loadCustom();
+        detectSettings.register();
         keymaps.register(KeyAction.of("controlcore", OPEN_PREFERENCES)
                 .displayName(Text.key("controlcore.keys.actions.open_preferences.name", "Open my preferences"))
                 .describedAs(Text.key(
@@ -36,7 +40,7 @@ public final class KeymapsModule implements FeatureModule {
 
     @Override
     public void start(ModuleContext context) {
-        input.listen(dispatcher);
+        input.listen(detector);
     }
 
     @Override

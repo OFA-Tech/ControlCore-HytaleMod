@@ -27,6 +27,7 @@ import net.ofatech.controlcore.domain.ports.game.CommandRunner;
 import net.ofatech.controlcore.domain.ports.game.EmptyHandInput;
 import net.ofatech.controlcore.domain.ports.game.HudDisplay;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
+import net.ofatech.controlcore.domain.ports.game.KeyCapture;
 import net.ofatech.controlcore.domain.ports.game.Messenger;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
 import net.ofatech.controlcore.domain.ports.game.PlayerData;
@@ -63,6 +64,7 @@ public final class FakePlatform implements Platform {
     public final FakeModLookup mods = new FakeModLookup();
     public final RecordingControlPanelView controlPanel = new RecordingControlPanelView();
     public final FakePlayerInput input = new FakePlayerInput();
+    public final FakeKeyCapture keyCapture = new FakeKeyCapture();
     public final RecordingCommandRunner commandRunner = new RecordingCommandRunner();
     public final FakeKeyBindStore keyBinds = new FakeKeyBindStore();
     public final FakeCustomKeyBindStore customKeyBinds = new FakeCustomKeyBindStore();
@@ -71,6 +73,9 @@ public final class FakePlatform implements Platform {
     public final FakeAutomationRuleStore automationRules = new FakeAutomationRuleStore();
     public final FakeServerHealth health = new FakeServerHealth();
     public final FakeOverlayDisplay overlay = new FakeOverlayDisplay();
+    public final FakePlayerAdmin admin = new FakePlayerAdmin();
+    public final FakeAccessLists access = new FakeAccessLists();
+    public final FakeChatGate chat = new FakeChatGate();
     public final java.util.Map<PlayerId, net.ofatech.controlcore.domain.ports.game.PlayerContext.Context> context =
             new java.util.concurrent.ConcurrentHashMap<>();
     public final FakeReportWriter reports = new FakeReportWriter();
@@ -86,6 +91,7 @@ public final class FakePlatform implements Platform {
     public final FakeModCatalog modCatalog = new FakeModCatalog();
     public final Map<PlayerId, Set<HudPart>> hiddenHud = new ConcurrentHashMap<>();
     public final Set<String> deniedNodes = ConcurrentHashMap.newKeySet();
+    public final java.util.Map<PlayerId, java.util.List<String>> deniedNodesFor = new ConcurrentHashMap<>();
     public final Set<PlayerId> probing = ConcurrentHashMap.newKeySet();
 
     public final FakeServerConfiguration serverConfig = new FakeServerConfiguration(
@@ -108,7 +114,12 @@ public final class FakePlatform implements Platform {
         binder.bind(Players.class, players);
         binder.bind(Translations.class, translations);
         binder.bind(Messenger.class, messenger);
-        binder.bind(Permissions.class, (player, node) -> !deniedNodes.contains(node));
+        binder.bind(
+                Permissions.class,
+                (player, node) -> !deniedNodes.contains(node)
+                        && !deniedNodesFor
+                                .getOrDefault(player, java.util.List.of())
+                                .contains(node));
         binder.bind(PlayerData.class, playerData);
         binder.bind(SettingStore.class, settingStore);
         binder.bind(Scheduler.class, scheduler);
@@ -137,10 +148,14 @@ public final class FakePlatform implements Platform {
             hidden.addAll(hide);
         });
         binder.bind(net.ofatech.controlcore.domain.ports.game.OverlayDisplay.class, overlay);
+        binder.bind(net.ofatech.controlcore.domain.ports.game.PlayerAdmin.class, admin);
+        binder.bind(net.ofatech.controlcore.domain.ports.game.AccessLists.class, access);
+        binder.bind(net.ofatech.controlcore.domain.ports.game.ChatGate.class, chat);
         binder.bind(
                 net.ofatech.controlcore.domain.ports.game.PlayerContext.class,
                 player -> context.getOrDefault(
                         player, net.ofatech.controlcore.domain.ports.game.PlayerContext.Context.UNKNOWN));
+        binder.bind(KeyCapture.class, keyCapture);
         binder.bind(InputProbe.class, new InputProbe() {
             @Override
             public boolean toggle(PlayerId player) {

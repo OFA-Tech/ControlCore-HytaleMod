@@ -7,12 +7,12 @@ import java.util.Optional;
 import net.ofatech.controlcore.api.ControlPanelApi;
 import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.automation.AutomationService;
-import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.diagnostics.DiagnosticsService;
 import net.ofatech.controlcore.application.history.HistoryEditor;
 import net.ofatech.controlcore.application.keymaps.InputProbeCommand;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.mods.ModsEditor;
+import net.ofatech.controlcore.application.players.PlayersService;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.application.settings.PermissionsEditor;
 import net.ofatech.controlcore.application.settings.PermittedSettingsEditor;
@@ -22,12 +22,14 @@ import net.ofatech.controlcore.application.snapshot.SnapshotService;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.ControlPanelContent;
 import net.ofatech.controlcore.domain.model.ControlPanelRequest;
+import net.ofatech.controlcore.domain.model.PanelRights;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.capability.ControlPanelView;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
+import net.ofatech.controlcore.domain.ports.game.KeyDetections;
 import net.ofatech.controlcore.domain.ports.game.Permissions;
 import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
@@ -43,13 +45,14 @@ public final class ControlPanelService implements ControlPanelApi {
     private final ControlPanelView view;
     private final SettingsApi registry;
     private final ServerConfigEditor serverConfig;
-    private final BansService bans;
+    private final PlayersService playerAdmin;
     private final KeymapsEditor keymaps;
     private final SettingPermissionPolicy permissions;
     private final Texts texts;
     private final ModsEditor mods;
     private final PermissionsEditor permissionRules;
     private final InputProbe probe;
+    private final KeyDetections keyDetection;
     private final Permissions nodes;
     private final HistoryEditor history;
     private final SnapshotService snapshots;
@@ -64,13 +67,14 @@ public final class ControlPanelService implements ControlPanelApi {
             ControlPanelView view,
             SettingsApi registry,
             ServerConfigEditor serverConfig,
-            BansService bans,
+            PlayersService playerAdmin,
             KeymapsEditor keymaps,
             SettingPermissionPolicy permissions,
             Texts texts,
             ModsEditor mods,
             PermissionsEditor permissionRules,
             InputProbe probe,
+            KeyDetections keyDetection,
             Permissions nodes,
             HistoryEditor history,
             SnapshotService snapshots,
@@ -83,13 +87,14 @@ public final class ControlPanelService implements ControlPanelApi {
         this.view = view;
         this.registry = registry;
         this.serverConfig = serverConfig;
-        this.bans = bans;
+        this.playerAdmin = playerAdmin;
         this.keymaps = keymaps;
         this.permissions = permissions;
         this.texts = texts;
         this.mods = mods;
         this.permissionRules = permissionRules;
         this.probe = probe;
+        this.keyDetection = keyDetection;
         this.nodes = nodes;
         this.history = history;
         this.snapshots = snapshots;
@@ -101,7 +106,8 @@ public final class ControlPanelService implements ControlPanelApi {
     public boolean mayOpenAdminPanel(PlayerId player) {
         return permissions.isAdmin(player)
                 || permitted(serverConfig, player).seesAny(SettingScope.SERVER)
-                || permitted(registry, player).seesAny(SettingScope.SERVER);
+                || permitted(registry, player).seesAny(SettingScope.SERVER)
+                || playerAdmin.maySee(Optional.of(player));
     }
 
     private PermittedSettingsEditor permitted(SettingsEditor editor, PlayerId player) {
@@ -174,15 +180,16 @@ public final class ControlPanelService implements ControlPanelApi {
                     "ControlPanel.PlayerNotFound",
                     Text.key("controlcore.errors.controlpanel.player_offline", "That player is not online.")));
         }
-        return view.open(
+        KeymapsEditor keys = keymaps.viewedBy(player, () -> permissions.isAdmin(player));
+        Result<Void> opened = view.open(
                 player,
                 request,
                 new ControlPanelContent(
                         server.read(),
                         permitted(serverConfig, player),
                         permitted(registry, player),
-                        keymaps.viewedBy(player),
-                        keymaps.viewedBy(player),
+                        keys,
+                        keys,
                         settings.startTab(player),
                         permissions.isAdmin(player),
                         texts.forPlayer(Optional.of(player)),
@@ -204,7 +211,9 @@ public final class ControlPanelService implements ControlPanelApi {
                         nodes.hasOwn(player, InputProbeCommand.PERMISSION) ? Optional.of(probe) : Optional.empty(),
                         focus,
                         serverConfig.worldNames(),
-                        bans.mayManage(Optional.of(player)) ? Optional.of(bans.viewedBy(player)) : Optional.empty(),
+                        playerAdmin.maySee(Optional.of(player))
+                                ? Optional.of(playerAdmin.viewedBy(player))
+                                : Optional.empty(),
                         snapshots.mayUse(Optional.of(player))
                                 ? Optional.of(profiles.viewedBy(player, nameOf(player)))
                                 : Optional.empty(),
@@ -213,7 +222,27 @@ public final class ControlPanelService implements ControlPanelApi {
                                 : Optional.empty(),
                         automation.mayManage(Optional.of(player))
                                 ? players.find(player).map(automation::viewedBy)
-                                : Optional.empty()));
+                                : Optional.empty(),
+                        keyDetection.viewedBy(player),
+                        () -> rights(player),
+                        () -> permissions.isAdmin(player)));
+        opened.onSuccess(nothing -> keyDetection.cancel(player));
+        return opened;
+    }
+
+    private PanelRights rights(PlayerId player) {
+        Optional<PlayerId> who = Optional.of(player);
+        return new PanelRights(
+                settings.panelEnabled(),
+                permissions.isAdmin(player),
+                mayOpenAdminPanel(player),
+                history.maySee(who),
+                history.mayRollBack(who),
+                snapshots.mayUse(who),
+                nodes.hasOwn(player, InputProbeCommand.PERMISSION),
+                playerAdmin.maySee(who),
+                diagnostics.maySee(who),
+                automation.mayManage(who));
     }
 
     private String nameOf(PlayerId player) {

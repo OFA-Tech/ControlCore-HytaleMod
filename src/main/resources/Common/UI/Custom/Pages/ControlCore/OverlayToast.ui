@@ -34,7 +34,7 @@ Group {
     Padding: (Horizontal: 12, Vertical: 8);
 
     Label #Title {
-      Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #e9e4d6);
+      Style: (...$C.@DefaultLabelStyle, FontSize: 14, RenderBold: true, TextColor: #e9e4d6, Wrap: true);
     }
 
     Label #Text {

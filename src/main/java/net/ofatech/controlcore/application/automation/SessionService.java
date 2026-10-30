@@ -21,10 +21,10 @@ import net.ofatech.controlcore.domain.ports.system.Clock;
 @AutoService(SessionsApi.class)
 public final class SessionService implements SessionsApi {
 
-    static final String FIRST_JOIN = "session.first-join";
-    static final String LAST_SEEN = "session.last-seen";
+    public static final String FIRST_JOIN = "session.first-join";
+    public static final String LAST_SEEN = "session.last-seen";
     static final String PLAYTIME = "session.playtime-seconds";
-    static final String NAME = "session.name";
+    public static final String NAME = "session.name";
 
     private final PlayerData data;
     private final Players players;

@@ -12,6 +12,7 @@ import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.application.mods.ModsEditor;
+import net.ofatech.controlcore.application.players.PlayerHistory;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.application.text.Texts;
@@ -45,6 +46,7 @@ public final class HistoryEditor {
     private final Permissions permissions;
     private final Texts texts;
     private final BansService bans;
+    private final PlayerHistory players;
     private final Clock clock;
 
     public HistoryEditor(
@@ -57,6 +59,7 @@ public final class HistoryEditor {
             Permissions permissions,
             Texts texts,
             BansService bans,
+            PlayerHistory players,
             Clock clock) {
         this.history = history;
         this.settings = settings;
@@ -67,6 +70,7 @@ public final class HistoryEditor {
         this.permissions = permissions;
         this.texts = texts;
         this.bans = bans;
+        this.players = players;
         this.clock = clock;
     }
 
@@ -172,7 +176,7 @@ public final class HistoryEditor {
                 "what",
                 what(record, tr),
                 "value",
-                shown(record.kind(), record.oldValue(), tr)));
+                shown(record.kind(), record.target(), record.oldValue(), tr)));
     }
 
     private Result<?> apply(ChangeRecord record, Optional<PlayerId> who) {
@@ -199,6 +203,7 @@ public final class HistoryEditor {
                 });
             case MOD -> mods.viewedBy(who).setEnabled(record.target(), Boolean.parseBoolean(old));
             case BAN -> admin(who).flatMap(ok -> bans.restore(record.target(), old, who));
+            case PLAYER -> players.restore(record.target(), old, record.newValue(), who);
             case GAME_ACTION ->
                 admin(who)
                         .flatMap(ok -> SettingId.parse(record.target()))
@@ -230,8 +235,8 @@ public final class HistoryEditor {
                 who(record.actor(), tr),
                 tr.t("controlcore.history.source." + record.source().name().toLowerCase(Locale.ROOT)),
                 what(record, tr),
-                shown(record.kind(), record.oldValue(), tr),
-                shown(record.kind(), record.newValue(), tr),
+                shown(record.kind(), record.target(), record.oldValue(), tr),
+                shown(record.kind(), record.target(), record.newValue(), tr),
                 record.restart(),
                 record.isRollback(),
                 rolledBack,
@@ -272,6 +277,7 @@ public final class HistoryEditor {
                                 .orElse(target));
             case PERMISSION -> tr.t("controlcore.history.what.permission", "target", permissionTarget(target, tr));
             case BAN -> bans.what(target, tr);
+            case PLAYER -> players.what(target, tr);
             case MOD ->
                 mods.viewedBy(Optional.empty()).list().stream()
                         .filter(entry -> entry.mod().id().equalsIgnoreCase(target))
@@ -282,6 +288,10 @@ public final class HistoryEditor {
     }
 
     public String shown(ChangeRecord.Kind kind, String value, Translator tr) {
+        return shown(kind, "", value, tr);
+    }
+
+    public String shown(ChangeRecord.Kind kind, String target, String value, Translator tr) {
         return switch (kind) {
             case CUSTOM_BIND ->
                 HistoryValues.bind(value)
@@ -310,6 +320,7 @@ public final class HistoryEditor {
             case MOD ->
                 tr.t(Boolean.parseBoolean(value) ? "controlcore.history.value.on" : "controlcore.history.value.off");
             case BAN -> bans.shown(value, tr);
+            case PLAYER -> players.shown(target, value, tr);
             case GAME_ACTION ->
                 tr.t("controlcore.keys.game_action."
                         + GameActionMode.parse(value)
