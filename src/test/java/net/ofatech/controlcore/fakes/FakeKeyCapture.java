@@ -15,8 +15,11 @@ public final class FakeKeyCapture implements KeyCapture {
     public final List<PlayerId> opened = new CopyOnWriteArrayList<>();
     private final Map<PlayerId, Consumer<Optional<String>>> waiting = new ConcurrentHashMap<>();
 
+    public final List<Boolean> anyKey = new CopyOnWriteArrayList<>();
+
     @Override
-    public void open(PlayerId player, Translator tr, Consumer<Optional<String>> done) {
+    public void open(PlayerId player, Translator tr, boolean anyKey, Consumer<Optional<String>> done) {
+        this.anyKey.add(anyKey);
         opened.add(player);
         waiting.put(player, done);
     }

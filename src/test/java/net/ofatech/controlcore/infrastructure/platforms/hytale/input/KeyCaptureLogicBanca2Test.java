@@ -17,7 +17,7 @@ class KeyCaptureLogicBanca2Test {
     private static final int LALT = BASE + 226;
     private static final int RSHIFT = BASE + 229;
 
-    private final KeyCaptureLogic logic = new KeyCaptureLogic();
+    private final KeyCaptureLogic logic = new KeyCaptureLogic(true);
 
     @Test
     void ctrlAndShiftTogetherAreBothKeptInCtrlAltShiftOrder() {
@@ -91,7 +91,7 @@ class KeyCaptureLogicBanca2Test {
                 if (key.isEmpty()) {
                     continue;
                 }
-                KeyCaptureLogic fresh = new KeyCaptureLogic();
+                KeyCaptureLogic fresh = new KeyCaptureLogic(true);
                 fresh.accept(LCTRL, false, 0);
                 String keys = fresh.accept(full, false, 1).captured().orElseThrow();
 

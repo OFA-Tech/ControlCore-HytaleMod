@@ -30,12 +30,13 @@ final class KeyCapturePage extends InteractiveCustomUIPage<KeyCapturePage.Event>
 
     private final Consumer<Optional<String>> done;
     private final Translator tr;
-    private final KeyCaptureLogic logic = new KeyCaptureLogic();
+    private final KeyCaptureLogic logic;
     private final AtomicBoolean finished = new AtomicBoolean();
 
-    KeyCapturePage(PlayerRef player, Translator tr, Consumer<Optional<String>> done) {
+    KeyCapturePage(PlayerRef player, Translator tr, boolean anyKey, Consumer<Optional<String>> done) {
         super(player, CustomPageLifetime.CanDismiss, Event.CODEC);
         this.tr = tr;
+        this.logic = new KeyCaptureLogic(anyKey);
         this.done = done;
     }
 
@@ -76,6 +77,9 @@ final class KeyCapturePage extends InteractiveCustomUIPage<KeyCapturePage.Event>
                 update.set("#CaptureHint.Text", tr.t("controlcore.ui.keyCapture.holding", "keys", holding.holds()));
             case KeyCaptureLogic.Outcome.Unsupported unsupported ->
                 update.set("#CaptureHint.Text", tr.t("controlcore.ui.keyCapture.unsupported"));
+            case KeyCaptureLogic.Outcome.NotInLists notInLists ->
+                update.set(
+                        "#CaptureHint.Text", tr.t("controlcore.ui.keyCapture.notInLists", "key", notInLists.label()));
             case KeyCaptureLogic.Outcome.Waiting waiting -> {}
         }
         sendUpdate(update, false);

@@ -30,7 +30,8 @@
   `ofatech.controlcore.bans` still covers bans.
 - **Detect key** on every key row and in the **New bind** form: press it, then press the key. Two ways, chosen in
   **Mod Settings -> ControlCore: Keymaps**: **From the game** (default; the panel closes, a toast asks for the key, the
-  server takes the next game action you send) or a **Capture screen** that reads any key, numpad included. The panel
+  server takes the next game action you send) or a **Capture screen** that reads any key, numpad included (with **Show every keyboard key in key lists** off, it
+  only accepts keys the server can hear and asks for another one otherwise). The panel
   comes back on the same tab with the key saved or filled in.
 - **Show every keyboard key in key lists** (off by default): the Key dropdown lists the whole keyboard; keys the server
   can't hear yet are marked, and binds on them explain how to make them work (give the key a game action in Hytale's

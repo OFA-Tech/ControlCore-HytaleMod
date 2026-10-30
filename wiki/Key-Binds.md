@@ -46,7 +46,9 @@ How Detect key works**:
   back with the key saved (on a row) or filled in (in the form; press **Add bind** to save). Only keys the server can
   hear are detected.
 - **Capture screen**: a small "Press a key" window opens and reads any key, even ones the server can't hear during play
-  yet (numpad, F-keys, ...). Esc cancels. Use it when Hytale starts sending every key, or to prepare binds now.
+  yet (numpad, F-keys, ...), but only when **Show every keyboard key in key lists** is on. With it off, a key the
+  server can't hear is refused on the spot and the window waits for another key. Esc cancels. Use it when Hytale
+  starts sending every key, or to prepare binds now.
 
 **Numpad and other extra keys today:** give the key a game action in Hytale's own **Settings -> Controls** first, for
 example set Numpad 5 as **Ability 4**. Then press **Detect key** and press Numpad 5: the server hears "Ability 4", and

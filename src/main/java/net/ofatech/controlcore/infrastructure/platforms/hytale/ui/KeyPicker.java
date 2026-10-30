@@ -223,7 +223,7 @@ final class KeyPicker {
     }
 
     private static boolean isExtra(Key key) {
-        return key.signal(false).isEmpty() && key.signal(true).isEmpty();
+        return !key.heardByServer();
     }
 
     private static String keyLabel(Translator tr, String key) {

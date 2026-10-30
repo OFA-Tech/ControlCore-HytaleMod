@@ -14,7 +14,7 @@ class KeyCaptureLogicBanca3Test {
     private static final int RALT = BASE + 230;
     private static final int LGUI = BASE + 227;
 
-    private final KeyCaptureLogic logic = new KeyCaptureLogic();
+    private final KeyCaptureLogic logic = new KeyCaptureLogic(true);
 
     @Test
     void sdlHoldsMapToTheKeyEnum() {
@@ -72,10 +72,11 @@ class KeyCaptureLogicBanca3Test {
 
     @Test
     void digitsAreCapturedAsDigitsAndNumpadSymbolsByName() {
-        assertThat(new KeyCaptureLogic().accept('7', false, 0)).isEqualTo(new KeyCaptureLogic.Outcome.Captured("7"));
-        assertThat(new KeyCaptureLogic().accept(BASE + 87, false, 0))
+        assertThat(new KeyCaptureLogic(true).accept('7', false, 0))
+                .isEqualTo(new KeyCaptureLogic.Outcome.Captured("7"));
+        assertThat(new KeyCaptureLogic(true).accept(BASE + 87, false, 0))
                 .isEqualTo(new KeyCaptureLogic.Outcome.Captured("NUMPAD_PLUS"));
-        assertThat(new KeyCaptureLogic().accept(BASE + 99, false, 0))
+        assertThat(new KeyCaptureLogic(true).accept(BASE + 99, false, 0))
                 .isEqualTo(new KeyCaptureLogic.Outcome.Captured("NUMPAD_PERIOD"));
     }
 }

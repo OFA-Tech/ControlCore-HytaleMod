@@ -75,7 +75,7 @@ class KeyCaptureBancaTest {
     @Test
     void ctrlWithEveryNumpadKeyParses() {
         for (int code = MASK | 84; code <= (MASK | 99); code++) {
-            KeyCaptureLogic logic = new KeyCaptureLogic();
+            KeyCaptureLogic logic = new KeyCaptureLogic(true);
             logic.accept(L_CTRL, false, 0);
             String written = logic.accept(code, false, 10).captured().orElseThrow();
             assertThat(written).startsWith("CTRL+");
@@ -85,7 +85,7 @@ class KeyCaptureBancaTest {
 
     @Test
     void guiKeysAreIgnoredAndDoNotBecomeAHold() {
-        KeyCaptureLogic logic = new KeyCaptureLogic();
+        KeyCaptureLogic logic = new KeyCaptureLogic(true);
 
         assertThat(logic.accept(L_GUI, false, 0).captured()).isEmpty();
         assertThat(logic.accept(R_GUI, false, 0).captured()).isEmpty();
@@ -95,18 +95,18 @@ class KeyCaptureBancaTest {
 
     @Test
     void rightSideModifiersCountLikeLeftOnes() {
-        KeyCaptureLogic ctrl = new KeyCaptureLogic();
+        KeyCaptureLogic ctrl = new KeyCaptureLogic(true);
         ctrl.accept(R_CTRL, false, 0);
         assertThat(ctrl.accept('a', false, 10).captured()).contains("CTRL+A");
 
-        KeyCaptureLogic shift = new KeyCaptureLogic();
+        KeyCaptureLogic shift = new KeyCaptureLogic(true);
         shift.accept(R_SHIFT, false, 0);
         assertThat(shift.accept(MASK | 58, false, 10).captured()).contains("SHIFT+F1");
     }
 
     @Test
     void aModifierHeldPastTheWindowStaysHeldThroughItsRepeats() {
-        KeyCaptureLogic logic = new KeyCaptureLogic();
+        KeyCaptureLogic logic = new KeyCaptureLogic(true);
         logic.accept(L_CTRL, false, 0);
         logic.accept(L_CTRL, true, 1000);
         logic.accept(L_CTRL, true, 2000);
@@ -116,7 +116,7 @@ class KeyCaptureBancaTest {
 
     @Test
     void theRepeatOfTheMainKeyIsIgnoredButTheFirstPressIsTaken() {
-        KeyCaptureLogic logic = new KeyCaptureLogic();
+        KeyCaptureLogic logic = new KeyCaptureLogic(true);
 
         assertThat(logic.accept('q', true, 0).captured()).isEmpty();
         assertThat(logic.accept('q', false, 0).captured()).contains("Q");
@@ -124,7 +124,7 @@ class KeyCaptureBancaTest {
 
     @Test
     void aModifierTappedAndReleasedJustBeforeStillCountsAsHeld() {
-        KeyCaptureLogic logic = new KeyCaptureLogic();
+        KeyCaptureLogic logic = new KeyCaptureLogic(true);
         logic.accept(L_SHIFT, false, 0);
 
         assertThat(logic.accept('a', false, 800).captured()).contains("SHIFT+A");
@@ -132,7 +132,7 @@ class KeyCaptureBancaTest {
 
     @Test
     void ctrlAndAltTogetherAreBothKept() {
-        KeyCaptureLogic logic = new KeyCaptureLogic();
+        KeyCaptureLogic logic = new KeyCaptureLogic(true);
         logic.accept(L_CTRL, false, 0);
         logic.accept(L_ALT, false, 50);
 
@@ -143,7 +143,8 @@ class KeyCaptureBancaTest {
         if (code == SdlKeys.ESCAPE || SdlKeys.isModifier(code)) {
             return;
         }
-        Optional<String> result = new KeyCaptureLogic().accept(code, false, 0).captured();
+        Optional<String> result =
+                new KeyCaptureLogic(true).accept(code, false, 0).captured();
         if (result.isEmpty()) {
             return;
         }

@@ -1167,3 +1167,4 @@ errors.snapshots.profile_replace = '{name}' is a profile; only admins can replac
 snapshots.still_profile = It is still a profile.
 profiles.status.matches_yours = Active profile: {name}. What you can restore still matches it; {count} key, permission or mod difference(s) only admins can restore.
 panel.snapshots.will_keep = {count} snapshot(s) with keys, permissions or mods will be kept: only admins can delete them.
+ui.keyCapture.notInLists = {key} isn't in the key lists: the server can't hear it yet. Press another key (Q, E, R, F, O, 1-9, mouse...), or turn on "Show every keyboard key in key lists". Esc cancels.

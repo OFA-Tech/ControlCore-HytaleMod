@@ -1167,3 +1167,4 @@ errors.snapshots.profile_replace = '{name}' é um perfil; só admins podem subst
 snapshots.still_profile = Continua sendo um perfil.
 profiles.status.matches_yours = Perfil ativo: {name}. O que você pode restaurar ainda bate com ele; {count} diferença(s) de teclas, permissões ou mods só admins podem restaurar.
 panel.snapshots.will_keep = {count} snapshot(s) com teclas, permissões ou mods serão mantidos: só admins podem apagá-los.
+ui.keyCapture.notInLists = {key} não está nas listas de teclas: o servidor ainda não ouve essa tecla. Aperte outra (Q, E, R, F, O, 1-9, mouse...) ou ligue "Mostrar todas as teclas nas listas". Esc cancela.

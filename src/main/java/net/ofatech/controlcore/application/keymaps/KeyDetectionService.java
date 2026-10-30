@@ -80,7 +80,11 @@ public final class KeyDetectionService implements KeyDetections {
                 }
                 finished.accept(result);
             });
-            capture.open(player, tr, keys -> detector.offer(player, token, keys.map(KeyDetector.Detected::new)));
+            capture.open(
+                    player,
+                    tr,
+                    settings.allKeys(),
+                    keys -> detector.offer(player, token, keys.map(KeyDetector.Detected::new)));
             return;
         }
         detector.fromGame(player, finished);

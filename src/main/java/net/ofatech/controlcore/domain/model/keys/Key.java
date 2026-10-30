@@ -256,6 +256,15 @@ public enum Key implements KeyInput {
     }
 
     /**
+     * Whether a server can hear this key during play.
+     *
+     * @return {@code true} when the key sends a game action the server receives, alone or held with another key
+     */
+    public boolean heardByServer() {
+        return signal(false).isPresent() || signal(true).isPresent();
+    }
+
+    /**
      * Returns how the server notices this key during play. {@link #ALT} alone gives {@link KeySignal#WALK_TAP};
      * with other keys it gives {@link KeySignal#WALKING}.
      *

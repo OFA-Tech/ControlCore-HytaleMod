@@ -32,7 +32,7 @@ class KeyCaptureLogicTest {
 
     @Test
     void ctrlThenNumpadFive() {
-        KeyCaptureLogic logic = new KeyCaptureLogic();
+        KeyCaptureLogic logic = new KeyCaptureLogic(true);
 
         assertThat(logic.accept(CTRL, false, 0).captured()).isEmpty();
         assertThat(logic.accept(CTRL, true, 100).captured()).isEmpty();
@@ -42,7 +42,7 @@ class KeyCaptureLogicTest {
 
     @Test
     void aSlowRepeatDelayStillCountsAsHeld() {
-        KeyCaptureLogic logic = new KeyCaptureLogic();
+        KeyCaptureLogic logic = new KeyCaptureLogic(true);
         logic.accept(CTRL, false, 0);
 
         assertThat(logic.accept(NUMPAD_5, false, 1000).captured()).contains("CTRL+NUMPAD_5");
@@ -50,7 +50,7 @@ class KeyCaptureLogicTest {
 
     @Test
     void staleModifierIsNotHeld() {
-        KeyCaptureLogic logic = new KeyCaptureLogic();
+        KeyCaptureLogic logic = new KeyCaptureLogic(true);
         logic.accept(CTRL, false, 0);
 
         assertThat(logic.accept(NUMPAD_5, false, 3000).captured()).contains("NUMPAD_5");
@@ -58,17 +58,18 @@ class KeyCaptureLogicTest {
 
     @Test
     void digitsAreWrittenAsTheyLook() {
-        assertThat(new KeyCaptureLogic().accept(51, false, 0).captured()).contains("3");
+        assertThat(new KeyCaptureLogic(true).accept(51, false, 0).captured()).contains("3");
     }
 
     @Test
     void escapeCancels() {
-        assertThat(new KeyCaptureLogic().accept(ESC, false, 0)).isInstanceOf(KeyCaptureLogic.Outcome.Cancelled.class);
+        assertThat(new KeyCaptureLogic(true).accept(ESC, false, 0))
+                .isInstanceOf(KeyCaptureLogic.Outcome.Cancelled.class);
     }
 
     @Test
     void modifiersAloneShowWhatIsHeldAndUnknownKeysSaySo() {
-        KeyCaptureLogic logic = new KeyCaptureLogic();
+        KeyCaptureLogic logic = new KeyCaptureLogic(true);
 
         assertThat(logic.accept(CTRL, false, 0)).isEqualTo(new KeyCaptureLogic.Outcome.Holding("CTRL"));
         assertThat(logic.accept(RIGHT_ALT, false, 10)).isEqualTo(new KeyCaptureLogic.Outcome.Holding("CTRL+ALT"));
@@ -78,7 +79,7 @@ class KeyCaptureLogicTest {
 
     @Test
     void repeatsAndUnknownKeysAreIgnored() {
-        KeyCaptureLogic logic = new KeyCaptureLogic();
+        KeyCaptureLogic logic = new KeyCaptureLogic(true);
 
         assertThat(logic.accept(NUMPAD_5, true, 0).captured()).isEmpty();
         assertThat(logic.accept(42424242, false, 0).captured()).isEmpty();

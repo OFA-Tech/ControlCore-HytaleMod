@@ -23,12 +23,19 @@ final class KeyCaptureLogic {
 
         record Unsupported(int keycode) implements Outcome {}
 
+        record NotInLists(String label) implements Outcome {}
+
         record Cancelled() implements Outcome {}
 
         record Captured(String keys) implements Outcome {}
     }
 
     private final Map<Key, Long> lastSeen = new LinkedHashMap<>();
+    private final boolean anyKey;
+
+    KeyCaptureLogic(boolean anyKey) {
+        this.anyKey = anyKey;
+    }
 
     Outcome accept(int keycode, boolean repeat, long nowMillis) {
         if (keycode == SdlKeys.ESCAPE) {
@@ -48,6 +55,9 @@ final class KeyCaptureLogic {
         Optional<Key> key = SdlKeys.key(keycode);
         if (key.isEmpty()) {
             return new Outcome.Unsupported(keycode);
+        }
+        if (!anyKey && !key.get().heardByServer()) {
+            return new Outcome.NotInLists(key.get().label());
         }
         String holds = holds(nowMillis);
         String written = KeyCombo.write(key.get());

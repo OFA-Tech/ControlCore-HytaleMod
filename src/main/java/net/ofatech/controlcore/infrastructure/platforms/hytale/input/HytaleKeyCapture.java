@@ -29,11 +29,11 @@ public final class HytaleKeyCapture implements KeyCapture {
     }
 
     @Override
-    public void open(PlayerId player, Translator tr, Consumer<Optional<String>> done) {
+    public void open(PlayerId player, Translator tr, boolean anyKey, Consumer<Optional<String>> done) {
         boolean opening = HytalePages.inWorld(player.value())
                 .map(playerRef -> HytalePages.open(
                         playerRef,
-                        ref -> new KeyCapturePage(ref, tr, done),
+                        ref -> new KeyCapturePage(ref, tr, anyKey, done),
                         log,
                         "the key capture screen",
                         () -> done.accept(Optional.empty())))
