@@ -1,6 +1,8 @@
 package net.ofatech.controlcore.application.keymaps;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.application.automation.NotificationService;
 import net.ofatech.controlcore.application.text.Texts;
@@ -32,10 +34,20 @@ public final class KeyDetectionService implements KeyDetections {
         this.texts = texts;
     }
 
+    private final Map<PlayerId, Runnable> prompts = new ConcurrentHashMap<>();
+
     @Override
     public void cancel(PlayerId player) {
+        dismissPrompt(player);
         if (detector.cancel(player)) {
             capture.close(player);
+        }
+    }
+
+    private void dismissPrompt(PlayerId player) {
+        Runnable dismiss = prompts.remove(player);
+        if (dismiss != null) {
+            dismiss.run();
         }
     }
 
@@ -87,12 +99,17 @@ public final class KeyDetectionService implements KeyDetections {
                     keys -> detector.offer(player, token, keys.map(KeyDetector.Detected::new)));
             return;
         }
-        detector.fromGame(player, finished);
-        notifications.toast(
+        dismissPrompt(player);
+        detector.fromGame(player, result -> {
+            dismissPrompt(player);
+            finished.accept(result);
+        });
+        Runnable dismiss = notifications.showToast(
                 player,
                 tr.t("controlcore.keys.detect.toast_title"),
                 tr.t("controlcore.keys.detect.toast_text", "seconds", KeyDetector.GAME_TIMEOUT.toSeconds()),
                 ToastLevel.INFO,
                 (int) KeyDetector.GAME_TIMEOUT.toSeconds());
+        prompts.put(player, dismiss);
     }
 }

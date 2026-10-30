@@ -47,9 +47,8 @@ class KeyDetectRuntimeTest extends RuntimeTestBase {
 
         assertThat(cancelled).isTrue();
         assertThat(results).containsExactly(Optional.of("CTRL+R"));
-        assertThat(platform.overlay.shown.get(admin.id()).toasts())
-                .extracting(line -> line.text())
-                .anyMatch(text -> text.contains("10 s"));
+        assertThat(platform.overlay.everToasted).anyMatch(text -> text.contains("10 s"));
+        assertThat(platform.overlay.shown.get(admin.id()).toasts()).isEmpty();
     }
 
     @Test

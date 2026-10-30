@@ -159,13 +159,17 @@ public final class NotificationService implements NotificationsApi {
 
     @Override
     public void toast(PlayerId player, String title, String text, ToastLevel level, int seconds) {
+        showToast(player, title, text, level, seconds);
+    }
+
+    public Runnable showToast(PlayerId player, String title, String text, ToastLevel level, int seconds) {
         if (player == null || !visible(player)) {
-            return;
+            return () -> {};
         }
         Overlay.Line line = line(title, text, level);
         if (HYTALE.equals(toastPosition.get(player))) {
             display.hytaleToast(player, line.title(), line.text(), line.level());
-            return;
+            return () -> {};
         }
         Entry entry = new Entry(sequence.incrementAndGet(), line);
         List<Entry> list = toasts.computeIfAbsent(player, key -> new ArrayList<>());
@@ -176,7 +180,7 @@ public final class NotificationService implements NotificationsApi {
             }
         }
         render(player);
-        scheduler.runLater(Duration.ofSeconds(Math.clamp(seconds, 1, 60)), () -> {
+        Runnable dismiss = () -> {
             boolean removed;
             synchronized (list) {
                 removed = list.remove(entry);
@@ -184,7 +188,9 @@ public final class NotificationService implements NotificationsApi {
             if (removed) {
                 render(player);
             }
-        });
+        };
+        scheduler.runLater(Duration.ofSeconds(Math.clamp(seconds, 1, 60)), dismiss);
+        return dismiss;
     }
 
     @Override

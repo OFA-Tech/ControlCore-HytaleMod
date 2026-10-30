@@ -27,6 +27,27 @@ class KeyDetectBancaTest extends RuntimeTestBase {
     }
 
     @Test
+    void thePromptToastGoesAwayAsSoonAsTheKeyIsDetected() {
+        List<Optional<String>> results = new ArrayList<>();
+        detection().detect(detection().mode(), results::add);
+        assertThat(platform.overlay.shown.get(admin.id()).toasts()).hasSize(1);
+
+        platform.input.press(admin.id(), KeySignal.ABILITY_3);
+
+        assertThat(results).hasSize(1).first().matches(Optional::isPresent);
+        assertThat(platform.overlay.shown.get(admin.id()).toasts()).isEmpty();
+    }
+
+    @Test
+    void thePromptToastGoesAwayWhenThePanelIsOpenedAgain() {
+        detection().detect(detection().mode(), result -> {});
+
+        detection();
+
+        assertThat(platform.overlay.shown.get(admin.id()).toasts()).isEmpty();
+    }
+
+    @Test
     void leavingWhileDetectingFromTheGameDropsTheDetection() {
         List<Optional<String>> results = new ArrayList<>();
         detection().detect(detection().mode(), results::add);
