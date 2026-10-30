@@ -176,6 +176,20 @@ Its pages live in [wiki/](wiki) and are published to the GitHub wiki on every pu
    changelog section. Versions below 1.0.0 (and `-rc.N` style suffixes) are marked as pre-releases.
 4. Upload the same jar to CurseForge with the text in [docs/curseforge.md](docs/curseforge.md).
 
+## Credits
+
+- **Hytale** by Hypixel Studios. ControlCore is a fan-made server mod and is not affiliated with Hypixel Studios.
+- **[CustomInventory](https://github.com/SupremoSama/Hytale-CustomInventory)** by SupremoSama (CC0): ControlCore adds
+  a button to its inventory screen when it is installed, and learned from its transport-independent packet hooks.
+- **[hyvatar.io](https://hyvatar.io)** renders the player heads in Players (turn off with `controlcore:player-heads`).
+  The idea of sending heads as runtime assets came from **HyUI**.
+
+## AI disclosure
+
+ControlCore is designed, reviewed and tested in game by its author. Most of the code, docs and translations were
+written with AI assistance (Claude by Anthropic, through OpenCode), and every release goes through an AI review
+panel and the author's in-game tests. No generated art or audio is shipped; the icon is a hand-drawn SVG.
+
 ## License
 
 MIT, see [LICENSE](LICENSE).
