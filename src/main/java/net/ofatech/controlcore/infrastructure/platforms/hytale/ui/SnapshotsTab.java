@@ -137,7 +137,7 @@ final class SnapshotsTab {
                                     ? "controlcore.panel.snapshots.is_profile"
                                     : "controlcore.panel.snapshots.make_profile"));
             commands.set(row + " #Delete.Visible", !entry.profile() && !entry.locked());
-            commands.set(row + " #Profile.Visible", !entry.locked() || entry.profile());
+            commands.set(row + " #Profile.Visible", view.admin() || (!entry.locked() && !entry.profile()));
             events.addEventBinding(
                     CustomUIEventBindingType.Activating,
                     row + " #Profile",

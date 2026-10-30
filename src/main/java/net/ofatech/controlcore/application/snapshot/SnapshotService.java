@@ -57,6 +57,8 @@ import net.ofatech.controlcore.domain.result.Result;
 
 public final class SnapshotService {
 
+    static final String UNKNOWN = "Snapshots.Unknown";
+
     public static final String NODE = "snapshots";
     static final int PREVIEW_LINES = 80;
 
@@ -152,6 +154,18 @@ public final class SnapshotService {
                                 "controlcore.errors.snapshots.admin_parts",
                                 "Only admins can delete, replace or (un)mark as profile '{name}': it holds keys, permissions or mods.")
                         .with("name", snapshot.name())));
+    }
+
+    private Result<Boolean> mayChangeProfile(Snapshot snapshot, Optional<PlayerId> who) {
+        if (snapshot.profile() && !isAdmin(who)) {
+            return Result.failure(Error.forbidden(
+                    "Snapshots.ProfileReplace",
+                    Text.key(
+                                    "controlcore.errors.snapshots.profile_replace",
+                                    "'{name}' is a profile; only admins can replace, delete or unmark it.")
+                            .with("name", snapshot.name())));
+        }
+        return mayChange(snapshot, who);
     }
 
     Plan forViewer(Plan plan, Optional<PlayerId> who) {
@@ -270,7 +284,7 @@ public final class SnapshotService {
             return Result.failure(allowed.error());
         }
         return find(rawName)
-                .flatMap(snapshot -> mayChange(snapshot, who).map(ok -> snapshot))
+                .flatMap(snapshot -> mayChangeProfile(snapshot, who).map(ok -> snapshot))
                 .flatMap(snapshot -> store.save(snapshot.asProfile(profile)));
     }
 
@@ -316,19 +330,12 @@ public final class SnapshotService {
                     "Snapshots.AdminParts",
                     Text.key(
                             "controlcore.errors.snapshots.admin_parts_save",
-                            "Untick Keys, Permissions and Mods: only admins can save them in a snapshot.")));
+                            "Leave out Keys, Permissions and Mods: only admins can save them in a snapshot.")));
         }
         return Snapshot.validName(rawName).flatMap(name -> {
             Optional<Snapshot> existing = store.find(name);
             if (existing.isPresent()) {
-                Result<Boolean> mayReplace = existing.get().profile() && !isAdmin(who)
-                        ? Result.failure(Error.forbidden(
-                                "Snapshots.ProfileReplace",
-                                Text.key(
-                                                "controlcore.errors.snapshots.profile_replace",
-                                                "'{name}' is a profile; only admins can replace it.")
-                                        .with("name", existing.get().name())))
-                        : mayChange(existing.get(), who);
+                Result<Boolean> mayReplace = mayChangeProfile(existing.get(), who);
                 if (mayReplace.isFailure()) {
                     return Result.failure(mayReplace.error());
                 }
@@ -446,7 +453,7 @@ public final class SnapshotService {
             return Result.failure(allowed.error());
         }
         return find(rawName)
-                .flatMap(snapshot -> mayChange(snapshot, who).map(ok -> snapshot))
+                .flatMap(snapshot -> mayChangeProfile(snapshot, who).map(ok -> snapshot))
                 .map(snapshot -> {
                     store.delete(snapshot.name());
                     log.info("Deleted snapshot " + snapshot.name());
@@ -506,7 +513,7 @@ public final class SnapshotService {
                 .flatMap(name -> store.find(name)
                         .<Result<Snapshot>>map(Result::success)
                         .orElseGet(() -> Result.failure(Error.notFound(
-                                "Snapshots.Unknown",
+                                UNKNOWN,
                                 Text.key("controlcore.errors.snapshots.unknown", "There is no snapshot {name}.")
                                         .with("name", name)))));
     }

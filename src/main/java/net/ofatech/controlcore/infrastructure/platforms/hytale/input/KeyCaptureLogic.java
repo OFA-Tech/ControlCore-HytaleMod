@@ -3,6 +3,7 @@ package net.ofatech.controlcore.infrastructure.platforms.hytale.input;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import net.ofatech.controlcore.domain.model.keys.Key;
 import net.ofatech.controlcore.domain.model.keys.KeyCombo;
@@ -31,9 +32,13 @@ final class KeyCaptureLogic {
     }
 
     private final Map<Key, Long> lastSeen = new LinkedHashMap<>();
-    private final boolean anyKey;
+    private final BooleanSupplier anyKey;
 
     KeyCaptureLogic(boolean anyKey) {
+        this(() -> anyKey);
+    }
+
+    KeyCaptureLogic(BooleanSupplier anyKey) {
         this.anyKey = anyKey;
     }
 
@@ -56,7 +61,7 @@ final class KeyCaptureLogic {
         if (key.isEmpty()) {
             return new Outcome.Unsupported(keycode);
         }
-        if (!anyKey && !key.get().heardByServer()) {
+        if (!anyKey.getAsBoolean() && !key.get().heardByServer()) {
             return new Outcome.NotInLists(key.get().label());
         }
         String holds = holds(nowMillis);

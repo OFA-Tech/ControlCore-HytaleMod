@@ -57,7 +57,7 @@ class SnapshotAdminLangBanca7Test {
                 .isEqualTo(
                         "Only admins can delete, replace or (un)mark as profile '{name}': it holds keys, permissions or mods.");
         assertThat(english.get("controlcore.errors.snapshots.admin_parts_save"))
-                .isEqualTo("Untick Keys, Permissions and Mods: only admins can save them in a snapshot.");
+                .isEqualTo("Leave out Keys, Permissions and Mods: only admins can save them in a snapshot.");
     }
 
     private static Set<String> placeholders(String text) {

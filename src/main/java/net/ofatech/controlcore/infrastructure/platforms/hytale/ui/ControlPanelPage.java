@@ -1424,7 +1424,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     }
 
     private static Optional<String> colour(String text) {
-        String hex = text.strip().toLowerCase(java.util.Locale.ROOT);
+        String hex = text.strip().toLowerCase(Locale.ROOT);
         hex = hex.startsWith("#") ? hex.substring(1) : hex;
         if (!hex.matches("[0-9a-f]{3}|[0-9a-f]{6}")) {
             return Optional.empty();

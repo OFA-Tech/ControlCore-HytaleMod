@@ -20,6 +20,7 @@ public final class KeyDetectionService implements KeyDetections {
     private final KeyCapture capture;
     private final NotificationService notifications;
     private final Texts texts;
+    private final Map<PlayerId, Runnable> prompts = new ConcurrentHashMap<>();
 
     public KeyDetectionService(
             KeyDetectSettings settings,
@@ -34,14 +35,16 @@ public final class KeyDetectionService implements KeyDetections {
         this.texts = texts;
     }
 
-    private final Map<PlayerId, Runnable> prompts = new ConcurrentHashMap<>();
-
     @Override
     public void cancel(PlayerId player) {
         dismissPrompt(player);
         if (detector.cancel(player)) {
             capture.close(player);
         }
+    }
+
+    void forget(PlayerId player) {
+        prompts.remove(player);
     }
 
     private void dismissPrompt(PlayerId player) {
@@ -85,6 +88,7 @@ public final class KeyDetectionService implements KeyDetections {
         Consumer<Optional<KeyDetector.Detected>> finished =
                 result -> done.accept(result.map(KeyDetector.Detected::keys));
         Translator tr = texts.forPlayer(Optional.of(player));
+        dismissPrompt(player);
         if (mode == KeyDetection.Mode.SCREEN) {
             long token = detector.fromScreen(player, result -> {
                 if (result.isEmpty()) {
@@ -95,15 +99,11 @@ public final class KeyDetectionService implements KeyDetections {
             capture.open(
                     player,
                     tr,
-                    settings.allKeys(),
+                    settings::allKeys,
                     keys -> detector.offer(player, token, keys.map(KeyDetector.Detected::new)));
             return;
         }
         dismissPrompt(player);
-        detector.fromGame(player, result -> {
-            dismissPrompt(player);
-            finished.accept(result);
-        });
         Runnable dismiss = notifications.showToast(
                 player,
                 tr.t("controlcore.keys.detect.toast_title"),
@@ -111,5 +111,11 @@ public final class KeyDetectionService implements KeyDetections {
                 ToastLevel.INFO,
                 (int) KeyDetector.GAME_TIMEOUT.toSeconds());
         prompts.put(player, dismiss);
+        detector.fromGame(player, result -> {
+            if (prompts.remove(player, dismiss)) {
+                dismiss.run();
+            }
+            finished.accept(result);
+        });
     }
 }

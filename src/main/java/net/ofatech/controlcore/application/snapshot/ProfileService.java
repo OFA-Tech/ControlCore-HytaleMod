@@ -29,6 +29,8 @@ import net.ofatech.controlcore.domain.result.Result;
 
 public final class ProfileService {
 
+    static final String NOT_A_PROFILE = "Profiles.NotAProfile";
+
     public static final String BUILT_IN = "@";
 
     enum Preset {
@@ -182,7 +184,7 @@ public final class ProfileService {
         Result<SnapshotService.Plan> plan = plan(current.get(), Optional.empty(), tr);
         if (plan.isFailure()) {
             String code = plan.error().code();
-            if (code.equals("Snapshots.Unknown") || code.equals("Profiles.NotAProfile")) {
+            if (code.equals(SnapshotService.UNKNOWN) || code.equals(NOT_A_PROFILE)) {
                 active.set(Optional.empty());
             }
             return tr.t("controlcore.profiles.status.none");
@@ -254,7 +256,7 @@ public final class ProfileService {
                 .flatMap(plan -> plan.snapshot().profile()
                         ? Result.success(plan)
                         : Result.failure(Error.validation(
-                                "Profiles.NotAProfile",
+                                NOT_A_PROFILE,
                                 Text.key("controlcore.errors.profiles.not_profile", "{name} is not a profile.")
                                         .with("name", plan.snapshot().name()))));
     }

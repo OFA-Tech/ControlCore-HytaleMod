@@ -2,13 +2,15 @@ package net.ofatech.controlcore.infrastructure.platforms.hytale.player;
 
 final class OverlaySize {
 
+    static final int TOAST_CHARS_PER_LINE = 48;
+    static final int TOAST_TITLE_CHARS_PER_LINE = 42;
+    static final int WARNING_CHARS_PER_LINE = 58;
+    static final int MAX_LINES = 8;
+
     private OverlaySize() {}
 
-    static final int TOAST_CHARS_PER_LINE = 54;
-    static final int WARNING_CHARS_PER_LINE = 70;
-
     static int toastHeight(String title, String text) {
-        int titleHeight = title.isBlank() ? 0 : 19;
+        int titleHeight = title.isBlank() ? 0 : 19 * lines(title, TOAST_TITLE_CHARS_PER_LINE);
         return 18 + titleHeight + 17 * lines(text, TOAST_CHARS_PER_LINE);
     }
 
@@ -18,7 +20,7 @@ final class OverlaySize {
 
     static int lines(String text, int width) {
         int lines = 0;
-        for (String paragraph : text.split("\n", -1)) {
+        for (String paragraph : text.strip().split("\\n+")) {
             int used = 0;
             lines++;
             for (String word : paragraph.strip().split("\\s+")) {
@@ -38,6 +40,6 @@ final class OverlaySize {
                 }
             }
         }
-        return Math.max(1, lines);
+        return Math.clamp(lines, 1, MAX_LINES);
     }
 }

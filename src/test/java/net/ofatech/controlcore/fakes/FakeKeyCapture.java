@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.text.Translator;
@@ -18,8 +19,8 @@ public final class FakeKeyCapture implements KeyCapture {
     public final List<Boolean> anyKey = new CopyOnWriteArrayList<>();
 
     @Override
-    public void open(PlayerId player, Translator tr, boolean anyKey, Consumer<Optional<String>> done) {
-        this.anyKey.add(anyKey);
+    public void open(PlayerId player, Translator tr, BooleanSupplier anyKey, Consumer<Optional<String>> done) {
+        this.anyKey.add(anyKey.getAsBoolean());
         opened.add(player);
         waiting.put(player, done);
     }

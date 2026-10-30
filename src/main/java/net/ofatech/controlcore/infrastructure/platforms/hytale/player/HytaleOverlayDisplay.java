@@ -108,6 +108,7 @@ public final class HytaleOverlayDisplay implements OverlayDisplay {
         CORNERS.values().forEach(commands::clear);
         PLACES.values().forEach(commands::clear);
         String corner = CORNERS.getOrDefault(overlay.toastCorner(), CORNERS.get(Overlay.TOP_RIGHT));
+        int toastsHeight = 0;
         for (int index = 0; index < overlay.toasts().size(); index++) {
             Overlay.Line toast = overlay.toasts().get(index);
             String row = corner + "[" + index + "]";
@@ -117,7 +118,12 @@ public final class HytaleOverlayDisplay implements OverlayDisplay {
             commands.set(row + " #Title.Text", toast.title());
             commands.set(row + " #Text.Text", toast.text());
             commands.setObject(row + ".Anchor", toastAnchor(toast));
+            toastsHeight += OverlaySize.toastHeight(toast.title(), toast.text()) + 6;
         }
+        if (corner.equals(CORNERS.get(Overlay.BOTTOM_RIGHT))) {
+            commands.setObject(corner + ".Anchor", bottomBox(170, 24, 380, toastsHeight));
+        }
+        int warningsHeight = 0;
         String place = PLACES.getOrDefault(overlay.warningPlace(), PLACES.get(Overlay.UNDER_COMPASS));
         for (int index = 0; index < overlay.warnings().size(); index++) {
             Overlay.Line warning = overlay.warnings().get(index);
@@ -126,7 +132,22 @@ public final class HytaleOverlayDisplay implements OverlayDisplay {
             levels(commands, row, warning.level());
             commands.set(row + " #Text.Text", warning.text());
             commands.setObject(row + ".Anchor", warningAnchor(warning.text()));
+            warningsHeight += OverlaySize.warningHeight(warning.text()) + 4;
         }
+        if (place.equals(PLACES.get(Overlay.BOTTOM))) {
+            commands.setObject(place + ".Anchor", bottomBox(150, null, 640, warningsHeight));
+        }
+    }
+
+    private static Anchor bottomBox(int bottom, Integer right, int width, int height) {
+        Anchor anchor = new Anchor();
+        anchor.setBottom(Value.of(bottom));
+        if (right != null) {
+            anchor.setRight(Value.of(right));
+        }
+        anchor.setWidth(Value.of(width));
+        anchor.setHeight(Value.of(Math.max(1, height)));
+        return anchor;
     }
 
     private static Anchor toastAnchor(Overlay.Line toast) {

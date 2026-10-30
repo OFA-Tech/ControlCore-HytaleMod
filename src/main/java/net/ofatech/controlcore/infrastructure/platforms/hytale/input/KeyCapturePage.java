@@ -15,6 +15,7 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,11 +32,13 @@ final class KeyCapturePage extends InteractiveCustomUIPage<KeyCapturePage.Event>
     private final Consumer<Optional<String>> done;
     private final Translator tr;
     private final KeyCaptureLogic logic;
+    private final BooleanSupplier anyKey;
     private final AtomicBoolean finished = new AtomicBoolean();
 
-    KeyCapturePage(PlayerRef player, Translator tr, boolean anyKey, Consumer<Optional<String>> done) {
+    KeyCapturePage(PlayerRef player, Translator tr, BooleanSupplier anyKey, Consumer<Optional<String>> done) {
         super(player, CustomPageLifetime.CanDismiss, Event.CODEC);
         this.tr = tr;
+        this.anyKey = anyKey;
         this.logic = new KeyCaptureLogic(anyKey);
         this.done = done;
     }
@@ -47,6 +50,9 @@ final class KeyCapturePage extends InteractiveCustomUIPage<KeyCapturePage.Event>
             @Nonnull UIEventBuilder events,
             @Nonnull Store<EntityStore> store) {
         commands.append(LAYOUT);
+        if (!anyKey.getAsBoolean()) {
+            commands.set("#CaptureHint.Text", tr.t("controlcore.ui.keyCapture.hintHeard"));
+        }
         events.addEventBinding(CustomUIEventBindingType.KeyDown, "#CaptureInput", EventData.of(Event.SOURCE, "key"));
         events.addEventBinding(
                 CustomUIEventBindingType.Activating, "#CaptureCancel", EventData.of(Event.SOURCE, "cancel"));

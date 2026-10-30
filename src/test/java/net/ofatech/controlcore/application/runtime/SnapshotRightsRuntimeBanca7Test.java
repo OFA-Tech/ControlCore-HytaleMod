@@ -108,9 +108,12 @@ class SnapshotRightsRuntimeBanca7Test extends RuntimeTestBase {
         assertThat(platform.snapshots.snapshots.get("mine").profile()).isTrue();
 
         assertThat(snapshotsFor(admin).setProfile("full", true).isSuccess()).isTrue();
-        assertThat(profilesFor(moderator).unmark("full").error().code()).isEqualTo("Snapshots.AdminParts");
+        assertThat(profilesFor(moderator).unmark("full").error().code()).isEqualTo("Snapshots.ProfileReplace");
         assertThat(platform.snapshots.snapshots.get("full").profile()).isTrue();
-        assertThat(profilesFor(moderator).unmark("mine").isSuccess()).isTrue();
+        assertThat(profilesFor(moderator).unmark("mine").error().code())
+                .as("once it is a profile only admins unmark it")
+                .isEqualTo("Snapshots.ProfileReplace");
+        assertThat(profilesFor(admin).unmark("mine").isSuccess()).isTrue();
     }
 
     @Test

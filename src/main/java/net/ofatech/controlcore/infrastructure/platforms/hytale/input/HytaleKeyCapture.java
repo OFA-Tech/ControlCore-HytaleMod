@@ -2,6 +2,7 @@ package net.ofatech.controlcore.infrastructure.platforms.hytale.input;
 
 import com.hypixel.hytale.server.core.entity.entities.player.pages.CustomUIPage;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.text.Translator;
@@ -29,7 +30,7 @@ public final class HytaleKeyCapture implements KeyCapture {
     }
 
     @Override
-    public void open(PlayerId player, Translator tr, boolean anyKey, Consumer<Optional<String>> done) {
+    public void open(PlayerId player, Translator tr, BooleanSupplier anyKey, Consumer<Optional<String>> done) {
         boolean opening = HytalePages.inWorld(player.value())
                 .map(playerRef -> HytalePages.open(
                         playerRef,
