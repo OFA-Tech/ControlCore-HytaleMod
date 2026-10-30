@@ -31,6 +31,6 @@ Group {
   Label #Text {
     FlexWeight: 1;
     Padding: (Horizontal: 12);
-    Style: (...$C.@DefaultLabelStyle, FontSize: 15, RenderBold: true, TextColor: #f2d69a, VerticalAlignment: Center, HorizontalAlignment: Center);
+    Style: (...$C.@DefaultLabelStyle, FontSize: 15, RenderBold: true, TextColor: #f2d69a, VerticalAlignment: Center, HorizontalAlignment: Center, Wrap: true);
   }
 }

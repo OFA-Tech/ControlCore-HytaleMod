@@ -7,6 +7,8 @@ import com.hypixel.hytale.server.core.Message;
 import com.hypixel.hytale.server.core.entity.entities.Player;
 import com.hypixel.hytale.server.core.entity.entities.player.hud.CustomUIHud;
 import com.hypixel.hytale.server.core.entity.entities.player.hud.HudManager;
+import com.hypixel.hytale.server.core.ui.Anchor;
+import com.hypixel.hytale.server.core.ui.Value;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
@@ -114,6 +116,7 @@ public final class HytaleOverlayDisplay implements OverlayDisplay {
             commands.set(row + " #Title.Visible", !toast.title().isBlank());
             commands.set(row + " #Title.Text", toast.title());
             commands.set(row + " #Text.Text", toast.text());
+            commands.setObject(row + ".Anchor", toastAnchor(toast));
         }
         String place = PLACES.getOrDefault(overlay.warningPlace(), PLACES.get(Overlay.UNDER_COMPASS));
         for (int index = 0; index < overlay.warnings().size(); index++) {
@@ -122,7 +125,22 @@ public final class HytaleOverlayDisplay implements OverlayDisplay {
             commands.append(place, WARNING);
             levels(commands, row, warning.level());
             commands.set(row + " #Text.Text", warning.text());
+            commands.setObject(row + ".Anchor", warningAnchor(warning.text()));
         }
+    }
+
+    private static Anchor toastAnchor(Overlay.Line toast) {
+        Anchor anchor = new Anchor();
+        anchor.setHeight(Value.of(OverlaySize.toastHeight(toast.title(), toast.text())));
+        anchor.setBottom(Value.of(6));
+        return anchor;
+    }
+
+    private static Anchor warningAnchor(String text) {
+        Anchor anchor = new Anchor();
+        anchor.setHeight(Value.of(OverlaySize.warningHeight(text)));
+        anchor.setBottom(Value.of(4));
+        return anchor;
     }
 
     private static void levels(UICommandBuilder commands, String row, ToastLevel level) {
