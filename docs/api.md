@@ -310,8 +310,8 @@ keep working; use `>=0.16.0` in your manifest when you call these.
        }
    }
    dependencies {
-       compileOnly("net.ofatech:controlcore:0.18.0")
-       vineImplementation("net.ofatech:controlcore:0.18.0") // run it in your dev server (not vineMod: see docs/platforms.md)
+       compileOnly("net.ofatech:controlcore:0.19.0")
+       vineImplementation("net.ofatech:controlcore:0.19.0") // run it in your dev server (not vineMod: see docs/platforms.md)
    }
    ```
 2. **Manifest.** Use `manifest_dependencies = OFATech:ControlCore=>=0.10.0`, or

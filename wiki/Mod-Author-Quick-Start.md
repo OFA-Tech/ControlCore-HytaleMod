@@ -4,7 +4,7 @@ Your mod can register **settings**, **key actions** and **HUD elements** with Co
 shows them in its panel (with search, permissions and translations), lets admins and players change them, and tells
 your mod when they change. You write no UI, no config files and no commands.
 
-Current API version: **2.0.0** (`ControlCoreApi.VERSION`), unchanged since ControlCore 0.10.0.
+Current API version: **2.3.0** (`ControlCoreApi.VERSION`), since ControlCore 0.19.0. Mods built for 2.0.0 and later keep working.
 
 ## 1. Add the dependency
 
@@ -31,8 +31,8 @@ repositories {
 }
 
 dependencies {
-    compileOnly("net.ofatech:controlcore:0.18.0")
-    vineImplementation("net.ofatech:controlcore:0.18.0") // load it in your dev server (runServer)
+    compileOnly("net.ofatech:controlcore:0.19.0")
+    vineImplementation("net.ofatech:controlcore:0.19.0") // load it in your dev server (runServer)
 }
 ```
 

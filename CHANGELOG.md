@@ -2,8 +2,14 @@
 
 ## Unreleased
 
-- Built and tested on Hytale server 0.7.5; 0.7.2 to 0.7.4 are still supported (`>=0.7.2 <0.8.0`). 0.7.5 only
-  tightens network packet checks and updates translations; nothing ControlCore uses changed.
+## 0.19.0 - 2026-10-29
+
+Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.5. The API for other mods
+is now **2.3.0** (new: numpad keys, `Key.HOLDS`, `KeyCombo.write`); mods built for 2.0.0 and later keep working.
+No migration needed; **Bans** in Server Configs is now part of **Players**.
+
+- Built and tested on Hytale server 0.7.5; 0.7.2 to 0.7.4 are still supported. 0.7.5 only tightens network packet
+  checks and updates translations; nothing ControlCore uses changed.
 
 ### Added
 - **Players** (Server Configs -> Players, replaces Bans): everyone who has played here, is online or is banned, with
