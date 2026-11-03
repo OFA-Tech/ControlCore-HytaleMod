@@ -163,13 +163,13 @@ final class KeymapTools {
         if (PROBE_TOGGLE.equals(name)) {
             boolean on = tool.toggle(viewerId);
             showProbeButton(update);
-            SettingsRows.footer(update, tr.t(on ? "controlcore.debug.probe_on" : "controlcore.debug.probe_off"));
+            SettingRowEditor.footer(update, tr.t(on ? "controlcore.debug.probe_on" : "controlcore.debug.probe_off"));
         } else {
             Result<Void> opened = tool.openKeyTest(viewerId, InputProbe.KEY_TEST_TARGETS);
             if (opened.isSuccess()) {
                 return;
             }
-            SettingsRows.footer(update, tr.error(opened.error()));
+            SettingRowEditor.footer(update, tr.error(opened.error()));
         }
         host.send(update);
     }
@@ -178,13 +178,13 @@ final class KeymapTools {
         SettingSnapshot current = host.latestOf(key, action.id);
         if (current == null || section.kind(current) != SettingsSection.Kind.KEYS) {
             UICommandBuilder update = new UICommandBuilder();
-            SettingsRows.footer(update, tr.t("controlcore.keys.detect.gone"));
+            SettingRowEditor.footer(update, tr.t("controlcore.keys.detect.gone"));
             host.send(update);
             return;
         }
         if (current.access() == SettingAccess.READ_ONLY) {
             UICommandBuilder update = new UICommandBuilder();
-            SettingsRows.footer(update, tr.t("controlcore.keys.detect.locked"));
+            SettingRowEditor.footer(update, tr.t("controlcore.keys.detect.locked"));
             host.send(update);
             return;
         }
@@ -206,7 +206,7 @@ final class KeymapTools {
                     String text = saved.isSuccess()
                             ? detectedText(key, section, saved.value(), keys, mode)
                             : tr.error(saved.error());
-                    SettingsRows.footer(update, text);
+                    SettingRowEditor.footer(update, text);
                     host.send(update);
                     return null;
                 });
@@ -255,7 +255,7 @@ final class KeymapTools {
                     wanted.isPresent() ? customKeyBinds.setGameAction(id.value(), wanted.get()) : null;
             if (saved != null && saved.isSuccess()) {
                 SettingSnapshot row = host.latestOf(key, action.id);
-                SettingsRows.footer(
+                SettingRowEditor.footer(
                         update,
                         tr.t(
                                 "controlcore.keys.game_action.saved",
@@ -266,7 +266,7 @@ final class KeymapTools {
                                 "mode",
                                 SettingRows.gameActionLabel(tr, saved.value())));
             } else if (saved != null) {
-                SettingsRows.footer(update, tr.error(saved.error()));
+                SettingRowEditor.footer(update, tr.error(saved.error()));
             }
             if (index != null) {
                 update.set(

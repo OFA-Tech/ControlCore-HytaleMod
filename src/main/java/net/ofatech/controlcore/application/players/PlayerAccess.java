@@ -274,10 +274,16 @@ public final class PlayerAccess {
     }
 
     List<String> groupPermissions(Optional<PlayerId> who, String group) {
-        if (!guard.mayChangeGroups(who) || group == null || !access.groups().contains(group)) {
+        if (!guard.mayChangeGroups(who)) {
             return List.of();
         }
-        return List.copyOf(access.groupPermissions(group));
+        return known(PlayerDirectory.clean(group))
+                .<List<String>>map(found -> List.copyOf(access.groupPermissions(found)))
+                .orElse(List.of());
+    }
+
+    private Optional<String> known(String group) {
+        return access.groups().stream().filter(group::equalsIgnoreCase).findFirst();
     }
 
     String operatorGroup() {
@@ -296,8 +302,6 @@ public final class PlayerAccess {
         if (wanted.isEmpty()) {
             return Result.failure(PlayerErrors.noGroup());
         }
-        return access.groups().contains(wanted)
-                ? Result.success(wanted)
-                : Result.failure(PlayerErrors.unknownGroup(wanted));
+        return known(wanted).map(Result::success).orElseGet(() -> Result.failure(PlayerErrors.unknownGroup(wanted)));
     }
 }

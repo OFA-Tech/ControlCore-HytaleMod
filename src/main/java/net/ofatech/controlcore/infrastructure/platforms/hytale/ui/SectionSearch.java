@@ -102,7 +102,7 @@ final class SectionSearch {
                 CustomUIEventBindingType.Activating,
                 key.search + "Defaults",
                 new EventData()
-                        .append(PanelAction.KEY, SettingsRows.RESTORE_DEFAULTS)
+                        .append(PanelAction.KEY, SettingRowEditor.RESTORE_DEFAULTS)
                         .append(PanelAction.SECTION, key.name()));
     }
 

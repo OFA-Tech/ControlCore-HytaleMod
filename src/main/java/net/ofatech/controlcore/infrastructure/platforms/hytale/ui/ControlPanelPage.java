@@ -124,7 +124,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private final Optional<HealthTab> healthTab;
     private final Optional<AutomationTab> automationTab;
     private final Optional<PlayersTab> playersTab;
-    private final SettingsRows rows;
+    private final SettingRowEditor rows;
     private final SectionSearch search;
     private final KeymapTools keys;
     private final ServerScope scope;
@@ -177,7 +177,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         for (PanelSection key : PanelSection.values()) {
             states.put(key, new SectionState());
         }
-        this.rows = new SettingsRows(sections, states, content.pendingRestart(), content.defaults(), tr, hooks, log);
+        this.rows =
+                new SettingRowEditor(sections, states, content.pendingRestart(), content.defaults(), tr, hooks, log);
         this.search = new SectionSearch(sections, states, tr, hooks);
         this.keys = new KeymapTools(
                 states,
@@ -414,7 +415,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 || PanelSection.SERVER_KEYMAPS.name().equals(action.section);
         if (serverKeys && sections.containsKey(PanelSection.SERVER_KEYMAPS) && !stillAdmin.getAsBoolean()) {
             UICommandBuilder update = new UICommandBuilder();
-            SettingsRows.footer(update, tr.t("controlcore.panel.no_longer_admin"));
+            SettingRowEditor.footer(update, tr.t("controlcore.panel.no_longer_admin"));
             sendUpdate(update, false);
             return;
         }
@@ -431,7 +432,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         }
         if (CLOSE.equals(name)) {
             close();
-        } else if (SettingsRows.RESTORE_DEFAULTS.equals(name)) {
+        } else if (SettingRowEditor.RESTORE_DEFAULTS.equals(name)) {
             rows.restoreDefaults(action.section);
         } else if (HISTORY_MODE_CHANGES.equals(name)
                 || HISTORY_MODE_SNAPSHOTS.equals(name)
@@ -446,7 +447,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             UICommandBuilder update = new UICommandBuilder();
             showHistoryMode(update);
             sendUpdate(update, false);
-        } else if (SettingsRows.HISTORY_LINK.equals(name)) {
+        } else if (SettingRowEditor.HISTORY_LINK.equals(name)) {
             showHistoryOf(action.id);
         } else if (name.startsWith(TAB_PREFIX)) {
             selectTab(name.substring(TAB_PREFIX.length()));
@@ -547,7 +548,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                     AutomationTab.Host,
                     PlayersTab.Host,
                     PanelKeyDetect.Host,
-                    SettingsRows.Host,
+                    SettingRowEditor.Host,
                     SectionSearch.Host,
                     KeymapTools.Host,
                     ServerScope.Host {

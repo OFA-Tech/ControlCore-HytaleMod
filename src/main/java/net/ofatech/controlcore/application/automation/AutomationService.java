@@ -640,8 +640,10 @@ public final class AutomationService {
         if (id == null) {
             return Optional.empty();
         }
-        String wanted = id.strip().toLowerCase(Locale.ROOT);
-        return store.all().stream().filter(rule -> rule.id().equals(wanted)).findFirst();
+        String wanted = id.strip();
+        return store.all().stream()
+                .filter(rule -> rule.id().equalsIgnoreCase(wanted))
+                .findFirst();
     }
 
     public static AutomationView.Form form(Rule rule) {

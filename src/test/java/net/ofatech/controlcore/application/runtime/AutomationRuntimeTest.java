@@ -165,7 +165,7 @@ class AutomationRuntimeTest extends RuntimeTestBase {
 
         assertThat(reply("cc-rule-test", Map.of("rule", "ping"))).contains("1");
         assertThat(platform.messenger.broadcasts).containsExactly("ping");
-        assertThat(reply("cc-rule-toggle", Map.of("rule", "ping"))).contains("off");
+        assertThat(reply("cc-rule-toggle", Map.of("rule", "PING"))).contains("off");
         platform.connectedPublisher.publish(new PlayerJoined(platform.players.join("Eve")));
         assertThat(platform.messenger.broadcasts).hasSize(1);
         assertThat(reply("cc-rule-remove", Map.of("rule", "ping"))).contains("Ping");

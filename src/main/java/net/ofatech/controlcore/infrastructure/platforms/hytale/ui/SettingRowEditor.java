@@ -27,7 +27,7 @@ import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Result;
 
-final class SettingsRows {
+final class SettingRowEditor {
 
     static final String RESTORE_DEFAULTS = "RestoreDefaults";
     static final String HISTORY_LINK = "HistoryOf";
@@ -70,7 +70,7 @@ final class SettingsRows {
     private Set<String> restartNames = Set.of();
     private Optional<PanelSection> armedDefaults = Optional.empty();
 
-    SettingsRows(
+    SettingRowEditor(
             Map<PanelSection, SettingsSection> sections,
             Map<PanelSection, SectionState> states,
             Supplier<List<Text>> pendingRestart,

@@ -3,6 +3,7 @@ package net.ofatech.controlcore.application.runtime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -148,7 +149,8 @@ class PanelParityRuntimeTest extends RuntimeTestBase {
         List<ChangeRecord> steps = platform.changeLog.records.subList(before, platform.changeLog.records.size());
         assertThat(steps).hasSize(3).allMatch(step -> step.kind() == ChangeRecord.Kind.PLAYER);
         assertThat(code(platform.commands.runAsConsole(
-                        "cc-group", Map.of("action", "set", "player", "Builder", "group", ADVENTURER))))
+                        "cc-group",
+                        Map.of("action", "set", "player", "Builder", "group", ADVENTURER.toUpperCase(Locale.ROOT)))))
                 .isEqualTo("Players.NothingToDo");
 
         long removedAdmin = steps.stream()
