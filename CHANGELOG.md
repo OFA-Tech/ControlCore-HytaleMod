@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.20.0 - 2026-11-03
+
+Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.5. Everything the panel does now
+also works as a command and through the API. The API for other mods is now **2.4.0** (new: server management sections
+and `actingFor(player)`); mods built for 2.0.0 and later keep working. No migration needed. Changed commands:
+`/cc-whitelist-add`, `-remove` and `-require` replace the sub-words, and `/cc-mod-on|off <mod> <check|all>`.
+
 ### Added
 - Commands for player management, also from the console, with the same rights as the Players tab: `/cc-kick`,
   `/cc-mute`, `/cc-unmute`, `/cc-freeze`, `/cc-unfreeze`, `/cc-gamemode`, `/cc-tp`, `/cc-bring`, `/cc-whitelist`, `/cc-whitelist-add`, `/cc-whitelist-remove`,

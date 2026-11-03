@@ -329,8 +329,8 @@ lists the player may not see are empty. `players().teleportTo` and `bring` move 
        }
    }
    dependencies {
-       compileOnly("net.ofatech:controlcore:0.19.0")
-       vineImplementation("net.ofatech:controlcore:0.19.0") // run it in your dev server (not vineMod: see docs/platforms.md)
+       compileOnly("net.ofatech:controlcore:0.20.0")
+       vineImplementation("net.ofatech:controlcore:0.20.0") // run it in your dev server (not vineMod: see docs/platforms.md)
    }
    ```
 2. **Manifest.** Use `manifest_dependencies = OFATech:ControlCore=>=0.10.0`, or
