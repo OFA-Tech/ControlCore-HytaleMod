@@ -72,6 +72,8 @@
   and the API.
 - `/cc-rule-add` and `/cc-rule-edit` with an unknown or missing `when=` list the triggers; rule ids and group names
   match ignoring case.
+- Turning a mod on when a mod it needs can't be turned on here now says "{name} needs {other}" instead of the
+  turning-off message.
 
 ## 0.19.0 - 2026-10-29
 

@@ -210,9 +210,13 @@ public final class ModsEditor {
                 if (!other.manageable()) {
                     return Result.failure(Error.forbidden(
                             "Mods.Required",
-                            Text.key(
-                                            "controlcore.errors.mods.required",
-                                            "{name} is needed by {other}, which can't be turned off here.")
+                            (enabled
+                                            ? Text.key(
+                                                    "controlcore.errors.mods.required_on",
+                                                    "{name} needs {other}, which can't be turned on here.")
+                                            : Text.key(
+                                                    "controlcore.errors.mods.required",
+                                                    "{name} is needed by {other}, which can't be turned off here."))
                                     .with(
                                             "name",
                                             entry.mod().name(),

@@ -99,6 +99,29 @@ class ParityCommandsRuntimeTest extends RuntimeTestBase {
     }
 
     @Test
+    void aModThatCantChangeHereIsNamedTheRightWayRound() {
+        platform.modCatalog.add("OFATech:ControlCore", false);
+        platform.modCatalog.setEnabled("OFATech:ControlCore", false);
+        platform.modCatalog.add(
+                "Test:Needy", false, new ModDependency("OFATech:ControlCore", "", false, ModDependency.Status.OK));
+        platform.modCatalog.setEnabled("Test:Needy", false);
+        Result<Reply> on = console("cc-mod-on", Map.of("mod", "Test:Needy", "confirm", "check"));
+        assertThat(code(on)).isEqualTo("Mods.Required");
+        assertThat(on.error().message().fallbackText())
+                .isEqualTo("Needy needs ControlCore, which can't be turned on here.");
+
+        platform.modCatalog.setEnabled("OFATech:ControlCore", true);
+        platform.modCatalog.add("Test:Lib", false);
+        platform.modCatalog.mods.replaceAll(mod -> mod.id().equals("OFATech:ControlCore")
+                ? mod.withDependencies(List.of(new ModDependency("Test:Lib", "", false, ModDependency.Status.OK)))
+                : mod);
+        Result<Reply> off = console("cc-mod-off", Map.of("mod", "Test:Lib", "confirm", "check"));
+        assertThat(code(off)).isEqualTo("Mods.Required");
+        assertThat(off.error().message().fallbackText())
+                .isEqualTo("Lib is needed by ControlCore, which can't be turned off here.");
+    }
+
+    @Test
     void rulesAreCreatedAndEditedWithThePanelsValidation() {
         String added = text(
                 console(
