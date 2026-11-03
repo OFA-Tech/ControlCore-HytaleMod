@@ -32,7 +32,7 @@ public interface DefaultsApi {
      *
      * @param section the section
      * @param world for {@link Section#SERVER_CONFIGS}: only this world's keys; empty for {@code config.json}
-     * @param search only values whose id, name or heading contain this text; {@code null} or blank for all
+     * @param search only values the panel's search shows for this text; {@code null} or blank for all
      * @return the number of values not at their default that this API may reset; 0 if it may not reset the
      *     section
      */
@@ -43,7 +43,7 @@ public interface DefaultsApi {
      *
      * @param section the section
      * @param world for {@link Section#SERVER_CONFIGS}: only this world's keys; empty for {@code config.json}
-     * @param search only values whose id, name or heading contain this text; {@code null} or blank for all
+     * @param search only values the panel's search shows for this text; {@code null} or blank for all
      * @return a message with the number reset (and the safety snapshot's name), or an error such as
      *     {@code Defaults.Forbidden}, or {@code Commands.PlayersOnly} for a player's own section without
      *     {@link #actingFor(PlayerId)}

@@ -3,6 +3,7 @@ package net.ofatech.controlcore.domain.model.settings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import net.ofatech.controlcore.domain.model.text.Translator;
 
 public final class SettingSearch {
 
@@ -170,6 +171,15 @@ public final class SettingSearch {
                 snapshot.definition().displayName(),
                 snapshot.definition().heading(),
                 description);
+    }
+
+    public boolean matches(SettingSnapshot snapshot, Translator tr) {
+        SettingDefinition<?> definition = snapshot.definition();
+        return matches(
+                snapshot,
+                tr.translate(definition.nameText()),
+                definition.heading(tr),
+                tr.translate(definition.descriptionText()));
     }
 
     public boolean matches(SettingSnapshot snapshot, String name, String category, String description) {

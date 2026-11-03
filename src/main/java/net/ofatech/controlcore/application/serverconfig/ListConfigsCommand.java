@@ -2,7 +2,6 @@ package net.ofatech.controlcore.application.serverconfig;
 
 import com.google.auto.service.AutoService;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import net.ofatech.controlcore.application.component.ModCommand;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
@@ -12,6 +11,7 @@ import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
+import net.ofatech.controlcore.domain.model.settings.SettingSearch;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
@@ -40,7 +40,7 @@ public final class ListConfigsCommand implements ModCommand {
         return CommandSpec.named("cc-configs")
                 .description("List the keys of the server's config.json or of a world, with value and default")
                 .optionalArg("world", ArgType.STRING, "A world's name; - or nothing for config.json")
-                .optionalArg("search", ArgType.GREEDY_STRING, "Only keys whose id, name or heading has this text");
+                .optionalArg("search", ArgType.GREEDY_STRING, "Only what the panel's search shows for this text");
     }
 
     @Override
@@ -60,8 +60,8 @@ public final class ListConfigsCommand implements ModCommand {
             }
             world = found;
         }
-        String search =
-                context.arg("search").map(Object::toString).orElse("").strip().toLowerCase(Locale.ROOT);
+        SettingSearch search =
+                SettingSearch.parse(context.arg("search").map(Object::toString).orElse(""));
         Optional<String> shownWorld = world;
         List<SettingSnapshot> visible =
                 permissions.editor(serverConfig, who).snapshot(SettingScope.SERVER, Optional.empty());
@@ -72,7 +72,7 @@ public final class ListConfigsCommand implements ModCommand {
         }
         List<SettingSnapshot> rows = visible.stream()
                 .filter(snapshot -> ServerConfigEditor.inWorld(snapshot.id(), shownWorld))
-                .filter(snapshot -> search.isEmpty() || matches(snapshot, search, tr))
+                .filter(snapshot -> search.matches(snapshot, tr))
                 .toList();
         String title = shownWorld
                 .map(name -> tr.t("controlcore.configs.title_world", "world", name))
@@ -111,14 +111,6 @@ public final class ListConfigsCommand implements ModCommand {
                 "ServerConfig.UnknownWorld",
                 Text.key("controlcore.errors.configs.unknown_world", "There is no world {world}. Worlds: {worlds}.")
                         .with("world", world, "worlds", String.join(", ", worlds)));
-    }
-
-    private static boolean matches(SettingSnapshot snapshot, String search, Translator tr) {
-        return snapshot.id().toString().toLowerCase(Locale.ROOT).contains(search)
-                || tr.translate(snapshot.definition().nameText())
-                        .toLowerCase(Locale.ROOT)
-                        .contains(search)
-                || snapshot.definition().heading(tr).toLowerCase(Locale.ROOT).contains(search);
     }
 
     private static String access(SettingAccess access) {

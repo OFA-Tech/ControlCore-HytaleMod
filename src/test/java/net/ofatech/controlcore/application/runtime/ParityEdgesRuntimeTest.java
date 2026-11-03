@@ -74,6 +74,20 @@ class ParityEdgesRuntimeTest extends RuntimeTestBase {
     }
 
     @Test
+    void theCommandsSearchIsThePanelsSearch() {
+        text(console("cc-set", Map.of("id", "server:server-name", "value", "Renamed")));
+        text(console("cc-set", Map.of("id", "server:max-view-radius", "value", "12")));
+
+        assertThat(text(console("cc-configs", Map.of("search", "-name is:changed"))))
+                .contains("server:max-view-radius")
+                .doesNotContain("server:server-name");
+        text(console("cc-restore-defaults", Map.of("section", "server-configs", "step", "confirm", "search", "-name")));
+
+        assertThat(config("ServerName")).isEqualTo("Renamed");
+        assertThat(config("MaxViewRadius")).isNotEqualTo("12");
+    }
+
+    @Test
     void anUnknownWorldIsRefusedBeforeAnythingChanges() {
         text(console("cc-set", Map.of("id", "server:server-name", "value", "Renamed")));
 

@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -19,6 +18,7 @@ import net.ofatech.controlcore.domain.model.settings.DefaultsView.Section;
 import net.ofatech.controlcore.domain.model.settings.PermissionsView;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
+import net.ofatech.controlcore.domain.model.settings.SettingSearch;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.model.snapshot.Snapshot;
@@ -151,12 +151,12 @@ public final class DefaultsService {
 
     public Predicate<String> matching(
             Section section, Optional<String> world, String search, Optional<PlayerId> who, Translator tr) {
-        String wanted = search == null ? "" : search.strip().toLowerCase(Locale.ROOT);
+        SettingSearch wanted = SettingSearch.parse(search);
         Set<String> ids = new HashSet<>();
         if (section == Section.PERMISSIONS) {
             if (admin(who)) {
                 permissions.viewedBy(tr).list().stream()
-                        .filter(entry -> contains(wanted, entry.target(), entry.name(), entry.heading()))
+                        .filter(entry -> entry.matches(wanted))
                         .forEach(entry -> ids.add(entry.target()));
             }
             return ids::contains;
@@ -165,25 +165,9 @@ public final class DefaultsService {
                 .onSuccess(target -> target.editor().snapshot(target.scope(), target.player()).stream()
                         .filter(snapshot ->
                                 section != Section.SERVER_CONFIGS || ServerConfigEditor.inWorld(snapshot.id(), world))
-                        .filter(snapshot -> contains(
-                                wanted,
-                                snapshot.id().toString(),
-                                tr.translate(snapshot.definition().nameText()),
-                                snapshot.definition().heading(tr)))
+                        .filter(snapshot -> wanted.matches(snapshot, tr))
                         .forEach(snapshot -> ids.add(snapshot.id().toString())));
         return ids::contains;
-    }
-
-    private static boolean contains(String wanted, String... texts) {
-        if (wanted.isEmpty()) {
-            return true;
-        }
-        for (String text : texts) {
-            if (text != null && text.toLowerCase(Locale.ROOT).contains(wanted)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private static List<SettingSnapshot> resettable(Target target, Predicate<String> shown) {

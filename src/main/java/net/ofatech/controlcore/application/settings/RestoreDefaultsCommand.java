@@ -43,7 +43,7 @@ public final class RestoreDefaultsCommand implements ModCommand {
                 .description("Put every changed row of a section back to its default, like the panel's button")
                 .arg("section", ArgType.STRING, SECTIONS)
                 .arg("step", ArgType.STRING, "check to see how many rows change, confirm to do it")
-                .optionalArg("search", ArgType.GREEDY_STRING, "Only rows whose id, name or heading has this text");
+                .optionalArg("search", ArgType.GREEDY_STRING, "Only what the panel's search shows for this text");
     }
 
     @Override

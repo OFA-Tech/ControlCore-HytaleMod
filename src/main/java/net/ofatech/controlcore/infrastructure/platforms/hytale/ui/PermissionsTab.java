@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import net.ofatech.controlcore.domain.model.settings.PermissionsView;
 import net.ofatech.controlcore.domain.model.settings.SettingSearch;
-import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -169,9 +168,7 @@ final class PermissionsTab {
     }
 
     private boolean matches(PermissionsView.Entry entry) {
-        SettingSnapshot snapshot =
-                new SettingSnapshot(entry.definition(), (entry.view() + " " + entry.edit()).strip(), entry.adminRule());
-        return search.matches(snapshot, entry.name(), entry.heading(), entry.description());
+        return entry.matches(search);
     }
 
     private boolean anyChild(int group, boolean[] visible) {
