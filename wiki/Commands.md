@@ -36,7 +36,7 @@ does not search for both words.
 `/cc-restore-defaults` sections: `mod-settings`, `prefs` (yours), `server-configs`, `world:<name>`, `keymaps-server`
 (admins), `keymaps-mine` (yours) and `permissions` (admins). Only rows you may change and that differ from their
 default are reset; read-only rows are skipped. Server-wide sections first save a `before-defaults` snapshot when you
-may use snapshots, and every reset is in History. `--search=text` limits it to the rows the panel's search shows for that word (one word, see above; `name:`, `id:`, `mod:`, `value:`, `is:changed` and `-word` work as in the panel).
+may use snapshots, and every reset is in History. `--search=text` limits it to the rows the panel's search shows for that word (one word, see above; `name:`, `id:`, `mod:`, `cat:`, `key:`/`value:`, `default:`, `desc:`, `is:changed`/`is:default` and `-word` work as in the panel).
 
 Ids look like `mod:key`, for example `controlcore:welcome-message`. The server's `config.json` keys are `server:…`,
 for example `server:motd` or `server:connection-timeouts.play-timeout`; `/cc-set` says when a key only applies after a
