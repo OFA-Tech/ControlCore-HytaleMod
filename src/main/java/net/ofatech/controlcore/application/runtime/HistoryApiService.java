@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import net.ofatech.controlcore.api.HistoryApi;
-import net.ofatech.controlcore.application.history.ChangeHistory;
 import net.ofatech.controlcore.application.history.HistoryCommand;
 import net.ofatech.controlcore.application.history.HistoryEditor;
 import net.ofatech.controlcore.application.players.PlayerDirectory;
@@ -21,19 +20,16 @@ import net.ofatech.controlcore.domain.result.Result;
 public final class HistoryApiService implements HistoryApi {
 
     private final HistoryEditor editor;
-    private final ChangeHistory history;
     private final Texts texts;
     private final PlayerDirectory directory;
     private final ApiActor actor;
 
-    public HistoryApiService(HistoryEditor editor, ChangeHistory history, Texts texts, PlayerDirectory directory) {
-        this(editor, history, texts, directory, ApiActor.MOD);
+    public HistoryApiService(HistoryEditor editor, Texts texts, PlayerDirectory directory) {
+        this(editor, texts, directory, ApiActor.MOD);
     }
 
-    private HistoryApiService(
-            HistoryEditor editor, ChangeHistory history, Texts texts, PlayerDirectory directory, ApiActor actor) {
+    private HistoryApiService(HistoryEditor editor, Texts texts, PlayerDirectory directory, ApiActor actor) {
         this.editor = editor;
-        this.history = history;
         this.texts = texts;
         this.directory = directory;
         this.actor = actor;
@@ -41,7 +37,7 @@ public final class HistoryApiService implements HistoryApi {
 
     @Override
     public HistoryApi actingFor(PlayerId player) {
-        return new HistoryApiService(editor, history, texts, directory, ApiActor.of(player, directory));
+        return new HistoryApiService(editor, texts, directory, ApiActor.of(player, directory));
     }
 
     @Override
@@ -50,12 +46,12 @@ public final class HistoryApiService implements HistoryApi {
             return List.of();
         }
         String filter = search == null ? "" : search.strip().toLowerCase(Locale.ROOT);
-        return editor.entries(tr(), actor.who()).stream()
-                .filter(entry ->
-                        kind.isEmpty() || entry.kind().name().equals(kind.get().name()))
-                .filter(entry -> HistoryCommand.matches(entry, filter))
+        return editor.listed(tr(), actor.who()).stream()
+                .filter(listed -> kind.isEmpty()
+                        || listed.entry().kind().name().equals(kind.get().name()))
+                .filter(listed -> HistoryCommand.matches(listed.entry(), filter))
                 .limit(limit > 0 ? limit : Long.MAX_VALUE)
-                .flatMap(entry -> history.find(entry.id()).map(record -> change(entry, record)).stream())
+                .map(listed -> change(listed.entry(), listed.record()))
                 .toList();
     }
 

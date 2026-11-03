@@ -154,23 +154,34 @@ public final class HistoryEditor {
                 .orElseGet(() -> tr.t("controlcore.history.cleared_all", "count", removed)));
     }
 
+    public record Listed(ChangeRecord record, HistoryView.Entry entry) {}
+
     public List<HistoryView.Entry> entries(Translator tr, Optional<PlayerId> viewer) {
         return entries(history.newestFirst(), tr, viewer);
     }
 
+    public List<Listed> listed(Translator tr, Optional<PlayerId> viewer) {
+        return listed(history.newestFirst(), tr, viewer);
+    }
+
     private List<HistoryView.Entry> entries(List<ChangeRecord> records, Translator tr, Optional<PlayerId> viewer) {
+        return listed(records, tr, viewer).stream().map(Listed::entry).toList();
+    }
+
+    private List<Listed> listed(List<ChangeRecord> records, Translator tr, Optional<PlayerId> viewer) {
         Set<Long> rolledBack = history.rolledBackIds();
         boolean mayRollBack = mayRollBack(viewer);
         Map<String, String> modNames =
-                records.stream().anyMatch(record -> record.kind() == Kind.MOD) ? modNames() : Map.of();
+                records.stream().anyMatch(record -> record.kind() == Kind.MOD) ? modNames(viewer) : Map.of();
         return records.stream()
-                .map(record -> entry(record, tr, rolledBack.contains(record.id()), mayRollBack, modNames))
+                .map(record ->
+                        new Listed(record, entry(record, tr, rolledBack.contains(record.id()), mayRollBack, modNames)))
                 .toList();
     }
 
-    private Map<String, String> modNames() {
+    private Map<String, String> modNames(Optional<PlayerId> viewer) {
         Map<String, String> names = new HashMap<>();
-        mods.viewedBy(Optional.empty())
+        mods.viewedBy(viewer)
                 .list()
                 .forEach(entry -> names.putIfAbsent(
                         entry.mod().id().toLowerCase(Locale.ROOT), entry.mod().name()));
