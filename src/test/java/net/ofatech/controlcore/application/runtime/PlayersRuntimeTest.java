@@ -263,8 +263,8 @@ class PlayersRuntimeTest {
             PlayerInfo builder = platform.players.join("Builder");
             platform.admin.inventories.put(
                     builder.id(),
-                    java.util.List.of(
-                            new net.ofatech.controlcore.domain.ports.game.PlayerAdmin.Item("hotbar", 0, "Weapon_Sword_Iron", 1)));
+                    java.util.List.of(new net.ofatech.controlcore.domain.ports.game.PlayerAdmin.Item(
+                            "hotbar", 0, "Weapon_Sword_Iron", 1)));
             PlayersView view = viewFor(admin);
 
             var details = view.details(builder.id().value().toString()).join().value();

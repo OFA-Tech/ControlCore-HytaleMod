@@ -44,7 +44,9 @@
   as `--name=` everywhere (`/cc-configs [--world=] [--search=]`, `/cc-restore-defaults ... [--search=]`), and a test
   keeps the wiki that way.
 - `--search=` in `/cc-configs`, `/cc-restore-defaults` and the defaults API is the panel's search (every word,
-  `name:`/`id:`/`is:changed` prefixes, `-word`), so all three pick the same rows.
+  `name:`/`id:`/`is:changed` prefixes, `-word`; on the command line one word, as Hytale splits at spaces), so all
+  three pick the same rows, the extra keys of a key row included. The panel's search no longer matches the
+  "Default: ..." text under each row; use `default:` for that.
 
 ### Fixed
 - An unreadable data file (for example a typo in `SettingValues.json`) is now moved aside as `<file>.broken-<time>` instead of being overwritten with empty data on the next save. A data file that can't be opened at all (locked, no
@@ -63,7 +65,10 @@
   and History shows mod names only for mods the viewer may see.
 - `/cc-warn-clear` says when there was nothing to clear and when a warning for everyone is still shown; toasts and
   warnings refuse texts over the 200 characters the HUD shows, and a toast or warning with no text after `Title|` or
-  `warning:`.
+  `warning:` (saying so). Automation toast and warning actions are held to the same 200 characters instead of being
+  cut when shown.
+- History leaves out mod changes for players who can't see that mod (hidden from players), in the panel, `/cc-history`
+  and the API.
 - `/cc-rule-add` and `/cc-rule-edit` with an unknown or missing `when=` list the triggers; rule ids and group names
   match ignoring case.
 

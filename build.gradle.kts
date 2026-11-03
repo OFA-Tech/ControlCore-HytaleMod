@@ -97,6 +97,8 @@ tasks.processResources {
 
 tasks.test {
     useJUnitPlatform()
+    inputs.dir("wiki").withPropertyName("wiki").withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.dir("docs").withPropertyName("docs").withPathSensitivity(PathSensitivity.RELATIVE)
 }
 
 // The run directory holds the server's log lock files (run/logs/*.lck), which Windows will not let Gradle

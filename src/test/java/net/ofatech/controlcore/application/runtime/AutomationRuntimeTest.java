@@ -72,6 +72,20 @@ class AutomationRuntimeTest extends RuntimeTestBase {
     }
 
     @Test
+    void toastAndWarningTextsLongerThanTheHudShowsAreRefused() {
+        String tooLong = "x".repeat(201);
+
+        for (String kind : List.of("toast-all", "toast-player", "warning-all")) {
+            Result<String> saved =
+                    view().save(Optional.empty(), form("Long", "join", "", "none", "", kind, tooLong, ""));
+            assertThat(saved.error().code()).as(kind).isEqualTo("Notify.InvalidText");
+        }
+        assertThat(view().save(Optional.empty(), form("Long", "join", "", "none", "", "message-all", tooLong, ""))
+                        .isSuccess())
+                .isTrue();
+    }
+
+    @Test
     void timersWaitForTheirPeriod() {
         save(form(
                 "Vote",

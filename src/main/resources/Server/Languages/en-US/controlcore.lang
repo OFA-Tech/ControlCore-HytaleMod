@@ -1249,3 +1249,4 @@ mods.check_on = Nothing changed yet: {name} would turn on after the next restart
 mods.check_off = Nothing changed yet: {name} would turn off after the next restart, and no other mod changes.
 mods.check_on_also = Nothing changed yet: {name} needs {mods}, which are off, so they would all turn on after the next restart.
 mods.check_off_also = Nothing changed yet: turning off {name} would also turn off {mods}, because they need it.
+errors.notify.empty_after = Write the message after '{prefix}'.

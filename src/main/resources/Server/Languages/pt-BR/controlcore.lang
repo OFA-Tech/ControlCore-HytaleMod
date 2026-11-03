@@ -1249,3 +1249,4 @@ mods.check_on = Nada mudou ainda: {name} ligaria depois do próximo reinício, e
 mods.check_off = Nada mudou ainda: {name} desligaria depois do próximo reinício, e nenhum outro mod muda.
 mods.check_on_also = Nada mudou ainda: {name} precisa de {mods}, que estão desligados, então todos ligariam depois do próximo reinício.
 mods.check_off_also = Nada mudou ainda: desligar {name} também desligaria {mods}, porque eles precisam dele.
+errors.notify.empty_after = Escreva a mensagem depois de '{prefix}'.

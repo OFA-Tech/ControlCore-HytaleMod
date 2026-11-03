@@ -219,9 +219,8 @@ final class SectionSearch {
         host.send(update);
     }
 
-    private static boolean matchesSearch(SettingsSection section, SettingSearch search, SettingSnapshot snapshot) {
-        return search.matches(
-                snapshot, section.name(snapshot), section.category(snapshot), section.description(snapshot));
+    private boolean matchesSearch(SettingsSection section, SettingSearch search, SettingSnapshot snapshot) {
+        return search.matches(snapshot, tr, section.keys());
     }
 
     Set<String> shownIds(PanelSection key) {

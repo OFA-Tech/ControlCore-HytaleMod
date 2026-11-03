@@ -165,7 +165,8 @@ public final class DefaultsService {
                 .onSuccess(target -> target.editor().snapshot(target.scope(), target.player()).stream()
                         .filter(snapshot ->
                                 section != Section.SERVER_CONFIGS || ServerConfigEditor.inWorld(snapshot.id(), world))
-                        .filter(snapshot -> wanted.matches(snapshot, tr))
+                        .filter(snapshot -> wanted.matches(
+                                snapshot, tr, section == Section.KEYMAPS_SERVER || section == Section.KEYMAPS_MINE))
                         .forEach(snapshot -> ids.add(snapshot.id().toString())));
         return ids::contains;
     }

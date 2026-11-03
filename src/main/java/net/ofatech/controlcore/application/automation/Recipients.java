@@ -65,7 +65,7 @@ public final class Recipients {
         String title = bar < 0 ? "" : text.substring(0, bar).strip();
         String body = (bar < 0 ? text : text.substring(bar + 1)).strip();
         if (body.isEmpty()) {
-            return Result.failure(invalidText());
+            return Result.failure(emptyAfter(text.substring(0, bar + 1).strip()));
         }
         return resolve(who, target).map(found -> {
             found.players()
@@ -100,7 +100,8 @@ public final class Recipients {
         AutomationService.Leveled leveled = style.map(level -> new AutomationService.Leveled(level, checked.value()))
                 .orElseGet(() -> AutomationService.Leveled.of(checked.value()));
         if (leveled.text().isBlank()) {
-            return Result.failure(invalidText());
+            return Result.failure(
+                    emptyAfter(checked.value().substring(0, checked.value().indexOf(':') + 1)));
         }
         return resolve(who, target).map(found -> {
             if (found.kind() == Kind.EVERYONE) {
@@ -213,11 +214,18 @@ public final class Recipients {
         return Result.success(text);
     }
 
-    private static Error invalidText() {
+    static Error invalidText() {
         return Error.validation(
                 "Notify.InvalidText",
                 Text.key("controlcore.errors.notify.invalid_text", "Write a text of 1 to {max} characters.")
                         .with("max", NotificationService.MAX_TEXT));
+    }
+
+    private static Error emptyAfter(String prefix) {
+        return Error.validation(
+                "Notify.EmptyText",
+                Text.key("controlcore.errors.notify.empty_after", "Write the message after '{prefix}'.")
+                        .with("prefix", PlainText.oneLine(prefix, PlainText.MAX_SHOWN_INPUT)));
     }
 
     private static Error badStyle() {

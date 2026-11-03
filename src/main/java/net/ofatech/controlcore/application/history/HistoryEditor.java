@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -171,9 +172,16 @@ public final class HistoryEditor {
     private List<Listed> listed(List<ChangeRecord> records, Translator tr, Optional<PlayerId> viewer) {
         Set<Long> rolledBack = history.rolledBackIds();
         boolean mayRollBack = mayRollBack(viewer);
-        Map<String, String> modNames =
-                records.stream().anyMatch(record -> record.kind() == Kind.MOD) ? modNames(viewer) : Map.of();
+        boolean anyMod = records.stream().anyMatch(record -> record.kind() == Kind.MOD);
+        Map<String, String> modNames = anyMod ? modNames(viewer) : Map.of();
+        Set<String> hidden = new HashSet<>();
+        if (anyMod && viewer.isPresent()) {
+            hidden.addAll(modNames(Optional.empty()).keySet());
+            hidden.removeAll(modNames.keySet());
+        }
         return records.stream()
+                .filter(record -> record.kind() != Kind.MOD
+                        || !hidden.contains(record.target().toLowerCase(Locale.ROOT)))
                 .map(record ->
                         new Listed(record, entry(record, tr, rolledBack.contains(record.id()), mayRollBack, modNames)))
                 .toList();

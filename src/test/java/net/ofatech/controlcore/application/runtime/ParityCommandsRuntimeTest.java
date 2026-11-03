@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import net.ofatech.controlcore.api.ControlCoreApi;
+import net.ofatech.controlcore.api.HistoryApi;
 import net.ofatech.controlcore.domain.event.PlayerJoined;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.automation.Rule;
@@ -148,6 +150,18 @@ class ParityCommandsRuntimeTest extends RuntimeTestBase {
     }
 
     @Test
+    void changesToAHiddenModAreLeftOutOfTheHistoryOfThoseWhoCantSeeIt() {
+        text(console("cc-mod-off", Map.of("mod", "Test:Base", "confirm", "all")));
+        text(console("cc-set", Map.of("id", "controlcore:mods-hidden", "value", "Test:Addon")));
+        HistoryApi history = ControlCoreApi.get().history();
+
+        assertThat(history.list(Optional.of(HistoryApi.Kind.MOD), "", 0)).hasSize(2);
+        assertThat(history.actingFor(builder.id()).list(Optional.of(HistoryApi.Kind.MOD), "", 0))
+                .extracting(HistoryApi.Change::target)
+                .containsExactly("Test:Base");
+    }
+
+    @Test
     void restartPendingListsWhatWaits() {
         assertThat(text(console("cc-restart-pending", Map.of()))).contains("Nothing");
         console("cc-set", Map.of("id", "server:backup.enabled", "value", "true"));
@@ -242,10 +256,14 @@ class ParityCommandsRuntimeTest extends RuntimeTestBase {
         text(console("cc-warn-clear", Map.of("target", "everyone")));
         assertThat(code(console("cc-warn-clear", Map.of("target", "everyone")))).isEqualTo("Notify.NothingToClear");
 
-        assertThat(code(console("cc-toast", Map.of("target", "Builder", "style", "info", "text", "Title|"))))
-                .isEqualTo("Notify.InvalidText");
-        assertThat(code(console("cc-warn", Map.of("target", "Builder", "seconds", 0, "text", "warning:"))))
-                .isEqualTo("Notify.InvalidText");
+        assertThat(console("cc-toast", Map.of("target", "Builder", "style", "info", "text", "Title|"))
+                        .error()
+                        .description())
+                .contains("after 'Title|'");
+        assertThat(console("cc-warn", Map.of("target", "Builder", "seconds", 0, "text", "warning:"))
+                        .error()
+                        .description())
+                .contains("after 'warning:'");
         assertThat(code(console("cc-toast", Map.of("target", "Builder", "style", "info", "text", "x".repeat(201)))))
                 .isEqualTo("Notify.InvalidText");
     }

@@ -843,6 +843,11 @@ public final class AutomationService {
     }
 
     private Result<Boolean> checkAction(ActionKind kind, String value) {
+        boolean shownOnHud =
+                kind == ActionKind.TOAST_PLAYER || kind == ActionKind.TOAST_ALL || kind == ActionKind.WARNING_ALL;
+        if (shownOnHud && value.length() > NotificationService.MAX_TEXT) {
+            return Result.failure(Recipients.invalidText());
+        }
         boolean ok = switch (kind) {
             case PROFILE -> profiles.ids().contains(value);
             case SET_SETTING ->

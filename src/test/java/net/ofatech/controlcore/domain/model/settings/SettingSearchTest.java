@@ -2,6 +2,8 @@ package net.ofatech.controlcore.domain.model.settings;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import net.ofatech.controlcore.domain.model.text.Translator;
+import net.ofatech.controlcore.fakes.TestTexts;
 import org.junit.jupiter.api.Test;
 
 class SettingSearchTest {
@@ -37,6 +39,21 @@ class SettingSearchTest {
         assertThat(matches("key:ctrl", home)).isTrue();
         assertThat(matches("key:alt", home)).isFalse();
         assertThat(matches("default:f", home)).isTrue();
+    }
+
+    @Test
+    void keyRowsAlsoMatchTheirExtraKeysInTheDescriptionLikeThePanel() {
+        Translator tr = TestTexts.english();
+        SettingSnapshot twoKeys =
+                new SettingSnapshot(home.definition(), "CTRL + F | ALT + 3", true, SettingAccess.EDITABLE);
+        SettingSearch search = SettingSearch.parse("alt", SettingSearch.Filter.DESCRIPTION);
+
+        assertThat(SettingSearch.description(twoKeys, tr, true)).contains("ALT + 3");
+        assertThat(search.matches(twoKeys, tr, true)).isTrue();
+        assertThat(search.matches(twoKeys, tr, false)).isFalse();
+        assertThat(SettingSearch.parse("default").matches(welcome, tr))
+                .as("the panel's 'Default: ...' row text is not searched")
+                .isFalse();
     }
 
     @Test
