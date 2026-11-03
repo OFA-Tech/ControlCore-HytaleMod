@@ -1234,3 +1234,7 @@ panel.notice.style.warning = Atenção
 panel.notice.style.error = Erro
 panel.notice.seconds_hint = Segundos, 0 = fica
 panel.notice.text_hint = Texto; Título|texto dá um título ao aviso
+players.list.none = Nenhum jogador encontrado.
+players.list.header = Jogadores, {filter} ({count}):
+players.list.line = - {player} ({id}){badges}: {status}
+players.list.more = ... e mais {count}. Filtre com --search=.

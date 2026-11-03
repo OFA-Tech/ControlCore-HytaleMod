@@ -22,6 +22,13 @@ public interface SnapshotsView {
             return tr.t(key, "name", name, "count", changes);
         }
 
+        public String profileTitle(Translator tr) {
+            String key = changes > 0
+                    ? "controlcore.profiles.preview.header"
+                    : adminOnly > 0 ? "controlcore.snapshots.preview.only_admin" : "controlcore.profiles.preview.same";
+            return tr.t(key, "name", name, "count", changes);
+        }
+
         public List<String> allLines(Translator tr) {
             List<String> all = new ArrayList<>(lines);
             if (adminOnly > 0 && changes > 0) {

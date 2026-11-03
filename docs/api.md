@@ -297,7 +297,8 @@ keep working; use `>=0.16.0` in your manifest when you call these.
 Everything the panel and the commands do, for other mods: `permissions()`, `mods()`, `history()`, `snapshots()`,
 `profiles()`, `health()`, `rules()`, `players()` and `defaults()`, plus `config.json`/world keys in `settings()`
 (`server:<key>`, `world:<world>.<key>`, `serverConfigs()`, `worlds()`), custom binds and game action modes in
-`keymaps()`, and `controlPanel().openForMod(player, modId)`. Values are API records (`PlayersApi.Player`,
+`keymaps()`, `controlPanel().openForMod(player, modId)`, and toasts and warning bars for the online admins in
+`notifications()` (`toastAdmins`, `warningAdmins`, `clearWarningAdmins`). Values are API records (`PlayersApi.Player`,
 `ModsApi.Mod`, `HistoryApi.Change`, ...), never Hytale types.
 
 Each section has two modes. Called directly it acts like the console with full rights, recorded in History as made by

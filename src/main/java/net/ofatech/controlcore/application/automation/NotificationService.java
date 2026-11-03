@@ -140,11 +140,14 @@ public final class NotificationService implements NotificationsApi {
 
     @Override
     public void toAdmins(String text) {
-        for (PlayerInfo player : players.online()) {
-            if (policy.isAdmin(player.id())) {
-                messenger.send(player.id(), text);
-            }
-        }
+        admins().forEach(player -> messenger.send(player, text));
+    }
+
+    List<PlayerId> admins() {
+        return players.online().stream()
+                .map(PlayerInfo::id)
+                .filter(policy::isAdmin)
+                .toList();
     }
 
     @Override
@@ -196,6 +199,21 @@ public final class NotificationService implements NotificationsApi {
     @Override
     public void toastAll(String title, String text, ToastLevel level, int seconds) {
         players.online().forEach(player -> toast(player.id(), title, text, level, seconds));
+    }
+
+    @Override
+    public void toastAdmins(String title, String text, ToastLevel level, int seconds) {
+        admins().forEach(player -> toast(player, title, text, level, seconds));
+    }
+
+    @Override
+    public void warningAdmins(String id, String text, ToastLevel level, int seconds) {
+        admins().forEach(player -> warning(player, id, text, level, seconds));
+    }
+
+    @Override
+    public void clearWarningAdmins(String id) {
+        admins().forEach(player -> clearWarning(player, id));
     }
 
     @Override

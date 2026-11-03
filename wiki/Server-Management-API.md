@@ -52,6 +52,7 @@ Messages (`Result<String>`) and display texts are in the acting player's languag
 | `players()` | `list(filter, search)`, `details`, `inventory`, `recentChat`, `kick`, `ban`/`unban`, `mute`/`unmute`, `freeze`/`unfreeze`, `toggleGameMode`, `teleportTo`/`bring`, `whitelist`, `requireWhitelist`, `operator`, `groups`, `group`, `setOnlyGroup`, `groupPermissions`, `groupPermission`; `rights()` | each action needs its `ofatech.controlcore.players.*` node, groups are admin-only, admins are protected from non-admins |
 | `defaults()` | `count(section, world, search)` and `restore(section, world, search)` | server-wide sections save a safety snapshot first |
 | `controlPanel()` | `openForMod(player, modId)` opens the panel on a mod's settings | |
+| `notifications()` | `toastAdmins`, `warningAdmins`, `clearWarningAdmins`: the `admins` target of `/cc-toast`, `/cc-warn` and `/cc-warn-clear` | online ControlCore admins only; admins who join later do not get the warning |
 
 `players()` methods that may have to look a player up (offline names) return a `CompletableFuture`. `teleportTo`
 and `bring` move the acting player, so they only work with `actingFor`; as the mod they fail with

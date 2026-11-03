@@ -159,13 +159,7 @@ public final class Recipients {
                     Kind.EVERYONE, players.online().stream().map(PlayerInfo::id).toList(), "everyone"));
         }
         if (wanted.equalsIgnoreCase("admins")) {
-            return Result.success(new Target(
-                    Kind.ADMINS,
-                    players.online().stream()
-                            .map(PlayerInfo::id)
-                            .filter(policy::isAdmin)
-                            .toList(),
-                    "admins"));
+            return Result.success(new Target(Kind.ADMINS, notifications.admins(), "admins"));
         }
         Optional<PlayerInfo> found = players.findByName(wanted);
         if (found.isEmpty()) {

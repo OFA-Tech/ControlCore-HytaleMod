@@ -1234,3 +1234,7 @@ panel.notice.style.warning = Warning
 panel.notice.style.error = Error
 panel.notice.seconds_hint = Seconds, 0 = stays
 panel.notice.text_hint = Text; Title|text gives a toast a title
+players.list.none = No players match.
+players.list.header = Players, {filter} ({count}):
+players.list.line = - {player} ({id}){badges}: {status}
+players.list.more = ... and {count} more. Narrow it down with --search=.

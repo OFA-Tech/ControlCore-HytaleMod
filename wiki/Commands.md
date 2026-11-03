@@ -80,6 +80,7 @@ The console counts as an admin; `/cc-tp` and `/cc-bring` need a player.
 | `/cc-group set <player> <group>` | admins | make that group the player's only group (one History line per group changed) |
 | `/cc-groups` | admins | list the permission groups and their own permissions |
 | `/cc-group-perm <give\|take> <group> <node>` | admins | give a group a permission node or take it away |
+| `/cc-players [--filter=filter] [--search=text]` | `ofatech.controlcore.players` or bans | the Players list: name, short UUID, badges and world or last seen, 20 at most; filters `everyone`, `online`, `offline`, `banned`, `whitelisted`, `operators`, `muted`, `frozen` |
 | `/cc-player <player>` | `ofatech.controlcore.players` | status, groups, whitelist, first join, ban, mute, freeze and recent messages |
 | `/cc-inventory <player>` | `ofatech.controlcore.players.inventory` | what an online player carries |
 | `/cc-chat` | `ofatech.controlcore.players` | the last 50 chat messages |
@@ -110,7 +111,7 @@ Also in the panel's **History** tab.
 
 | Command | Who | Does |
 |---|---|---|
-| `/cc-history [--filter=text]` | admins or `ofatech.controlcore.history` | the latest 10 changes, optionally only those whose name, who or value contains the filter |
+| `/cc-history [--filter=text] [--kind=kind]` | admins or `ofatech.controlcore.history` | the latest 10 changes, optionally only those whose name, who or value contains the filter, and only one kind like the History dropdown: `all`, `settings`, `config`, `worlds`, `keys`, `binds`, `permissions`, `mods`, `bans`, `players` |
 | `/cc-rollback <number>` | admins or `ofatech.controlcore.history.rollback` | put back the value change `#number` replaced |
 | `/cc-history-clear <days\|all>` | admins | delete changes older than a number of days (`30` or `30d`), or all of them |
 
@@ -128,6 +129,7 @@ Also in the panel: **History** → **Snapshots**. All need admins or `ofatech.co
 | `/cc-snapshot-delete <name>` | delete it |
 | `/cc-snapshots-clear` | delete every snapshot that is not used as a profile |
 | `/cc-profiles` | list the profiles and show which one is active |
+| `/cc-profile-preview <id>` | what switching to a profile (built-in or marked snapshot) would change, without changing anything |
 | `/cc-profile <id>` | switch to a profile: `@vanilla`, `@pvp`, `@creative`, `@event` or a snapshot marked as profile (saves `before-<name>` first) |
 | `/cc-profile-mark <snapshot>` | mark a snapshot as a profile |
 | `/cc-profile-unmark <profile>` | turn a profile back into a plain snapshot; only admins change a snapshot once it is a profile |

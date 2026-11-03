@@ -39,6 +39,10 @@ public final class PlayerCommands {
         return players.viewedBy(who(context));
     }
 
+    boolean maySee(CommandContext context) {
+        return players.maySee(who(context));
+    }
+
     Translator tr(CommandContext context) {
         return texts.forSender(context.sender());
     }

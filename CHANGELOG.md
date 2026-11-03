@@ -25,9 +25,13 @@
   `rules()`, `players()` and `defaults()`; `settings()` also reads and writes `config.json` (`server:<key>`) and world
   keys (`world:<world>.<key>`) and lists them with `serverConfigs()` and `worlds()`; `keymaps()` gained custom binds
   (`customBinds`, `findCustom`, `addCustom`, `removeCustom`) and game action modes (`gameActionMode`,
-  `setGameActionMode`); `controlPanel().openForMod(player, modId)`. Each section acts with full rights by default
+  `setGameActionMode`); `controlPanel().openForMod(player, modId)`; `notifications()` gained `toastAdmins`,
+  `warningAdmins` and `clearWarningAdmins`. Each section acts with full rights by default
   (History: "a mod"), or with exactly a player's panel rights through `actingFor(playerId)` (History: that player).
   See the wiki page Server management API.
+- `/cc-profile-preview <profile>`: what switching to a profile, built-ins included, would change (the panel's
+  Switch to... preview). `/cc-players [--filter=] [--search=]`: the Players list with the panel's filters.
+  `/cc-history --kind=<kind>`: the History tab's kind dropdown.
 - `docs/parity.md`: every operation mapped to its panel place, command and API method, kept in sync by a test.
 
 ### Changed

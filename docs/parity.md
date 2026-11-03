@@ -93,6 +93,7 @@ Ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`.
 |---|---|---|---|
 | List the latest changes | History tab -> Changes | `/cc-history` | `history().list` |
 | Search the changes, or one row's changes | History search; History button on a row | `/cc-history --filter=<text>` | `history().list` with a search |
+| Show one kind of change | History: kind dropdown | `/cc-history --kind=<kind>` | `history().list` with a kind |
 | Roll back a change | History row: Roll back | `/cc-rollback <number>` | `history().rollback` |
 | Delete changes older than N days | History: Clear dropdown (7, 30, 90 days) | `/cc-history-clear <days>` | `history().clearOlderThan` |
 | Delete every change | History: Clear dropdown (all) | `/cc-history-clear all` | `history().clearAll` |
@@ -114,7 +115,7 @@ Ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`.
 | Operation | Panel (where) | Command | API method |
 |---|---|---|---|
 | List the profiles and the active one | History -> Profiles | `/cc-profiles` | `profiles().list`, `profiles().status` |
-| Preview a switch | Profiles row: Switch to... | `/cc-snapshot-diff <name>` (marked snapshots only, see Gaps) | `profiles().preview` |
+| Preview a switch | Profiles row: Switch to... | `/cc-profile-preview <profile>` | `profiles().preview` |
 | Switch to a profile (saves `before-<name>` first) | Profiles preview: Save current state, then switch | `/cc-profile <id>` | `profiles().switchTo` |
 | Mark a snapshot as a profile | Snapshots row: Use as profile | `/cc-profile-mark <snapshot>` | `profiles().mark` |
 | Turn a profile back into a snapshot | Profiles row: Remove from profiles | `/cc-profile-unmark <profile>` | `profiles().unmark` |
@@ -146,7 +147,7 @@ Ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`.
 
 | Operation | Panel (where) | Command | API method |
 |---|---|---|---|
-| List players (filter, search) | Server Configs -> Players: filter dropdown and search | — (see Gaps) | `players().list` |
+| List players (filter, search) | Server Configs -> Players: filter dropdown and search | `/cc-players [--filter=<filter>] [--search=<text>]` | `players().list` |
 | List the bans | Players: Banned filter | `/cc-bans` | `players().list` (`BANNED`) |
 | Details: status, groups, whitelist, ban, mute, freeze, chat | Players row: Details | `/cc-player <player>` | `players().details` |
 | Inventory | Players -> Details | `/cc-inventory <player>` | `players().inventory` |
@@ -188,7 +189,9 @@ Ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`.
 | Warning bar to a player | Automation -> Send message: warning, one player | `/cc-warn <player> <seconds> <text>` | `notifications().warning` |
 | Warning bar to everyone | Automation -> Send message: warning, everyone | `/cc-warn everyone <seconds> <text>` | `notifications().warningAll` |
 | Clear a warning bar | Automation -> Send message: clear | `/cc-warn-clear <player or everyone>` | `notifications().clearWarning`, `notifications().clearWarningAll` |
-| Toast or warning to the admins | Automation -> Send message: admins | `/cc-toast admins ...`, `/cc-warn admins ...` | — (see Gaps) |
+| Toast to the online admins | Automation -> Send message: toast, admins | `/cc-toast admins <style> <text>` | `notifications().toastAdmins` |
+| Warning bar to the online admins | Automation -> Send message: warning, admins | `/cc-warn admins <seconds> <text>` | `notifications().warningAdmins` |
+| Clear the admins' warning bar | Automation -> Send message: clear, admins | `/cc-warn-clear admins` | `notifications().clearWarningAdmins` |
 
 ## Restore defaults
 
@@ -223,12 +226,3 @@ them: `actingFor` and `register`/`unregister` on every section, `events()`, `sch
 `settings().setCategoryPermission`, `settings().categoryPermission`, `settings().onAnyChange`, `players().rights`, and
 the chat/title helpers `notifications().message`, `broadcast`, `toAdmins`, `title`, `titleAll` (automation rules
 send these as actions).
-
-## Gaps
-
-- **Preview a built-in profile** (`@vanilla`, `@pvp`, `@creative`, `@event`): panel (Switch to...) and
-  `profiles().preview` only. `/cc-snapshot-diff` only takes snapshots, so there is no command preview for built-ins.
-- **List players with a filter** (everyone, online, offline, operators, muted, frozen): panel and `players().list`
-  only. Commands cover banned (`/cc-bans`) and whitelisted (`/cc-whitelist list`).
-- **Toast or warning to the admins**: panel and commands have an `admins` target; the API has `toast`/`toastAll` and
-  `warning`/`warningAll` but no admins target (`notifications().toAdmins` is chat only).
