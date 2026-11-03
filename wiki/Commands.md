@@ -207,8 +207,8 @@ See [Key binds](Key-Binds) for the key syntax and which keys work.
 |---|---|---|
 | `/cc-mods` | `ofatech.controlcore.settings` | list the server's mods and whether they run |
 | `/cc-mod-info <mod>` | anyone (mods hidden from players stay hidden) | the panel's **Details**: requires, can use, needed by and the Hytale version |
-| `/cc-mod-on <mod> <check\|all>` | admins | turn a mod on from the next start; with `check`, if it needs mods that are off, it lists them and changes nothing; `all` turns them on too |
-| `/cc-mod-off <mod> <check\|all>` | admins | turn a mod off from the next start; with `check`, if other mods need it, it lists them and changes nothing; `all` turns them off too |
+| `/cc-mod-on <mod> <check\|all>` | admins | turn a mod on from the next start; `check` changes nothing and says what `all` would do, including mods it needs that are off; `all` turns it and those mods on |
+| `/cc-mod-off <mod> <check\|all>` | admins | turn a mod off from the next start; `check` changes nothing and says what `all` would do, including mods that need it; `all` turns it and those mods off |
 | `/cc-mod-configs <mod>` | admins | show the mod's config files (read-only) |
 
 `<mod>` is the mod's id (`Group:Name`), name or settings namespace.

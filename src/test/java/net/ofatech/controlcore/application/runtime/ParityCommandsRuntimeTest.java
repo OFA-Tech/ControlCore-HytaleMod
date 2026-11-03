@@ -57,8 +57,10 @@ class ParityCommandsRuntimeTest extends RuntimeTestBase {
         assertThat(text(console("cc-mod-info", Map.of("mod", "Base"))))
                 .contains("Base", "Test:Base", "Requires", "Needed by", "Addon", "Hytale");
 
-        assertThat(code(console("cc-mod-off", Map.of("mod", "Test:Base", "confirm", "check"))))
-                .isEqualTo("Mods.Confirm");
+        assertThat(text(console("cc-mod-off", Map.of("mod", "Test:Base", "confirm", "check"))))
+                .contains("Nothing changed", "Base", "Addon", "/cc-mod-off Test:Base all");
+        assertThat(text(console("cc-mod-off", Map.of("mod", "Test:Addon", "confirm", "check"))))
+                .contains("Nothing changed", "no other mod");
         assertThat(platform.modCatalog.mods).allMatch(ModInfo::enabledAfterRestart);
 
         assertThat(text(console("cc-mod-off", Map.of("mod", "Test:Base", "confirm", "all"))))
@@ -149,7 +151,7 @@ class ParityCommandsRuntimeTest extends RuntimeTestBase {
     void restartPendingListsWhatWaits() {
         assertThat(text(console("cc-restart-pending", Map.of()))).contains("Nothing");
         console("cc-set", Map.of("id", "server:backup.enabled", "value", "true"));
-        console("cc-mod-off", Map.of("mod", "Test:Addon", "confirm", "check"));
+        console("cc-mod-off", Map.of("mod", "Test:Addon", "confirm", "all"));
 
         assertThat(text(console("cc-restart-pending", Map.of()))).contains("Addon");
         assertThat(code(platform.commands.run("cc-restart-pending", builder, Map.of())))

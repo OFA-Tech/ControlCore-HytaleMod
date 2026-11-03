@@ -90,7 +90,7 @@ class ReviewRound2RuntimeTest extends RuntimeTestBase {
 
     @Test
     void historyShowsAHiddenModsNameOnlyToThoseWhoSeeTheMod() {
-        text(console("cc-mod-off", Map.of("mod", "Test:Base", "confirm", "check")));
+        text(console("cc-mod-off", Map.of("mod", "Test:Base", "confirm", "all")));
         text(console("cc-set", Map.of("id", "controlcore:mods-hidden", "value", "Test:Base")));
         HistoryApi history = ControlCoreApi.get().history();
 

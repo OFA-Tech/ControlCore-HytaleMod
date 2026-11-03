@@ -3,15 +3,14 @@ package net.ofatech.controlcore.application.hud;
 import com.google.auto.service.AutoService;
 import java.util.Locale;
 import net.ofatech.controlcore.application.component.ModCommand;
+import net.ofatech.controlcore.application.text.CommonErrors;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerId;
-import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.command.ArgType;
 import net.ofatech.controlcore.domain.ports.command.CommandContext;
 import net.ofatech.controlcore.domain.ports.command.CommandSpec;
 import net.ofatech.controlcore.domain.ports.command.Reply;
-import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
 @AutoService(ModCommand.class)
@@ -43,10 +42,7 @@ public final class HudCommand implements ModCommand {
             case "show" -> hidden = false;
             case "toggle" -> hidden = !hud.isHidden(player);
             default -> {
-                return Result.failure(Error.validation(
-                        "Hud.BadChoice",
-                        Text.key("controlcore.errors.players.bad_choice", "Use {choices}.")
-                                .with("choices", "hide, show, toggle")));
+                return Result.failure(CommonErrors.badChoice("Hud.BadChoice", "hide, show, toggle"));
             }
         }
         hud.setHidden(player, hidden);

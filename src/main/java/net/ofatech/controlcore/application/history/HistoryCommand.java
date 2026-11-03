@@ -7,6 +7,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import net.ofatech.controlcore.application.component.ModCommand;
+import net.ofatech.controlcore.application.text.CommonErrors;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
@@ -64,10 +65,7 @@ public final class HistoryCommand implements ModCommand {
                 context.arg("kind").map(Object::toString).orElse("all").strip();
         Optional<HistoryView.Filter> kind = HistoryView.Filter.find(kindText);
         if (kind.isEmpty()) {
-            return Result.failure(Error.validation(
-                    "History.BadKind",
-                    Text.key("controlcore.errors.players.bad_choice", "Use {choices}.")
-                            .with("choices", kinds())));
+            return Result.failure(CommonErrors.badChoice("History.BadKind", kinds()));
         }
         List<HistoryView.Entry> matching = history.entries(tr, viewer).stream()
                 .filter(entry -> kind.get().accepts(entry) && matches(entry, filter))

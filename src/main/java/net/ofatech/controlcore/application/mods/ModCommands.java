@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import net.ofatech.controlcore.application.text.CommonErrors;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.mods.ModDependency;
@@ -115,10 +116,7 @@ public final class ModCommands {
         Translator tr = tr(context);
         String confirm = context.string("confirm").strip().toLowerCase(Locale.ROOT);
         if (!confirm.equals("check") && !confirm.equals("all")) {
-            return Result.failure(Error.validation(
-                    "Mods.BadChoice",
-                    Text.key("controlcore.errors.players.bad_choice", "Use {choices}.")
-                            .with("choices", "check, all")));
+            return Result.failure(CommonErrors.badChoice("Mods.BadChoice", "check, all"));
         }
         boolean all = confirm.equals("all");
         Result<ModsView.Entry> found = view.find(context.string("mod"));
@@ -126,27 +124,29 @@ public final class ModCommands {
             return Result.failure(found.error());
         }
         ModInfo mod = found.value().mod();
-        List<ModsView.Entry> others = found.value().manageable() ? view.alsoChanged(mod.id(), enabled) : List.of();
+        Result<List<ModsView.Entry>> planned = view.plan(mod.id(), enabled);
+        if (planned.isFailure()) {
+            return Result.failure(planned.error());
+        }
+        List<ModsView.Entry> others = planned.value();
         String names = String.join(
                 ", ", others.stream().map(entry -> entry.mod().name()).toList());
-        if (!others.isEmpty() && !all) {
-            return Result.failure(Error.validation(
-                    "Mods.Confirm",
-                    Text.of(tr.t(
-                                    enabled
-                                            ? "controlcore.panel.mods.confirm_on"
-                                            : "controlcore.panel.mods.confirm_off",
-                                    "name",
-                                    mod.name(),
-                                    "mods",
-                                    names)
-                            + " "
-                            + tr.t(
-                                    "controlcore.mods.confirm_command",
-                                    "command",
-                                    enabled ? "cc-mod-on" : "cc-mod-off",
-                                    "mod",
-                                    mod.id()))));
+        if (!all) {
+            String would = others.isEmpty()
+                    ? tr.t(enabled ? "controlcore.mods.check_on" : "controlcore.mods.check_off", "name", mod.name())
+                    : tr.t(
+                            enabled ? "controlcore.mods.check_on_also" : "controlcore.mods.check_off_also",
+                            "name",
+                            mod.name(),
+                            "mods",
+                            names);
+            return Result.success(Reply.of(would + " "
+                    + tr.t(
+                            "controlcore.mods.confirm_command",
+                            "command",
+                            enabled ? "cc-mod-on" : "cc-mod-off",
+                            "mod",
+                            mod.id())));
         }
         return view.setEnabled(mod.id(), enabled)
                 .map(changed -> Reply.of(

@@ -7,6 +7,12 @@ public final class CommonErrors {
 
     private CommonErrors() {}
 
+    public static Error badChoice(String code, String choices) {
+        return Error.validation(
+                code,
+                Text.key("controlcore.errors.bad_choice", "Use {choices}.").with("choices", choices));
+    }
+
     public static Error notSaved() {
         return Error.failure(
                 "Storage.NotSaved",

@@ -15,6 +15,8 @@ public interface ModsView {
 
     Result<Entry> setEnabled(String modId, boolean enabled);
 
+    Result<List<Entry>> plan(String modId, boolean enabled);
+
     List<Entry> alsoChanged(String modId, boolean enabled);
 
     List<ModCatalog.ConfigFile> configFiles(String modId);

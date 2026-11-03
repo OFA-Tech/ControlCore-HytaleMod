@@ -154,6 +154,33 @@ public final class ModsEditor {
 
         @Override
         public Result<Entry> setEnabled(String modId, boolean enabled) {
+            Result<List<Entry>> planned = plan(modId, enabled);
+            if (planned.isFailure()) {
+                return Result.failure(planned.error());
+            }
+            Entry entry = list().stream()
+                    .filter(candidate -> candidate.mod().id().equalsIgnoreCase(modId))
+                    .findFirst()
+                    .orElseThrow();
+            for (Entry other : planned.value()) {
+                Result<ModInfo> changed = change(other, enabled);
+                if (changed.isFailure()) {
+                    return Result.failure(changed.error());
+                }
+            }
+            return change(entry, enabled)
+                    .map(changed -> new Entry(
+                            changed,
+                            entry.namespace(),
+                            entry.hasServerSettings(),
+                            entry.hasPreferences(),
+                            entry.hasKeys(),
+                            true,
+                            entry.neededBy()));
+        }
+
+        @Override
+        public Result<List<Entry>> plan(String modId, boolean enabled) {
             Optional<Entry> entry = list().stream()
                     .filter(candidate -> candidate.mod().id().equalsIgnoreCase(modId))
                     .findFirst();
@@ -184,21 +211,7 @@ public final class ModsEditor {
                                             other.mod().name())));
                 }
             }
-            for (Entry other : others) {
-                Result<ModInfo> changed = change(other, enabled);
-                if (changed.isFailure()) {
-                    return Result.failure(changed.error());
-                }
-            }
-            return change(entry.get(), enabled)
-                    .map(changed -> new Entry(
-                            changed,
-                            entry.get().namespace(),
-                            entry.get().hasServerSettings(),
-                            entry.get().hasPreferences(),
-                            entry.get().hasKeys(),
-                            true,
-                            entry.get().neededBy()));
+            return Result.success(others);
         }
 
         private Result<ModInfo> change(Entry entry, boolean enabled) {

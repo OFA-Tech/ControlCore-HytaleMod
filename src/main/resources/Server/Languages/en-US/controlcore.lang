@@ -1170,7 +1170,7 @@ profiles.status.matches_yours = Active profile: {name}. What you can restore sti
 panel.snapshots.will_keep = {count} with keys, permissions or mods stay (admins only).
 ui.keyCapture.notInLists = {key} isn't in the key lists: the server can't hear it yet. Press another key (Q, E, R, F, O, 1-9...; for mouse buttons use "From the game"), or turn on "Show every keyboard key in key lists". Esc cancels.
 ui.keyCapture.hintHeard = Press the key you want, with Ctrl, Alt or Shift if you like. Only keys the server can hear are accepted. Esc cancels; it also closes by itself after 5 minutes.
-errors.players.bad_choice = Use {choices}.
+errors.bad_choice = Use {choices}.
 players.whitelist_list.none = Nobody is on the whitelist.
 players.whitelist_list.header = Whitelisted players ({count}):
 players.whitelist_list.line = - {player} ({id})
@@ -1245,3 +1245,7 @@ players.list.header = Players, {filter} ({count}):
 players.list.line = - {player} ({id}){badges}: {status}
 players.list.more = ... and {count} more. Narrow it down with --search=.
 errors.storage.not_saved = The change was not saved because its file could not be written. The server log has the details.
+mods.check_on = Nothing changed yet: {name} would turn on after the next restart, and no other mod changes.
+mods.check_off = Nothing changed yet: {name} would turn off after the next restart, and no other mod changes.
+mods.check_on_also = Nothing changed yet: {name} needs {mods}, which are off, so they would all turn on after the next restart.
+mods.check_off_also = Nothing changed yet: turning off {name} would also turn off {mods}, because they need it.

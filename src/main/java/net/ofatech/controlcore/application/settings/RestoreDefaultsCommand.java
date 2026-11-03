@@ -7,6 +7,7 @@ import java.util.function.Predicate;
 import net.ofatech.controlcore.application.component.ModCommand;
 import net.ofatech.controlcore.application.serverconfig.ListConfigsCommand;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
+import net.ofatech.controlcore.application.text.CommonErrors;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
@@ -85,10 +86,7 @@ public final class RestoreDefaultsCommand implements ModCommand {
         }
         String step = context.string("step").strip().toLowerCase(Locale.ROOT);
         if (!step.equals("check") && !step.equals("confirm")) {
-            return Result.failure(Error.validation(
-                    "Defaults.Confirm",
-                    Text.key("controlcore.errors.players.bad_choice", "Use {choices}.")
-                            .with("choices", "check, confirm")));
+            return Result.failure(CommonErrors.badChoice("Defaults.Confirm", "check, confirm"));
         }
         Predicate<String> shown = defaults.matching(
                 section, world, context.arg("search").map(Object::toString).orElse(""), who, tr);

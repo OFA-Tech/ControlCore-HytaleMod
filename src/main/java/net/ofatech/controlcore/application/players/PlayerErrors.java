@@ -1,6 +1,7 @@
 package net.ofatech.controlcore.application.players;
 
 import net.ofatech.controlcore.application.bans.BansService;
+import net.ofatech.controlcore.application.text.CommonErrors;
 import net.ofatech.controlcore.application.text.PlainText;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.result.Error;
@@ -102,10 +103,7 @@ public final class PlayerErrors {
     }
 
     static Error badChoice(String choices) {
-        return Error.validation(
-                "Players.BadChoice",
-                Text.key("controlcore.errors.players.bad_choice", "Use {choices}.")
-                        .with("choices", choices));
+        return CommonErrors.badChoice("Players.BadChoice", choices);
     }
 
     private static String shown(String input) {

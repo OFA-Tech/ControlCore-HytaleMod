@@ -1170,7 +1170,7 @@ profiles.status.matches_yours = Perfil activo: {name}. Lo que puedes restaurar s
 panel.snapshots.will_keep = Quedan {count} con teclas, permisos o mods (solo admins).
 ui.keyCapture.notInLists = {key} no está en las listas de teclas: el servidor aún no la oye. Pulsa otra (Q, E, R, F, O, 1-9...; para botones del ratón usa "Desde el juego") o activa "Mostrar todas las teclas en las listas". Esc cancela.
 ui.keyCapture.hintHeard = Pulsa la tecla que quieras, con Ctrl, Alt o Shift si quieres. Solo valen teclas que el servidor oye. Esc cancela; también se cierra sola tras 5 minutos.
-errors.players.bad_choice = Usa {choices}.
+errors.bad_choice = Usa {choices}.
 players.whitelist_list.none = No hay nadie en la lista blanca.
 players.whitelist_list.header = Jugadores en la lista blanca ({count}):
 players.whitelist_list.line = - {player} ({id})
@@ -1245,3 +1245,7 @@ players.list.header = Jugadores, {filter} ({count}):
 players.list.line = - {player} ({id}){badges}: {status}
 players.list.more = ... y {count} más. Acota con --search=.
 errors.storage.not_saved = El cambio no se guardó porque no se pudo escribir su archivo. El registro del servidor tiene los detalles.
+mods.check_on = Nada ha cambiado aún: {name} se activaría tras el próximo reinicio, y ningún otro mod cambia.
+mods.check_off = Nada ha cambiado aún: {name} se desactivaría tras el próximo reinicio, y ningún otro mod cambia.
+mods.check_on_also = Nada ha cambiado aún: {name} necesita {mods}, que están desactivados, así que todos se activarían tras el próximo reinicio.
+mods.check_off_also = Nada ha cambiado aún: desactivar {name} también desactivaría {mods}, porque lo necesitan.

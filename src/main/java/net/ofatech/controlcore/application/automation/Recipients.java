@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
+import net.ofatech.controlcore.application.text.CommonErrors;
 import net.ofatech.controlcore.application.text.PlainText;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
@@ -162,10 +163,7 @@ public final class Recipients {
                 yield warn(who, notice.target(), seconds(notice.seconds()), style, notice.text(), tr);
             }
             default ->
-                Result.failure(Error.validation(
-                        "Notify.BadKind",
-                        Text.key("controlcore.errors.players.bad_choice", "Use {choices}.")
-                                .with("choices", String.join(", ", TOAST, WARNING, CLEAR))));
+                Result.failure(CommonErrors.badChoice("Notify.BadKind", String.join(", ", TOAST, WARNING, CLEAR)));
         };
     }
 
@@ -223,10 +221,7 @@ public final class Recipients {
     }
 
     private static Error badStyle() {
-        return Error.validation(
-                "Notify.BadStyle",
-                Text.key("controlcore.errors.players.bad_choice", "Use {choices}.")
-                        .with("choices", "info, success, warning, error"));
+        return CommonErrors.badChoice("Notify.BadStyle", "info, success, warning, error");
     }
 
     private static int seconds(String text) {
