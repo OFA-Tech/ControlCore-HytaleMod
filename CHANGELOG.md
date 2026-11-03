@@ -28,7 +28,7 @@
   `setGameActionMode`); `controlPanel().openForMod(player, modId)`; `notifications()` gained `toastAdmins`,
   `warningAdmins` and `clearWarningAdmins`. Each section acts with full rights by default
   (History: "a mod"), or with exactly a player's panel rights through `actingFor(playerId)` (History: that player).
-  `players().inventory` and `players().recentChat` return data (`Inventory` with `InventoryItem(itemId, amount)`,
+  `players().inventory` and `players().recentChat` return data (`Inventory(readable, items)` with `InventoryItem(section, slot, itemId, amount)`,
   `ChatLine(time, player, playerName, text)`), not translated panel lines.
   See the wiki page Server management API.
 - `/cc-profile-preview <profile>`: what switching to a profile, built-ins included, would change (the panel's

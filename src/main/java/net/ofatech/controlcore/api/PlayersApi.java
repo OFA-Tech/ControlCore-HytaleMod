@@ -65,7 +65,7 @@ public interface PlayersApi {
      * Reads what an online player carries, as on their details page.
      *
      * @param player the player's name or UUID
-     * @return the inventory (empty and not online when the player is offline), or an error such as
+     * @return the inventory (empty and not readable when the player is offline), or an error such as
      *     {@code Players.Unknown}, {@code Players.Forbidden} or {@code Players.ProtectedAdmin}
      */
     CompletableFuture<Result<Inventory>> inventory(String player);
@@ -333,17 +333,17 @@ public interface PlayersApi {
     /**
      * What a player carries.
      *
-     * @param online whether the player is online and their inventory could be read; {@code false} means
-     *     {@code items} is empty because it is unknown
-     * @param items every stack they carry
+     * @param readable whether the inventory was actually read; {@code false} (for example the player is offline)
+     *     means {@code items} is empty because it is unknown
+     * @param items every stack they carry, slot by slot
      */
-    record Inventory(boolean online, List<InventoryItem> items) {
+    record Inventory(boolean readable, List<InventoryItem> items) {
 
         /**
          * Copies the list so the inventory can't change.
          *
-         * @param online whether the player is online and their inventory could be read
-         * @param items every stack they carry
+         * @param readable whether the inventory was actually read
+         * @param items every stack they carry, slot by slot
          */
         public Inventory {
             items = List.copyOf(items);
@@ -351,12 +351,15 @@ public interface PlayersApi {
     }
 
     /**
-     * One stack in an inventory.
+     * One stack in one inventory slot.
      *
+     * @param section the part of the inventory: {@code hotbar}, {@code storage}, {@code armor}, {@code utility},
+     *     {@code tools} or {@code backpack}
+     * @param slot the slot's index in that section, from 0
      * @param itemId the item's id, for example {@code Weapon_Sword_Iron}
      * @param amount how many
      */
-    record InventoryItem(String itemId, int amount) {}
+    record InventoryItem(String section, int slot, String itemId, int amount) {}
 
     /**
      * One chat message.

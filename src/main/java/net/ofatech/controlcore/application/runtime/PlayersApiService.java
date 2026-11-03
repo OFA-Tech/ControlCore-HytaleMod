@@ -8,7 +8,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import net.ofatech.controlcore.api.PlayersApi;
 import net.ofatech.controlcore.application.players.PlayerDirectory;
-import net.ofatech.controlcore.application.players.PlayerErrors;
 import net.ofatech.controlcore.application.players.PlayersService;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.players.PlayerAction;
@@ -78,14 +77,11 @@ public final class PlayersApiService implements PlayersApi {
 
     @Override
     public CompletableFuture<Result<Inventory>> inventory(String player) {
-        if (!view().rights().inventory()) {
-            return CompletableFuture.completedFuture(Result.failure(PlayerErrors.forbidden()));
-        }
         return onPlayer(player, PlayersView::inventory)
                 .thenApply(result -> result.map(inventory -> new Inventory(
-                        inventory.online(),
+                        inventory.readable(),
                         inventory.items().stream()
-                                .map(item -> new InventoryItem(item.id(), item.quantity()))
+                                .map(item -> new InventoryItem(item.section(), item.slot(), item.id(), item.quantity()))
                                 .toList())));
     }
 

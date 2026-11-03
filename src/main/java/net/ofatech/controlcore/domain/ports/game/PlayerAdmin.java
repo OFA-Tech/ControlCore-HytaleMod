@@ -11,7 +11,7 @@ public interface PlayerAdmin {
     String ADVENTURE = "adventure";
     String CREATIVE = "creative";
 
-    record Item(String id, int quantity) {}
+    record Item(String section, int slot, String id, int quantity) {}
 
     record Spot(String world, double x, double y, double z) {}
 

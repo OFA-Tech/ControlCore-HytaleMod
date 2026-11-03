@@ -95,7 +95,7 @@ public interface PlayersView {
         }
     }
 
-    record Inventory(boolean online, List<PlayerAdmin.Item> items) {
+    record Inventory(boolean readable, List<PlayerAdmin.Item> items) {
 
         public Inventory {
             items = List.copyOf(items);

@@ -335,14 +335,23 @@ class ServerApiRuntimeTest extends RuntimeTestBase {
     @Test
     void inventoryAndChatAreDataNotPanelLines() {
         platform.admin.inventories.put(
-                guest.id(), List.of(new PlayerAdmin.Item("Weapon_Sword_Iron", 1), new PlayerAdmin.Item("Rock", 32)));
+                guest.id(),
+                List.of(
+                        new PlayerAdmin.Item("hotbar", 0, "Weapon_Sword_Iron", 1),
+                        new PlayerAdmin.Item("storage", 4, "Rock", 32),
+                        new PlayerAdmin.Item("storage", 5, "Rock", 8)));
         platform.chat.say(guest.id(), "Guest", "hello there");
 
         PlayersApi.Inventory inventory = ok(api.players().inventory("Guest").join());
-        assertThat(inventory.online()).isTrue();
+        assertThat(inventory.readable()).isTrue();
         assertThat(inventory.items())
                 .containsExactly(
-                        new PlayersApi.InventoryItem("Weapon_Sword_Iron", 1), new PlayersApi.InventoryItem("Rock", 32));
+                        new PlayersApi.InventoryItem("hotbar", 0, "Weapon_Sword_Iron", 1),
+                        new PlayersApi.InventoryItem("storage", 4, "Rock", 32),
+                        new PlayersApi.InventoryItem("storage", 5, "Rock", 8));
+        assertThat(ok(api.players().details("Guest").join()).lines())
+                .as("the details page adds up stacks of one item")
+                .anyMatch(line -> line.text().contains("Rock") && line.text().contains("40"));
         assertThat(api.players().recentChat()).singleElement().satisfies(line -> {
             assertThat(line.player()).isEqualTo(guest.id());
             assertThat(line.playerName()).isEqualTo("Guest");

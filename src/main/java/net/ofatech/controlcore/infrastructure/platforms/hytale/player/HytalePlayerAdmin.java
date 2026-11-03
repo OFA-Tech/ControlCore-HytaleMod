@@ -16,11 +16,12 @@ import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.Universe;
 import com.hypixel.hytale.server.core.universe.world.World;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -122,16 +123,24 @@ public final class HytalePlayerAdmin implements PlayerAdmin {
     public CompletableFuture<Optional<List<Item>>> inventory(PlayerId player) {
         CompletableFuture<Optional<List<Item>>> done = new CompletableFuture<>();
         onWorldThread(player, "read the inventory of", done, Optional.empty(), (ref, store) -> {
-            Map<String, Integer> counts = new TreeMap<>();
-            InventoryComponent.getCombined(store, ref, InventoryComponent.EVERYTHING)
-                    .forEach((slot, stack) -> {
+            List<Item> items = new ArrayList<>();
+            Map<String, InventoryComponent> sections = new LinkedHashMap<>();
+            sections.put("hotbar", store.getComponent(ref, InventoryComponent.Hotbar.getComponentType()));
+            sections.put("storage", store.getComponent(ref, InventoryComponent.Storage.getComponentType()));
+            sections.put("armor", store.getComponent(ref, InventoryComponent.Armor.getComponentType()));
+            sections.put("utility", store.getComponent(ref, InventoryComponent.Utility.getComponentType()));
+            sections.put("tools", store.getComponent(ref, InventoryComponent.Tool.getComponentType()));
+            sections.put("backpack", store.getComponent(ref, InventoryComponent.Backpack.getComponentType()));
+            sections.forEach((section, component) -> {
+                if (component != null && component.getInventory() != null) {
+                    component.getInventory().forEach((slot, stack) -> {
                         if (stack != null && !stack.isEmpty() && stack.getItemId() != null) {
-                            counts.merge(stack.getItemId(), stack.getQuantity(), Integer::sum);
+                            items.add(new Item(section, slot, stack.getItemId(), stack.getQuantity()));
                         }
                     });
-            done.complete(Optional.of(counts.entrySet().stream()
-                    .map(entry -> new Item(entry.getKey(), entry.getValue()))
-                    .toList()));
+                }
+            });
+            done.complete(Optional.of(List.copyOf(items)));
         });
         return done;
     }

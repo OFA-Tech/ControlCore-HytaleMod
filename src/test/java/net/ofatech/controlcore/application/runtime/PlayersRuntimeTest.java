@@ -264,7 +264,7 @@ class PlayersRuntimeTest {
             platform.admin.inventories.put(
                     builder.id(),
                     java.util.List.of(
-                            new net.ofatech.controlcore.domain.ports.game.PlayerAdmin.Item("Weapon_Sword_Iron", 1)));
+                            new net.ofatech.controlcore.domain.ports.game.PlayerAdmin.Item("hotbar", 0, "Weapon_Sword_Iron", 1)));
             PlayersView view = viewFor(admin);
 
             var details = view.details(builder.id().value().toString()).join().value();
@@ -1216,8 +1216,8 @@ class PlayersRuntimeTest {
             PlayerInfo moderator = platform.players.join("Moderator");
             platform.deniedNodesFor.put(moderator.id(), List.of("settings", "admin"));
             platform.deniedNodesFor.put(builder.id(), List.of("settings", "admin"));
-            platform.admin.inventories.put(admin.id(), List.of(new Item("Admin_Secret_Blade", 1)));
-            platform.admin.inventories.put(builder.id(), List.of(new Item("Weapon_Sword_Iron", 1)));
+            platform.admin.inventories.put(admin.id(), List.of(new Item("hotbar", 0, "Admin_Secret_Blade", 1)));
+            platform.admin.inventories.put(builder.id(), List.of(new Item("hotbar", 0, "Weapon_Sword_Iron", 1)));
             PlayersView view = viewFor(moderator);
             assertThat(view.rights().inventory()).isTrue();
 
@@ -1234,7 +1234,7 @@ class PlayersRuntimeTest {
             start();
             PlayerInfo admin = platform.players.join("Admin");
             PlayerInfo other = platform.players.join("OtherAdmin");
-            platform.admin.inventories.put(other.id(), List.of(new Item("Admin_Secret_Blade", 1)));
+            platform.admin.inventories.put(other.id(), List.of(new Item("hotbar", 0, "Admin_Secret_Blade", 1)));
             PlayersView view = viewFor(admin);
 
             assertThat(texts(view.details(other.id().value().toString()).join().value()))
@@ -1249,7 +1249,7 @@ class PlayersRuntimeTest {
             PlayerInfo banner = platform.players.join("Banner");
             platform.deniedNodesFor.put(
                     banner.id(), List.of("settings", "admin", "players", "players.inventory", "players.kick"));
-            platform.admin.inventories.put(builder.id(), List.of(new Item("Weapon_Sword_Iron", 1)));
+            platform.admin.inventories.put(builder.id(), List.of(new Item("hotbar", 0, "Weapon_Sword_Iron", 1)));
             platform.chat.say(builder.id(), "Builder", "private-ish words");
             PlayersView view = viewFor(banner);
 

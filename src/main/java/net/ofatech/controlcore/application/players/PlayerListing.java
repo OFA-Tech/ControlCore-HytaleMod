@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import net.ofatech.controlcore.application.automation.SessionService;
 import net.ofatech.controlcore.application.bans.BansService;
@@ -227,10 +228,10 @@ public final class PlayerListing {
             } else if (items.get().isEmpty()) {
                 all.add(new Line(tr.t("controlcore.players.details.inventory_empty"), false));
             } else {
-                items.get()
-                        .forEach(item -> all.add(new Line(
-                                tr.t("controlcore.players.details.item", "item", item.id(), "count", item.quantity()),
-                                false)));
+                Map<String, Integer> counts = new TreeMap<>();
+                items.get().forEach(item -> counts.merge(item.id(), item.quantity(), Integer::sum));
+                counts.forEach((item, count) -> all.add(
+                        new Line(tr.t("controlcore.players.details.item", "item", item, "count", count), false)));
             }
             return Result.success(new Details(name, all));
         });
