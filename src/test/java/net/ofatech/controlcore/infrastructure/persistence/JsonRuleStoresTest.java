@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBind;
+import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingPermission;
 import net.ofatech.controlcore.fakes.RecordingLog;
 import org.junit.jupiter.api.Test;
@@ -70,6 +71,34 @@ class JsonRuleStoresTest {
         store.saveAll(List.of());
         assertThat(log.contains("Could not read automation rules")).isTrue();
         assertMovedAside("AutomationRules.json", "[ broken");
+    }
+
+    @Test
+    void aFileWithBrokenTextIsMovedAside() throws IOException {
+        Path file = folder.resolve("SettingValues.json");
+        Files.write(file, new byte[] {'{', '"', (byte) 0xC3, (byte) 0x28, '"', '}'});
+
+        var store = new JsonSettingStore(file, log);
+
+        assertThat(store.all()).isEmpty();
+        try (var files = Files.list(folder)) {
+            assertThat(files.filter(p -> p.getFileName().toString().startsWith("SettingValues.json.broken-")))
+                    .hasSize(1);
+        }
+    }
+
+    @Test
+    void aFileThatCannotBeOpenedIsNeverWrittenOver() {
+        Path file = folder.resolve("SettingValues.json");
+        assertThat(file.toFile().mkdir()).isTrue();
+
+        var store = new JsonSettingStore(file, log);
+        store.put(SettingId.of("homes:max"), "5");
+        store.flush();
+
+        assertThat(file).isDirectory();
+        assertThat(folder.toFile().list()).containsExactly("SettingValues.json");
+        assertThat(log.contains("left untouched")).isTrue();
     }
 
     private void assertMovedAside(String name, String original) throws IOException {

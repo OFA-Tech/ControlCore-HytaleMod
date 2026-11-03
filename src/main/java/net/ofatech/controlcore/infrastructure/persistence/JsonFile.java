@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Type;
+import java.nio.charset.CharacterCodingException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -21,6 +22,7 @@ final class JsonFile {
     private final Path file;
     private final Log log;
     private final String contents;
+    private volatile boolean readOnly;
 
     JsonFile(Path file, Log log, String contents) {
         this.file = file;
@@ -38,8 +40,15 @@ final class JsonFile {
         }
         try (Reader reader = Files.newBufferedReader(file)) {
             return Optional.ofNullable(GSON.fromJson(reader, type));
-        } catch (IOException | JsonParseException e) {
+        } catch (CharacterCodingException | JsonParseException e) {
             log.error("Could not read " + contents + " from " + file + "; " + moveAside(), e);
+            return Optional.empty();
+        } catch (IOException e) {
+            readOnly = true;
+            log.error(
+                    "Could not open " + contents + " in " + file + "; it is left untouched and changes to it are not"
+                            + " saved until the server restarts",
+                    e);
             return Optional.empty();
         }
     }
@@ -55,6 +64,9 @@ final class JsonFile {
     }
 
     boolean write(Object value, Type type) {
+        if (readOnly) {
+            return false;
+        }
         try {
             Files.createDirectories(file.toAbsolutePath().getParent());
             Path temporary = file.resolveSibling(file.getFileName() + ".tmp");

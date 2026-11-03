@@ -38,7 +38,8 @@
 - The panel's **Restore defaults** button now runs through the same service as `/cc-restore-defaults`.
 
 ### Fixed
-- An unreadable data file (for example a typo in `SettingValues.json`) is now moved aside as `<file>.broken-<time>` instead of being overwritten with empty data on the next save.
+- An unreadable data file (for example a typo in `SettingValues.json`) is now moved aside as `<file>.broken-<time>` instead of being overwritten with empty data on the next save. A data file that can't be opened at all (locked, no
+  access) is left untouched and nothing is saved over it until the next start.
 - Someone who loses admin while the panel is open can no longer change permission rules or turn mods on or off from it.
 - Snapshot and profile restores by non-admins skip settings they may not change, and the preview hides settings they may not see.
 - Two admins saving automation rules at the same time no longer lose one of them.
