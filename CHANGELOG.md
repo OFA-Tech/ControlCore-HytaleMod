@@ -20,6 +20,14 @@
   player, the same as `/cc-toast`, `/cc-warn` and `/cc-warn-clear`.
 - **Hide the whole HUD** at the top of Player Prefs -> ControlCore: HUD, showing whether your HUD is hidden now (same
   as `/cc-hud`).
+- **API 2.4.0** (additive; mods built for 2.0.0 and later keep working): mods can do everything the panel and the
+  commands do. New sections `permissions()`, `mods()`, `history()`, `snapshots()`, `profiles()`, `health()`,
+  `rules()`, `players()` and `defaults()`; `settings()` also reads and writes `config.json` (`server:<key>`) and world
+  keys (`world:<world>.<key>`) and lists them with `serverConfigs()` and `worlds()`; `keymaps()` gained custom binds
+  (`customBinds`, `findCustom`, `addCustom`, `removeCustom`) and game action modes (`gameActionMode`,
+  `setGameActionMode`); `controlPanel().openForMod(player, modId)`. Each section acts with full rights by default
+  (History: "a mod"), or with exactly a player's panel rights through `actingFor(playerId)` (History: that player).
+  See the wiki page Server management API.
 
 ### Changed
 - The panel's **Restore defaults** button now runs through the same service as `/cc-restore-defaults`.

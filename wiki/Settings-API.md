@@ -85,6 +85,22 @@ sub.close();                          // stop listening
 - To react to every setting, use `settings.onAnyChange(listener)` or subscribe to `SettingChanged` on
   [the events bus](Panel-Events-And-Logos#events).
 
+### config.json and world keys (API 2.4.0)
+
+`read`, `write` and `reset` also take the server's `config.json` keys and every world's keys, as text, like
+`/cc-get` and `/cc-set`:
+
+```java
+SettingsApi settings = api.settings();
+settings.write(SettingId.of("server:motd"), Optional.empty(), "Welcome!");
+settings.reset(SettingId.of("world:default.pvp-enabled"), Optional.empty());
+List<SettingSnapshot> keys = settings.serverConfigs();   // every server: and world: key
+List<String> worlds = settings.worlds();
+```
+
+`settings.actingFor(playerId)` does the same with that player's rights: keys they may not see are unknown, keys they
+may only see are read-only, and History shows the player. See [Server management API](Server-Management-API).
+
 ## Permissions
 
 By default, server settings are for ControlCore admins and preferences are each player's own. You can set your own

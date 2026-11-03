@@ -21,5 +21,6 @@
 - [Key actions](Key-Actions-API)
 - [HUD elements](HUD-API)
 - [Automation API](Automation-API)
+- [Server management API](Server-Management-API)
 - [Translations](Translations-API)
 - [Panel, events, logos](Panel-Events-And-Logos)

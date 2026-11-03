@@ -4,7 +4,7 @@ Your mod can register **settings**, **key actions** and **HUD elements** with Co
 shows them in its panel (with search, permissions and translations), lets admins and players change them, and tells
 your mod when they change. You write no UI, no config files and no commands.
 
-Current API version: **2.3.0** (`ControlCoreApi.VERSION`), since ControlCore 0.19.0. Mods built for 2.0.0 and later keep working.
+Current API version: **2.4.0** (`ControlCoreApi.VERSION`), since ControlCore 0.20.0. Mods built for 2.0.0 and later keep working. 2.4.0 adds the [server management API](Server-Management-API): everything the panel and commands do.
 
 ## 1. Add the dependency
 
