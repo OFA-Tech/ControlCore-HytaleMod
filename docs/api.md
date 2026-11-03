@@ -299,7 +299,9 @@ Everything the panel and the commands do, for other mods: `permissions()`, `mods
 (`server:<key>`, `world:<world>.<key>`, `serverConfigs()`, `worlds()`), custom binds and game action modes in
 `keymaps()`, `controlPanel().openForMod(player, modId)`, and toasts and warning bars for the online admins in
 `notifications()` (`toastAdmins`, `warningAdmins`, `clearWarningAdmins`). Values are API records (`PlayersApi.Player`,
-`ModsApi.Mod`, `HistoryApi.Change`, ...), never Hytale types.
+`ModsApi.Mod`, `HistoryApi.Change`, ...), never Hytale types; `players().inventory` gives `PlayersApi.Inventory`
+(online flag and `InventoryItem(itemId, amount)` stacks) and `players().recentChat` gives
+`PlayersApi.ChatLine(time, player, playerName, text)`, not translated panel lines.
 
 Each section has two modes. Called directly it acts like the console with full rights, recorded in History as made by
 a mod. `section.actingFor(playerId)` returns the same interface restricted to exactly what that player may do in the

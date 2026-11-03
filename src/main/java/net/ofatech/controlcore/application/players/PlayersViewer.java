@@ -224,6 +224,26 @@ final class PlayersViewer implements PlayersView {
     }
 
     @Override
+    public CompletableFuture<Result<Inventory>> inventory(String id) {
+        Optional<PlayerId> found = PlayerDirectory.parse(id);
+        if (found.isEmpty()) {
+            return PlayerDirectory.completed(Result.failure(PlayerErrors.unknown(PlayerDirectory.clean(id))));
+        }
+        if (!guard.mayInspect(who) || !guard.may(who, PlayerGuard.INVENTORY)) {
+            return PlayerDirectory.completed(Result.failure(PlayerErrors.forbidden()));
+        }
+        if (!guard.mayInspectInventoryOf(who, found.get())) {
+            return PlayerDirectory.completed(Result.failure(PlayerErrors.protectedAdmin(listing.nameOf(found.get()))));
+        }
+        return listing.inventory(found.get());
+    }
+
+    @Override
+    public List<ChatLine> recentChat() {
+        return guard.mayInspect(who) ? listing.recentChat() : List.of();
+    }
+
+    @Override
     public Subscription onChange(Runnable listener) {
         return changes.onChange(listener);
     }

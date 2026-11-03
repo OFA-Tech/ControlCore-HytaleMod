@@ -1,5 +1,6 @@
 package net.ofatech.controlcore.api;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -61,20 +62,20 @@ public interface PlayersApi {
     CompletableFuture<Result<Details>> details(String player);
 
     /**
-     * Reads a player's inventory, as on their details page.
+     * Reads what an online player carries, as on their details page.
      *
      * @param player the player's name or UUID
-     * @return one line per slot, or an error such as {@code Players.Unknown}, {@code Players.Forbidden} or
-     *     {@code Players.ProtectedAdmin}
+     * @return the inventory (empty and not online when the player is offline), or an error such as
+     *     {@code Players.Unknown}, {@code Players.Forbidden} or {@code Players.ProtectedAdmin}
      */
-    CompletableFuture<Result<List<String>>> inventory(String player);
+    CompletableFuture<Result<Inventory>> inventory(String player);
 
     /**
      * Reads the recent chat, as the Players page shows it.
      *
-     * @return the latest chat lines, oldest first; empty if this API may not see players
+     * @return the latest chat messages, oldest first; empty if this API may not see players
      */
-    List<String> recentChat();
+    List<ChatLine> recentChat();
 
     /**
      * Kicks an online player.
@@ -328,4 +329,42 @@ public interface PlayersApi {
      * @param heading whether it starts a part of the page, for example "Inventory"
      */
     record Line(String text, boolean heading) {}
+
+    /**
+     * What a player carries.
+     *
+     * @param online whether the player is online and their inventory could be read; {@code false} means
+     *     {@code items} is empty because it is unknown
+     * @param items every stack they carry
+     */
+    record Inventory(boolean online, List<InventoryItem> items) {
+
+        /**
+         * Copies the list so the inventory can't change.
+         *
+         * @param online whether the player is online and their inventory could be read
+         * @param items every stack they carry
+         */
+        public Inventory {
+            items = List.copyOf(items);
+        }
+    }
+
+    /**
+     * One stack in an inventory.
+     *
+     * @param itemId the item's id, for example {@code Weapon_Sword_Iron}
+     * @param amount how many
+     */
+    record InventoryItem(String itemId, int amount) {}
+
+    /**
+     * One chat message.
+     *
+     * @param time when it was sent
+     * @param player who sent it
+     * @param playerName their name when they sent it
+     * @param text what they wrote, on one line
+     */
+    record ChatLine(Instant time, PlayerId player, String playerName, String text) {}
 }

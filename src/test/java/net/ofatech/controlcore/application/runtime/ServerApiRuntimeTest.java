@@ -21,6 +21,7 @@ import net.ofatech.controlcore.domain.model.serverconfig.ConfigEntry;
 import net.ofatech.controlcore.domain.model.serverconfig.ConfigValueKind;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
+import net.ofatech.controlcore.domain.ports.game.PlayerAdmin;
 import net.ofatech.controlcore.domain.ports.mods.ModCatalog;
 import net.ofatech.controlcore.domain.result.Result;
 import org.junit.jupiter.api.BeforeEach;
@@ -317,6 +318,28 @@ class ServerApiRuntimeTest extends RuntimeTestBase {
         ok(api.players().actingFor(admin.id()).unfreeze("Guest").join());
         ok(api.players().actingFor(admin.id()).teleportTo("Guest").join());
         assertThat(code(api.players().details("Nobody").join())).isEqualTo("Players.Unknown");
+    }
+
+    @Test
+    void inventoryAndChatAreDataNotPanelLines() {
+        platform.admin.inventories.put(
+                guest.id(), List.of(new PlayerAdmin.Item("Weapon_Sword_Iron", 1), new PlayerAdmin.Item("Rock", 32)));
+        platform.chat.say(guest.id(), "Guest", "hello there");
+
+        PlayersApi.Inventory inventory = ok(api.players().inventory("Guest").join());
+        assertThat(inventory.online()).isTrue();
+        assertThat(inventory.items())
+                .containsExactly(
+                        new PlayersApi.InventoryItem("Weapon_Sword_Iron", 1), new PlayersApi.InventoryItem("Rock", 32));
+        assertThat(api.players().recentChat()).singleElement().satisfies(line -> {
+            assertThat(line.player()).isEqualTo(guest.id());
+            assertThat(line.playerName()).isEqualTo("Guest");
+            assertThat(line.text()).isEqualTo("hello there");
+        });
+
+        assertThat(code(api.players().actingFor(guest.id()).inventory("Admin").join()))
+                .isEqualTo("Players.Forbidden");
+        assertThat(api.players().actingFor(guest.id()).recentChat()).isEmpty();
     }
 
     @Test

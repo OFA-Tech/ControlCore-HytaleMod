@@ -7,11 +7,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import net.ofatech.controlcore.api.PlayersApi;
-import net.ofatech.controlcore.application.players.PlayerCommands;
 import net.ofatech.controlcore.application.players.PlayerDirectory;
 import net.ofatech.controlcore.application.players.PlayerErrors;
 import net.ofatech.controlcore.application.players.PlayersService;
-import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.players.PlayerAction;
 import net.ofatech.controlcore.domain.model.players.PlayersView;
@@ -21,24 +19,22 @@ import net.ofatech.controlcore.domain.result.Result;
 public final class PlayersApiService implements PlayersApi {
 
     private final PlayersService players;
-    private final Texts texts;
     private final PlayerDirectory directory;
     private final ApiActor actor;
 
-    public PlayersApiService(PlayersService players, Texts texts, PlayerDirectory directory) {
-        this(players, texts, directory, ApiActor.MOD);
+    public PlayersApiService(PlayersService players, PlayerDirectory directory) {
+        this(players, directory, ApiActor.MOD);
     }
 
-    private PlayersApiService(PlayersService players, Texts texts, PlayerDirectory directory, ApiActor actor) {
+    private PlayersApiService(PlayersService players, PlayerDirectory directory, ApiActor actor) {
         this.players = players;
-        this.texts = texts;
         this.directory = directory;
         this.actor = actor;
     }
 
     @Override
     public PlayersApi actingFor(PlayerId player) {
-        return new PlayersApiService(players, texts, directory, ApiActor.of(player, directory));
+        return new PlayersApiService(players, directory, ApiActor.of(player, directory));
     }
 
     @Override
@@ -81,26 +77,23 @@ public final class PlayersApiService implements PlayersApi {
     }
 
     @Override
-    public CompletableFuture<Result<List<String>>> inventory(String player) {
+    public CompletableFuture<Result<Inventory>> inventory(String player) {
         if (!view().rights().inventory()) {
             return CompletableFuture.completedFuture(Result.failure(PlayerErrors.forbidden()));
         }
-        return onPlayer(player, PlayersView::details)
-                .thenApply(result -> result.flatMap(details -> {
-                    int at = PlayerCommands.inventoryAt(details, texts.forPlayer(actor.who()));
-                    if (at < 0) {
-                        return Result.failure(PlayerErrors.protectedAdmin(details.title()));
-                    }
-                    return Result.success(
-                            details.lines().subList(at + 1, details.lines().size()).stream()
-                                    .map(PlayersView.Line::text)
-                                    .toList());
-                }));
+        return onPlayer(player, PlayersView::inventory)
+                .thenApply(result -> result.map(inventory -> new Inventory(
+                        inventory.online(),
+                        inventory.items().stream()
+                                .map(item -> new InventoryItem(item.id(), item.quantity()))
+                                .toList())));
     }
 
     @Override
-    public List<String> recentChat() {
-        return view().chat().lines().stream().map(PlayersView.Line::text).toList();
+    public List<ChatLine> recentChat() {
+        return view().recentChat().stream()
+                .map(line -> new ChatLine(line.at(), line.player(), line.name(), line.text()))
+                .toList();
     }
 
     @Override

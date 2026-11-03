@@ -1,10 +1,13 @@
 package net.ofatech.controlcore.domain.model.players;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import net.ofatech.controlcore.domain.event.Subscription;
+import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.ports.game.PlayerAdmin;
 import net.ofatech.controlcore.domain.result.Result;
 
 public interface PlayersView {
@@ -92,6 +95,15 @@ public interface PlayersView {
         }
     }
 
+    record Inventory(boolean online, List<PlayerAdmin.Item> items) {
+
+        public Inventory {
+            items = List.copyOf(items);
+        }
+    }
+
+    record ChatLine(Instant at, PlayerId player, String name, String text) {}
+
     String viewer();
 
     Rights rights();
@@ -147,6 +159,10 @@ public interface PlayersView {
     CompletableFuture<Result<Details>> details(String id);
 
     Details chat();
+
+    CompletableFuture<Result<Inventory>> inventory(String id);
+
+    List<ChatLine> recentChat();
 
     Subscription onChange(Runnable listener);
 }
