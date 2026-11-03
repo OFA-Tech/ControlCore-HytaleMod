@@ -19,7 +19,7 @@ import net.ofatech.controlcore.domain.ports.game.KeyDetection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class KeymapsRightsRuntimeBanca5Test extends RuntimeTestBase {
+class KeymapsRightsRuntimeTest extends RuntimeTestBase {
 
     private static final SettingId HOME = SettingId.of("homes:home");
 
