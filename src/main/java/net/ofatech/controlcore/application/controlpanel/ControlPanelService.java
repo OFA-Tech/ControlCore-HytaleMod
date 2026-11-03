@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import net.ofatech.controlcore.api.ControlPanelApi;
-import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.automation.AutomationService;
 import net.ofatech.controlcore.application.diagnostics.DiagnosticsService;
 import net.ofatech.controlcore.application.history.HistoryEditor;
@@ -19,6 +18,7 @@ import net.ofatech.controlcore.application.settings.DefaultsService;
 import net.ofatech.controlcore.application.settings.PermissionsEditor;
 import net.ofatech.controlcore.application.settings.PermittedSettingsEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.application.snapshot.ProfileService;
 import net.ofatech.controlcore.application.snapshot.SnapshotService;
 import net.ofatech.controlcore.application.text.Texts;
@@ -45,7 +45,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final Players players;
     private final ServerConfiguration server;
     private final ControlPanelView view;
-    private final SettingsApi registry;
+    private final SettingsRegistry registry;
     private final ServerConfigEditor serverConfig;
     private final PlayersService playerAdmin;
     private final KeymapsEditor keymaps;
@@ -69,7 +69,7 @@ public final class ControlPanelService implements ControlPanelApi {
             Players players,
             ServerConfiguration server,
             ControlPanelView view,
-            SettingsApi registry,
+            SettingsRegistry registry,
             ServerConfigEditor serverConfig,
             PlayersService playerAdmin,
             KeymapsEditor keymaps,
@@ -139,6 +139,7 @@ public final class ControlPanelService implements ControlPanelApi {
         return open(player, request);
     }
 
+    @Override
     public Result<Void> openForMod(PlayerId player, String mod) {
         String wanted = mod == null ? "" : mod.strip();
         var entry = mods.viewedBy(Optional.of(player)).list().stream()

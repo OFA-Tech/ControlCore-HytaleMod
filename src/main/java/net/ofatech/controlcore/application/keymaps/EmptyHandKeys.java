@@ -2,9 +2,9 @@ package net.ofatech.controlcore.application.keymaps;
 
 import com.google.auto.service.AutoService;
 import net.ofatech.controlcore.api.Setting;
-import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.component.FeatureModule;
 import net.ofatech.controlcore.application.component.ModuleContext;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.text.Text;
@@ -18,7 +18,7 @@ public final class EmptyHandKeys implements FeatureModule {
     private final Setting<Boolean> enabled;
     private final EmptyHandInput input;
 
-    public EmptyHandKeys(SettingsApi settings, EmptyHandInput input) {
+    public EmptyHandKeys(SettingsRegistry settings, EmptyHandInput input) {
         this.input = input;
         this.enabled = settings.register(SettingDefinition.server(
                                 "controlcore", "empty-hand-keys", SettingType.bool(), true)

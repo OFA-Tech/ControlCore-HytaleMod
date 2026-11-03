@@ -5,8 +5,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.ofatech.controlcore.api.Setting;
-import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
@@ -39,7 +39,7 @@ public final class WorldsService {
     private final Set<PlayerId> frozen = ConcurrentHashMap.newKeySet();
 
     public WorldsService(
-            SettingsApi settings,
+            SettingsRegistry settings,
             ServerConfigEditor serverConfig,
             Worlds worlds,
             PlayerTuning tuning,

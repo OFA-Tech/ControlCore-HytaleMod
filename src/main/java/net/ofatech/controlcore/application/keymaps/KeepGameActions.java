@@ -2,9 +2,9 @@ package net.ofatech.controlcore.application.keymaps;
 
 import com.google.auto.service.AutoService;
 import net.ofatech.controlcore.api.Setting;
-import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.component.FeatureModule;
 import net.ofatech.controlcore.application.component.ModuleContext;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.text.Text;
@@ -17,7 +17,7 @@ public final class KeepGameActions implements FeatureModule {
     private final Setting<Boolean> enabled;
     private final KeyDispatcher dispatcher;
 
-    public KeepGameActions(SettingsApi settings, KeyDispatcher dispatcher) {
+    public KeepGameActions(SettingsRegistry settings, KeyDispatcher dispatcher) {
         this.dispatcher = dispatcher;
         this.enabled = settings.register(
                         SettingDefinition.server("controlcore", "keys-keep-game-action", SettingType.bool(), true)

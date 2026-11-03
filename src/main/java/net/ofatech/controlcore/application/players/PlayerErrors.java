@@ -5,11 +5,11 @@ import net.ofatech.controlcore.application.text.PlainText;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.result.Error;
 
-final class PlayerErrors {
+public final class PlayerErrors {
 
     private PlayerErrors() {}
 
-    static Error forbidden() {
+    public static Error forbidden() {
         return Error.forbidden(
                 "Players.Forbidden",
                 Text.key("controlcore.errors.players.forbidden", "You are not allowed to do that."));
@@ -23,7 +23,7 @@ final class PlayerErrors {
                         "Only admins (operators) can change operators and groups."));
     }
 
-    static Error protectedAdmin(String player) {
+    public static Error protectedAdmin(String player) {
         return BansService.protectedAdmin(shown(player));
     }
 

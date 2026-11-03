@@ -12,12 +12,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import net.ofatech.controlcore.api.KeymapsApi;
 import net.ofatech.controlcore.api.Setting;
-import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.history.ChangeRecorder;
+import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.application.settings.ModNames;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
@@ -38,8 +38,8 @@ public final class ModsEditor {
     static final String SELF = "OFATech:ControlCore";
 
     private final ModCatalog catalog;
-    private final SettingsApi settings;
-    private final KeymapsApi keymaps;
+    private final SettingsRegistry settings;
+    private final KeymapRegistry keymaps;
     private final ModNames modNames;
     private final SettingPermissionPolicy permissions;
     private final Log log;
@@ -48,8 +48,8 @@ public final class ModsEditor {
 
     public ModsEditor(
             ModCatalog catalog,
-            SettingsApi settings,
-            KeymapsApi keymaps,
+            SettingsRegistry settings,
+            KeymapRegistry keymaps,
             ModNames modNames,
             SettingPermissionPolicy permissions,
             Log log,

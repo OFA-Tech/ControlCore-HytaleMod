@@ -72,7 +72,7 @@ public final class HistoryCommand implements ModCommand {
         return Result.success(Reply.of(text.toString()));
     }
 
-    static boolean matches(HistoryView.Entry entry, String filter) {
+    public static boolean matches(HistoryView.Entry entry, String filter) {
         if (filter.isEmpty()) {
             return true;
         }

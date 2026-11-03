@@ -95,6 +95,10 @@ public final class DiagnosticsService {
     }
 
     public Result<String> writeReport(Optional<PlayerId> who, Translator tr) {
+        return writeReportFile(who).map(path -> tr.t("controlcore.diagnostics.report_written", "path", path));
+    }
+
+    public Result<String> writeReportFile(Optional<PlayerId> who) {
         if (!maySee(who)) {
             return Result.failure(Error.forbidden(
                     "Diagnostics.Forbidden",
@@ -119,10 +123,8 @@ public final class DiagnosticsService {
             }
         }
         String fileName = "report-" + FILE.format(now.atZone(ZoneId.systemDefault())) + ".txt";
-        return reports.write(fileName, sanitize(text.toString())).map(path -> {
-            log.info("Wrote diagnostics report " + path);
-            return tr.t("controlcore.diagnostics.report_written", "path", path);
-        });
+        return reports.write(fileName, sanitize(text.toString()))
+                .onSuccess(path -> log.info("Wrote diagnostics report " + path));
     }
 
     static String sanitize(String text) {

@@ -2,9 +2,11 @@ package net.ofatech.controlcore.api;
 
 import java.util.List;
 import java.util.Optional;
+import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingPermission;
+import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.result.Result;
@@ -22,7 +24,12 @@ import net.ofatech.controlcore.domain.result.Result;
  * }</pre>
  *
  * <p>The text operations inherited from {@link SettingsEditor} ({@code snapshot}, {@code read}, {@code write},
- * {@code reset}) are for UIs and commands that work with any setting.
+ * {@code reset}) are for UIs and commands that work with any setting. Since API 2.4.0 {@code read}, {@code write}
+ * and {@code reset} also take the server's {@code config.json} keys ({@code server:<key>}) and world keys
+ * ({@code world:<world>.<key>}), listed by {@link #serverConfigs()}.
+ *
+ * <p>The API acts with full rights, like the console, and the change history shows the change as made by a mod.
+ * {@link #actingFor(PlayerId)} gives the same API with the rights a player has in the control panel.
  */
 public interface SettingsApi extends SettingsEditor {
 
@@ -107,4 +114,36 @@ public interface SettingsApi extends SettingsEditor {
      * @since API 1.4.0
      */
     SettingPermission categoryPermission(String category);
+
+    /**
+     * Returns this API acting for a player. {@code snapshot}, {@code read}, {@code write}, {@code reset} and
+     * {@link #serverConfigs()} then follow the player's rights in the control panel: settings they may not see are
+     * left out or reported as unknown, settings they may only see are read-only, preferences of other players are
+     * refused ({@code Settings.Forbidden}), and the change history records the player as the one who made the
+     * change. Registering settings, mod names and category rules are not restricted: they describe the calling
+     * mod's own settings.
+     *
+     * @param player the player whose rights apply
+     * @return the settings API restricted to {@code player}'s rights
+     * @throws NullPointerException if {@code player} is {@code null}
+     * @since API 2.4.0
+     */
+    SettingsApi actingFor(PlayerId player);
+
+    /**
+     * Lists the server's {@code config.json} keys and every world's keys, as settings.
+     *
+     * @return the keys this API may see: ids {@code server:<key>} for {@code config.json} and
+     *     {@code world:<world>.<key>} for worlds, server keys first
+     * @since API 2.4.0
+     */
+    List<SettingSnapshot> serverConfigs();
+
+    /**
+     * Lists the loaded worlds whose keys {@link #serverConfigs()} lists.
+     *
+     * @return the world names, as Hytale reports them
+     * @since API 2.4.0
+     */
+    List<String> worlds();
 }

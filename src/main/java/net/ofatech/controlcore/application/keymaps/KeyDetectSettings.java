@@ -1,7 +1,7 @@
 package net.ofatech.controlcore.application.keymaps;
 
 import net.ofatech.controlcore.api.Setting;
-import net.ofatech.controlcore.api.SettingsApi;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.text.Text;
@@ -13,11 +13,11 @@ public final class KeyDetectSettings {
     static final String SCREEN = "screen";
     private static final Text CATEGORY = Text.key("controlcore.settings.category.keymaps", "Keymaps");
 
-    private final SettingsApi settings;
+    private final SettingsRegistry settings;
     private volatile Setting<String> mode;
     private volatile Setting<Boolean> allKeys;
 
-    public KeyDetectSettings(SettingsApi settings) {
+    public KeyDetectSettings(SettingsRegistry settings) {
         this.settings = settings;
     }
 

@@ -1,6 +1,5 @@
 package net.ofatech.controlcore.application.keymaps;
 
-import com.google.auto.service.AutoService;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -9,7 +8,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
-import net.ofatech.controlcore.api.KeymapsApi;
 import net.ofatech.controlcore.application.history.ChangeRecorder;
 import net.ofatech.controlcore.application.history.HistoryValues;
 import net.ofatech.controlcore.domain.event.SettingChanged;
@@ -32,8 +30,7 @@ import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
-@AutoService(KeymapsApi.class)
-public final class KeymapRegistry implements KeymapsApi {
+public final class KeymapRegistry {
 
     public static final String PLAYER_KEY_PREFIX = "keybind:";
     public static final String CUSTOM = "custom";
@@ -66,7 +63,6 @@ public final class KeymapRegistry implements KeymapsApi {
         this.history = history;
     }
 
-    @Override
     public Result<KeyAction> register(KeyAction action) {
         if (action != null && CUSTOM.equals(action.modId())) {
             return Result.failure(Error.validation(
@@ -79,19 +75,16 @@ public final class KeymapRegistry implements KeymapsApi {
         return put(action);
     }
 
-    @Override
     public void unregister(SettingId id) {
         if (id != null && !CUSTOM.equals(id.namespace())) {
             actions.remove(id);
         }
     }
 
-    @Override
     public Optional<KeyAction> find(SettingId id) {
         return Optional.ofNullable(id).map(actions::get);
     }
 
-    @Override
     public List<KeyAction> actions() {
         return actions.values().stream()
                 .sorted(Comparator.comparing(KeyAction::id))
@@ -109,12 +102,10 @@ public final class KeymapRegistry implements KeymapsApi {
         return !action.runsAsServer() || permissions.hasOwn(player, SERVER_KEYS_NODE);
     }
 
-    @Override
     public KeyBinds keysFor(SettingId id, PlayerId player) {
         return ownKeys(id, player).orElseGet(() -> serverKeys(id));
     }
 
-    @Override
     public KeyBinds serverKeys(SettingId id) {
         return serverBinds.get(id).flatMap(text -> parsed(id, text)).orElseGet(() -> defaults(id));
     }
@@ -131,7 +122,6 @@ public final class KeymapRegistry implements KeymapsApi {
         return playerData.get(player, PLAYER_KEY_PREFIX + id).flatMap(text -> parsed(id, text));
     }
 
-    @Override
     public Result<KeyBinds> bind(SettingId id, PlayerId player, String keys) {
         return usable(id, player).flatMap(action -> KeyBinds.parse(keys)).map(binds -> {
             String before = keysFor(id, player).toString();
@@ -142,7 +132,6 @@ public final class KeymapRegistry implements KeymapsApi {
         });
     }
 
-    @Override
     public Result<KeyBinds> resetBind(SettingId id, PlayerId player) {
         return usable(id, player).map(action -> {
             String before = keysFor(id, player).toString();
@@ -154,7 +143,6 @@ public final class KeymapRegistry implements KeymapsApi {
         });
     }
 
-    @Override
     public Result<KeyBinds> bindServer(SettingId id, String keys) {
         return known(id).flatMap(action -> KeyBinds.parse(keys)).map(binds -> {
             String before = serverKeys(id).toString();
@@ -165,7 +153,6 @@ public final class KeymapRegistry implements KeymapsApi {
         });
     }
 
-    @Override
     public Result<KeyBinds> resetServerBind(SettingId id) {
         return known(id).map(action -> {
             String before = serverKeys(id).toString();

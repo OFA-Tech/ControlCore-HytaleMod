@@ -4,7 +4,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.history.ChangeRecorder;
 import net.ofatech.controlcore.application.history.HistoryValues;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -30,11 +29,11 @@ public final class SettingPermissionPolicy {
 
     private final SettingPermissionStore store;
     private final Permissions permissions;
-    private final SettingsApi settings;
+    private final SettingsRegistry settings;
     private final ChangeRecorder history;
 
     public SettingPermissionPolicy(
-            SettingPermissionStore store, Permissions permissions, SettingsApi settings, ChangeRecorder history) {
+            SettingPermissionStore store, Permissions permissions, SettingsRegistry settings, ChangeRecorder history) {
         this.store = store;
         this.permissions = permissions;
         this.settings = settings;

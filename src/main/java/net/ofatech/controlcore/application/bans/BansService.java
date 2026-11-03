@@ -16,10 +16,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.ofatech.controlcore.api.Setting;
-import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.history.ChangeContext;
 import net.ofatech.controlcore.application.history.ChangeHistory;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.application.text.PlainText;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.event.Subscription;
@@ -67,7 +67,7 @@ public final class BansService {
             Permissions permissions,
             Texts texts,
             Clock clock,
-            SettingsApi settings) {
+            SettingsRegistry settings) {
         this.bans = bans;
         this.heads = settings.register(SettingDefinition.server("controlcore", "player-heads", SettingType.bool(), true)
                         .named(Text.key("controlcore.settings.player_heads.name", "Show player heads"))

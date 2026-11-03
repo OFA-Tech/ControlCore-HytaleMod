@@ -8,13 +8,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
-import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.application.mods.ModsEditor;
 import net.ofatech.controlcore.application.players.PlayerHistory;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord;
@@ -38,7 +38,7 @@ public final class HistoryEditor {
     private static final DateTimeFormatter WHEN = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final ChangeHistory history;
-    private final SettingsApi settings;
+    private final SettingsRegistry settings;
     private final ServerConfigEditor serverConfig;
     private final KeymapRegistry keymaps;
     private final SettingPermissionPolicy policy;
@@ -51,7 +51,7 @@ public final class HistoryEditor {
 
     public HistoryEditor(
             ChangeHistory history,
-            SettingsApi settings,
+            SettingsRegistry settings,
             ServerConfigEditor serverConfig,
             KeymapRegistry keymaps,
             SettingPermissionPolicy policy,

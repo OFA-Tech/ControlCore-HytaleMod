@@ -1,7 +1,7 @@
 package net.ofatech.controlcore.application.welcome;
 
 import net.ofatech.controlcore.api.Setting;
-import net.ofatech.controlcore.api.SettingsApi;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
@@ -16,7 +16,7 @@ public final class WelcomeSettings {
     private final Setting<Boolean> show;
     private final Setting<String> color;
 
-    public WelcomeSettings(SettingsApi settings) {
+    public WelcomeSettings(SettingsRegistry settings) {
         this.message = settings.register(
                         SettingDefinition.server("controlcore", "welcome-message", SettingType.text(256), "")
                                 .named(Text.key("controlcore.settings.welcome_message.name", "Welcome message"))

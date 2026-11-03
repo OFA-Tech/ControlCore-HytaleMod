@@ -13,8 +13,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import net.ofatech.controlcore.api.HudApi;
 import net.ofatech.controlcore.api.NotificationsApi;
 import net.ofatech.controlcore.api.Setting;
-import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
@@ -75,7 +75,7 @@ public final class NotificationService implements NotificationsApi {
             SettingPermissionPolicy policy,
             OverlayDisplay display,
             Scheduler scheduler,
-            SettingsApi settings,
+            SettingsRegistry settings,
             HudApi huds) {
         this.messenger = messenger;
         this.players = players;

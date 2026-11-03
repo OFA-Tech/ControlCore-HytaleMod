@@ -644,7 +644,7 @@ public final class AutomationService {
         return store.all().stream().filter(rule -> rule.id().equals(wanted)).findFirst();
     }
 
-    static AutomationView.Form form(Rule rule) {
+    public static AutomationView.Form form(Rule rule) {
         Optional<Rule.Condition> condition = rule.conditions().stream().findFirst();
         List<AutomationView.Step> steps = new ArrayList<>();
         for (Rule.Action action : rule.actions()) {

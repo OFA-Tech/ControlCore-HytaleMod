@@ -5,7 +5,6 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
-import net.ofatech.controlcore.application.history.ChangeContext;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
@@ -63,29 +62,22 @@ public final class PlayerCommands {
 
     Result<Reply> onPlayer(
             CommandContext context, BiFunction<PlayersView, String, CompletableFuture<Result<String>>> work) {
-        String input = PlayerDirectory.clean(context.string("player"));
-        if (input.isEmpty()) {
+        if (PlayerDirectory.clean(context.string("player")).isEmpty()) {
             return Result.failure(PlayerErrors.noPlayer());
         }
         PlayersView view = view(context);
-        ChangeContext.Attribution attribution = ChangeContext.current();
         return reply(
                 context,
-                directory
-                        .find(input)
-                        .thenCompose(found -> ChangeContext.as(
-                                attribution,
-                                () -> found.map(id ->
-                                                work.apply(view, id.value().toString()))
-                                        .orElseGet(() -> PlayerDirectory.completed(
-                                                Result.failure(PlayerErrors.unknown(input)))))));
+                directory.withPlayer(
+                        context.string("player"),
+                        id -> work.apply(view, id.value().toString())));
     }
 
     static String text(String title, List<Line> lines) {
         return lines.stream().map(Line::text).collect(Collectors.joining("\n", title + "\n", ""));
     }
 
-    static int inventoryAt(Details details, Translator tr) {
+    public static int inventoryAt(Details details, Translator tr) {
         String heading = tr.t("controlcore.players.details.inventory");
         List<Line> lines = details.lines();
         for (int i = 0; i < lines.size(); i++) {
