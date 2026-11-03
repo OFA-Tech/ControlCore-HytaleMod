@@ -10,6 +10,16 @@
   `all` when other mods change too), `/cc-mod-configs`, `/cc-rule-add` and `/cc-rule-edit` (`key=value; ...` fields,
   the panel's checks), `/cc-profile-mark`, `/cc-profile-unmark`, `/cc-configs`, `/cc-restart-pending`,
   `/cc-restore-defaults` (`check`, then `confirm`), `/cc-hud`, `/cc-toast`, `/cc-warn` and `/cc-warn-clear`.
+- **Require whitelist to join**: a bar in Players when the Whitelisted filter is chosen, and
+  `/cc-whitelist require <on|off>`. It is config.json `RequireJoinPermission` (live), needs the whitelist right and is
+  recorded and rolled back like any Server Configs key.
+- **Set as only group**: in **+ Player action** and as `/cc-group set <player> <group>`. Takes the player out of every
+  other group and puts them in the one picked; admins only, nobody drops their own operator group, and each group
+  added or removed is its own History line.
+- **Send message** in the Automation tab: a toast, warning bar or clearing it, to everyone, the admins or one online
+  player, the same as `/cc-toast`, `/cc-warn` and `/cc-warn-clear`.
+- **Hide the whole HUD** at the top of Player Prefs -> ControlCore: HUD, showing whether your HUD is hidden now (same
+  as `/cc-hud`).
 
 ### Changed
 - The panel's **Restore defaults** button now runs through the same service as `/cc-restore-defaults`.

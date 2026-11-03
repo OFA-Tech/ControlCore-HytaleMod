@@ -9,6 +9,7 @@ import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.automation.AutomationService;
 import net.ofatech.controlcore.application.diagnostics.DiagnosticsService;
 import net.ofatech.controlcore.application.history.HistoryEditor;
+import net.ofatech.controlcore.application.hud.HudPrefs;
 import net.ofatech.controlcore.application.keymaps.InputProbeCommand;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.mods.ModsEditor;
@@ -61,6 +62,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final DiagnosticsService diagnostics;
     private final AutomationService automation;
     private final DefaultsService defaults;
+    private final HudPrefs hudPrefs;
 
     public ControlPanelService(
             ControlPanelSettings settings,
@@ -83,7 +85,9 @@ public final class ControlPanelService implements ControlPanelApi {
             ProfileService profiles,
             DiagnosticsService diagnostics,
             AutomationService automation,
-            DefaultsService defaults) {
+            DefaultsService defaults,
+            HudPrefs hudPrefs) {
+        this.hudPrefs = hudPrefs;
         this.settings = settings;
         this.defaults = defaults;
         this.players = players;
@@ -191,7 +195,7 @@ public final class ControlPanelService implements ControlPanelApi {
                 new ControlPanelContent(
                         server.read(),
                         permitted(serverConfig, player),
-                        permitted(registry, player),
+                        hudPrefs.around(permitted(registry, player)),
                         keys,
                         keys,
                         settings.startTab(player),

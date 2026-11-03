@@ -214,6 +214,31 @@ final class PanelAction {
                     (action, value) -> action.form.put("Reason", value),
                     action -> action.form.get("Reason"))
             .add()
+            .append(
+                    new KeyedCodec<>("@NoticeTarget", Codec.STRING),
+                    (action, value) -> action.form.put("NoticeTarget", value),
+                    action -> action.form.get("NoticeTarget"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@NoticeKind", Codec.STRING),
+                    (action, value) -> action.form.put("NoticeKind", value),
+                    action -> action.form.get("NoticeKind"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@NoticeStyle", Codec.STRING),
+                    (action, value) -> action.form.put("NoticeStyle", value),
+                    action -> action.form.get("NoticeStyle"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@NoticeSeconds", Codec.STRING),
+                    (action, value) -> action.form.put("NoticeSeconds", value),
+                    action -> action.form.get("NoticeSeconds"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@NoticeText", Codec.STRING),
+                    (action, value) -> action.form.put("NoticeText", value),
+                    action -> action.form.get("NoticeText"))
+            .add()
             .build();
 
     String name;

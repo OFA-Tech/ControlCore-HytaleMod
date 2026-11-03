@@ -10,6 +10,7 @@ import net.ofatech.controlcore.application.automation.ActionRegistry;
 import net.ofatech.controlcore.application.automation.AutomationService;
 import net.ofatech.controlcore.application.automation.AutomationSettings;
 import net.ofatech.controlcore.application.automation.NotificationService;
+import net.ofatech.controlcore.application.automation.Recipients;
 import net.ofatech.controlcore.application.automation.SessionService;
 import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.diagnostics.DiagnosticsService;
@@ -123,6 +124,12 @@ class ControlPanelServiceTest {
                 new FakeClock(),
                 registry);
         var sessions = new SessionService(new FakePlayerData(), players, new FakeClock());
+        var hud = new net.ofatech.controlcore.application.hud.HudService(
+                registry,
+                (player, hide, show) -> {},
+                players,
+                player -> net.ofatech.controlcore.domain.ports.game.PlayerContext.Context.UNKNOWN,
+                log);
         var notifications = new NotificationService(
                 new FakeMessenger(),
                 players,
@@ -130,12 +137,7 @@ class ControlPanelServiceTest {
                 new net.ofatech.controlcore.fakes.FakeOverlayDisplay(),
                 new net.ofatech.controlcore.fakes.FakeScheduler(),
                 registry,
-                new net.ofatech.controlcore.application.hud.HudService(
-                        registry,
-                        (player, hide, show) -> {},
-                        players,
-                        player -> net.ofatech.controlcore.domain.ports.game.PlayerContext.Context.UNKNOWN,
-                        log));
+                hud);
         var playerData = new FakePlayerData();
         var access = new net.ofatech.controlcore.fakes.FakeAccessLists();
         var playerAdminPort = new net.ofatech.controlcore.fakes.FakePlayerAdmin();
@@ -166,7 +168,7 @@ class ControlPanelServiceTest {
                 new net.ofatech.controlcore.fakes.FakeScheduler(),
                 playersChanges);
         var playerAccess = new net.ofatech.controlcore.application.players.PlayerAccess(
-                directory, guard, access, changes, playersChanges);
+                directory, guard, access, changes, playersChanges, serverConfig);
         var control = new net.ofatech.controlcore.application.players.PlayerControl(
                 directory, guard, notices, playerAdminPort, changes, playersChanges, log);
         var listing = new net.ofatech.controlcore.application.players.PlayerListing(
@@ -236,7 +238,8 @@ class ControlPanelServiceTest {
                 new FakeServerHealth(),
                 new FakeClock(),
                 TestTexts.of(registry, players),
-                log);
+                log,
+                new Recipients(players, policy, notifications));
         var keymaps = new KeymapsEditor(keyRegistry, TestTexts.of(registry, players), modNames);
         var permissionRules = new PermissionsEditor(registry, serverConfig, policy);
         return new ControlPanelService(
@@ -275,7 +278,8 @@ class ControlPanelServiceTest {
                         policy,
                         permissionRules,
                         snapshots,
-                        TestTexts.of(registry, players)));
+                        TestTexts.of(registry, players)),
+                new net.ofatech.controlcore.application.hud.HudPrefs(hud));
     }
 
     @Test

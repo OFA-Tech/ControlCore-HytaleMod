@@ -23,6 +23,7 @@ public enum PlayerAction {
     OP_REMOVE(Rights::groups, Field.PLAYER),
     GROUP_ADD(Rights::groups, Field.PLAYER, Field.GROUP),
     GROUP_REMOVE(Rights::groups, Field.PLAYER, Field.GROUP),
+    GROUP_SET(Rights::groups, Field.PLAYER, Field.GROUP),
     NODE_ADD(Rights::groups, Field.GROUP, Field.NODE),
     NODE_REMOVE(Rights::groups, Field.GROUP, Field.NODE);
 

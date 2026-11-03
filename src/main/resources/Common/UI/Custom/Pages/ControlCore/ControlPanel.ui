@@ -467,6 +467,24 @@ $C.@PageOverlay {
                 }
               }
 
+              Group #WhitelistRequiredRow {
+                LayoutMode: Left;
+                Visible: false;
+                Anchor: (Height: 34, Bottom: 8);
+                Background: #1b2f44;
+                Padding: (Horizontal: 10);
+
+                Label #WhitelistRequiredText {
+                  Style: @BannerStyle;
+                  FlexWeight: 1;
+                }
+
+                $C.@SmallSecondaryTextButton #WhitelistRequiredToggle {
+                  @Text = %controlcore.ui.players.whitelistRequire;
+                  Anchor: (Width: 190, Height: 30, Left: 6);
+                }
+              }
+
               Label #PlayerListEmpty {
                 Text: %controlcore.ui.players.empty;
                 Style: @NoteStyle;
@@ -1460,9 +1478,68 @@ $C.@PageOverlay {
                 FlexWeight: 1;
               }
 
+              $C.@SmallTertiaryTextButton #NoticeOpen {
+                @Text = %controlcore.ui.notice.open;
+                Anchor: (Width: 190, Height: 32, Left: 10);
+              }
+
               $C.@SmallSecondaryTextButton #RuleNew {
                 @Text = %controlcore.ui.automation.new;
-                Anchor: (Width: 170, Height: 32, Left: 10);
+                Anchor: (Width: 170, Height: 32, Left: 6);
+              }
+            }
+
+            Group #NoticeForm {
+              LayoutMode: Top;
+              Visible: false;
+              Anchor: (Bottom: 10);
+              Background: #182a37;
+              Padding: (Full: 10);
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 30, Bottom: 6);
+
+                Label {
+                  Text: %controlcore.ui.notice.title;
+                  Style: @SubsectionTitleStyle;
+                  FlexWeight: 1;
+                }
+
+                $C.@SmallTertiaryTextButton #NoticeClose {
+                  @Text = %controlcore.ui.automation.close;
+                  Anchor: (Width: 140, Height: 30);
+                }
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 38);
+
+                $C.@DropdownBox #NoticeTarget {
+                  Anchor: (Width: 180, Right: 6);
+                }
+
+                $C.@DropdownBox #NoticeKind {
+                  Anchor: (Width: 200, Right: 6);
+                }
+
+                $C.@DropdownBox #NoticeStyle {
+                  Anchor: (Width: 130, Right: 6);
+                }
+
+                $C.@TextField #NoticeSeconds {
+                  Anchor: (Width: 90, Right: 6);
+                }
+
+                $C.@TextField #NoticeText {
+                  FlexWeight: 1;
+                }
+
+                $C.@SmallSecondaryTextButton #NoticeSend {
+                  @Text = %controlcore.ui.notice.send;
+                  Anchor: (Width: 120, Height: 34, Left: 6);
+                }
               }
             }
 

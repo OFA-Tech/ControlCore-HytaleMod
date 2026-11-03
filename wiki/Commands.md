@@ -74,8 +74,10 @@ The console counts as an admin; `/cc-tp` and `/cc-bring` need a player.
 | `/cc-tp <player>` | `ofatech.controlcore.players.teleport` | teleport yourself to an online player |
 | `/cc-bring <player>` | `ofatech.controlcore.players.teleport` | teleport an online player to you |
 | `/cc-whitelist <add\|remove\|list> [player]` | `ofatech.controlcore.players.whitelist` | change or list the whitelist |
+| `/cc-whitelist require <on\|off>` | `ofatech.controlcore.players.whitelist` | whether joining needs the whitelist (config.json `RequireJoinPermission`, live, in History) |
 | `/cc-op <player>` / `/cc-deop <player>` | admins | make or remove an operator |
 | `/cc-group <add\|remove> <player> <group>` | admins | add a player to a permission group or remove them |
+| `/cc-group set <player> <group>` | admins | make that group the player's only group (one History line per group changed) |
 | `/cc-groups` | admins | list the permission groups and their own permissions |
 | `/cc-group-perm <give\|take> <group> <node>` | admins | give a group a permission node or take it away |
 | `/cc-player <player>` | `ofatech.controlcore.players` | status, groups, whitelist, first join, ban, mute, freeze and recent messages |

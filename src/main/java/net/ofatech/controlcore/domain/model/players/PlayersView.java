@@ -130,6 +130,12 @@ public interface PlayersView {
 
     CompletableFuture<Result<String>> group(String player, String group, boolean add);
 
+    CompletableFuture<Result<String>> onlyGroup(String player, String group);
+
+    boolean whitelistRequired();
+
+    Result<String> requireWhitelist(boolean on);
+
     Result<String> groupPermission(String group, String node, boolean add);
 
     CompletableFuture<Result<String>> mute(String player, String length, boolean add);

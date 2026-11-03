@@ -153,6 +153,21 @@ final class PlayersViewer implements PlayersView {
     }
 
     @Override
+    public CompletableFuture<Result<String>> onlyGroup(String player, String group) {
+        return access.setOnlyGroup(who, player, group, tr);
+    }
+
+    @Override
+    public boolean whitelistRequired() {
+        return access.whitelistRequired();
+    }
+
+    @Override
+    public Result<String> requireWhitelist(boolean on) {
+        return access.requireWhitelist(who, on, tr);
+    }
+
+    @Override
     public Result<String> groupPermission(String group, String node, boolean add) {
         return access.setGroupPermission(who, group, node, add, tr);
     }
@@ -182,6 +197,7 @@ final class PlayersViewer implements PlayersView {
             case FREEZE_ADD, FREEZE_REMOVE -> freeze(input.player(), action == PlayerAction.FREEZE_ADD);
             case OP_ADD, OP_REMOVE -> operator(input.player(), action == PlayerAction.OP_ADD);
             case GROUP_ADD, GROUP_REMOVE -> group(input.player(), input.group(), action == PlayerAction.GROUP_ADD);
+            case GROUP_SET -> onlyGroup(input.player(), input.group());
             case NODE_ADD, NODE_REMOVE ->
                 PlayerDirectory.completed(
                         groupPermission(input.group(), input.node(), action == PlayerAction.NODE_ADD));

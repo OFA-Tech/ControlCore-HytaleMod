@@ -100,6 +100,7 @@ public final class AutomationService {
     private final Clock clock;
     private final Texts texts;
     private final Log log;
+    private final Recipients recipients;
 
     private final Map<String, Instant> lastRun = new ConcurrentHashMap<>();
     private final Map<String, Instant> timerStart = new ConcurrentHashMap<>();
@@ -124,7 +125,9 @@ public final class AutomationService {
             ServerHealth health,
             Clock clock,
             Texts texts,
-            Log log) {
+            Log log,
+            Recipients recipients) {
+        this.recipients = recipients;
         this.store = store;
         this.settings = settings;
         this.actions = actions;
@@ -544,6 +547,16 @@ public final class AutomationService {
             @Override
             public String hint(String kind, String value) {
                 return AutomationService.hint(kind, value, tr);
+            }
+
+            @Override
+            public List<Choice> noticeTargets() {
+                return recipients.targets(tr);
+            }
+
+            @Override
+            public Result<String> send(Notice notice) {
+                return recipients.send(who, notice, tr);
             }
         };
     }

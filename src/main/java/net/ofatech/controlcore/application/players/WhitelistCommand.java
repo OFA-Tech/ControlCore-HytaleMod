@@ -24,9 +24,9 @@ public final class WhitelistCommand implements ModCommand {
     @Override
     public CommandSpec spec() {
         return CommandSpec.named("cc-whitelist")
-                .description("Add a player to the whitelist, remove one, or list it")
-                .arg("action", ArgType.STRING, "add, remove or list")
-                .optionalArg("player", ArgType.STRING, "Player name or UUID, for add and remove");
+                .description("Add a player to the whitelist, remove one, list it, or turn requiring it on or off")
+                .arg("action", ArgType.STRING, "add, remove, list or require")
+                .optionalArg("player", ArgType.STRING, "Player name or UUID for add and remove; on or off for require");
     }
 
     @Override
@@ -36,10 +36,17 @@ public final class WhitelistCommand implements ModCommand {
         if (action.equals("list")) {
             return list(view, commands.tr(context));
         }
-        if (!action.equals("add") && !action.equals("remove")) {
-            return Result.failure(PlayerErrors.badChoice("add, remove, list"));
-        }
         String player = context.arg("player").map(String.class::cast).orElse("");
+        if (action.equals("require")) {
+            String state = PlayerDirectory.clean(player).toLowerCase(Locale.ROOT);
+            if (!state.equals("on") && !state.equals("off")) {
+                return Result.failure(PlayerErrors.badChoice("on, off"));
+            }
+            return view.requireWhitelist(state.equals("on")).map(Reply::of);
+        }
+        if (!action.equals("add") && !action.equals("remove")) {
+            return Result.failure(PlayerErrors.badChoice("add, remove, list, require"));
+        }
         if (PlayerDirectory.clean(player).isEmpty()) {
             return Result.failure(PlayerErrors.noPlayer());
         }

@@ -4,6 +4,13 @@ The **Automation** tab (admins) holds rules that run on their own: **when** some
 holds, **then** do something. Everything a rule changes is recorded in [History](Control-Panel#history) as
 "automation", so it can be rolled back.
 
+## Sending a message now
+
+**Send message** opens a small form above the rules: pick who gets it (**Everyone**, **Admins** or a player who is
+online), what (**Toast**, **Warning bar** or **Clear warning bar**), the style (Info, Success, Warning, Error), for a
+warning bar the seconds it stays (`0` or empty: until cleared), and the text (`Title|text` gives a toast a title).
+**Send** does the same as `/cc-toast`, `/cc-warn` and `/cc-warn-clear`; only admins can send.
+
 ## Making a rule
 
 Press **+ New rule** and fill in:
