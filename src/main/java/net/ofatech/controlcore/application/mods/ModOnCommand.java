@@ -22,7 +22,10 @@ public final class ModOnCommand implements ModCommand {
         return CommandSpec.named("cc-mod-on")
                 .description("Turn a mod on from the next start")
                 .arg("mod", ArgType.STRING, "The mod's id, name or settings namespace (see /cc-mods)")
-                .optionalArg("confirm", ArgType.STRING, "all: also turn on the mods it needs");
+                .arg(
+                        "confirm",
+                        ArgType.STRING,
+                        "check: stop if other mods would change; all: also turn on the mods it needs");
     }
 
     @Override

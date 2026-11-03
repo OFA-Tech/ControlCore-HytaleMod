@@ -24,14 +24,14 @@ Admin commands also work from the server console; commands about your own prefer
 | `/cc-prefs` | any player | list your preferences |
 | `/cc-pref <id> <value>` | any player | change one of your preferences |
 | `/cc-pref-reset <id>` | any player | put a preference back to its default |
-| `/cc-configs [world\|-] [search]` | who may see the keys | list the `config.json` keys, or a world's keys, by heading, with value, default and `LIVE`, `RESTART` or `READ-ONLY`; only keys you may see |
+| `/cc-configs [--world=name] [--search=text]` | who may see the keys | list the `config.json` keys, or a world's keys, by heading, with value, default and `LIVE`, `RESTART` or `READ-ONLY`; only keys you may see |
 | `/cc-restart-pending` | admins | what was changed (config keys, mods) and only applies after a restart |
-| `/cc-restore-defaults <section> <check\|confirm> [search]` | like the panel | the panel's **Restore defaults** button: `check` says how many rows would change, `confirm` does it |
+| `/cc-restore-defaults <section> <check\|confirm> [--search=text]` | like the panel | the panel's **Restore defaults** button: `check` says how many rows would change, `confirm` does it |
 
 `/cc-restore-defaults` sections: `mod-settings`, `prefs` (yours), `server-configs`, `world:<name>`, `keymaps-server`
 (admins), `keymaps-mine` (yours) and `permissions` (admins). Only rows you may change and that differ from their
 default are reset; read-only rows are skipped. Server-wide sections first save a `before-defaults` snapshot when you
-may use snapshots, and every reset is in History. `[search]` limits it to rows whose id, name or heading has the text.
+may use snapshots, and every reset is in History. `--search=text` limits it to rows whose id, name or heading has the text.
 
 Ids look like `mod:key`, for example `controlcore:welcome-message`. The server's `config.json` keys are `server:…`,
 for example `server:motd` or `server:connection-timeouts.play-timeout`; `/cc-set` says when a key only applies after a
@@ -73,8 +73,9 @@ The console counts as an admin; `/cc-tp` and `/cc-bring` need a player.
 | `/cc-gamemode <player>` | `ofatech.controlcore.players.gamemode` | switch an online player between Adventure and Creative |
 | `/cc-tp <player>` | `ofatech.controlcore.players.teleport` | teleport yourself to an online player |
 | `/cc-bring <player>` | `ofatech.controlcore.players.teleport` | teleport an online player to you |
-| `/cc-whitelist <add\|remove\|list> [player]` | `ofatech.controlcore.players.whitelist` | change or list the whitelist |
-| `/cc-whitelist require <on\|off>` | `ofatech.controlcore.players.whitelist` | whether joining needs the whitelist (config.json `RequireJoinPermission`, live, in History) |
+| `/cc-whitelist` | `ofatech.controlcore.players.whitelist` | list the whitelist, 20 at most |
+| `/cc-whitelist-add <player>` / `/cc-whitelist-remove <player>` | `ofatech.controlcore.players.whitelist` | add a player to the whitelist or remove one |
+| `/cc-whitelist-require <on\|off>` | `ofatech.controlcore.players.whitelist` | whether joining needs the whitelist (config.json `RequireJoinPermission`, live, in History) |
 | `/cc-op <player>` / `/cc-deop <player>` | admins | make or remove an operator |
 | `/cc-group <add\|remove> <player> <group>` | admins | add a player to a permission group or remove them |
 | `/cc-group set <player> <group>` | admins | make that group the player's only group (one History line per group changed) |
@@ -88,7 +89,7 @@ The console counts as an admin; `/cc-tp` and `/cc-bring` need a player.
 ```
 /cc-mute Griefer 30m
 /cc-kick Griefer stop spamming
-/cc-whitelist add Builder
+/cc-whitelist-add Builder
 /cc-group add Builder hytale:Adventurer
 /cc-group-perm give hytale:Adventurer homes.use
 ```
@@ -203,8 +204,8 @@ See [Key binds](Key-Binds) for the key syntax and which keys work.
 |---|---|---|
 | `/cc-mods` | `ofatech.controlcore.settings` | list the server's mods and whether they run |
 | `/cc-mod-info <mod>` | anyone (mods hidden from players stay hidden) | the panel's **Details**: requires, can use, needed by and the Hytale version |
-| `/cc-mod-on <mod> [all]` | admins | turn a mod on from the next start; if it needs mods that are off, it lists them and needs `all` to turn them on too |
-| `/cc-mod-off <mod> [all]` | admins | turn a mod off from the next start; if other mods need it, it lists them and needs `all` to turn them off too |
+| `/cc-mod-on <mod> <check\|all>` | admins | turn a mod on from the next start; with `check`, if it needs mods that are off, it lists them and changes nothing; `all` turns them on too |
+| `/cc-mod-off <mod> <check\|all>` | admins | turn a mod off from the next start; with `check`, if other mods need it, it lists them and changes nothing; `all` turns them off too |
 | `/cc-mod-configs <mod>` | admins | show the mod's config files (read-only) |
 
 `<mod>` is the mod's id (`Group:Name`), name or settings namespace.

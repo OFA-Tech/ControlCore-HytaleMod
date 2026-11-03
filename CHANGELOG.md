@@ -4,14 +4,14 @@
 
 ### Added
 - Commands for player management, also from the console, with the same rights as the Players tab: `/cc-kick`,
-  `/cc-mute`, `/cc-unmute`, `/cc-freeze`, `/cc-unfreeze`, `/cc-gamemode`, `/cc-tp`, `/cc-bring`, `/cc-whitelist`,
+  `/cc-mute`, `/cc-unmute`, `/cc-freeze`, `/cc-unfreeze`, `/cc-gamemode`, `/cc-tp`, `/cc-bring`, `/cc-whitelist`, `/cc-whitelist-add`, `/cc-whitelist-remove`,
   `/cc-op`, `/cc-deop`, `/cc-group`, `/cc-groups`, `/cc-group-perm`, `/cc-player`, `/cc-inventory` and `/cc-chat`.
-- Commands for the rest of the panel, with the panel's rights: `/cc-mod-info`, `/cc-mod-on`, `/cc-mod-off` (asks for
-  `all` when other mods change too), `/cc-mod-configs`, `/cc-rule-add` and `/cc-rule-edit` (`key=value; ...` fields,
+- Commands for the rest of the panel, with the panel's rights: `/cc-mod-info`, `/cc-mod-on`, `/cc-mod-off` (`<mod> check` stops and
+  lists the other mods that would change, `<mod> all` changes them too), `/cc-mod-configs`, `/cc-rule-add` and `/cc-rule-edit` (`key=value; ...` fields,
   the panel's checks), `/cc-profile-mark`, `/cc-profile-unmark`, `/cc-configs`, `/cc-restart-pending`,
   `/cc-restore-defaults` (`check`, then `confirm`), `/cc-hud`, `/cc-toast`, `/cc-warn` and `/cc-warn-clear`.
 - **Require whitelist to join**: a bar in Players when the Whitelisted filter is chosen, and
-  `/cc-whitelist require <on|off>`. It is config.json `RequireJoinPermission` (live), needs the whitelist right and is
+  `/cc-whitelist-require <on|off>`. It is config.json `RequireJoinPermission` (live), needs the whitelist right and is
   recorded and rolled back like any Server Configs key.
 - **Set as only group**: in **+ Player action** and as `/cc-group set <player> <group>`. Takes the player out of every
   other group and puts them in the one picked; admins only, nobody drops their own operator group, and each group

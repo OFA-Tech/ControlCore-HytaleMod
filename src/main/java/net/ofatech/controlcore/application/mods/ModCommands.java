@@ -127,10 +127,14 @@ public final class ModCommands {
     Result<Reply> setEnabled(CommandContext context, boolean enabled) {
         ModsView view = view(context);
         Translator tr = tr(context);
-        boolean all = context.arg("confirm")
-                .map(Object::toString)
-                .filter(text -> text.strip().equalsIgnoreCase("all"))
-                .isPresent();
+        String confirm = context.string("confirm").strip().toLowerCase(Locale.ROOT);
+        if (!confirm.equals("check") && !confirm.equals("all")) {
+            return Result.failure(Error.validation(
+                    "Mods.BadChoice",
+                    Text.key("controlcore.errors.players.bad_choice", "Use {choices}.")
+                            .with("choices", "check, all")));
+        }
+        boolean all = confirm.equals("all");
         Result<ModsView.Entry> found = find(view, context.string("mod"));
         if (found.isFailure()) {
             return Result.failure(found.error());

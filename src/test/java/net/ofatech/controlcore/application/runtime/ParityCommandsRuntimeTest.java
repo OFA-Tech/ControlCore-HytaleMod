@@ -57,7 +57,8 @@ class ParityCommandsRuntimeTest extends RuntimeTestBase {
         assertThat(text(console("cc-mod-info", Map.of("mod", "Base"))))
                 .contains("Base", "Test:Base", "Requires", "Needed by", "Addon", "Hytale");
 
-        assertThat(code(console("cc-mod-off", Map.of("mod", "Test:Base")))).isEqualTo("Mods.Confirm");
+        assertThat(code(console("cc-mod-off", Map.of("mod", "Test:Base", "confirm", "check"))))
+                .isEqualTo("Mods.Confirm");
         assertThat(platform.modCatalog.mods).allMatch(ModInfo::enabledAfterRestart);
 
         assertThat(text(console("cc-mod-off", Map.of("mod", "Test:Base", "confirm", "all"))))
@@ -67,8 +68,10 @@ class ParityCommandsRuntimeTest extends RuntimeTestBase {
         assertThat(text(console("cc-mod-on", Map.of("mod", "Test:Addon", "confirm", "all"))))
                 .contains("Base");
         assertThat(text(console("cc-mod-configs", Map.of("mod", "Test:Base")))).contains("config.json", "{}");
+        assertThat(code(console("cc-mod-on", Map.of("mod", "Test:Base", "confirm", "yes"))))
+                .isEqualTo("Mods.BadChoice");
 
-        assertThat(code(platform.commands.run("cc-mod-off", builder, Map.of("mod", "Test:Addon"))))
+        assertThat(code(platform.commands.run("cc-mod-off", builder, Map.of("mod", "Test:Addon", "confirm", "check"))))
                 .isEqualTo("Mods.Forbidden");
         assertThat(code(platform.commands.run("cc-mod-configs", builder, Map.of("mod", "Test:Base"))))
                 .isEqualTo("Mods.ConfigForbidden");
@@ -146,7 +149,7 @@ class ParityCommandsRuntimeTest extends RuntimeTestBase {
     void restartPendingListsWhatWaits() {
         assertThat(text(console("cc-restart-pending", Map.of()))).contains("Nothing");
         console("cc-set", Map.of("id", "server:backup.enabled", "value", "true"));
-        console("cc-mod-off", Map.of("mod", "Test:Addon"));
+        console("cc-mod-off", Map.of("mod", "Test:Addon", "confirm", "check"));
 
         assertThat(text(console("cc-restart-pending", Map.of()))).contains("Addon");
         assertThat(code(platform.commands.run("cc-restart-pending", builder, Map.of())))

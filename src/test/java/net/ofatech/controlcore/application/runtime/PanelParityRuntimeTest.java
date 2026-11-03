@@ -82,16 +82,16 @@ class PanelParityRuntimeTest extends RuntimeTestBase {
 
     @Test
     void requiringTheWhitelistGoesThroughTheServerConfigAndCanBeRolledBack() {
-        assertThat(text(platform.commands.runAsConsole("cc-whitelist", Map.of("action", "require", "player", "on"))))
+        assertThat(text(platform.commands.runAsConsole("cc-whitelist-require", Map.of("state", "on"))))
                 .contains("required");
         assertThat(required()).isEqualTo("true");
         ChangeRecord record = platform.changeLog.records.getLast();
         assertThat(record.kind()).isEqualTo(ChangeRecord.Kind.SERVER_CONFIG);
         assertThat(record.target()).isEqualTo("server:require-join-permission");
         assertThat(record.newValue()).isEqualTo("true");
-        assertThat(code(platform.commands.runAsConsole("cc-whitelist", Map.of("action", "require", "player", "on"))))
+        assertThat(code(platform.commands.runAsConsole("cc-whitelist-require", Map.of("state", "on"))))
                 .isEqualTo("Players.NothingToDo");
-        assertThat(code(platform.commands.runAsConsole("cc-whitelist", Map.of("action", "require", "player", "maybe"))))
+        assertThat(code(platform.commands.runAsConsole("cc-whitelist-require", Map.of("state", "maybe"))))
                 .isEqualTo("Players.BadChoice");
 
         PlayersView view = players(admin);
@@ -109,7 +109,7 @@ class PanelParityRuntimeTest extends RuntimeTestBase {
 
     @Test
     void onlyPlayersWithTheWhitelistRightMayRequireIt() {
-        assertThat(code(platform.commands.run("cc-whitelist", builder, Map.of("action", "require", "player", "on"))))
+        assertThat(code(platform.commands.run("cc-whitelist-require", builder, Map.of("state", "on"))))
                 .isEqualTo("Players.Forbidden");
         assertThat(required()).isEqualTo("false");
     }

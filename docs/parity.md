@@ -46,8 +46,8 @@ Ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`.
 
 | Operation | Panel (where) | Command | API method |
 |---|---|---|---|
-| List the worlds | Server Configs -> Worlds: world dropdown | `/cc-configs <world>` | `settings().worlds` |
-| List one world's keys | Server Configs -> Worlds | `/cc-configs <world>` | `settings().serverConfigs` |
+| List the worlds | Server Configs -> Worlds: world dropdown | `/cc-configs --world=<world>` | `settings().worlds` |
+| List one world's keys | Server Configs -> Worlds | `/cc-configs --world=<world>` | `settings().serverConfigs` |
 | Show, change, reset a world key | Server Configs -> Worlds row | `/cc-get`, `/cc-set`, `/cc-reset` with `world:<world>.<key>` | `settings().read`, `settings().write`, `settings().reset` |
 
 ## Keymaps
@@ -82,7 +82,7 @@ Ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`.
 |---|---|---|---|
 | List the mods and whether they run | Mods tab | `/cc-mods` | `mods().list` |
 | Details: requires, can use, needed by, Hytale version | Mods row: Details | `/cc-mod-info <mod>` | `mods().list` (`Mod.dependencies`, `Mod.neededBy`) |
-| Which other mods turning one on or off changes | Mods: the confirm box | `/cc-mod-on <mod>`, `/cc-mod-off <mod>` (without `all`) | `mods().alsoChanged` |
+| Which other mods turning one on or off changes | Mods: the confirm box | `/cc-mod-on <mod> check`, `/cc-mod-off <mod> check` | `mods().alsoChanged` |
 | Turn a mod on or off from the next start | Mods row: Enabled box (Turn all on/off) | `/cc-mod-on <mod> all`, `/cc-mod-off <mod> all` | `mods().setEnabled` |
 | Show a mod's config files | Mods row: Config files | `/cc-mod-configs <mod>` | `mods().configFiles` |
 | Open a mod's settings or keys | Mods row: Settings / Keys | `/cc-config <mod>` | `controlPanel().openForMod` |
@@ -162,9 +162,9 @@ Ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`.
 | Switch Adventure and Creative | Players row: Game mode | `/cc-gamemode <player>` | `players().toggleGameMode` |
 | Teleport to a player | Players row: Teleport to | `/cc-tp <player>` | `players().teleportTo` |
 | Bring a player | Players row: Bring | `/cc-bring <player>` | `players().bring` |
-| Add to or remove from the whitelist | + Player action | `/cc-whitelist add <player>`, `/cc-whitelist remove <player>` | `players().whitelist` |
-| List the whitelist | Players: Whitelisted filter | `/cc-whitelist list` | `players().list` (`WHITELISTED`) |
-| Require the whitelist to join | Players, Whitelisted filter: Require whitelist / Stop requiring | `/cc-whitelist require <on or off>` | `players().whitelistRequired`, `players().requireWhitelist` |
+| Add to or remove from the whitelist | + Player action | `/cc-whitelist-add <player>`, `/cc-whitelist-remove <player>` | `players().whitelist` |
+| List the whitelist | Players: Whitelisted filter | `/cc-whitelist` | `players().list` (`WHITELISTED`) |
+| Require the whitelist to join | Players, Whitelisted filter: Require whitelist / Stop requiring | `/cc-whitelist-require <on or off>` | `players().whitelistRequired`, `players().requireWhitelist` |
 | Make or remove an operator | + Player action: Make / Remove operator | `/cc-op <player>`, `/cc-deop <player>` | `players().operator` |
 | List groups and their permissions | + Player action: group dropdown | `/cc-groups` | `players().groups`, `players().groupPermissions` |
 | Add to or remove from a group | + Player action | `/cc-group <add or remove> <player> <group>` | `players().group` |
@@ -197,8 +197,8 @@ Ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`.
 
 | Operation | Panel (where) | Command | API method |
 |---|---|---|---|
-| How many rows would be reset | Restore defaults (first press) | `/cc-restore-defaults <section> check [search]` | `defaults().count` |
-| Reset the rows shown (safety snapshot first) | Restore defaults (second press), end of the search line | `/cc-restore-defaults <section> confirm [search]` | `defaults().restore` |
+| How many rows would be reset | Restore defaults (first press) | `/cc-restore-defaults <section> check [--search=<text>]` | `defaults().count` |
+| Reset the rows shown (safety snapshot first) | Restore defaults (second press), end of the search line | `/cc-restore-defaults <section> confirm [--search=<text>]` | `defaults().restore` |
 
 ## Panel opening
 

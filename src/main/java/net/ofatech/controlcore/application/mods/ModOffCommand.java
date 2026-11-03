@@ -22,7 +22,10 @@ public final class ModOffCommand implements ModCommand {
         return CommandSpec.named("cc-mod-off")
                 .description("Turn a mod off from the next start")
                 .arg("mod", ArgType.STRING, "The mod's id, name or settings namespace (see /cc-mods)")
-                .optionalArg("confirm", ArgType.STRING, "all: also turn off the mods that need it");
+                .arg(
+                        "confirm",
+                        ArgType.STRING,
+                        "check: stop if other mods would change; all: also turn off the mods that need it");
     }
 
     @Override

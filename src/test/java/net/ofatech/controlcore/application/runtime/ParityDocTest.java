@@ -15,6 +15,9 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.ofatech.controlcore.api.ControlCoreApi;
+import net.ofatech.controlcore.domain.ports.command.ArgSpec;
+import net.ofatech.controlcore.domain.ports.command.CommandSpec;
+import net.ofatech.controlcore.fakes.FakeCommandRegistrar;
 import org.junit.jupiter.api.Test;
 
 class ParityDocTest extends RuntimeTestBase {
@@ -48,6 +51,33 @@ class ParityDocTest extends RuntimeTestBase {
         assertThat(registered).isNotEmpty();
         assertThat(documented).as("commands in docs/parity.md").isSubsetOf(registered);
         assertThat(registered).as("registered commands").isSubsetOf(documented);
+    }
+
+    @Test
+    void theWikiShowsEveryOptionalArgumentAsNameEqualsValue() throws IOException {
+        runtime.setup();
+        List<String> wiki = Files.readAllLines(Path.of("wiki", "Commands.md"));
+
+        for (FakeCommandRegistrar.Registered command : platform.commands.commands.values()) {
+            CommandSpec spec = command.spec();
+            List<ArgSpec> optional =
+                    spec.args().stream().filter(arg -> !arg.required()).toList();
+            if (optional.isEmpty()) {
+                continue;
+            }
+            List<String> lines = wiki.stream()
+                    .filter(line -> line.startsWith("|"))
+                    .filter(line -> line.contains("`/" + spec.name() + " ") || line.contains("`/" + spec.name() + "`"))
+                    .toList();
+            assertThat(lines).as("wiki/Commands.md rows for /%s", spec.name()).isNotEmpty();
+            for (String line : lines) {
+                for (ArgSpec arg : optional) {
+                    assertThat(line)
+                            .as("/%s shows optional %s as --%s=", spec.name(), arg.name(), arg.name())
+                            .contains("--" + arg.name() + "=");
+                }
+            }
+        }
     }
 
     @Test

@@ -77,6 +77,14 @@ public final class PlayerCommands {
                         id -> work.apply(view, id.value().toString())));
     }
 
+    Result<Reply> whitelist(CommandContext context, boolean add) {
+        String player = context.string("player");
+        if (PlayerDirectory.clean(player).isEmpty()) {
+            return Result.failure(PlayerErrors.noPlayer());
+        }
+        return reply(context, view(context).whitelist(player, add));
+    }
+
     static String text(String title, List<Line> lines) {
         return lines.stream().map(Line::text).collect(Collectors.joining("\n", title + "\n", ""));
     }

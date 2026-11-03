@@ -1174,6 +1174,7 @@ errors.players.bad_choice = Use {choices}.
 players.whitelist_list.none = Ninguém está na whitelist.
 players.whitelist_list.header = Jogadores na whitelist ({count}):
 players.whitelist_list.line = - {player} ({id})
+players.whitelist_list.more = ... e mais {count}. Veja-os com /cc-players --filter=whitelisted --search=<texto>.
 players.group_list.none = Não há grupos de permissão.
 players.group_list.header = Grupos de permissão ({count}):
 players.group_list.line = - {group} ({id}): {nodes}
@@ -1189,7 +1190,7 @@ errors.notify.invalid_text = Escreva um texto de 1 a {max} caracteres.
 errors.notify.invalid_seconds = Use de 0 a {max} segundos.
 errors.restart.forbidden = Só admins podem ver o que espera um reinício.
 restart.none = Nada espera um reinício.
-mods.confirm_command = Para continuar, adicione all: /{command} {mod} all
+mods.confirm_command = Para continuar, digite: /{command} {mod} all
 errors.mods.config_forbidden = Só admins podem ler os arquivos de configuração dos mods.
 configs.title = config.json
 configs.title_world = Mundo {world}

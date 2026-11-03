@@ -53,8 +53,8 @@ class PlayerCommandsRuntimeTest extends RuntimeTestBase {
                 .contains("hello there")
                 .doesNotContain("Inventory");
         assertThat(text(platform.commands.runAsConsole("cc-chat", Map.of()))).contains("Builder: hello there");
-        text(platform.commands.runAsConsole("cc-whitelist", Map.of("action", "add", "player", "Builder")));
-        assertThat(text(platform.commands.runAsConsole("cc-whitelist", Map.of("action", "list"))))
+        text(platform.commands.runAsConsole("cc-whitelist-add", Map.of("player", "Builder")));
+        assertThat(text(platform.commands.runAsConsole("cc-whitelist", Map.of())))
                 .contains("Builder");
         assertThat(text(platform.commands.runAsConsole("cc-kick", Map.of("player", "Builder", "reason", "-"))))
                 .contains("Builder");
@@ -64,8 +64,6 @@ class PlayerCommandsRuntimeTest extends RuntimeTestBase {
                 .isEqualTo("Commands.PlayersOnly");
         assertThat(code(platform.commands.runAsConsole("cc-bring", Map.of("player", "Admin"))))
                 .isEqualTo("Commands.PlayersOnly");
-        assertThat(code(platform.commands.runAsConsole("cc-whitelist", Map.of("action", "maybe"))))
-                .isEqualTo("Players.BadChoice");
         assertThat(code(platform.commands.runAsConsole("cc-mute", Map.of("player", "Nobody", "length", "1h"))))
                 .isEqualTo("Players.Unknown");
     }
@@ -98,7 +96,7 @@ class PlayerCommandsRuntimeTest extends RuntimeTestBase {
                 .isEqualTo("Players.Forbidden");
         assertThat(code(platform.commands.run("cc-inventory", moderator, Map.of("player", "Builder"))))
                 .isEqualTo("Players.Forbidden");
-        assertThat(code(platform.commands.run("cc-whitelist", moderator, Map.of("action", "add", "player", "Builder"))))
+        assertThat(code(platform.commands.run("cc-whitelist-add", moderator, Map.of("player", "Builder"))))
                 .isEqualTo("Players.Forbidden");
         assertThat(code(platform.commands.run("cc-op", moderator, Map.of("player", "Builder"))))
                 .isEqualTo("Players.AdminsOnly");
