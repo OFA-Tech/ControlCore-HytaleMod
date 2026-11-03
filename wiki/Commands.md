@@ -222,7 +222,7 @@ See [Key binds](Key-Binds) for the key syntax and which keys work.
 | `/cc-warn <player\|everyone\|admins> <seconds> <text>` | admins | a warning bar; `0` seconds keeps it until cleared; start the text with `warning:` (or `info:`, `success:`, `error:`) for a style |
 | `/cc-warn-clear <player\|everyone\|admins>` | admins | take away the warning bar from `/cc-warn` |
 
-The same limits as automation actions: up to 256 characters. `everyone` warnings also reach players who join later.
+Texts are 1 to 200 characters; a toast needs text after `Title|` and a warning after its `warning:` style. `everyone` warnings also reach players who join later; `/cc-warn-clear <player>` says so when one for everyone is still shown.
 
 ## Debug tools
 

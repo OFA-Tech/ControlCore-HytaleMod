@@ -266,6 +266,19 @@ public final class NotificationService implements NotificationsApi {
         }
     }
 
+    boolean hasWarning(PlayerId player, String id) {
+        Map<String, Entry> own = warnings.get(player);
+        return own != null && own.containsKey(id);
+    }
+
+    boolean hasAnyWarning(String id) {
+        return warnings.values().stream().anyMatch(own -> own.containsKey(id));
+    }
+
+    boolean hasWarningAll(String id) {
+        return everyone.containsKey(id);
+    }
+
     public List<String> warningIds() {
         List<String> ids = new ArrayList<>(everyone.keySet());
         ids.sort(String::compareTo);

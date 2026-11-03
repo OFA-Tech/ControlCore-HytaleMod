@@ -55,21 +55,28 @@ public final class Recipients {
         if (level.isEmpty()) {
             return Result.failure(badStyle());
         }
-        return text(input)
-                .flatMap(text -> resolve(who, target).map(found -> {
-                    int bar = text.indexOf('|');
-                    String title = bar < 0 ? "" : text.substring(0, bar).strip();
-                    String body = (bar < 0 ? text : text.substring(bar + 1)).strip();
-                    found.players()
-                            .forEach(player -> notifications.toast(
-                                    player, title, body, level.get(), AutomationService.TOAST_SECONDS));
-                    return tr.t(
-                            "controlcore.notify.toast_sent",
-                            "target",
-                            found.name(tr),
-                            "count",
-                            found.players().size());
-                }));
+        Result<String> checked = text(input);
+        if (checked.isFailure()) {
+            return checked;
+        }
+        String text = checked.value();
+        int bar = text.indexOf('|');
+        String title = bar < 0 ? "" : text.substring(0, bar).strip();
+        String body = (bar < 0 ? text : text.substring(bar + 1)).strip();
+        if (body.isEmpty()) {
+            return Result.failure(invalidText());
+        }
+        return resolve(who, target).map(found -> {
+            found.players()
+                    .forEach(player ->
+                            notifications.toast(player, title, body, level.get(), AutomationService.TOAST_SECONDS));
+            return tr.t(
+                    "controlcore.notify.toast_sent",
+                    "target",
+                    found.name(tr),
+                    "count",
+                    found.players().size());
+        });
     }
 
     public Result<String> warn(
@@ -85,34 +92,59 @@ public final class Recipients {
                     Text.key("controlcore.errors.notify.invalid_seconds", "Use 0 to {max} seconds.")
                             .with("max", MAX_WARNING_SECONDS)));
         }
-        return text(input)
-                .flatMap(text -> resolve(who, target).map(found -> {
-                    AutomationService.Leveled leveled = style.map(level -> new AutomationService.Leveled(level, text))
-                            .orElseGet(() -> AutomationService.Leveled.of(text));
-                    if (found.kind() == Kind.EVERYONE) {
-                        notifications.warningAll(WARNING_ID, leveled.text(), leveled.level(), seconds);
-                    } else {
-                        found.players()
-                                .forEach(player -> notifications.warning(
-                                        player, WARNING_ID, leveled.text(), leveled.level(), seconds));
-                    }
-                    return tr.t(
-                            "controlcore.notify.warning_sent",
-                            "target",
-                            found.name(tr),
-                            "count",
-                            found.players().size());
-                }));
+        Result<String> checked = text(input);
+        if (checked.isFailure()) {
+            return checked;
+        }
+        AutomationService.Leveled leveled = style.map(level -> new AutomationService.Leveled(level, checked.value()))
+                .orElseGet(() -> AutomationService.Leveled.of(checked.value()));
+        if (leveled.text().isBlank()) {
+            return Result.failure(invalidText());
+        }
+        return resolve(who, target).map(found -> {
+            if (found.kind() == Kind.EVERYONE) {
+                notifications.warningAll(WARNING_ID, leveled.text(), leveled.level(), seconds);
+            } else {
+                found.players()
+                        .forEach(player ->
+                                notifications.warning(player, WARNING_ID, leveled.text(), leveled.level(), seconds));
+            }
+            return tr.t(
+                    "controlcore.notify.warning_sent",
+                    "target",
+                    found.name(tr),
+                    "count",
+                    found.players().size());
+        });
     }
 
     public Result<String> clear(Optional<PlayerId> who, String target, Translator tr) {
-        return resolve(who, target).map(found -> {
-            if (found.kind() == Kind.EVERYONE) {
+        return resolve(who, target).flatMap(found -> {
+            boolean forEveryone = notifications.hasWarningAll(WARNING_ID);
+            boolean everyoneTarget = found.kind() == Kind.EVERYONE;
+            boolean own = everyoneTarget
+                    ? notifications.hasAnyWarning(WARNING_ID)
+                    : found.players().stream().anyMatch(player -> notifications.hasWarning(player, WARNING_ID));
+            if (!own && !(everyoneTarget && forEveryone)) {
+                return Result.failure(Error.validation(
+                        "Notify.NothingToClear",
+                        forEveryone
+                                ? Text.key(
+                                        "controlcore.errors.notify.only_everyone",
+                                        "Only the warning for everyone is shown; take it away with /cc-warn-clear"
+                                                + " everyone.")
+                                : Text.key(
+                                        "controlcore.errors.notify.nothing_to_clear",
+                                        "There is no warning bar from /cc-warn to take away.")));
+            }
+            if (everyoneTarget) {
                 notifications.clearWarningAll(WARNING_ID);
             } else {
                 found.players().forEach(player -> notifications.clearWarning(player, WARNING_ID));
             }
-            return tr.t("controlcore.notify.warning_cleared", "target", found.name(tr));
+            String text = tr.t("controlcore.notify.warning_cleared", "target", found.name(tr));
+            return Result.success(
+                    !everyoneTarget && forEveryone ? text + " " + tr.t("controlcore.notify.everyone_remains") : text);
         });
     }
 
@@ -177,13 +209,17 @@ public final class Recipients {
 
     static Result<String> text(String input) {
         String text = input == null ? "" : input.strip();
-        if (text.isEmpty() || text.length() > AutomationService.MAX_TEXT) {
-            return Result.failure(Error.validation(
-                    "Notify.InvalidText",
-                    Text.key("controlcore.errors.notify.invalid_text", "Write a text of 1 to {max} characters.")
-                            .with("max", AutomationService.MAX_TEXT)));
+        if (text.isEmpty() || text.length() > NotificationService.MAX_TEXT) {
+            return Result.failure(invalidText());
         }
         return Result.success(text);
+    }
+
+    private static Error invalidText() {
+        return Error.validation(
+                "Notify.InvalidText",
+                Text.key("controlcore.errors.notify.invalid_text", "Write a text of 1 to {max} characters.")
+                        .with("max", NotificationService.MAX_TEXT));
     }
 
     private static Error badStyle() {

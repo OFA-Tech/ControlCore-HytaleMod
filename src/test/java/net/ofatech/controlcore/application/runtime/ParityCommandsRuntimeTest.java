@@ -228,6 +228,26 @@ class ParityCommandsRuntimeTest extends RuntimeTestBase {
                 .isEqualTo("Notify.InvalidSeconds");
     }
 
+    @Test
+    void clearingAWarningSaysWhatIsLeftAndEmptyTextsAreRefused() {
+        assertThat(code(console("cc-warn-clear", Map.of("target", "Builder")))).isEqualTo("Notify.NothingToClear");
+
+        text(console("cc-warn", Map.of("target", "everyone", "seconds", 0, "text", "For all")));
+        text(console("cc-warn", Map.of("target", "Builder", "seconds", 0, "text", "For you")));
+        assertThat(text(console("cc-warn-clear", Map.of("target", "Builder")))).contains("/cc-warn-clear everyone");
+        assertThat(console("cc-warn-clear", Map.of("target", "Builder")).error().description())
+                .contains("/cc-warn-clear everyone");
+        text(console("cc-warn-clear", Map.of("target", "everyone")));
+        assertThat(code(console("cc-warn-clear", Map.of("target", "everyone")))).isEqualTo("Notify.NothingToClear");
+
+        assertThat(code(console("cc-toast", Map.of("target", "Builder", "style", "info", "text", "Title|"))))
+                .isEqualTo("Notify.InvalidText");
+        assertThat(code(console("cc-warn", Map.of("target", "Builder", "seconds", 0, "text", "warning:"))))
+                .isEqualTo("Notify.InvalidText");
+        assertThat(code(console("cc-toast", Map.of("target", "Builder", "style", "info", "text", "x".repeat(201)))))
+                .isEqualTo("Notify.InvalidText");
+    }
+
     private Overlay overlay(PlayerInfo player) {
         return platform.overlay.shown.get(player.id());
     }
