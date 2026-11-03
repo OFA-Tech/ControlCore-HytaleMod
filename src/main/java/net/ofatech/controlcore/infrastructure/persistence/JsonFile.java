@@ -69,7 +69,9 @@ final class JsonFile {
             Files.move(file, broken);
             return "moved it to " + broken + " and starting empty";
         } catch (IOException e) {
-            return "could not move it aside (" + e.getMessage() + "); starting empty";
+            readOnly = true;
+            return "could not move it aside (" + e.getMessage() + "); starting empty, and changes to it are not saved"
+                    + " until the file is fixed and the server restarted";
         }
     }
 

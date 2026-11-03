@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Map;
 import net.ofatech.controlcore.fakes.RecordingLog;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -38,5 +39,20 @@ class JsonFileReadErrorsTest {
             assertThat(files.map(p -> p.getFileName().toString())).containsExactly("SettingValues.json");
         }
         assertThat(Files.readString(file, StandardCharsets.UTF_8)).isEqualTo(original);
+    }
+
+    @Test
+    void aBrokenFileThatCantBeMovedAsideIsNotWrittenOver() throws IOException {
+        Path file = folder.resolve("a".repeat(240) + ".json");
+        String original = "{ not json";
+        Files.writeString(file, original, StandardCharsets.UTF_8);
+
+        JsonFile json = new JsonFile(file, log, "test data");
+        assertThat(json.<Map<String, String>>read(Map.class)).isEmpty();
+        assertThat(json.write(Map.of("a", "b"), Map.class)).isFalse();
+
+        assertThat(Files.readString(file, StandardCharsets.UTF_8)).isEqualTo(original);
+        assertThat(log.contains("not saved until the file is fixed and the server restarted"))
+                .isTrue();
     }
 }

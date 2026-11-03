@@ -51,7 +51,7 @@
 
 ### Fixed
 - An unreadable data file (for example a typo in `SettingValues.json`) is now moved aside as `<file>.broken-<time>` instead of being overwritten with empty data on the next save. A data file that can't be opened at all (locked, no
-  access) is left untouched and nothing is saved over it until the next start; changes to its permission rules,
+  access), or one that can't be moved aside, is left untouched and nothing is saved over it until the next start; changes to its permission rules,
   custom key binds or automation rules are refused with "The change was not saved" instead of looking saved.
 - Someone who loses admin while the panel is open can no longer change permission rules or turn mods on or off from it.
 - Snapshot and profile restores by non-admins skip settings they may not change, and the preview hides settings they may not see.
