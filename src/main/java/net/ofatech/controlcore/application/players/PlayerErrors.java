@@ -101,6 +101,13 @@ final class PlayerErrors {
                 Text.key("controlcore.errors.players.players_only", "Only players in the game can do that."));
     }
 
+    static Error badChoice(String choices) {
+        return Error.validation(
+                "Players.BadChoice",
+                Text.key("controlcore.errors.players.bad_choice", "Use {choices}.")
+                        .with("choices", choices));
+    }
+
     private static String shown(String input) {
         return PlainText.oneLine(input, PlainText.MAX_SHOWN_INPUT);
     }

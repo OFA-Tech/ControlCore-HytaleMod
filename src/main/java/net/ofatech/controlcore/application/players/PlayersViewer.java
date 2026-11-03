@@ -15,7 +15,6 @@ import net.ofatech.controlcore.domain.result.Result;
 
 final class PlayersViewer implements PlayersView {
 
-    private final PlayerId viewer;
     private final Optional<PlayerId> who;
     private final Translator tr;
     private final PlayerGuard guard;
@@ -27,7 +26,7 @@ final class PlayersViewer implements PlayersView {
     private final PlayersChanges changes;
 
     PlayersViewer(
-            PlayerId viewer,
+            Optional<PlayerId> who,
             Translator tr,
             PlayerGuard guard,
             PlayerListing listing,
@@ -36,8 +35,7 @@ final class PlayersViewer implements PlayersView {
             PlayerControl control,
             BansService bans,
             PlayersChanges changes) {
-        this.viewer = viewer;
-        this.who = Optional.of(viewer);
+        this.who = who;
         this.tr = tr;
         this.guard = guard;
         this.listing = listing;
@@ -50,7 +48,7 @@ final class PlayersViewer implements PlayersView {
 
     @Override
     public String viewer() {
-        return viewer.value().toString();
+        return who.map(id -> id.value().toString()).orElse("");
     }
 
     @Override
@@ -119,12 +117,14 @@ final class PlayersViewer implements PlayersView {
 
     @Override
     public CompletableFuture<Result<String>> teleportTo(String id) {
-        return byId(id, found -> control.teleport(who, viewer, found, false, tr));
+        return who.map(me -> byId(id, found -> control.teleport(who, me, found, false, tr)))
+                .orElseGet(() -> PlayerDirectory.completed(Result.failure(PlayerErrors.playersOnly())));
     }
 
     @Override
     public CompletableFuture<Result<String>> bring(String id) {
-        return byId(id, found -> control.teleport(who, found, viewer, true, tr));
+        return who.map(me -> byId(id, found -> control.teleport(who, found, me, true, tr)))
+                .orElseGet(() -> PlayerDirectory.completed(Result.failure(PlayerErrors.playersOnly())));
     }
 
     @Override

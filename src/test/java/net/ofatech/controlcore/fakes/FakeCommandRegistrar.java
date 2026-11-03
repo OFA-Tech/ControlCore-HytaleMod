@@ -26,7 +26,14 @@ public final class FakeCommandRegistrar implements CommandRegistrar {
     }
 
     public Result<Reply> run(String name, PlayerInfo sender, Map<String, Object> args) {
-        CommandSender who = CommandSender.of(sender);
+        return run(name, CommandSender.of(sender), args);
+    }
+
+    public Result<Reply> runAsConsole(String name, Map<String, Object> args) {
+        return run(name, CommandSender.console("Console"), args);
+    }
+
+    private Result<Reply> run(String name, CommandSender who, Map<String, Object> args) {
         CommandContext context = new CommandContext() {
             @Override
             public CommandSender sender() {

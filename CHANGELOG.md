@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Added
+- Commands for player management, also from the console, with the same rights as the Players tab: `/cc-kick`,
+  `/cc-mute`, `/cc-unmute`, `/cc-freeze`, `/cc-unfreeze`, `/cc-gamemode`, `/cc-tp`, `/cc-bring`, `/cc-whitelist`,
+  `/cc-op`, `/cc-deop`, `/cc-group`, `/cc-groups`, `/cc-group-perm`, `/cc-player`, `/cc-inventory` and `/cc-chat`.
+
 ## 0.19.0 - 2026-10-29
 
 Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.5. The API for other mods

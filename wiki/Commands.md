@@ -49,6 +49,39 @@ World settings are `world:<world>.<key>`, for example `world:default.is-pvp-enab
 /cc-pref controlcore:panel-start-tab Mod Settings
 ```
 
+## Players
+
+The same actions as the panel's **Players** tab, with the same rights: each needs its node (or admin), only an admin
+may act on an admin, and nobody can unmute, unfreeze, de-op or un-whitelist themselves. `<player>` is a name or UUID.
+The console counts as an admin; `/cc-tp` and `/cc-bring` need a player.
+
+| Command | Who | Does |
+|---|---|---|
+| `/cc-kick <player> <reason\|->` | `ofatech.controlcore.players.kick` | kick an online player; `-` uses the default message |
+| `/cc-mute <player> <length>` | `ofatech.controlcore.players.mute` | mute for a length: `permanent`, `30m`, `12h`, `7d`, `2w` |
+| `/cc-unmute <player>` | `ofatech.controlcore.players.mute` | lift a mute |
+| `/cc-freeze <player>` | `ofatech.controlcore.players.freeze` | hold a player in place (offline players are frozen when they join) |
+| `/cc-unfreeze <player>` | `ofatech.controlcore.players.freeze` | let them move again |
+| `/cc-gamemode <player>` | `ofatech.controlcore.players.gamemode` | switch an online player between Adventure and Creative |
+| `/cc-tp <player>` | `ofatech.controlcore.players.teleport` | teleport yourself to an online player |
+| `/cc-bring <player>` | `ofatech.controlcore.players.teleport` | teleport an online player to you |
+| `/cc-whitelist <add\|remove\|list> [player]` | `ofatech.controlcore.players.whitelist` | change or list the whitelist |
+| `/cc-op <player>` / `/cc-deop <player>` | admins | make or remove an operator |
+| `/cc-group <add\|remove> <player> <group>` | admins | add a player to a permission group or remove them |
+| `/cc-groups` | admins | list the permission groups and their own permissions |
+| `/cc-group-perm <give\|take> <group> <node>` | admins | give a group a permission node or take it away |
+| `/cc-player <player>` | `ofatech.controlcore.players` | status, groups, whitelist, first join, ban, mute, freeze and recent messages |
+| `/cc-inventory <player>` | `ofatech.controlcore.players.inventory` | what an online player carries |
+| `/cc-chat` | `ofatech.controlcore.players` | the last 50 chat messages |
+
+```
+/cc-mute Griefer 30m
+/cc-kick Griefer stop spamming
+/cc-whitelist add Builder
+/cc-group add Builder hytale:Adventurer
+/cc-group-perm give hytale:Adventurer homes.use
+```
+
 ## Permissions
 
 All three are also in the panel's **Permissions** tab.
