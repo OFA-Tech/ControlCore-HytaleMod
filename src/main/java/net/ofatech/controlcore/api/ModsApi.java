@@ -60,7 +60,8 @@ public interface ModsApi {
      * Lists a mod's config files, as the Mods tab shows them.
      *
      * @param modId the mod's id, {@code Group:Name}
-     * @return the files with their lines; empty if there are none or the mod is unknown or hidden
+     * @return the files with their lines; empty if there are none, the mod is unknown or hidden, or the actor is
+     *     not an admin
      */
     List<ConfigFile> configFiles(String modId);
 
@@ -68,7 +69,7 @@ public interface ModsApi {
      * Lists what needs a server restart to take effect: changed {@code config.json} keys and mods turned on or
      * off.
      *
-     * @return the names of the pending changes; empty if nothing waits for a restart
+     * @return the names of the pending changes; empty if nothing waits for a restart or the actor is not an admin
      */
     List<Text> pendingRestart();
 

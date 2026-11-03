@@ -21,6 +21,7 @@ import net.ofatech.controlcore.domain.model.serverconfig.ConfigEntry;
 import net.ofatech.controlcore.domain.model.serverconfig.ConfigValueKind;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
+import net.ofatech.controlcore.domain.ports.mods.ModCatalog;
 import net.ofatech.controlcore.domain.result.Result;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -190,6 +191,15 @@ class ServerApiRuntimeTest extends RuntimeTestBase {
         assertThat(changed).containsExactly("Acme:Base", "Acme:Addon");
         assertMadeBy(admin);
         assertThat(api.mods().pendingRestart()).hasSize(2);
+        assertThat(api.mods().actingFor(guest.id()).pendingRestart()).isEmpty();
+    }
+
+    @Test
+    void modConfigFilesAreOnlyForAdmins() {
+        platform.modCatalog.files.put("Acme:Base", List.of(new ModCatalog.ConfigFile("config.json", List.of("{}"))));
+
+        assertThat(api.mods().actingFor(admin.id()).configFiles("Acme:Base")).hasSize(1);
+        assertThat(api.mods().actingFor(guest.id()).configFiles("Acme:Base")).isEmpty();
     }
 
     @Test

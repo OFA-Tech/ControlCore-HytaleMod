@@ -258,6 +258,9 @@ public final class ModsEditor {
 
         @Override
         public List<ModCatalog.ConfigFile> configFiles(String modId) {
+            if (!stillAdmin.getAsBoolean()) {
+                return List.of();
+            }
             boolean visible = list().stream().anyMatch(entry -> entry.mod().id().equalsIgnoreCase(modId));
             if (!visible) {
                 return List.of();

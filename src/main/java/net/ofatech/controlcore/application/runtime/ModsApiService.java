@@ -71,6 +71,9 @@ public final class ModsApiService implements ModsApi {
 
     @Override
     public List<Text> pendingRestart() {
+        if (!view().canManage()) {
+            return List.of();
+        }
         List<Text> names = new ArrayList<>(serverConfig.pendingRestart());
         names.addAll(mods.pendingRestart());
         return List.copyOf(names);
