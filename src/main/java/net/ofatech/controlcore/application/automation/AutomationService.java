@@ -665,7 +665,7 @@ public final class AutomationService {
         return save(editing, form, Optional.empty(), who, tr);
     }
 
-    public Result<String> save(
+    public synchronized Result<String> save(
             Optional<String> editing,
             AutomationView.Form form,
             Optional<Boolean> enabled,
@@ -870,7 +870,7 @@ public final class AutomationService {
         return id;
     }
 
-    public Result<String> toggle(String id, Optional<PlayerId> who, Translator tr) {
+    public synchronized Result<String> toggle(String id, Optional<PlayerId> who, Translator tr) {
         if (!mayManage(who)) {
             return forbidden();
         }
@@ -907,7 +907,7 @@ public final class AutomationService {
                 + (parts.length > 1 ? " " + parts[1] : ""));
     }
 
-    public Result<String> remove(String id, Optional<PlayerId> who, Translator tr) {
+    public synchronized Result<String> remove(String id, Optional<PlayerId> who, Translator tr) {
         if (!mayManage(who)) {
             return forbidden();
         }
