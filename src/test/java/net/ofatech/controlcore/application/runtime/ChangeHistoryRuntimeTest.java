@@ -3,11 +3,13 @@ package net.ofatech.controlcore.application.runtime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import net.ofatech.controlcore.api.ControlCoreApi;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord;
+import net.ofatech.controlcore.domain.model.history.HistoryView;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,6 +44,31 @@ class ChangeHistoryRuntimeTest extends RuntimeTestBase {
                 .contains("#" + record.id())
                 .contains("Admin")
                 .contains("Hello");
+    }
+
+    @Test
+    void panelRowsKeepModNamesRollbackMarksAndTheNewestSlice() {
+        platform.modCatalog.add("Acme:Homes", false);
+        platform.commands.run("cc-set", admin, Map.of("id", WELCOME, "value", "Hello"));
+        long first = last().id();
+        platform.commands.run("cc-rollback", admin, Map.of("change", (int) first));
+        platform.commands.run(COMMAND, admin, Map.of());
+        var panel = platform.controlPanel.lastContent;
+        assertThat(panel.mods().setEnabled("Acme:Homes", false).isSuccess()).isTrue();
+        HistoryView view = panel.history().orElseThrow();
+
+        List<HistoryView.Entry> all = view.entries();
+
+        assertThat(all.getFirst().kind()).isEqualTo(ChangeRecord.Kind.MOD);
+        assertThat(all.getFirst().what()).isEqualTo("Homes");
+        assertThat(all.get(1).rollback()).isTrue();
+        assertThat(all.get(1).canRollback()).isTrue();
+        assertThat(all.get(2).id()).isEqualTo(first);
+        assertThat(all.get(2).rolledBack()).isTrue();
+        assertThat(all.get(2).canRollback()).isFalse();
+        assertThat(view.entries(2)).isEqualTo(all.subList(0, 2));
+        assertThat(view.entries(all.size() + 5)).isEqualTo(all);
+        assertThat(view.total()).isEqualTo(all.size());
     }
 
     @Test

@@ -3,11 +3,11 @@ package net.ofatech.controlcore.application.history;
 import com.google.auto.service.AutoService;
 import java.util.Optional;
 import net.ofatech.controlcore.api.Setting;
-import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.component.FeatureModule;
 import net.ofatech.controlcore.application.component.ModuleContext;
 import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
@@ -20,14 +20,14 @@ public final class HistoryModule implements FeatureModule {
     static final String DAYS_ID = "controlcore:history-days";
     static final int DEFAULT_DAYS = 90;
 
-    private final SettingsApi settings;
+    private final SettingsRegistry settings;
     private final ServerConfigEditor serverConfig;
     private final KeymapRegistry keymaps;
     private final ChangeHistory history;
     private final Setting<Integer> days;
 
     public HistoryModule(
-            SettingsApi settings, ServerConfigEditor serverConfig, KeymapRegistry keymaps, ChangeHistory history) {
+            SettingsRegistry settings, ServerConfigEditor serverConfig, KeymapRegistry keymaps, ChangeHistory history) {
         this.settings = settings;
         this.serverConfig = serverConfig;
         this.keymaps = keymaps;

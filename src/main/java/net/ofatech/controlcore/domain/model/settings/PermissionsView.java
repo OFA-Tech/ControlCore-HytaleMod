@@ -26,5 +26,11 @@ public interface PermissionsView {
             String view,
             String edit,
             boolean adminRule,
-            SettingDefinition<?> definition) {}
+            SettingDefinition<?> definition) {
+
+        public boolean matches(SettingSearch search) {
+            SettingSnapshot snapshot = new SettingSnapshot(definition, (view + " " + edit).strip(), adminRule);
+            return search.matches(snapshot, name, heading, description);
+        }
+    }
 }

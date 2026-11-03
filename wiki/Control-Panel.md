@@ -80,7 +80,8 @@ Buttons on each row:
 - **Ban** bans the player with the length and reason chosen in the form; **Unban** (press twice) lifts a ban.
 
 **+ Player action** opens a form (and **Close form** folds it away): pick **Ban**, **Unban**, **Kick**, **Add to /
-Remove from whitelist**, **Make / Remove operator**, **Add to / Remove from group**, or **Give / Take a permission** for
+Remove from whitelist**, **Make / Remove operator**, **Add to / Remove from group**, **Set as only group** (takes the
+player out of every other group and puts them in the one picked), or **Give / Take a permission** for
 a group (the form then lists that group's own permissions), **Mute** / **Unmute** (for a length, like bans; muted
 players' messages are blocked and they are told so) or **Freeze** / **Unfreeze** (an online player can't move or
 jump until unfrozen or until they leave), type a
@@ -94,7 +95,10 @@ for each button, `ofatech.controlcore.players.whitelist` for the whitelist, `.pl
 `.players.inventory` for those, and `ofatech.controlcore.bans` for bans. **Recent chat** shows the last 50 messages
 since the server started (kept in memory only).
 Operators and groups can only be changed by admins, because adding someone to `hytale:Admin` gives them everything.
-Whether joining needs the whitelist is the **Require join permission** key in config.json. All of these changes are in
+With the **Whitelisted** filter, a bar above the list shows whether joining needs the whitelist, with a **Require
+whitelist** / **Stop requiring** button (players with the whitelist right). It is the **Require join permission** key
+in config.json, applies at once and shows up in History as that key. **Set as only group** is recorded as one History
+line per group added or removed; nobody can take their own operator group away this way. All of these changes are in
 History and can be rolled back. Moderators can't use these actions on an admin; only admins can. A freeze stays until it is lifted, even if the player leaves and joins again; an offline player can be frozen and is held in place when they join. Nobody can lift their own mute or freeze or take themselves off the whitelist; another admin or the console has to. Mute only blocks normal chat messages; commands from other mods that send messages are not covered.
 
 World ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`, so `/cc-get`, `/cc-set`,
@@ -122,7 +126,9 @@ key still does its normal game action too. See [Key binds](Key-Binds#who-decides
 
 ### Player Prefs
 
-Your own preferences: the same rows, but only for you. Default returns to the mod's default.
+Your own preferences: the same rows, but only for you. Default returns to the mod's default. **ControlCore: HUD**
+starts with **Hide the whole HUD**, the same switch as `/cc-hud` and the toggle key; it shows whether your HUD is
+hidden right now and lasts until you turn it off or leave.
 
 ### Keymaps
 
@@ -155,7 +161,8 @@ Admins only: who may see and change each setting, `config.json` key, category or
 Admins (and players with `ofatech.controlcore.history`) see every server-wide change: `config.json` keys, mod
 settings, the server's keys, custom binds, permission rules and mods turned on or off. Each line shows what changed,
 `old -> new`, and `#number · when · who · from where` (panel, command, mod or rollback). Players' own preferences
-are not recorded.
+are not recorded. Non-admins don't see changes to mods hidden from players or to settings, `config.json` keys and
+world keys they have no view right on.
 
 - The dropdown limits the list to one kind; the search matches names, people, values and `#number`. The newest 200
   changes are listed; `/cc-history --filter=<text>` searches further back.

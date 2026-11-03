@@ -5,7 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBind;
+import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingPermission;
 import net.ofatech.controlcore.fakes.RecordingLog;
 import org.junit.jupiter.api.Test;
@@ -47,6 +49,29 @@ class JsonRuleStoresTest {
     }
 
     @Test
+    void storesWhoseFileCouldNotBeOpenedRefuseChangesAndSaySoOncePerFile() throws IOException {
+        var permissions =
+                new JsonSettingPermissionStore(Files.createDirectory(folder.resolve("SettingPermissions.json")), log);
+        var binds = new JsonCustomKeyBindStore(Files.createDirectory(folder.resolve("CustomKeyBinds.json")), log);
+        var rules = new JsonAutomationRuleStore(Files.createDirectory(folder.resolve("AutomationRules.json")), log);
+        rules.all();
+
+        assertThat(permissions.put("mod:chat", SettingPermission.of("chat.staff")))
+                .isFalse();
+        assertThat(permissions.put("mod:chat", SettingPermission.of("chat.staff")))
+                .isFalse();
+        assertThat(binds.put(new CustomKeyBind("warp", "CTRL + R", "warp", false)))
+                .isFalse();
+        assertThat(binds.remove("warp")).as("nothing to remove").isTrue();
+        assertThat(rules.saveAll(List.of())).isFalse();
+
+        assertThat(permissions.all()).isEmpty();
+        assertThat(binds.all()).isEmpty();
+        assertThat(log.lines.stream().filter(line -> line.contains("was not saved: it could not be read at start")))
+                .hasSize(3);
+    }
+
+    @Test
     void anUnreadableFileStartsEmptyAndIsLogged() throws IOException {
         Path file = folder.resolve("CustomKeyBinds.json");
         Files.writeString(file, "{ not json");
@@ -55,5 +80,55 @@ class JsonRuleStoresTest {
 
         assertThat(store.all()).isEmpty();
         assertThat(log.contains("Could not read custom key binds")).isTrue();
+        assertMovedAside("CustomKeyBinds.json", "{ not json");
+    }
+
+    @Test
+    void anUnreadableAutomationFileIsMovedAsideNotOverwritten() throws IOException {
+        Path file = folder.resolve("AutomationRules.json");
+        Files.writeString(file, "[ broken");
+
+        var store = new JsonAutomationRuleStore(file, log);
+
+        assertThat(store.all()).isEmpty();
+        store.saveAll(List.of());
+        assertThat(log.contains("Could not read automation rules")).isTrue();
+        assertMovedAside("AutomationRules.json", "[ broken");
+    }
+
+    @Test
+    void aFileWithBrokenTextIsMovedAside() throws IOException {
+        Path file = folder.resolve("SettingValues.json");
+        Files.write(file, new byte[] {'{', '"', (byte) 0xC3, (byte) 0x28, '"', '}'});
+
+        var store = new JsonSettingStore(file, log);
+
+        assertThat(store.all()).isEmpty();
+        try (var files = Files.list(folder)) {
+            assertThat(files.filter(p -> p.getFileName().toString().startsWith("SettingValues.json.broken-")))
+                    .hasSize(1);
+        }
+    }
+
+    @Test
+    void aFileThatCannotBeOpenedIsNeverWrittenOver() {
+        Path file = folder.resolve("SettingValues.json");
+        assertThat(file.toFile().mkdir()).isTrue();
+
+        var store = new JsonSettingStore(file, log);
+        store.put(SettingId.of("homes:max"), "5");
+        store.flush();
+
+        assertThat(file).isDirectory();
+        assertThat(folder.toFile().list()).containsExactly("SettingValues.json");
+        assertThat(log.contains("left untouched")).isTrue();
+    }
+
+    private void assertMovedAside(String name, String original) throws IOException {
+        try (var files = Files.list(folder)) {
+            assertThat(files.filter(p -> p.getFileName().toString().startsWith(name + ".broken-")))
+                    .singleElement()
+                    .satisfies(p -> assertThat(p).hasContent(original));
+        }
     }
 }

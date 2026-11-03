@@ -5,18 +5,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import net.ofatech.controlcore.api.ControlPanelApi;
-import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.automation.AutomationService;
 import net.ofatech.controlcore.application.diagnostics.DiagnosticsService;
 import net.ofatech.controlcore.application.history.HistoryEditor;
+import net.ofatech.controlcore.application.hud.HudPrefs;
 import net.ofatech.controlcore.application.keymaps.InputProbeCommand;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.mods.ModsEditor;
 import net.ofatech.controlcore.application.players.PlayersService;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
+import net.ofatech.controlcore.application.settings.DefaultsService;
 import net.ofatech.controlcore.application.settings.PermissionsEditor;
 import net.ofatech.controlcore.application.settings.PermittedSettingsEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.application.snapshot.ProfileService;
 import net.ofatech.controlcore.application.snapshot.SnapshotService;
 import net.ofatech.controlcore.application.text.Texts;
@@ -43,7 +45,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final Players players;
     private final ServerConfiguration server;
     private final ControlPanelView view;
-    private final SettingsApi registry;
+    private final SettingsRegistry registry;
     private final ServerConfigEditor serverConfig;
     private final PlayersService playerAdmin;
     private final KeymapsEditor keymaps;
@@ -59,13 +61,15 @@ public final class ControlPanelService implements ControlPanelApi {
     private final ProfileService profiles;
     private final DiagnosticsService diagnostics;
     private final AutomationService automation;
+    private final DefaultsService defaults;
+    private final HudPrefs hudPrefs;
 
     public ControlPanelService(
             ControlPanelSettings settings,
             Players players,
             ServerConfiguration server,
             ControlPanelView view,
-            SettingsApi registry,
+            SettingsRegistry registry,
             ServerConfigEditor serverConfig,
             PlayersService playerAdmin,
             KeymapsEditor keymaps,
@@ -80,8 +84,12 @@ public final class ControlPanelService implements ControlPanelApi {
             SnapshotService snapshots,
             ProfileService profiles,
             DiagnosticsService diagnostics,
-            AutomationService automation) {
+            AutomationService automation,
+            DefaultsService defaults,
+            HudPrefs hudPrefs) {
+        this.hudPrefs = hudPrefs;
         this.settings = settings;
+        this.defaults = defaults;
         this.players = players;
         this.server = server;
         this.view = view;
@@ -125,38 +133,27 @@ public final class ControlPanelService implements ControlPanelApi {
     }
 
     public Result<Void> openBestFor(PlayerId player) {
-        ControlPanelRequest request = mayOpenAdminPanel(player) && settings.panelEnabled()
-                ? ControlPanelRequest.ALL
-                : ControlPanelRequest.PLAYER_PREFERENCES;
-        return open(player, request);
+        return open(player, bestRequest(player));
     }
 
-    public Result<Void> openForMod(PlayerId player, String mod) {
-        String wanted = mod == null ? "" : mod.strip();
-        var entry = mods.viewedBy(Optional.of(player)).list().stream()
-                .filter(candidate -> candidate.mod().id().equalsIgnoreCase(wanted)
-                        || candidate.mod().name().equalsIgnoreCase(wanted)
-                        || candidate
-                                .namespace()
-                                .filter(wanted::equalsIgnoreCase)
-                                .isPresent())
-                .findFirst();
-        if (entry.isEmpty()) {
-            return Result.failure(Error.notFound(
-                    "Mods.Unknown",
-                    Text.key("controlcore.errors.mods.unknown", "There is no mod {id}.")
-                            .with("id", wanted)));
-        }
-        if (entry.get().namespace().isEmpty()) {
-            return Result.failure(Error.notFound(
-                    "Mods.NoSettings",
-                    Text.key("controlcore.errors.mods.no_settings", "{name} has no settings in ControlCore.")
-                            .with("name", entry.get().mod().name())));
-        }
-        ControlPanelRequest request = mayOpenAdminPanel(player) && settings.panelEnabled()
+    private ControlPanelRequest bestRequest(PlayerId player) {
+        return mayOpenAdminPanel(player) && settings.panelEnabled()
                 ? ControlPanelRequest.ALL
                 : ControlPanelRequest.PLAYER_PREFERENCES;
-        return open(player, request, entry.get().namespace());
+    }
+
+    @Override
+    public Result<Void> openForMod(PlayerId player, String mod) {
+        return mods.viewedBy(Optional.of(player))
+                .find(mod)
+                .flatMap(entry -> entry.namespace().isEmpty()
+                        ? Result.failure(Error.notFound(
+                                "Mods.NoSettings",
+                                Text.key(
+                                                "controlcore.errors.mods.no_settings",
+                                                "{name} has no settings in ControlCore.")
+                                        .with("name", entry.mod().name())))
+                        : open(player, bestRequest(player), entry.namespace()));
     }
 
     private Result<Void> open(PlayerId player, ControlPanelRequest request, Optional<String> focus) {
@@ -180,14 +177,14 @@ public final class ControlPanelService implements ControlPanelApi {
                     "ControlPanel.PlayerNotFound",
                     Text.key("controlcore.errors.controlpanel.player_offline", "That player is not online.")));
         }
-        KeymapsEditor keys = keymaps.viewedBy(player, () -> permissions.isAdmin(player));
+        KeymapsEditor keys = keymaps.viewedBy(player, permissions);
         Result<Void> opened = view.open(
                 player,
                 request,
                 new ControlPanelContent(
                         server.read(),
                         permitted(serverConfig, player),
-                        permitted(registry, player),
+                        hudPrefs.around(permitted(registry, player)),
                         keys,
                         keys,
                         settings.startTab(player),
@@ -200,7 +197,8 @@ public final class ControlPanelService implements ControlPanelApi {
                         },
                         mods.viewedBy(Optional.of(player)),
                         permissions.isAdmin(player)
-                                ? Optional.of(permissionRules.viewedBy(texts.forPlayer(Optional.of(player))))
+                                ? Optional.of(permissionRules.viewedBy(
+                                        texts.forPlayer(Optional.of(player)), () -> permissions.isAdmin(player)))
                                 : Optional.empty(),
                         history.maySee(Optional.of(player))
                                 ? Optional.of(history.viewedBy(player, nameOf(player)))
@@ -225,7 +223,8 @@ public final class ControlPanelService implements ControlPanelApi {
                                 : Optional.empty(),
                         keyDetection.viewedBy(player),
                         () -> rights(player),
-                        () -> permissions.isAdmin(player)));
+                        () -> permissions.isAdmin(player),
+                        defaults.viewedBy(player, nameOf(player))));
         opened.onSuccess(nothing -> keyDetection.cancel(player));
         return opened;
     }

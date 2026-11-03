@@ -3,6 +3,8 @@ package net.ofatech.controlcore.api;
 import java.util.List;
 import java.util.Optional;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.model.keys.CustomKeyBind;
+import net.ofatech.controlcore.domain.model.keys.GameActionMode;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
 import net.ofatech.controlcore.domain.model.keys.KeyBinds;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
@@ -120,4 +122,78 @@ public interface KeymapsApi {
      * @return the mod's default bindings, or {@code Keys.UnknownAction}
      */
     Result<KeyBinds> resetServerBind(SettingId id);
+
+    /**
+     * Returns this API acting for a player, with the rights they have in the control panel: they may change only
+     * their own bindings, and only admins may change the server's bindings, custom binds and game action modes
+     * ({@code Keys.ServerOnlyAdmins}, or {@code Keys.Forbidden} for another player's bindings). The change history
+     * records the player as the one who made the change. Registering and removing the calling mod's own actions
+     * and reading actions and bindings are not restricted.
+     *
+     * @param player the player whose rights apply
+     * @return the key actions API restricted to {@code player}'s rights
+     * @throws NullPointerException if {@code player} is {@code null}
+     * @since API 2.4.0
+     */
+    KeymapsApi actingFor(PlayerId player);
+
+    /**
+     * Lists the custom binds admins created ({@code custom:} actions that run a command).
+     *
+     * @return every custom bind, sorted by name
+     * @since API 2.4.0
+     */
+    List<CustomKeyBind> customBinds();
+
+    /**
+     * Finds a custom bind.
+     *
+     * @param name the bind's name, with or without the {@code custom:} prefix
+     * @return the bind, or empty if there is none
+     * @since API 2.4.0
+     */
+    Optional<CustomKeyBind> findCustom(String name);
+
+    /**
+     * Creates a custom bind, or replaces the one with the same name, like {@code /cc-keybind-add}.
+     *
+     * @param name the bind's name, for example {@code warp-spawn} (becomes {@code custom:warp-spawn})
+     * @param keys the default keys, for example {@code ctrl+f}
+     * @param command the command to run, without {@code /}; {@code {player}} and {@code {uuid}} are filled in
+     * @param runAsServer {@code true} to run the command as the server, {@code false} as the player who pressed
+     *     the keys
+     * @return a confirmation message, or an error such as {@code Keys.InvalidCombo} or
+     *     {@code Keys.ServerOnlyAdmins}
+     * @since API 2.4.0
+     */
+    Result<String> addCustom(String name, String keys, String command, boolean runAsServer);
+
+    /**
+     * Removes a custom bind.
+     *
+     * @param name the bind's name, with or without the {@code custom:} prefix
+     * @return a confirmation message, or an error such as {@code Keys.UnknownAction} or
+     *     {@code Keys.ServerOnlyAdmins}
+     * @since API 2.4.0
+     */
+    Result<String> removeCustom(String name);
+
+    /**
+     * Returns whether pressing an action's keys still does what the keys do in the game.
+     *
+     * @param id the action's id
+     * @return the action's mode; {@link GameActionMode#SERVER_SETTING} if none was chosen
+     * @since API 2.4.0
+     */
+    GameActionMode gameActionMode(SettingId id);
+
+    /**
+     * Chooses whether pressing an action's keys still does what the keys do in the game.
+     *
+     * @param id the action's id
+     * @param mode the new mode
+     * @return the saved mode, or an error such as {@code Keys.UnknownAction} or {@code Keys.ServerOnlyAdmins}
+     * @since API 2.4.0
+     */
+    Result<GameActionMode> setGameActionMode(SettingId id, GameActionMode mode);
 }

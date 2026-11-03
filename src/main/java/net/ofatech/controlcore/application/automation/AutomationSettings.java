@@ -1,7 +1,7 @@
 package net.ofatech.controlcore.application.automation;
 
 import net.ofatech.controlcore.api.Setting;
-import net.ofatech.controlcore.api.SettingsApi;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.text.Text;
@@ -12,7 +12,7 @@ public final class AutomationSettings {
 
     private final Setting<Boolean> enabled;
 
-    public AutomationSettings(SettingsApi settings) {
+    public AutomationSettings(SettingsRegistry settings) {
         this.enabled = settings.register(
                         SettingDefinition.server("controlcore", "automation-enabled", SettingType.bool(), true)
                                 .named(Text.key("controlcore.settings.automation_enabled.name", "Automation rules run"))

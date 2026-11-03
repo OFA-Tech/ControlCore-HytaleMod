@@ -54,15 +54,11 @@ public final class PlayersService {
     }
 
     public PlayersView viewedBy(PlayerId viewer) {
+        return viewedBy(Optional.of(viewer));
+    }
+
+    public PlayersView viewedBy(Optional<PlayerId> viewer) {
         return new PlayersViewer(
-                viewer,
-                texts.forPlayer(Optional.of(viewer)),
-                guard,
-                listing,
-                moderation,
-                access,
-                control,
-                bans,
-                changes);
+                viewer, texts.forPlayer(viewer), guard, listing, moderation, access, control, bans, changes);
     }
 }

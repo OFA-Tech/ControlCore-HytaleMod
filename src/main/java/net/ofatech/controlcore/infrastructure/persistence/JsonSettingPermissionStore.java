@@ -30,22 +30,24 @@ public final class JsonSettingPermissionStore implements SettingPermissionStore 
     }
 
     @Override
-    public synchronized void put(String target, SettingPermission rule) {
+    public synchronized boolean put(String target, SettingPermission rule) {
+        Map<String, SettingPermission> updated = new TreeMap<>(rules);
         if (rule.isInherit()) {
-            if (rules.remove(target) == null) {
-                return;
+            if (updated.remove(target) == null) {
+                return true;
             }
         } else {
-            rules.put(target, rule);
+            updated.put(target, rule);
         }
-        save();
-    }
-
-    private void save() {
         Map<String, Entry> snapshot = new TreeMap<>();
-        rules.forEach((target, rule) -> snapshot.put(
-                target, new Entry(rule.view().orElse(null), rule.edit().orElse(null))));
-        file.write(snapshot, FILE_TYPE);
+        updated.forEach((key, value) -> snapshot.put(
+                key, new Entry(value.view().orElse(null), value.edit().orElse(null))));
+        if (!file.write(snapshot, FILE_TYPE)) {
+            return false;
+        }
+        rules.clear();
+        rules.putAll(updated);
+        return true;
     }
 
     private void load() {

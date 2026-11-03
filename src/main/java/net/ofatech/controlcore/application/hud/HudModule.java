@@ -1,10 +1,10 @@
 package net.ofatech.controlcore.application.hud;
 
 import com.google.auto.service.AutoService;
-import net.ofatech.controlcore.api.KeymapsApi;
 import net.ofatech.controlcore.application.automation.NotificationService;
 import net.ofatech.controlcore.application.component.FeatureModule;
 import net.ofatech.controlcore.application.component.ModuleContext;
+import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
@@ -16,12 +16,12 @@ public final class HudModule implements FeatureModule {
     static final String TOGGLE_HUD = "toggle-hud";
 
     private final HudService hud;
-    private final KeymapsApi keymaps;
+    private final KeymapRegistry keymaps;
     private final NotificationService notifications;
     private Subscription changes;
     private Subscription notificationChanges;
 
-    public HudModule(HudService hud, KeymapsApi keymaps, NotificationService notifications) {
+    public HudModule(HudService hud, KeymapRegistry keymaps, NotificationService notifications) {
         this.hud = hud;
         this.keymaps = keymaps;
         this.notifications = notifications;

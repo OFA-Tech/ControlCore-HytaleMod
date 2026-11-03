@@ -7,7 +7,7 @@ public interface CustomKeyBindStore {
 
     List<CustomKeyBind> all();
 
-    void put(CustomKeyBind bind);
+    boolean put(CustomKeyBind bind);
 
-    void remove(String name);
+    boolean remove(String name);
 }

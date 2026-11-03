@@ -13,8 +13,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import net.ofatech.controlcore.api.HudApi;
 import net.ofatech.controlcore.api.NotificationsApi;
 import net.ofatech.controlcore.api.Setting;
-import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
@@ -75,7 +75,7 @@ public final class NotificationService implements NotificationsApi {
             SettingPermissionPolicy policy,
             OverlayDisplay display,
             Scheduler scheduler,
-            SettingsApi settings,
+            SettingsRegistry settings,
             HudApi huds) {
         this.messenger = messenger;
         this.players = players;
@@ -140,11 +140,14 @@ public final class NotificationService implements NotificationsApi {
 
     @Override
     public void toAdmins(String text) {
-        for (PlayerInfo player : players.online()) {
-            if (policy.isAdmin(player.id())) {
-                messenger.send(player.id(), text);
-            }
-        }
+        admins().forEach(player -> messenger.send(player, text));
+    }
+
+    List<PlayerId> admins() {
+        return players.online().stream()
+                .map(PlayerInfo::id)
+                .filter(policy::isAdmin)
+                .toList();
     }
 
     @Override
@@ -199,6 +202,21 @@ public final class NotificationService implements NotificationsApi {
     }
 
     @Override
+    public void toastAdmins(String title, String text, ToastLevel level, int seconds) {
+        admins().forEach(player -> toast(player, title, text, level, seconds));
+    }
+
+    @Override
+    public void warningAdmins(String id, String text, ToastLevel level, int seconds) {
+        admins().forEach(player -> warning(player, id, text, level, seconds));
+    }
+
+    @Override
+    public void clearWarningAdmins(String id) {
+        admins().forEach(player -> clearWarning(player, id));
+    }
+
+    @Override
     public void warning(PlayerId player, String id, String text, ToastLevel level, int seconds) {
         if (player == null || id == null || id.isBlank()) {
             return;
@@ -246,6 +264,19 @@ public final class NotificationService implements NotificationsApi {
         if (changed) {
             renderAll();
         }
+    }
+
+    boolean hasWarning(PlayerId player, String id) {
+        Map<String, Entry> own = warnings.get(player);
+        return own != null && own.containsKey(id);
+    }
+
+    boolean hasAnyWarning(String id) {
+        return warnings.values().stream().anyMatch(own -> own.containsKey(id));
+    }
+
+    boolean hasWarningAll(String id) {
+        return everyone.containsKey(id);
     }
 
     public List<String> warningIds() {

@@ -128,4 +128,36 @@ public interface NotificationsApi {
      * @since API 2.2.0
      */
     void clearWarningAll(String id);
+
+    /**
+     * Shows a toast to every online ControlCore admin, the same as the {@code admins} target of
+     * {@code /cc-toast} and the panel's Send message.
+     *
+     * @param title the bold first line; empty for none
+     * @param text the message
+     * @param level how important it is; decides the colour
+     * @param seconds how long it stays, from 1 to 60
+     * @since API 2.4.0
+     */
+    void toastAdmins(String title, String text, ToastLevel level, int seconds);
+
+    /**
+     * Shows a warning bar to every online ControlCore admin. Admins who join later do not get it. Showing a warning
+     * with the same id again replaces it.
+     *
+     * @param id your own name for this warning, used to replace or clear it
+     * @param text the warning
+     * @param level how important it is; decides the colour
+     * @param seconds how long it stays; 0 keeps it until {@link #clearWarningAdmins} is called
+     * @since API 2.4.0
+     */
+    void warningAdmins(String id, String text, ToastLevel level, int seconds);
+
+    /**
+     * Removes a warning from every online ControlCore admin.
+     *
+     * @param id the warning's id
+     * @since API 2.4.0
+     */
+    void clearWarningAdmins(String id);
 }

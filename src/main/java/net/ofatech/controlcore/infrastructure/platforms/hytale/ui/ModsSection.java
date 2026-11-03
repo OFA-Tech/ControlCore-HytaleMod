@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import net.ofatech.controlcore.application.mods.ModCommands;
 import net.ofatech.controlcore.domain.model.mods.ModDependency;
 import net.ofatech.controlcore.domain.model.mods.ModInfo;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.text.Translator;
-import net.ofatech.controlcore.domain.ports.mods.ModCatalog;
 
 final class ModsSection {
 
@@ -212,18 +212,7 @@ final class ModsSection {
     }
 
     String configText(String modId) {
-        List<ModCatalog.ConfigFile> files = view.configFiles(modId);
-        if (files.isEmpty()) {
-            return tr.t("controlcore.panel.mods.no_config");
-        }
-        StringBuilder text = new StringBuilder();
-        for (ModCatalog.ConfigFile file : files) {
-            text.append(text.isEmpty() ? "" : "\n\n").append(file.name()).append(':');
-            for (String line : file.lines()) {
-                text.append("\n  ").append(line);
-            }
-        }
-        return text.toString();
+        return ModCommands.configText(view.configFiles(modId), tr);
     }
 
     Optional<ModsView.Entry> find(String modId) {

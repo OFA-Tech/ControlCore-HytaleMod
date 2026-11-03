@@ -37,6 +37,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingPermission;
+import net.ofatech.controlcore.domain.model.settings.SettingRights;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.snapshot.Snapshot;
@@ -113,14 +114,24 @@ public final class SnapshotService {
         this.log = log;
     }
 
-    record Change(String what, String current, String target, Supplier<Result<?>> apply, boolean adminOnly) {
+    record Change(
+            String what,
+            String current,
+            String target,
+            Supplier<Result<?>> apply,
+            boolean adminOnly,
+            Optional<SettingDefinition<?>> setting) {
 
         Change(String what, String current, String target, Supplier<Result<?>> apply) {
-            this(what, current, target, apply, false);
+            this(what, current, target, apply, false, Optional.empty());
+        }
+
+        Change(String what, String current, String target, Supplier<Result<?>> apply, SettingDefinition<?> setting) {
+            this(what, current, target, apply, false, Optional.of(setting));
         }
 
         Change onlyForAdmins() {
-            return new Change(what, current, target, apply, true);
+            return new Change(what, current, target, apply, true, setting);
         }
     }
 
@@ -128,15 +139,6 @@ public final class SnapshotService {
 
         public Plan(Snapshot snapshot, List<Change> changes, int skipped) {
             this(snapshot, changes, skipped, 0);
-        }
-
-        Plan forViewer(boolean admin) {
-            if (admin) {
-                return this;
-            }
-            List<Change> allowed =
-                    changes.stream().filter(change -> !change.adminOnly()).toList();
-            return new Plan(snapshot, allowed, skipped, adminOnly + changes.size() - allowed.size());
         }
     }
 
@@ -169,7 +171,23 @@ public final class SnapshotService {
     }
 
     Plan forViewer(Plan plan, Optional<PlayerId> who) {
-        return plan.forViewer(isAdmin(who));
+        if (isAdmin(who)) {
+            return plan;
+        }
+        List<Change> allowed = new ArrayList<>();
+        int skipped = plan.skipped();
+        int adminOnly = plan.adminOnly();
+        for (Change change : plan.changes()) {
+            if (change.adminOnly()) {
+                adminOnly++;
+            } else if (change.setting().isPresent()
+                    && policy.rights(who, change.setting().get()) != SettingRights.EDIT) {
+                skipped++;
+            } else {
+                allowed.add(change);
+            }
+        }
+        return new Plan(plan.snapshot(), allowed, skipped, adminOnly);
     }
 
     public boolean locked(Snapshot snapshot, Optional<PlayerId> who) {
@@ -407,7 +425,7 @@ public final class SnapshotService {
                             "name",
                             saved.value().name());
         }
-        Plan allowed = plan.forViewer(isAdmin(who));
+        Plan allowed = forViewer(plan, who);
         List<String> failures = new ArrayList<>();
         int applied = ChangeContext.restoringSnapshot(actor, () -> {
             int done = 0;
@@ -539,7 +557,8 @@ public final class SnapshotService {
                                 "controlcore.snapshots.value.default",
                                 "value",
                                 current.definition().formattedDefault()),
-                        () -> serverConfig.reset(current.id(), Optional.empty())));
+                        () -> serverConfig.reset(current.id(), Optional.empty()),
+                        current.definition()));
             }
         }
         if (label.has(Part.SETTINGS)) {
@@ -555,7 +574,8 @@ public final class SnapshotService {
                                 "controlcore.snapshots.value.default",
                                 "value",
                                 current.definition().formattedDefault()),
-                        () -> settings.reset(current.id(), Optional.empty())));
+                        () -> settings.reset(current.id(), Optional.empty()),
+                        current.definition()));
             }
         }
         return new Plan(label, changes, skipped);
@@ -677,7 +697,7 @@ public final class SnapshotService {
     }
 
     Plan differences(Snapshot snapshot, Translator tr, Optional<PlayerId> who) {
-        return differences(snapshot, tr).forViewer(isAdmin(who));
+        return forViewer(differences(snapshot, tr), who);
     }
 
     private Plan differences(Snapshot snapshot, Translator tr) {
@@ -701,7 +721,8 @@ public final class SnapshotService {
                             history.what(Kind.SERVER_CONFIG, id, tr),
                             shown(current.value().value(), tr),
                             shown(value, tr),
-                            () -> serverConfig.write(parsed, Optional.empty(), value)));
+                            () -> serverConfig.write(parsed, Optional.empty(), value),
+                            current.value().definition()));
                 }
             });
         }
@@ -717,7 +738,8 @@ public final class SnapshotService {
                             history.what(Kind.SETTING, id, tr),
                             shown(current.value().value(), tr),
                             shown(target, tr),
-                            () -> settings.write(parsed, Optional.empty(), target)));
+                            () -> settings.write(parsed, Optional.empty(), target),
+                            current.value().definition()));
                 }
             });
         } else if (snapshot.has(Part.SETTINGS)) {
@@ -734,7 +756,8 @@ public final class SnapshotService {
                             history.what(Kind.SETTING, id, tr),
                             shown(current.value(), tr),
                             shown(target, tr),
-                            () -> settings.write(current.id(), Optional.empty(), target)));
+                            () -> settings.write(current.id(), Optional.empty(), target),
+                            current.definition()));
                 } else if (target == null && current.overridden()) {
                     changes.add(new Change(
                             history.what(Kind.SETTING, id, tr),
@@ -743,7 +766,8 @@ public final class SnapshotService {
                                     "controlcore.snapshots.value.default",
                                     "value",
                                     current.definition().formattedDefault()),
-                            () -> settings.reset(current.id(), Optional.empty())));
+                            () -> settings.reset(current.id(), Optional.empty()),
+                            current.definition()));
                 }
             }
             skipped[0] += (int) snapshot.settings().keySet().stream()
@@ -792,7 +816,7 @@ public final class SnapshotService {
             });
         }
         if (snapshot.has(Part.PLAYERS)) {
-            playerChanges(snapshot, tr, changes, skipped);
+            playerChanges(snapshot, tr, adminOnly, skipped);
         }
         adminOnly.forEach(change -> changes.add(change.onlyForAdmins()));
         return new Plan(snapshot, changes, skipped[0]);

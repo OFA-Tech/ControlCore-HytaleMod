@@ -15,7 +15,6 @@ import net.ofatech.controlcore.domain.result.Result;
 
 final class PlayersViewer implements PlayersView {
 
-    private final PlayerId viewer;
     private final Optional<PlayerId> who;
     private final Translator tr;
     private final PlayerGuard guard;
@@ -27,7 +26,7 @@ final class PlayersViewer implements PlayersView {
     private final PlayersChanges changes;
 
     PlayersViewer(
-            PlayerId viewer,
+            Optional<PlayerId> who,
             Translator tr,
             PlayerGuard guard,
             PlayerListing listing,
@@ -36,8 +35,7 @@ final class PlayersViewer implements PlayersView {
             PlayerControl control,
             BansService bans,
             PlayersChanges changes) {
-        this.viewer = viewer;
-        this.who = Optional.of(viewer);
+        this.who = who;
         this.tr = tr;
         this.guard = guard;
         this.listing = listing;
@@ -50,7 +48,7 @@ final class PlayersViewer implements PlayersView {
 
     @Override
     public String viewer() {
-        return viewer.value().toString();
+        return who.map(id -> id.value().toString()).orElse("");
     }
 
     @Override
@@ -119,12 +117,14 @@ final class PlayersViewer implements PlayersView {
 
     @Override
     public CompletableFuture<Result<String>> teleportTo(String id) {
-        return byId(id, found -> control.teleport(who, viewer, found, false, tr));
+        return who.map(me -> byId(id, found -> control.teleport(who, me, found, false, tr)))
+                .orElseGet(() -> PlayerDirectory.completed(Result.failure(PlayerErrors.playersOnly())));
     }
 
     @Override
     public CompletableFuture<Result<String>> bring(String id) {
-        return byId(id, found -> control.teleport(who, found, viewer, true, tr));
+        return who.map(me -> byId(id, found -> control.teleport(who, found, me, true, tr)))
+                .orElseGet(() -> PlayerDirectory.completed(Result.failure(PlayerErrors.playersOnly())));
     }
 
     @Override
@@ -150,6 +150,21 @@ final class PlayersViewer implements PlayersView {
     @Override
     public CompletableFuture<Result<String>> group(String player, String group, boolean add) {
         return access.setGroup(who, player, group, add, tr);
+    }
+
+    @Override
+    public CompletableFuture<Result<String>> onlyGroup(String player, String group) {
+        return access.setOnlyGroup(who, player, group, tr);
+    }
+
+    @Override
+    public boolean whitelistRequired() {
+        return access.whitelistRequired();
+    }
+
+    @Override
+    public Result<String> requireWhitelist(boolean on) {
+        return access.requireWhitelist(who, on, tr);
     }
 
     @Override
@@ -182,6 +197,7 @@ final class PlayersViewer implements PlayersView {
             case FREEZE_ADD, FREEZE_REMOVE -> freeze(input.player(), action == PlayerAction.FREEZE_ADD);
             case OP_ADD, OP_REMOVE -> operator(input.player(), action == PlayerAction.OP_ADD);
             case GROUP_ADD, GROUP_REMOVE -> group(input.player(), input.group(), action == PlayerAction.GROUP_ADD);
+            case GROUP_SET -> onlyGroup(input.player(), input.group());
             case NODE_ADD, NODE_REMOVE ->
                 PlayerDirectory.completed(
                         groupPermission(input.group(), input.node(), action == PlayerAction.NODE_ADD));
@@ -205,6 +221,26 @@ final class PlayersViewer implements PlayersView {
         return guard.mayInspect(who)
                 ? listing.chatView(tr)
                 : new Details(tr.t("controlcore.players.chat.title"), List.of());
+    }
+
+    @Override
+    public CompletableFuture<Result<Inventory>> inventory(String id) {
+        Optional<PlayerId> found = PlayerDirectory.parse(id);
+        if (found.isEmpty()) {
+            return PlayerDirectory.completed(Result.failure(PlayerErrors.unknown(PlayerDirectory.clean(id))));
+        }
+        if (!guard.mayInspect(who) || !guard.may(who, PlayerGuard.INVENTORY)) {
+            return PlayerDirectory.completed(Result.failure(PlayerErrors.forbidden()));
+        }
+        if (!guard.mayInspectInventoryOf(who, found.get())) {
+            return PlayerDirectory.completed(Result.failure(PlayerErrors.protectedAdmin(listing.nameOf(found.get()))));
+        }
+        return listing.inventory(found.get());
+    }
+
+    @Override
+    public List<ChatLine> recentChat() {
+        return guard.mayInspect(who) ? listing.recentChat() : List.of();
     }
 
     @Override

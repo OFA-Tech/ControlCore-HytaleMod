@@ -14,12 +14,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import net.ofatech.controlcore.application.automation.SessionService;
 import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.text.PlainText;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
+import net.ofatech.controlcore.domain.model.players.PlayersView;
 import net.ofatech.controlcore.domain.model.players.PlayersView.Details;
 import net.ofatech.controlcore.domain.model.players.PlayersView.Entry;
 import net.ofatech.controlcore.domain.model.players.PlayersView.Line;
@@ -226,13 +228,33 @@ public final class PlayerListing {
             } else if (items.get().isEmpty()) {
                 all.add(new Line(tr.t("controlcore.players.details.inventory_empty"), false));
             } else {
-                items.get()
-                        .forEach(item -> all.add(new Line(
-                                tr.t("controlcore.players.details.item", "item", item.id(), "count", item.quantity()),
-                                false)));
+                Map<String, Integer> counts = new TreeMap<>();
+                items.get().forEach(item -> counts.merge(item.id(), item.quantity(), Integer::sum));
+                counts.forEach((item, count) -> all.add(
+                        new Line(tr.t("controlcore.players.details.item", "item", item, "count", count), false)));
             }
             return Result.success(new Details(name, all));
         });
+    }
+
+    CompletableFuture<Result<PlayersView.Inventory>> inventory(PlayerId id) {
+        PlayersView.Inventory offline = new PlayersView.Inventory(false, List.of());
+        if (!directory.online(id)) {
+            return CompletableFuture.completedFuture(Result.success(offline));
+        }
+        return admin.inventory(id)
+                .thenApply(items -> Result.success(
+                        items.map(list -> new PlayersView.Inventory(true, list)).orElse(offline)));
+    }
+
+    String nameOf(PlayerId id) {
+        return directory.nameOf(id);
+    }
+
+    List<PlayersView.ChatLine> recentChat() {
+        return chat.last(RecentChat.SHOWN).stream()
+                .map(line -> new PlayersView.ChatLine(line.at(), line.player(), line.name(), line.text()))
+                .toList();
     }
 
     Details chatView(Translator tr) {

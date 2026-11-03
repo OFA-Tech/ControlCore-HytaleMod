@@ -143,18 +143,7 @@ final class ProfilesTab {
         SnapshotsView.Preview preview = result.value();
         previewing = Optional.of(profile);
         List<String> lines = preview.allLines(tr);
-        update.set(
-                "#ProfilePreviewTitle.Text",
-                tr.t(
-                        preview.changes() > 0
-                                ? "controlcore.profiles.preview.header"
-                                : preview.adminOnly() > 0
-                                        ? "controlcore.snapshots.preview.only_admin"
-                                        : "controlcore.profiles.preview.same",
-                        "name",
-                        preview.name(),
-                        "count",
-                        preview.changes()));
+        update.set("#ProfilePreviewTitle.Text", preview.profileTitle(tr));
         update.set("#ProfilePreviewText.Text", String.join("\n", lines));
         update.set("#ProfilePreview.Visible", true);
         host.resize(LIST, LIST_HEIGHT - PREVIEW_HEIGHT, update);

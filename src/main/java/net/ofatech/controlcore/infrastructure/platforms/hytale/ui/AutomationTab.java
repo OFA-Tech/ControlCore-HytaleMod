@@ -36,6 +36,14 @@ final class AutomationTab {
     private static final String STEP_UP = "RuleStepUp";
     private static final String STEP_DOWN = "RuleStepDown";
     private static final String STEP_REMOVE = "RuleStepRemove";
+    private static final String NOTICE_OPEN = "NoticeOpen";
+    private static final String NOTICE_CLOSE = "NoticeClose";
+    private static final String NOTICE_SEND = "NoticeSend";
+    private static final String NOTICE_KIND = "NoticeKindPicked";
+    private static final int NOTICE_HEIGHT = 100;
+    private static final List<String> NOTICE_KINDS = List.of("toast", "warning", "clear");
+    private static final List<String> NOTICE_STYLES = List.of("info", "success", "warning", "error");
+    private static final List<String> NOTICE_FIELDS = List.of("Target", "Kind", "Style", "Seconds", "Text");
     private static final String LIST = "#RuleList";
     private static final String STEPS = "#RuleActions";
     private static final String ROW = "Pages/ControlCore/RuleRow.ui";
@@ -61,6 +69,8 @@ final class AutomationTab {
     private Optional<String> editing = Optional.empty();
     private AutomationView.Form draft = blank();
     private Optional<String> armedRemove = Optional.empty();
+    private boolean noticeOpen;
+    private AutomationView.Notice notice = new AutomationView.Notice("everyone", "toast", "info", "", "");
 
     AutomationTab(AutomationView view, Translator tr, Host host) {
         this.view = view;
@@ -88,6 +98,7 @@ final class AutomationTab {
                             .append(PanelAction.VALUE, "#Rule" + dropdown + ".Value"));
         }
         buildSteps(commands, events);
+        buildNotice(commands, events);
         List<AutomationView.Entry> entries = view.list();
         commands.set("#RuleEmpty.Visible", entries.isEmpty());
         for (int index = 0; index < entries.size(); index++) {
@@ -153,6 +164,74 @@ final class AutomationTab {
         commands.set("#RuleActionAdd.Visible", steps.size() < AutomationService.MAX_ACTIONS);
     }
 
+    private void buildNotice(UICommandBuilder commands, UIEventBuilder events) {
+        List<AutomationView.Choice> choices = view.noticeTargets();
+        List<DropdownEntryInfo> targets = new ArrayList<>();
+        for (AutomationView.Choice choice : choices) {
+            targets.add(new DropdownEntryInfo(LocalizableString.fromString(choice.label()), choice.id()));
+        }
+        if (choices.stream().noneMatch(choice -> choice.id().equals(notice.target()))) {
+            notice = new AutomationView.Notice(
+                    "everyone", notice.kind(), notice.style(), notice.seconds(), notice.text());
+        }
+        commands.set("#NoticeTarget.Entries", targets);
+        commands.set("#NoticeKind.Entries", options("notice.kind", NOTICE_KINDS));
+        commands.set("#NoticeStyle.Entries", options("notice.style", NOTICE_STYLES));
+        commands.set("#NoticeTarget.Value", notice.target());
+        commands.set("#NoticeKind.Value", notice.kind());
+        commands.set("#NoticeStyle.Value", notice.style());
+        commands.set("#NoticeSeconds.Value", notice.seconds());
+        commands.set("#NoticeText.Value", notice.text());
+        commands.set("#NoticeSeconds.PlaceholderText", tr.t("controlcore.panel.notice.seconds_hint"));
+        commands.set("#NoticeText.PlaceholderText", tr.t("controlcore.panel.notice.text_hint"));
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating, "#NoticeOpen", EventData.of(PanelAction.KEY, NOTICE_OPEN));
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating, "#NoticeClose", EventData.of(PanelAction.KEY, NOTICE_CLOSE));
+        events.addEventBinding(
+                CustomUIEventBindingType.ValueChanged,
+                "#NoticeKind",
+                new EventData().append(PanelAction.KEY, NOTICE_KIND).append(PanelAction.VALUE, "#NoticeKind.Value"));
+        EventData send = new EventData().append(PanelAction.KEY, NOTICE_SEND);
+        for (String field : NOTICE_FIELDS) {
+            send.append("@Notice" + field, "#Notice" + field + ".Value");
+        }
+        events.addEventBinding(CustomUIEventBindingType.Activating, "#NoticeSend", send);
+        showNoticeFields(commands, notice.kind());
+    }
+
+    private void showNoticeFields(UICommandBuilder commands, String kind) {
+        commands.set("#NoticeStyle.Visible", !"clear".equals(kind));
+        commands.set("#NoticeSeconds.Visible", "warning".equals(kind));
+        commands.set("#NoticeText.Visible", !"clear".equals(kind));
+    }
+
+    private void sendNotice(PanelAction action) {
+        notice = new AutomationView.Notice(
+                action.form("NoticeTarget").isEmpty() ? notice.target() : action.form("NoticeTarget"),
+                action.form("NoticeKind").isEmpty() ? notice.kind() : action.form("NoticeKind"),
+                action.form("NoticeStyle").isEmpty() ? notice.style() : action.form("NoticeStyle"),
+                action.form("NoticeSeconds"),
+                action.form("NoticeText"));
+        Result<String> result = view.send(notice);
+        UICommandBuilder update = new UICommandBuilder();
+        if (result.isSuccess()) {
+            notice = new AutomationView.Notice(notice.target(), notice.kind(), notice.style(), notice.seconds(), "");
+            update.set("#NoticeText.Value", "");
+        }
+        update.set("#FooterStatus.Text", result.isSuccess() ? result.value() : tr.error(result.error()));
+        host.send(update);
+    }
+
+    private List<DropdownEntryInfo> options(String kind, List<String> ids) {
+        List<DropdownEntryInfo> entries = new ArrayList<>();
+        for (String id : ids) {
+            entries.add(new DropdownEntryInfo(
+                    LocalizableString.fromString(tr.t("controlcore.panel." + kind + "." + id)), id));
+        }
+        return entries;
+    }
+
     private EventData capture(String key, int index) {
         EventData data = new EventData().append(PanelAction.KEY, key);
         if (index >= 0) {
@@ -200,6 +279,18 @@ final class AutomationTab {
             case TOGGLE -> refreshAfter(view.toggle(action.id));
             case TEST -> footer(view.test(action.id));
             case REMOVE -> remove(action.id);
+            case NOTICE_OPEN, NOTICE_CLOSE -> {
+                noticeOpen = NOTICE_OPEN.equals(action.name());
+                UICommandBuilder update = new UICommandBuilder();
+                showForm(update);
+                host.send(update);
+            }
+            case NOTICE_KIND -> {
+                UICommandBuilder update = new UICommandBuilder();
+                showNoticeFields(update, action.value == null ? notice.kind() : action.value.strip());
+                host.send(update);
+            }
+            case NOTICE_SEND -> sendNotice(action);
             default -> {
                 return false;
             }
@@ -333,8 +424,11 @@ final class AutomationTab {
             hints(commands, "Trigger", "trigger", draft.trigger());
             hints(commands, "Condition", "condition", draft.condition());
         }
-        int form = FORM_BASE + STEP_HEIGHT * draft.actions().size();
-        host.resize(LIST, formOpen ? Math.max(120, LIST_HEIGHT - form) : LIST_HEIGHT, commands);
+        commands.set("#NoticeForm.Visible", noticeOpen);
+        commands.set("#NoticeOpen.Visible", !noticeOpen);
+        int form = formOpen ? FORM_BASE + STEP_HEIGHT * draft.actions().size() : 0;
+        int height = LIST_HEIGHT - form - (noticeOpen ? NOTICE_HEIGHT : 0);
+        host.resize(LIST, height < LIST_HEIGHT ? Math.max(120, height) : LIST_HEIGHT, commands);
     }
 
     private void hints(UICommandBuilder commands, String field, String kind, String value) {

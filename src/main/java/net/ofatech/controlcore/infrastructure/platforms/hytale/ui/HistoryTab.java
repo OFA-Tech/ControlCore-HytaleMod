@@ -12,8 +12,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
-import net.ofatech.controlcore.domain.model.history.ChangeRecord;
+import net.ofatech.controlcore.application.history.HistoryCommand;
 import net.ofatech.controlcore.domain.model.history.HistoryView;
+import net.ofatech.controlcore.domain.model.history.HistoryView.Filter;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.result.Result;
 
@@ -28,43 +29,6 @@ final class HistoryTab {
     private static final String ROW = "Pages/ControlCore/HistoryRow.ui";
     private static final String LIST = "#HistoryList";
     private static final String ICONS = "Pages/ControlCore/Icons/";
-
-    enum Filter {
-        ALL(null),
-        SETTINGS(ChangeRecord.Kind.SETTING),
-        CONFIG(ChangeRecord.Kind.SERVER_CONFIG),
-        WORLDS(ChangeRecord.Kind.SERVER_CONFIG),
-        KEYS(ChangeRecord.Kind.SERVER_KEYS),
-        BINDS(ChangeRecord.Kind.CUSTOM_BIND),
-        PERMISSIONS(ChangeRecord.Kind.PERMISSION),
-        MODS(ChangeRecord.Kind.MOD),
-        BANS(ChangeRecord.Kind.BAN),
-        PLAYERS(ChangeRecord.Kind.PLAYER);
-
-        private final ChangeRecord.Kind kind;
-
-        Filter(ChangeRecord.Kind kind) {
-            this.kind = kind;
-        }
-
-        static Filter of(String name) {
-            return Arrays.stream(values())
-                    .filter(filter -> filter.name().equals(name))
-                    .findFirst()
-                    .orElse(ALL);
-        }
-
-        boolean accepts(HistoryView.Entry entry) {
-            if (this == KEYS && entry.kind() == ChangeRecord.Kind.GAME_ACTION) {
-                return true;
-            }
-            if (kind == null || entry.kind() != kind) {
-                return kind == null;
-            }
-            boolean world = entry.target().startsWith("world:");
-            return this == WORLDS ? world : this != CONFIG || !world;
-        }
-    }
 
     interface Host {
         void rebuild();
@@ -93,11 +57,10 @@ final class HistoryTab {
     }
 
     void build(UICommandBuilder commands, UIEventBuilder events) {
-        List<HistoryView.Entry> all = view.entries();
         targets = null;
-        total = all.size();
-        newest = all.isEmpty() ? 0 : all.getFirst().id();
-        entries = all.subList(0, Math.min(ROWS, all.size()));
+        entries = view.entries(ROWS);
+        total = Math.max(entries.size(), view.total());
+        newest = view.newest();
         commands.set(
                 "#HistoryFilter.Entries",
                 Arrays.stream(Filter.values())
@@ -242,7 +205,7 @@ final class HistoryTab {
         int shown = 0;
         for (int index = 0; index < entries.size(); index++) {
             HistoryView.Entry entry = entries.get(index);
-            boolean visible = filter.accepts(entry) && matches(entry, wanted);
+            boolean visible = filter.accepts(entry) && HistoryCommand.matches(entry, wanted);
             commands.set(LIST + "[" + index + "].Visible", visible);
             if (visible) {
                 shown++;
@@ -260,23 +223,6 @@ final class HistoryTab {
                                 "total",
                                 total)
                         : tr.t("controlcore.panel.history.shown", "shown", shown, "total", total));
-    }
-
-    private static boolean matches(HistoryView.Entry entry, String wanted) {
-        if (wanted.isEmpty()) {
-            return true;
-        }
-        return String.join(
-                        "\n",
-                        entry.what(),
-                        entry.who(),
-                        entry.target(),
-                        entry.before(),
-                        entry.after(),
-                        entry.source(),
-                        "#" + entry.id())
-                .toLowerCase(Locale.ROOT)
-                .contains(wanted);
     }
 
     private String details(HistoryView.Entry entry) {

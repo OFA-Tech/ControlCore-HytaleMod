@@ -7,5 +7,5 @@ public interface AutomationRuleStore {
 
     List<Rule> all();
 
-    void saveAll(List<Rule> rules);
+    boolean saveAll(List<Rule> rules);
 }

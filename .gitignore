@@ -53,3 +53,5 @@ src/main/resources/WorldSettings.json
 src/main/resources/WorldSettings.json.tmp
 src/main/resources/history/
 src/main/resources/snapshots/
+
+*.broken-*

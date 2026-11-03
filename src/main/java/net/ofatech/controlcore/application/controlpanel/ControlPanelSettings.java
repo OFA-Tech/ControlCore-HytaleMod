@@ -1,7 +1,7 @@
 package net.ofatech.controlcore.application.controlpanel;
 
 import net.ofatech.controlcore.api.Setting;
-import net.ofatech.controlcore.api.SettingsApi;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.ControlPanelTab;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
@@ -17,7 +17,7 @@ public final class ControlPanelSettings {
     private final Setting<Boolean> enabled;
     private final Setting<String> startTab;
 
-    public ControlPanelSettings(SettingsApi settings, SettingsProvider defaults) {
+    public ControlPanelSettings(SettingsRegistry settings, SettingsProvider defaults) {
         this.enabled = settings.register(SettingDefinition.server(
                                 "controlcore",
                                 "control-panel-enabled",

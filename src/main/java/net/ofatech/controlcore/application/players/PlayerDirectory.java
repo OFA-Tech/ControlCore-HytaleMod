@@ -43,6 +43,19 @@ public final class PlayerDirectory {
                         () -> found.map(work).orElseGet(() -> Result.failure(PlayerErrors.unknown(input)))));
     }
 
+    public <T> CompletableFuture<Result<T>> withPlayer(
+            String player, Function<PlayerId, CompletableFuture<Result<T>>> work) {
+        String input = clean(player);
+        if (input.isEmpty()) {
+            return completed(Result.failure(PlayerErrors.noPlayer()));
+        }
+        ChangeContext.Attribution attribution = ChangeContext.current();
+        return find(input)
+                .thenCompose(found -> ChangeContext.as(
+                        attribution,
+                        () -> found.map(work).orElseGet(() -> completed(Result.failure(PlayerErrors.unknown(input))))));
+    }
+
     static <T> CompletableFuture<Result<T>> completed(Result<T> result) {
         return CompletableFuture.completedFuture(result);
     }

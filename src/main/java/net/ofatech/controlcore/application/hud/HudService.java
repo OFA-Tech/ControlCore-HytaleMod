@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.ofatech.controlcore.api.HudApi;
 import net.ofatech.controlcore.api.Setting;
-import net.ofatech.controlcore.api.SettingsApi;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
@@ -44,7 +44,7 @@ public final class HudService implements HudApi {
 
     private static final Text CATEGORY = Text.key("controlcore.hud.category", "HUD");
 
-    private final SettingsApi settings;
+    private final SettingsRegistry settings;
     private final HudDisplay display;
     private final Players players;
     private final Log log;
@@ -57,7 +57,7 @@ public final class HudService implements HudApi {
     private final PlayerContext context;
     private final Setting<List<String>> contextRules;
 
-    public HudService(SettingsApi settings, HudDisplay display, Players players, PlayerContext context, Log log) {
+    public HudService(SettingsRegistry settings, HudDisplay display, Players players, PlayerContext context, Log log) {
         this.settings = settings;
         this.display = display;
         this.players = players;

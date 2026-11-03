@@ -4,24 +4,29 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import net.ofatech.controlcore.api.SettingsApi;
+import java.util.stream.Collectors;
 import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.application.mods.ModsEditor;
 import net.ofatech.controlcore.application.players.PlayerHistory;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Actor;
+import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
 import net.ofatech.controlcore.domain.model.history.HistoryView;
 import net.ofatech.controlcore.domain.model.keys.GameActionMode;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
+import net.ofatech.controlcore.domain.model.settings.SettingRights;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
@@ -38,7 +43,7 @@ public final class HistoryEditor {
     private static final DateTimeFormatter WHEN = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final ChangeHistory history;
-    private final SettingsApi settings;
+    private final SettingsRegistry settings;
     private final ServerConfigEditor serverConfig;
     private final KeymapRegistry keymaps;
     private final SettingPermissionPolicy policy;
@@ -51,7 +56,7 @@ public final class HistoryEditor {
 
     public HistoryEditor(
             ChangeHistory history,
-            SettingsApi settings,
+            SettingsRegistry settings,
             ServerConfigEditor serverConfig,
             KeymapRegistry keymaps,
             SettingPermissionPolicy policy,
@@ -88,9 +93,20 @@ public final class HistoryEditor {
         return new HistoryView() {
             @Override
             public List<Entry> entries() {
-                return history.newestFirst().stream()
-                        .map(record -> entry(record, tr, who))
-                        .toList();
+                return HistoryEditor.this.entries(history.newestFirst(), tr, who);
+            }
+
+            @Override
+            public List<Entry> entries(int newest) {
+                List<ChangeRecord> records = visible(history.newestFirst(), who);
+                return HistoryEditor.this.entries(records.subList(0, Math.min(newest, records.size())), tr, who);
+            }
+
+            @Override
+            public int total() {
+                return everything(who)
+                        ? history.size()
+                        : visible(history.newestFirst(), who).size();
             }
 
             @Override
@@ -100,7 +116,12 @@ public final class HistoryEditor {
 
             @Override
             public Set<String> targets() {
-                return history.targets();
+                if (everything(who)) {
+                    return history.targets();
+                }
+                return visible(history.newestFirst(), who).stream()
+                        .map(ChangeRecord::target)
+                        .collect(Collectors.toSet());
             }
 
             @Override
@@ -142,25 +163,96 @@ public final class HistoryEditor {
                 .orElseGet(() -> tr.t("controlcore.history.cleared_all", "count", removed)));
     }
 
+    public record Listed(ChangeRecord record, HistoryView.Entry entry) {}
+
     public List<HistoryView.Entry> entries(Translator tr, Optional<PlayerId> viewer) {
-        return history.newestFirst().stream()
-                .map(record -> entry(record, tr, viewer))
+        return entries(history.newestFirst(), tr, viewer);
+    }
+
+    public List<Listed> listed(Translator tr, Optional<PlayerId> viewer) {
+        return listed(history.newestFirst(), tr, viewer);
+    }
+
+    private List<HistoryView.Entry> entries(List<ChangeRecord> records, Translator tr, Optional<PlayerId> viewer) {
+        return listed(records, tr, viewer).stream().map(Listed::entry).toList();
+    }
+
+    private List<Listed> listed(List<ChangeRecord> records, Translator tr, Optional<PlayerId> viewer) {
+        Set<Long> rolledBack = history.rolledBackIds();
+        boolean mayRollBack = mayRollBack(viewer);
+        List<ChangeRecord> shown = visible(records, viewer);
+        Map<String, String> modNames =
+                shown.stream().anyMatch(record -> record.kind() == Kind.MOD) ? modNames(viewer) : Map.of();
+        return shown.stream()
+                .map(record ->
+                        new Listed(record, entry(record, tr, rolledBack.contains(record.id()), mayRollBack, modNames)))
                 .toList();
     }
 
+    private boolean everything(Optional<PlayerId> viewer) {
+        return viewer.isEmpty() || policy.isAdmin(viewer.get());
+    }
+
+    private List<ChangeRecord> visible(List<ChangeRecord> records, Optional<PlayerId> viewer) {
+        if (everything(viewer)) {
+            return records;
+        }
+        Set<String> shownMods = records.stream().anyMatch(record -> record.kind() == Kind.MOD)
+                ? modNames(viewer).keySet()
+                : Set.of();
+        Map<String, Boolean> seen = new HashMap<>();
+        return records.stream()
+                .filter(record -> switch (record.kind()) {
+                    case MOD -> shownMods.contains(record.target().toLowerCase(Locale.ROOT));
+                    case SETTING ->
+                        seen.computeIfAbsent("s" + record.target(), key -> mayView(settings, record.target(), viewer));
+                    case SERVER_CONFIG ->
+                        seen.computeIfAbsent(
+                                "c" + record.target(), key -> mayView(serverConfig, record.target(), viewer));
+                    case PERMISSION ->
+                        !record.target().startsWith(SettingPermissionPolicy.SETTING)
+                                || seen.computeIfAbsent("p" + record.target(), key -> {
+                                    String id = record.target().substring(SettingPermissionPolicy.SETTING.length());
+                                    return mayView(settings, id, viewer) || mayView(serverConfig, id, viewer);
+                                });
+                    default -> true;
+                })
+                .toList();
+    }
+
+    private boolean mayView(SettingsEditor editor, String target, Optional<PlayerId> viewer) {
+        return SettingId.parse(target)
+                .flatMap(id -> editor.read(id, Optional.empty()))
+                .map(snapshot -> policy.rights(viewer, snapshot.definition()) != SettingRights.NONE)
+                .orElse(false);
+    }
+
+    private Map<String, String> modNames(Optional<PlayerId> viewer) {
+        Map<String, String> names = new HashMap<>();
+        mods.viewedBy(viewer)
+                .list()
+                .forEach(entry -> names.putIfAbsent(
+                        entry.mod().id().toLowerCase(Locale.ROOT), entry.mod().name()));
+        return names;
+    }
+
     public Result<String> rollback(long id, Optional<PlayerId> who, Actor actor, Translator tr) {
+        Error unknown = Error.notFound(
+                "History.Unknown",
+                Text.key("controlcore.errors.history.unknown", "There is no change #{id}.")
+                        .with("id", id));
         Optional<ChangeRecord> found = history.find(id);
         if (found.isEmpty()) {
-            return Result.failure(Error.notFound(
-                    "History.Unknown",
-                    Text.key("controlcore.errors.history.unknown", "There is no change #{id}.")
-                            .with("id", id)));
+            return Result.failure(unknown);
         }
         ChangeRecord record = found.get();
         if (!mayRollBack(who)) {
             return Result.failure(Error.forbidden(
                     "History.Forbidden",
                     Text.key("controlcore.errors.history.forbidden", "You may not roll changes back.")));
+        }
+        if (visible(List.of(record), who).isEmpty()) {
+            return Result.failure(unknown);
         }
         if (history.rolledBack(id)) {
             return Result.failure(Error.validation(
@@ -225,8 +317,8 @@ public final class HistoryEditor {
                 Text.key("controlcore.errors.history.admin_only", "Only admins can roll this change back.")));
     }
 
-    private HistoryView.Entry entry(ChangeRecord record, Translator tr, Optional<PlayerId> viewer) {
-        boolean rolledBack = history.rolledBack(record.id());
+    private HistoryView.Entry entry(
+            ChangeRecord record, Translator tr, boolean rolledBack, boolean mayRollBack, Map<String, String> modNames) {
         return new HistoryView.Entry(
                 record.id(),
                 record.kind(),
@@ -234,13 +326,15 @@ public final class HistoryEditor {
                 WHEN.format(record.at().atZone(ZoneId.systemDefault())),
                 who(record.actor(), tr),
                 tr.t("controlcore.history.source." + record.source().name().toLowerCase(Locale.ROOT)),
-                what(record, tr),
+                record.kind() == Kind.MOD
+                        ? modNames.getOrDefault(record.target().toLowerCase(Locale.ROOT), record.target())
+                        : what(record, tr),
                 shown(record.kind(), record.target(), record.oldValue(), tr),
                 shown(record.kind(), record.target(), record.newValue(), tr),
                 record.restart(),
                 record.isRollback(),
                 rolledBack,
-                !rolledBack && mayRollBack(viewer));
+                !rolledBack && mayRollBack);
     }
 
     public String who(Actor actor, Translator tr) {

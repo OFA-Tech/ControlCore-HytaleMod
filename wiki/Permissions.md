@@ -17,7 +17,7 @@ All nodes start with **`ofatech.controlcore`**. Operators have every node.
 | `ofatech.controlcore.players.gamemode` | switch a player between Adventure and Creative |
 | `ofatech.controlcore.players.teleport` | teleport to a player or bring them to you |
 | `ofatech.controlcore.players.kick` | kick a player |
-| `ofatech.controlcore.players.whitelist` | add players to or remove them from the whitelist |
+| `ofatech.controlcore.players.whitelist` | add players to or remove them from the whitelist, and turn requiring it on or off |
 | `ofatech.controlcore.players.mute` | mute and unmute players |
 | `ofatech.controlcore.players.freeze` | freeze and unfreeze players |
 | `ofatech.controlcore.players.inventory` | see a player's inventory on their Details page |
@@ -42,7 +42,8 @@ Mods can set their own rules in code. Admins override them in the panel's **Perm
 
 `/open-admin-config` → **Permissions** (admins only) lists every mod, category, setting and `config.json` key:
 
-- Each setting's line says who may see and change it **now**, and which rule decides it (like `/cc-perm-check`).
+- Each setting's line says who may see and change it **now**, and which rule decides it: the same answer as
+  `/cc-perm-check`, and it updates as soon as you save a rule.
 - **See** and **Change** hold your rule for that line. Leave a field empty to inherit, or write a full node or
   `everyone`. **Save** stores both; **Default** removes your rule.
 - **Whole mod** and **Whole category** lines set a rule for everything below them.

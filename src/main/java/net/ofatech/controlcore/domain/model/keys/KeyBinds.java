@@ -62,6 +62,15 @@ public record KeyBinds(List<KeyCombo> combos) {
     }
 
     /**
+     * Returns the combinations after the main one, as players write them.
+     *
+     * @return for example {@code MOUSE_MIDDLE | CTRL + F}, or an empty text if there is at most one combination
+     */
+    public String extras() {
+        return combos.stream().skip(1).map(KeyCombo::toString).collect(Collectors.joining(" | "));
+    }
+
+    /**
      * Returns the binds as players write them; {@link #parse(String)} reads this form back.
      *
      * @return the binds, for example {@code ALT + 3 | MOUSE_MIDDLE}, or {@code none} if unbound

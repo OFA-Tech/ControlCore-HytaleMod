@@ -39,6 +39,17 @@ class SettingPermissionPolicyTest {
             .inCategory("Homes");
 
     @Test
+    void aRuleThatCouldNotBeSavedIsReportedAndNotApplied() {
+        store.failWrites = true;
+
+        assertThat(policy.setRule("mod:homes", "edit", "homes.admin").error().code())
+                .isEqualTo("Storage.NotSaved");
+        assertThat(policy.replaceRule("mod:homes", "homes.view", "").error().code())
+                .isEqualTo("Storage.NotSaved");
+        assertThat(policy.rule("mod:homes")).isEqualTo(SettingPermission.INHERIT);
+    }
+
+    @Test
     void serverSettingsAreForAdminsAndPreferencesForEveryoneByDefault() {
         SettingDefinition<Boolean> pref = SettingDefinition.player("homes", "show", SettingType.bool(), true);
 

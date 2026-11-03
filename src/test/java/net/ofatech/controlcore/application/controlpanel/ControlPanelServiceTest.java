@@ -10,6 +10,7 @@ import net.ofatech.controlcore.application.automation.ActionRegistry;
 import net.ofatech.controlcore.application.automation.AutomationService;
 import net.ofatech.controlcore.application.automation.AutomationSettings;
 import net.ofatech.controlcore.application.automation.NotificationService;
+import net.ofatech.controlcore.application.automation.Recipients;
 import net.ofatech.controlcore.application.automation.SessionService;
 import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.diagnostics.DiagnosticsService;
@@ -21,6 +22,7 @@ import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.mods.ModsEditor;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
+import net.ofatech.controlcore.application.settings.DefaultsService;
 import net.ofatech.controlcore.application.settings.ModNames;
 import net.ofatech.controlcore.application.settings.PermissionsEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
@@ -76,6 +78,8 @@ class ControlPanelServiceTest {
     private final PlayerInfo admin = players.join("Admin");
     private SettingsRegistry registry;
     private boolean debugAllowed = true;
+    private boolean stillAdmin = true;
+    private final FakeModCatalog catalog = new FakeModCatalog();
     private final InputProbe probe = new InputProbe() {
         @Override
         public boolean toggle(PlayerId player) {
@@ -108,10 +112,9 @@ class ControlPanelServiceTest {
                 log,
                 ChangeRecorder.NONE);
         var policy = new SettingPermissionPolicy(
-                new FakeSettingPermissionStore(), (player, node) -> true, registry, ChangeRecorder.NONE);
+                new FakeSettingPermissionStore(), (player, node) -> stillAdmin, registry, ChangeRecorder.NONE);
         var serverConfig = new ServerConfigEditor(server, Worlds.NONE, bus, bus, log);
-        var mods =
-                new ModsEditor(new FakeModCatalog(), registry, keyRegistry, modNames, policy, log, ChangeRecorder.NONE);
+        var mods = new ModsEditor(catalog, registry, keyRegistry, modNames, policy, log, ChangeRecorder.NONE);
         var changes = new ChangeHistory(new FakeChangeLogStore(), new FakeClock());
         var bans = new BansService(
                 Bans.NONE,
@@ -122,6 +125,12 @@ class ControlPanelServiceTest {
                 new FakeClock(),
                 registry);
         var sessions = new SessionService(new FakePlayerData(), players, new FakeClock());
+        var hud = new net.ofatech.controlcore.application.hud.HudService(
+                registry,
+                (player, hide, show) -> {},
+                players,
+                player -> net.ofatech.controlcore.domain.ports.game.PlayerContext.Context.UNKNOWN,
+                log);
         var notifications = new NotificationService(
                 new FakeMessenger(),
                 players,
@@ -129,12 +138,7 @@ class ControlPanelServiceTest {
                 new net.ofatech.controlcore.fakes.FakeOverlayDisplay(),
                 new net.ofatech.controlcore.fakes.FakeScheduler(),
                 registry,
-                new net.ofatech.controlcore.application.hud.HudService(
-                        registry,
-                        (player, hide, show) -> {},
-                        players,
-                        player -> net.ofatech.controlcore.domain.ports.game.PlayerContext.Context.UNKNOWN,
-                        log));
+                hud);
         var playerData = new FakePlayerData();
         var access = new net.ofatech.controlcore.fakes.FakeAccessLists();
         var playerAdminPort = new net.ofatech.controlcore.fakes.FakePlayerAdmin();
@@ -165,7 +169,7 @@ class ControlPanelServiceTest {
                 new net.ofatech.controlcore.fakes.FakeScheduler(),
                 playersChanges);
         var playerAccess = new net.ofatech.controlcore.application.players.PlayerAccess(
-                directory, guard, access, changes, playersChanges);
+                directory, guard, access, changes, playersChanges, serverConfig, policy);
         var control = new net.ofatech.controlcore.application.players.PlayerControl(
                 directory, guard, notices, playerAdminPort, changes, playersChanges, log);
         var listing = new net.ofatech.controlcore.application.players.PlayerListing(
@@ -235,7 +239,10 @@ class ControlPanelServiceTest {
                 new FakeServerHealth(),
                 new FakeClock(),
                 TestTexts.of(registry, players),
-                log);
+                log,
+                new Recipients(players, policy, notifications));
+        var keymaps = new KeymapsEditor(keyRegistry, TestTexts.of(registry, players), modNames);
+        var permissionRules = new PermissionsEditor(registry, serverConfig, policy);
         return new ControlPanelService(
                 new ControlPanelSettings(registry, settings),
                 players,
@@ -244,11 +251,11 @@ class ControlPanelServiceTest {
                 registry,
                 serverConfig,
                 playerAdmin,
-                new KeymapsEditor(keyRegistry, TestTexts.of(registry, players), modNames),
+                keymaps,
                 policy,
                 TestTexts.of(registry, players),
                 mods,
-                new PermissionsEditor(registry, serverConfig, policy),
+                permissionRules,
                 probe,
                 KeyDetections.NONE,
                 (player, node) -> !node.equals("debug") || debugAllowed,
@@ -264,7 +271,16 @@ class ControlPanelServiceTest {
                         TestTexts.of(registry, players),
                         new FakeClock(),
                         log),
-                automation);
+                automation,
+                new DefaultsService(
+                        registry,
+                        serverConfig,
+                        keymaps,
+                        policy,
+                        permissionRules,
+                        snapshots,
+                        TestTexts.of(registry, players)),
+                new net.ofatech.controlcore.application.hud.HudPrefs(hud));
     }
 
     @Test
@@ -327,6 +343,27 @@ class ControlPanelServiceTest {
                 .singleElement()
                 .satisfies(entry -> assertThat(entry.adminRule()).isFalse());
         assertThat(builtIn.lastContent.debug()).isPresent();
+    }
+
+    @Test
+    void losingAdminWhileThePanelIsOpenTakesAwayPermissionsAndModsRights() {
+        catalog.add("Acme:Homes", false);
+        var service = service();
+        service.open(admin.id(), ControlPanelRequest.ALL);
+        PermissionsView rules = builtIn.lastContent.permissions().orElseThrow();
+        var mods = builtIn.lastContent.mods();
+        assertThat(mods.canManage()).isTrue();
+
+        stillAdmin = false;
+
+        assertThat(rules.save("setting:server:server-name", "", "staff.name")
+                        .error()
+                        .type())
+                .isEqualTo(ErrorType.FORBIDDEN);
+        assertThat(rules.reset("setting:server:server-name").error().type()).isEqualTo(ErrorType.FORBIDDEN);
+        assertThat(mods.canManage()).isFalse();
+        assertThat(mods.setEnabled("Acme:Homes", false).error().type()).isEqualTo(ErrorType.FORBIDDEN);
+        assertThat(catalog.mods.getFirst().enabledAfterRestart()).isTrue();
     }
 
     @Test

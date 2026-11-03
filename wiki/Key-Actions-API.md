@@ -84,6 +84,22 @@ keymaps.resetServerBind(id);
 
 The mod's defaults apply until an admin changes the server's keys; a player's own keys win over both.
 
+## Custom binds and game actions (API 2.4.0)
+
+The admins' custom binds (`custom:<name>`, `/cc-keybind-add`) and the per-action game action mode
+(`/cc-key-game-action`):
+
+```java
+keymaps.addCustom("warp-spawn", "ctrl+f", "warp spawn", false);   // runs as the player
+keymaps.customBinds();                                            // List<CustomKeyBind>
+keymaps.removeCustom("warp-spawn");
+keymaps.setGameActionMode(id, GameActionMode.REPLACE);            // SERVER_SETTING, KEEP or REPLACE
+```
+
+`keymaps.actingFor(playerId)` gives a player's panel rights: they change only their own bindings; server keys,
+custom binds and game action modes are for admins (`Keys.ServerOnlyAdmins`). See
+[Server management API](Server-Management-API).
+
 ## Errors
 
 | Code | When |

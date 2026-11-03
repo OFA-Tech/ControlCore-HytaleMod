@@ -292,6 +292,25 @@ them off; see the wiki HUD page.
 [Automation API](https://github.com/OFA-Tech/ControlCore-HytaleMod/wiki/Automation-API). Mods built against 2.0.0
 keep working; use `>=0.16.0` in your manifest when you call these.
 
+## Server management (API 2.4.0)
+
+Everything the panel and the commands do, for other mods: `permissions()`, `mods()`, `history()`, `snapshots()`,
+`profiles()`, `health()`, `rules()`, `players()` and `defaults()`, plus `config.json`/world keys in `settings()`
+(`server:<key>`, `world:<world>.<key>`, `serverConfigs()`, `worlds()`), custom binds and game action modes in
+`keymaps()`, `controlPanel().openForMod(player, modId)`, and toasts and warning bars for the online admins in
+`notifications()` (`toastAdmins`, `warningAdmins`, `clearWarningAdmins`). Values are API records (`PlayersApi.Player`,
+`ModsApi.Mod`, `HistoryApi.Change`, ...), never Hytale types; `players().inventory` gives `PlayersApi.Inventory`
+(`readable` flag and one `InventoryItem(section, slot, itemId, amount)` per filled slot, section being hotbar, storage, armor, utility, tools or backpack) and `players().recentChat` gives
+`PlayersApi.ChatLine(time, player, playerName, text)`, not translated panel lines.
+
+Each section has two modes. Called directly it acts like the console with full rights, recorded in History as made by
+a mod. `section.actingFor(playerId)` returns the same interface restricted to exactly what that player may do in the
+panel (permission nodes, admins protected from non-admins, per-setting see/change rules, admin-only snapshot parts)
+and records the player in History. Refusals are failed `Result`s (`Players.Forbidden`, `Snapshots.AdminParts`, ...);
+lists the player may not see are empty. `players().teleportTo` and `bring` move the acting player, so they need
+`actingFor`. The input probe and "Detect key" are not part of the API. Details:
+[Server management API](https://github.com/OFA-Tech/ControlCore-HytaleMod/wiki/Server-Management-API).
+
 ## Using it from another mod
 
 1. **Dependency.** Releases are published to GitHub Packages. GitHub asks for a login even for public
@@ -310,8 +329,8 @@ keep working; use `>=0.16.0` in your manifest when you call these.
        }
    }
    dependencies {
-       compileOnly("net.ofatech:controlcore:0.19.0")
-       vineImplementation("net.ofatech:controlcore:0.19.0") // run it in your dev server (not vineMod: see docs/platforms.md)
+       compileOnly("net.ofatech:controlcore:0.20.0")
+       vineImplementation("net.ofatech:controlcore:0.20.0") // run it in your dev server (not vineMod: see docs/platforms.md)
    }
    ```
 2. **Manifest.** Use `manifest_dependencies = OFATech:ControlCore=>=0.10.0`, or

@@ -8,6 +8,7 @@ import net.ofatech.controlcore.domain.ports.config.AutomationRuleStore;
 public final class FakeAutomationRuleStore implements AutomationRuleStore {
 
     public List<Rule> rules = new ArrayList<>();
+    public boolean failWrites;
 
     @Override
     public List<Rule> all() {
@@ -15,7 +16,11 @@ public final class FakeAutomationRuleStore implements AutomationRuleStore {
     }
 
     @Override
-    public void saveAll(List<Rule> updated) {
+    public boolean saveAll(List<Rule> updated) {
+        if (failWrites) {
+            return false;
+        }
         rules = new ArrayList<>(updated);
+        return true;
     }
 }

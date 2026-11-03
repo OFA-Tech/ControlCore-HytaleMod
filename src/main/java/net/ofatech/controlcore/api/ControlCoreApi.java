@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface ControlCoreApi {
 
     /** Version of this API contract (semantic versioning), for example {@code "2.0.0"}. */
-    String VERSION = "2.3.0";
+    String VERSION = "2.4.0";
 
     /**
      * Returns the running API; use it when ControlCore is a required dependency.
@@ -113,4 +113,76 @@ public interface ControlCoreApi {
      * @since API 2.1.0
      */
     ActionsApi actions();
+
+    /**
+     * Admins' rules for who may see and change settings.
+     *
+     * @return the permissions API
+     * @since API 2.4.0
+     */
+    PermissionsApi permissions();
+
+    /**
+     * The server's mods: details, dependencies and turning them on or off.
+     *
+     * @return the mods API
+     * @since API 2.4.0
+     */
+    ModsApi mods();
+
+    /**
+     * The change history: listing, rolling back and clearing changes.
+     *
+     * @return the history API
+     * @since API 2.4.0
+     */
+    HistoryApi history();
+
+    /**
+     * Snapshots of the server's settings.
+     *
+     * @return the snapshots API
+     * @since API 2.4.0
+     */
+    SnapshotsApi snapshots();
+
+    /**
+     * Profiles: snapshots to switch between, and the built-in presets.
+     *
+     * @return the profiles API
+     * @since API 2.4.0
+     */
+    ProfilesApi profiles();
+
+    /**
+     * The server's health and diagnostics reports.
+     *
+     * @return the health API
+     * @since API 2.4.0
+     */
+    HealthApi health();
+
+    /**
+     * Automation rules.
+     *
+     * @return the rules API
+     * @since API 2.4.0
+     */
+    RulesApi rules();
+
+    /**
+     * Player management: moderation, whitelist, operators and groups.
+     *
+     * @return the players API
+     * @since API 2.4.0
+     */
+    PlayersApi players();
+
+    /**
+     * Restoring defaults for a whole section.
+     *
+     * @return the defaults API
+     * @since API 2.4.0
+     */
+    DefaultsApi defaults();
 }

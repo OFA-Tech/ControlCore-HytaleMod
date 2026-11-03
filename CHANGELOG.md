@@ -2,6 +2,88 @@
 
 ## Unreleased
 
+## 0.20.0 - 2026-11-03
+
+Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.5. Everything the panel does now
+also works as a command and through the API. The API for other mods is now **2.4.0** (new: server management sections
+and `actingFor(player)`); mods built for 2.0.0 and later keep working. No migration needed. Changed commands:
+`/cc-whitelist-add`, `-remove` and `-require` replace the sub-words, and `/cc-mod-on|off <mod> <check|all>`.
+
+### Added
+- Commands for player management, also from the console, with the same rights as the Players tab: `/cc-kick`,
+  `/cc-mute`, `/cc-unmute`, `/cc-freeze`, `/cc-unfreeze`, `/cc-gamemode`, `/cc-tp`, `/cc-bring`, `/cc-whitelist`, `/cc-whitelist-add`, `/cc-whitelist-remove`,
+  `/cc-op`, `/cc-deop`, `/cc-group`, `/cc-groups`, `/cc-group-perm`, `/cc-player`, `/cc-inventory` and `/cc-chat`.
+- Commands for the rest of the panel, with the panel's rights: `/cc-mod-info`, `/cc-mod-on`, `/cc-mod-off` (`<mod> check` changes nothing and
+  says what would change, other mods included; `<mod> all` changes them all; a mod already in that state says so and
+  changes nothing), `/cc-mod-configs`, `/cc-rule-add` and `/cc-rule-edit` (`key=value; ...` fields,
+  the panel's checks), `/cc-profile-mark`, `/cc-profile-unmark`, `/cc-configs`, `/cc-restart-pending`,
+  `/cc-restore-defaults` (`check`, then `confirm`), `/cc-hud`, `/cc-toast`, `/cc-warn` and `/cc-warn-clear`.
+- **Require whitelist to join**: a bar in Players when the Whitelisted filter is chosen, and
+  `/cc-whitelist-require <on|off>`. It is config.json `RequireJoinPermission` (live), needs the whitelist right and is
+  recorded and rolled back like any Server Configs key.
+- **Set as only group**: in **+ Player action** and as `/cc-group set <player> <group>`. Takes the player out of every
+  other group and puts them in the one picked; admins only, nobody drops their own operator group, and each group
+  added or removed is its own History line.
+- **Send message** in the Automation tab: a toast, warning bar or clearing it, to everyone, the admins or one online
+  player, the same as `/cc-toast`, `/cc-warn` and `/cc-warn-clear`.
+- **Hide the whole HUD** at the top of Player Prefs -> ControlCore: HUD, showing whether your HUD is hidden now (same
+  as `/cc-hud`).
+- **API 2.4.0** (additive; mods built for 2.0.0 and later keep working): mods can do everything the panel and the
+  commands do. New sections `permissions()`, `mods()`, `history()`, `snapshots()`, `profiles()`, `health()`,
+  `rules()`, `players()` and `defaults()`; `settings()` also reads and writes `config.json` (`server:<key>`) and world
+  keys (`world:<world>.<key>`) and lists them with `serverConfigs()` and `worlds()`; `keymaps()` gained custom binds
+  (`customBinds`, `findCustom`, `addCustom`, `removeCustom`) and game action modes (`gameActionMode`,
+  `setGameActionMode`); `controlPanel().openForMod(player, modId)`; `notifications()` gained `toastAdmins`,
+  `warningAdmins` and `clearWarningAdmins`. Each section acts with full rights by default
+  (History: "a mod"), or with exactly a player's panel rights through `actingFor(playerId)` (History: that player).
+  `players().inventory` and `players().recentChat` return data (`Inventory(readable, items)` with `InventoryItem(section, slot, itemId, amount)`,
+  `ChatLine(time, player, playerName, text)`), not translated panel lines.
+  See the wiki page Server management API.
+- `/cc-profile-preview <profile>`: what switching to a profile, built-ins included, would change (the panel's
+  Switch to... preview). `/cc-players [--filter=] [--search=]`: the Players list with the panel's filters.
+  `/cc-history --kind=<kind>`: the History tab's kind dropdown.
+- `docs/parity.md`: every operation mapped to its panel place, command and API method, kept in sync by a test.
+
+### Changed
+- The panel's **Restore defaults** button now runs through the same service as `/cc-restore-defaults`.
+- Words you type after a command are now always required arguments, because Hytale only accepts optional ones as
+  `--name=value`: the whitelist is `/cc-whitelist` (list), `/cc-whitelist-add <player>`, `/cc-whitelist-remove
+  <player>` and `/cc-whitelist-require <on|off>`, and `/cc-mod-on|off <mod> <check|all>`. Optional arguments are shown
+  as `--name=` everywhere (`/cc-configs [--world=] [--search=]`, `/cc-restore-defaults ... [--search=]`), and a test
+  keeps the wiki that way.
+- `--search=` in `/cc-configs`, `/cc-restore-defaults` and the defaults API is the panel's search (every word,
+  `name:`/`id:`/`is:changed` prefixes, `-word`; on the command line one word, as Hytale splits at spaces), so all
+  three pick the same rows, the extra keys of a key row included. The panel's search no longer matches the
+  "Default: ..." text under each row; use `default:` for that.
+
+### Fixed
+- An unreadable data file (for example a typo in `SettingValues.json`) is now moved aside as `<file>.broken-<time>` instead of being overwritten with empty data on the next save. A data file that can't be opened at all (locked, no
+  access), or one that can't be moved aside, is left untouched and nothing is saved over it until the next start; changes to its permission rules,
+  custom key binds or automation rules are refused with "The change was not saved" instead of looking saved.
+- Someone who loses admin while the panel is open can no longer change permission rules or turn mods on or off from it.
+- Snapshot and profile restores by non-admins skip settings they may not change, and the preview hides settings they may not see.
+- Two admins saving automation rules at the same time no longer lose one of them.
+- The History tab no longer slows the server down when the history is long.
+- Joining and leaving no longer rewrites the whole player data file each time; it is saved every 5 minutes and at shutdown.
+- A player who leaves and comes back no longer keeps stale held keys, which could stop "stand still + key" binds from firing.
+- Restoring a snapshot's players part (preferences and binds of every player) is admin-only; a non-admin restore no
+  longer rewrites an admin's preferences.
+- Requiring the whitelist also follows `RequireJoinPermission`'s own edit rule, not only the whitelist node.
+- Acting for a non-admin, the API no longer returns mod config files, pending restarts or custom binds they can't use,
+  and History shows mod names only for mods the viewer may see.
+- `/cc-warn-clear` says when there was nothing to clear and when a warning for everyone is still shown; toasts and
+  warnings refuse texts over the 200 characters the HUD shows, and a toast or warning with no text after `Title|` or
+  `warning:` (saying so). Automation toast and warning actions are held to the same 200 characters, before
+  placeholders are filled, instead of being cut when shown, and one with no text after its style or `Title|` says so
+  the same way.
+- History leaves out mod changes for players who can't see that mod (hidden from players), and setting, config.json
+  and world changes for players with no view right on that setting, in the panel, `/cc-history` and the API. The
+  panel's newest rows and count are taken after that, and rolling back a change you can't see says it doesn't exist.
+- `/cc-rule-add` and `/cc-rule-edit` with an unknown or missing `when=` list the triggers; rule ids and group names
+  match ignoring case.
+- Turning a mod on when a mod it needs can't be turned on here now says "{name} needs {other}" instead of the
+  turning-off message.
+
 ## 0.19.0 - 2026-10-29
 
 Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.5. The API for other mods

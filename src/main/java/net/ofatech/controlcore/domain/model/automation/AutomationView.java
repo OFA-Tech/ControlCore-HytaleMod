@@ -24,6 +24,10 @@ public interface AutomationView {
         }
     }
 
+    record Choice(String id, String label) {}
+
+    record Notice(String target, String kind, String style, String seconds, String text) {}
+
     List<Entry> list();
 
     boolean globallyOn();
@@ -39,4 +43,8 @@ public interface AutomationView {
     Result<String> remove(String id);
 
     String hint(String kind, String value);
+
+    List<Choice> noticeTargets();
+
+    Result<String> send(Notice notice);
 }

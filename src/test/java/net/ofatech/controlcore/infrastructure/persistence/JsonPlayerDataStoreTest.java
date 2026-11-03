@@ -41,5 +41,11 @@ class JsonPlayerDataStoreTest {
 
         assertThat(store.get(player, "key")).isEmpty();
         assertThat(log.contains("Could not read player data")).isTrue();
+        assertThat(file).doesNotExist();
+        try (var broken = Files.list(folder)) {
+            assertThat(broken.filter(p -> p.getFileName().toString().startsWith("players.json.broken-")))
+                    .singleElement()
+                    .satisfies(p -> assertThat(p).hasContent("{ not json"));
+        }
     }
 }

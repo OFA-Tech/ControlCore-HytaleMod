@@ -30,22 +30,27 @@ public final class JsonCustomKeyBindStore implements CustomKeyBindStore {
     }
 
     @Override
-    public synchronized void put(CustomKeyBind bind) {
-        binds.put(bind.name(), bind);
-        save();
+    public synchronized boolean put(CustomKeyBind bind) {
+        Map<String, CustomKeyBind> updated = new TreeMap<>(binds);
+        updated.put(bind.name(), bind);
+        return save(updated);
     }
 
     @Override
-    public synchronized void remove(String name) {
-        if (binds.remove(name) != null) {
-            save();
-        }
+    public synchronized boolean remove(String name) {
+        Map<String, CustomKeyBind> updated = new TreeMap<>(binds);
+        return updated.remove(name) == null || save(updated);
     }
 
-    private void save() {
+    private boolean save(Map<String, CustomKeyBind> updated) {
         Map<String, Entry> snapshot = new TreeMap<>();
-        binds.forEach((name, bind) -> snapshot.put(name, new Entry(bind.keys(), bind.command(), bind.runAsServer())));
-        file.write(snapshot, FILE_TYPE);
+        updated.forEach((name, bind) -> snapshot.put(name, new Entry(bind.keys(), bind.command(), bind.runAsServer())));
+        if (!file.write(snapshot, FILE_TYPE)) {
+            return false;
+        }
+        binds.clear();
+        binds.putAll(updated);
+        return true;
     }
 
     private void load() {

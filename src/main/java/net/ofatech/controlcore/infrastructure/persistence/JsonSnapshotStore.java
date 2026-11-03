@@ -8,7 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -68,16 +67,10 @@ public final class JsonSnapshotStore implements SnapshotStore {
     @Override
     public synchronized Result<Snapshot> save(Snapshot snapshot) {
         Path file = folder.resolve(snapshot.name() + SUFFIX);
-        Path temp = folder.resolve(snapshot.name() + SUFFIX + ".tmp");
-        try {
-            Files.createDirectories(folder);
-            Files.writeString(temp, GSON.toJson(FileForm.of(snapshot)), StandardCharsets.UTF_8);
-            Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        if (new JsonFile(file, log, "snapshot").write(FileForm.of(snapshot), FileForm.class)) {
             return Result.success(snapshot);
-        } catch (IOException e) {
-            log.error("Could not save snapshot " + file, e);
-            return Result.failure(Error.failure("Snapshots.WriteFailed", "Could not write " + file.getFileName()));
         }
+        return Result.failure(Error.failure("Snapshots.WriteFailed", "Could not write " + file.getFileName()));
     }
 
     @Override

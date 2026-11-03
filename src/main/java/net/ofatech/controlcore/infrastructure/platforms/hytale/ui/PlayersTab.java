@@ -36,6 +36,8 @@ final class PlayersTab {
     private static final String BRING = "PlayerBring";
     private static final String FILTER = "PlayerFilter";
     private static final String SEARCH = "PlayerSearch";
+    private static final String REQUIRE = "WhitelistRequire";
+    private static final int REQUIRE_HEIGHT = 42;
     private static final String BODY = "#PlayerDetailsBody";
     private static final String ROW = "Pages/ControlCore/PlayerRow.ui";
     private static final String LIST = "#PlayersRows";
@@ -107,6 +109,10 @@ final class PlayersTab {
         commands.set("#PlayersSearch.PlaceholderText", tr.t("controlcore.players.search_hint"));
         events.addEventBinding(CustomUIEventBindingType.Activating, "#PlayerChat", EventData.of(PanelAction.KEY, CHAT));
         events.addEventBinding(
+                CustomUIEventBindingType.Activating,
+                "#WhitelistRequiredToggle",
+                EventData.of(PanelAction.KEY, REQUIRE));
+        events.addEventBinding(
                 CustomUIEventBindingType.Activating, "#PlayerDetailsBack", EventData.of(PanelAction.KEY, DETAILS_BACK));
         events.addEventBinding(
                 CustomUIEventBindingType.ValueChanged,
@@ -129,6 +135,7 @@ final class PlayersTab {
         }
         showCount(commands);
         resizeList(commands);
+        showRequire(commands);
         showDetails(commands);
         footer.ifPresent(text -> commands.set("#FooterStatus.Text", text));
         footer = Optional.empty();
@@ -203,7 +210,34 @@ final class PlayersTab {
 
     private void resizeList(UICommandBuilder commands) {
         int height = form.isOpen() ? LIST_WITH_FORM - (form.showsNote() ? NOTE_HEIGHT : 0) : LIST_ALONE;
-        host.resize(LIST, height, commands);
+        host.resize(LIST, height - (showsRequire() ? REQUIRE_HEIGHT : 0), commands);
+    }
+
+    private boolean showsRequire() {
+        return filter == PlayersView.Filter.WHITELISTED
+                && details.isEmpty()
+                && view.rights().whitelist();
+    }
+
+    private void showRequire(UICommandBuilder commands) {
+        boolean shown = showsRequire();
+        commands.set("#WhitelistRequiredRow.Visible", shown);
+        if (!shown) {
+            return;
+        }
+        boolean required = view.whitelistRequired();
+        commands.set(
+                "#WhitelistRequiredText.Text",
+                tr.t(
+                        required
+                                ? "controlcore.panel.players.whitelist_required_on"
+                                : "controlcore.panel.players.whitelist_required_off"));
+        commands.set(
+                "#WhitelistRequiredToggle.Text",
+                tr.t(
+                        required
+                                ? "controlcore.panel.players.whitelist_require_off"
+                                : "controlcore.panel.players.whitelist_require_on"));
     }
 
     private void showDetails(UICommandBuilder commands) {
@@ -277,6 +311,14 @@ final class PlayersTab {
                 host.rebuild();
             }
             case FILTER, SEARCH -> narrow(action);
+            case REQUIRE -> {
+                armed = Optional.empty();
+                Result<String> result = view.requireWhitelist(!view.whitelistRequired());
+                UICommandBuilder update = new UICommandBuilder();
+                showRequire(update);
+                update.set("#FooterStatus.Text", result.isSuccess() ? result.value() : tr.error(result.error()));
+                host.send(update);
+            }
             case UNBAN -> confirmed(action, "controlcore.panel.players.confirm_unban", () -> view.unban(action.id));
             case KICK -> confirmed(action, "controlcore.players.confirm_kick", () -> view.kick(action.id, ""));
             case BAN -> {
@@ -380,6 +422,8 @@ final class PlayersTab {
             update.set(LIST + "[" + index + "].Visible", rows.get(index).matches(filter, query));
         }
         showCount(update);
+        showRequire(update);
+        resizeList(update);
         host.send(update);
     }
 

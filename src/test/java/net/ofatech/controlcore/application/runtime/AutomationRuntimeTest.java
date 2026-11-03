@@ -58,6 +58,34 @@ class AutomationRuntimeTest extends RuntimeTestBase {
     }
 
     @Test
+    void aRuleThatCouldNotBeSavedIsReportedAndNotKept() {
+        save(form("Hello", "join", "", "none", "", "message-player", "Hi", "none", "", ""));
+        platform.automationRules.failWrites = true;
+
+        Result<String> saved =
+                view().save(Optional.empty(), form("Bye", "join", "", "none", "", "message-player", "Bye", ""));
+        Result<String> removed = view().remove("hello");
+
+        assertThat(saved.error().code()).isEqualTo("Storage.NotSaved");
+        assertThat(removed.error().code()).isEqualTo("Storage.NotSaved");
+        assertThat(platform.automationRules.rules).extracting(rule -> rule.id()).containsExactly("hello");
+    }
+
+    @Test
+    void toastAndWarningTextsLongerThanTheHudShowsAreRefused() {
+        String tooLong = "x".repeat(201);
+
+        for (String kind : List.of("toast-all", "toast-player", "warning-all")) {
+            Result<String> saved =
+                    view().save(Optional.empty(), form("Long", "join", "", "none", "", kind, tooLong, ""));
+            assertThat(saved.error().code()).as(kind).isEqualTo("Notify.InvalidText");
+        }
+        assertThat(view().save(Optional.empty(), form("Long", "join", "", "none", "", "message-all", tooLong, ""))
+                        .isSuccess())
+                .isTrue();
+    }
+
+    @Test
     void timersWaitForTheirPeriod() {
         save(form(
                 "Vote",
@@ -165,7 +193,7 @@ class AutomationRuntimeTest extends RuntimeTestBase {
 
         assertThat(reply("cc-rule-test", Map.of("rule", "ping"))).contains("1");
         assertThat(platform.messenger.broadcasts).containsExactly("ping");
-        assertThat(reply("cc-rule-toggle", Map.of("rule", "ping"))).contains("off");
+        assertThat(reply("cc-rule-toggle", Map.of("rule", "PING"))).contains("off");
         platform.connectedPublisher.publish(new PlayerJoined(platform.players.join("Eve")));
         assertThat(platform.messenger.broadcasts).hasSize(1);
         assertThat(reply("cc-rule-remove", Map.of("rule", "ping"))).contains("Ping");

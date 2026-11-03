@@ -25,6 +25,7 @@ import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.application.snapshot.ProfileService;
+import net.ofatech.controlcore.application.text.CommonErrors;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
@@ -71,6 +72,28 @@ public final class AutomationService {
         }
     }
 
+    record HudText(String title, String body, int minutes) {
+
+        static HudText toast(String text) {
+            int bar = text.indexOf('|');
+            return new HudText(
+                    bar < 0 ? "" : text.substring(0, bar).strip(),
+                    (bar < 0 ? text : text.substring(bar + 1)).strip(),
+                    0);
+        }
+
+        static HudText warning(String text) {
+            int bar = text.lastIndexOf('|');
+            if (bar >= 0 && text.substring(bar + 1).strip().matches("\\d{1,4}")) {
+                return new HudText(
+                        "",
+                        text.substring(0, bar).strip(),
+                        Integer.parseInt(text.substring(bar + 1).strip()));
+            }
+            return new HudText("", text.strip(), 0);
+        }
+    }
+
     public static final int MAX_ACTIONS = 8;
 
     private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("H:mm");
@@ -100,6 +123,7 @@ public final class AutomationService {
     private final Clock clock;
     private final Texts texts;
     private final Log log;
+    private final Recipients recipients;
 
     private final Map<String, Instant> lastRun = new ConcurrentHashMap<>();
     private final Map<String, Instant> timerStart = new ConcurrentHashMap<>();
@@ -124,7 +148,9 @@ public final class AutomationService {
             ServerHealth health,
             Clock clock,
             Texts texts,
-            Log log) {
+            Log log,
+            Recipients recipients) {
+        this.recipients = recipients;
         this.store = store;
         this.settings = settings;
         this.actions = actions;
@@ -369,25 +395,17 @@ public final class AutomationService {
             }
             case TOAST_PLAYER, TOAST_ALL -> {
                 Leveled leveled = Leveled.of(text);
-                int bar = leveled.text().indexOf('|');
-                String title = bar < 0 ? "" : leveled.text().substring(0, bar).strip();
-                String body = (bar < 0 ? leveled.text() : leveled.text().substring(bar + 1)).strip();
+                HudText shown = HudText.toast(leveled.text());
                 if (action.kind() == ActionKind.TOAST_ALL) {
-                    notifications.toastAll(title, body, leveled.level(), TOAST_SECONDS);
+                    notifications.toastAll(shown.title(), shown.body(), leveled.level(), TOAST_SECONDS);
                 } else {
-                    notifications.toast(player.get(), title, body, leveled.level(), TOAST_SECONDS);
+                    notifications.toast(player.get(), shown.title(), shown.body(), leveled.level(), TOAST_SECONDS);
                 }
             }
             case WARNING_ALL -> {
                 Leveled leveled = Leveled.of(text);
-                int bar = leveled.text().lastIndexOf('|');
-                String body = leveled.text();
-                int minutes = 0;
-                if (bar >= 0 && leveled.text().substring(bar + 1).strip().matches("\\d{1,4}")) {
-                    minutes = Integer.parseInt(leveled.text().substring(bar + 1).strip());
-                    body = leveled.text().substring(0, bar).strip();
-                }
-                notifications.warningAll(rule.id(), body, leveled.level(), minutes * 60);
+                HudText shown = HudText.warning(leveled.text());
+                notifications.warningAll(rule.id(), shown.body(), leveled.level(), shown.minutes() * 60);
             }
             case CLEAR_WARNING -> {
                 String target = action.value().strip();
@@ -545,6 +563,16 @@ public final class AutomationService {
             public String hint(String kind, String value) {
                 return AutomationService.hint(kind, value, tr);
             }
+
+            @Override
+            public List<Choice> noticeTargets() {
+                return recipients.targets(tr);
+            }
+
+            @Override
+            public Result<String> send(Notice notice) {
+                return recipients.send(who, notice, tr);
+            }
         };
     }
 
@@ -627,11 +655,13 @@ public final class AutomationService {
         if (id == null) {
             return Optional.empty();
         }
-        String wanted = id.strip().toLowerCase(Locale.ROOT);
-        return store.all().stream().filter(rule -> rule.id().equals(wanted)).findFirst();
+        String wanted = id.strip();
+        return store.all().stream()
+                .filter(rule -> rule.id().equalsIgnoreCase(wanted))
+                .findFirst();
     }
 
-    static AutomationView.Form form(Rule rule) {
+    public static AutomationView.Form form(Rule rule) {
         Optional<Rule.Condition> condition = rule.conditions().stream().findFirst();
         List<AutomationView.Step> steps = new ArrayList<>();
         for (Rule.Action action : rule.actions()) {
@@ -649,6 +679,15 @@ public final class AutomationService {
 
     public Result<String> save(
             Optional<String> editing, AutomationView.Form form, Optional<PlayerId> who, Translator tr) {
+        return save(editing, form, Optional.empty(), who, tr);
+    }
+
+    public synchronized Result<String> save(
+            Optional<String> editing,
+            AutomationView.Form form,
+            Optional<Boolean> enabled,
+            Optional<PlayerId> who,
+            Translator tr) {
         if (!mayManage(who)) {
             return forbidden();
         }
@@ -656,7 +695,7 @@ public final class AutomationService {
         if (built.isFailure()) {
             return Result.failure(built.error());
         }
-        Rule rule = built.value();
+        Rule rule = enabled.map(built.value()::withEnabled).orElse(built.value());
         List<Rule> rules = new ArrayList<>(store.all());
         int index = -1;
         for (int i = 0; i < rules.size(); i++) {
@@ -674,7 +713,9 @@ public final class AutomationService {
         } else {
             rules.add(rule);
         }
-        store.saveAll(rules);
+        if (!store.saveAll(rules)) {
+            return Result.failure(CommonErrors.notSaved());
+        }
         timerStart.remove(rule.id());
         dailyDone.remove(rule.id());
         cronDone.remove(rule.id());
@@ -816,6 +857,22 @@ public final class AutomationService {
     }
 
     private Result<Boolean> checkAction(ActionKind kind, String value) {
+        boolean shownOnHud =
+                kind == ActionKind.TOAST_PLAYER || kind == ActionKind.TOAST_ALL || kind == ActionKind.WARNING_ALL;
+        if (shownOnHud && value.length() > NotificationService.MAX_TEXT) {
+            return Result.failure(Recipients.invalidText());
+        }
+        if (shownOnHud && !value.isBlank()) {
+            String text = Leveled.of(value).text();
+            boolean warning = kind == ActionKind.WARNING_ALL;
+            if ((warning ? HudText.warning(text) : HudText.toast(text)).body().isEmpty()) {
+                int bar = value.indexOf('|');
+                String prefix = !warning && bar >= 0
+                        ? value.substring(0, bar + 1).strip()
+                        : value.substring(0, value.indexOf(':') + 1).strip();
+                return Result.failure(prefix.isEmpty() ? Recipients.invalidText() : Recipients.emptyAfter(prefix));
+            }
+        }
         boolean ok = switch (kind) {
             case PROFILE -> profiles.ids().contains(value);
             case SET_SETTING ->
@@ -848,7 +905,7 @@ public final class AutomationService {
         return id;
     }
 
-    public Result<String> toggle(String id, Optional<PlayerId> who, Translator tr) {
+    public synchronized Result<String> toggle(String id, Optional<PlayerId> who, Translator tr) {
         if (!mayManage(who)) {
             return forbidden();
         }
@@ -861,7 +918,9 @@ public final class AutomationService {
         for (Rule rule : store.all()) {
             rules.add(rule.id().equals(updated.id()) ? updated : rule);
         }
-        store.saveAll(rules);
+        if (!store.saveAll(rules)) {
+            return Result.failure(CommonErrors.notSaved());
+        }
         timerStart.remove(updated.id());
         return Result.success(tr.t(
                 updated.enabled() ? "controlcore.automation.turned_on" : "controlcore.automation.turned_off",
@@ -885,7 +944,7 @@ public final class AutomationService {
                 + (parts.length > 1 ? " " + parts[1] : ""));
     }
 
-    public Result<String> remove(String id, Optional<PlayerId> who, Translator tr) {
+    public synchronized Result<String> remove(String id, Optional<PlayerId> who, Translator tr) {
         if (!mayManage(who)) {
             return forbidden();
         }
@@ -895,7 +954,9 @@ public final class AutomationService {
         }
         List<Rule> rules = new ArrayList<>(store.all());
         rules.removeIf(rule -> rule.id().equals(found.get().id()));
-        store.saveAll(rules);
+        if (!store.saveAll(rules)) {
+            return Result.failure(CommonErrors.notSaved());
+        }
         log.info("Automation rule removed: " + found.get().name());
         return Result.success(
                 tr.t("controlcore.automation.removed", "name", found.get().name()));

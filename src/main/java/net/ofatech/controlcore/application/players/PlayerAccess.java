@@ -2,12 +2,17 @@ package net.ofatech.controlcore.application.players;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 import net.ofatech.controlcore.application.history.ChangeHistory;
+import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
+import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
 import net.ofatech.controlcore.domain.model.players.PlayersView;
+import net.ofatech.controlcore.domain.model.settings.SettingId;
+import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.game.AccessLists;
 import net.ofatech.controlcore.domain.result.Error;
@@ -15,6 +20,7 @@ import net.ofatech.controlcore.domain.result.Result;
 
 public final class PlayerAccess {
 
+    private static final SettingId REQUIRE_WHITELIST = ServerConfigEditor.idOf("RequireJoinPermission");
     private static final int MAX_NODE = 120;
     private static final Pattern NODE =
             Pattern.compile("-?[A-Za-z0-9_*:][A-Za-z0-9_*:-]*(\\.[A-Za-z0-9_*:][A-Za-z0-9_*:-]*)*");
@@ -24,18 +30,56 @@ public final class PlayerAccess {
     private final AccessLists access;
     private final ChangeHistory history;
     private final PlayersChanges changes;
+    private final ServerConfigEditor serverConfig;
+    private final SettingPermissionPolicy policy;
 
     public PlayerAccess(
             PlayerDirectory directory,
             PlayerGuard guard,
             AccessLists access,
             ChangeHistory history,
-            PlayersChanges changes) {
+            PlayersChanges changes,
+            ServerConfigEditor serverConfig,
+            SettingPermissionPolicy policy) {
         this.directory = directory;
         this.guard = guard;
         this.access = access;
         this.history = history;
         this.changes = changes;
+        this.serverConfig = serverConfig;
+        this.policy = policy;
+    }
+
+    public boolean whitelistRequired() {
+        return serverConfig
+                .read(REQUIRE_WHITELIST, Optional.empty())
+                .map(snapshot -> Boolean.parseBoolean(snapshot.value()))
+                .orElse(false);
+    }
+
+    public synchronized Result<String> requireWhitelist(Optional<PlayerId> who, boolean on, Translator tr) {
+        if (!guard.may(who, PlayerGuard.WHITELIST)) {
+            return Result.failure(PlayerErrors.forbidden());
+        }
+        Result<SettingSnapshot> current = serverConfig.read(REQUIRE_WHITELIST, Optional.empty());
+        if (current.isFailure()) {
+            return Result.failure(current.error());
+        }
+        if (Boolean.parseBoolean(current.value().value()) == on) {
+            return Result.failure(PlayerErrors.nothingToDo(
+                    on
+                            ? "controlcore.errors.players.whitelist_already_required"
+                            : "controlcore.errors.players.whitelist_not_required",
+                    on ? "The whitelist is already required." : "The whitelist is not required."));
+        }
+        Result<SettingSnapshot> written =
+                policy.editor(serverConfig, who).write(REQUIRE_WHITELIST, Optional.empty(), String.valueOf(on));
+        if (written.isFailure()) {
+            return Result.failure(written.error());
+        }
+        changes.fire();
+        return Result.success(
+                tr.t(on ? "controlcore.players.whitelist_required" : "controlcore.players.whitelist_open"));
     }
 
     public CompletableFuture<Result<String>> setWhitelisted(
@@ -133,6 +177,52 @@ public final class PlayerAccess {
                 label));
     }
 
+    public CompletableFuture<Result<String>> setOnlyGroup(
+            Optional<PlayerId> who, String player, String group, Translator tr) {
+        Result<String> wanted = checkGroup(who, group);
+        if (wanted.isFailure()) {
+            return PlayerDirectory.completed(Result.failure(wanted.error()));
+        }
+        return directory.resolve(player, id -> onlyGroup(who, id, wanted.value(), tr));
+    }
+
+    synchronized Result<String> onlyGroup(Optional<PlayerId> who, PlayerId id, String group, Translator tr) {
+        Result<String> wanted = checkGroup(who, group);
+        if (wanted.isFailure()) {
+            return Result.failure(wanted.error());
+        }
+        String name = directory.nameOf(id);
+        Set<String> before = Set.copyOf(access.groupsOf(id));
+        if (before.contains(access.operatorGroup()) && !wanted.value().equals(access.operatorGroup())) {
+            Optional<Error> refused = PlayerGuard.self(who, id);
+            if (refused.isPresent()) {
+                return Result.failure(refused.get());
+            }
+        }
+        String label = access.label(wanted.value());
+        if (before.equals(Set.of(wanted.value()))) {
+            return Result.failure(PlayerErrors.nothingToDo(
+                    "controlcore.errors.players.already_only_group",
+                    "{player} is already only in {group}.",
+                    "player",
+                    name,
+                    "group",
+                    label));
+        }
+        for (String other : before) {
+            if (!other.equals(wanted.value())) {
+                access.removeFromGroup(id, other);
+                history.record(Kind.PLAYER, PlayerChange.GROUP.target(id, name, other), "true", "false", false);
+            }
+        }
+        if (!before.contains(wanted.value())) {
+            access.addToGroup(id, wanted.value());
+            history.record(Kind.PLAYER, PlayerChange.GROUP.target(id, name, wanted.value()), "false", "true", false);
+        }
+        changes.fire();
+        return Result.success(tr.t("controlcore.players.group_set", "player", name, "group", label));
+    }
+
     public synchronized Result<String> setGroupPermission(
             Optional<PlayerId> who, String group, String node, boolean add, Translator tr) {
         Result<String> wanted = checkGroup(who, group);
@@ -184,10 +274,16 @@ public final class PlayerAccess {
     }
 
     List<String> groupPermissions(Optional<PlayerId> who, String group) {
-        if (!guard.mayChangeGroups(who) || group == null || !access.groups().contains(group)) {
+        if (!guard.mayChangeGroups(who)) {
             return List.of();
         }
-        return List.copyOf(access.groupPermissions(group));
+        return known(PlayerDirectory.clean(group))
+                .<List<String>>map(found -> List.copyOf(access.groupPermissions(found)))
+                .orElse(List.of());
+    }
+
+    private Optional<String> known(String group) {
+        return access.groups().stream().filter(group::equalsIgnoreCase).findFirst();
     }
 
     String operatorGroup() {
@@ -206,8 +302,6 @@ public final class PlayerAccess {
         if (wanted.isEmpty()) {
             return Result.failure(PlayerErrors.noGroup());
         }
-        return access.groups().contains(wanted)
-                ? Result.success(wanted)
-                : Result.failure(PlayerErrors.unknownGroup(wanted));
+        return known(wanted).map(Result::success).orElseGet(() -> Result.failure(PlayerErrors.unknownGroup(wanted)));
     }
 }

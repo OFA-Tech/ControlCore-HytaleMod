@@ -13,6 +13,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.result.ErrorType;
 import net.ofatech.controlcore.fakes.FakePlayerData;
 import net.ofatech.controlcore.fakes.FakeSettingStore;
@@ -180,7 +181,7 @@ class SettingsRegistryTest {
                         .heading())
                 .isEqualTo("Home Tp: Limits");
 
-        registry.setModName("home_tp", "Home Teleports");
+        registry.setModName("home_tp", Text.of("Home Teleports"));
         registry.register(SettingDefinition.player("home_tp", "hints", SettingType.bool(), true));
 
         assertThat(registry.definitions())

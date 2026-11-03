@@ -49,7 +49,6 @@ public final class SessionService implements SessionsApi {
         }
         data.put(player.id(), LAST_SEEN, now.toString());
         data.put(player.id(), NAME, player.name());
-        data.flush();
         onlineSince.put(player.id(), now);
         return first;
     }
@@ -64,7 +63,6 @@ public final class SessionService implements SessionsApi {
             data.put(player.id(), PLAYTIME, Long.toString(seconds));
         }
         data.put(player.id(), LAST_SEEN, now.toString());
-        data.flush();
     }
 
     public void enteredWorld(PlayerId player, String world) {

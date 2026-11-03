@@ -10,6 +10,8 @@ public interface PlayerInput {
 
     void stop();
 
+    default void forget(PlayerId player) {}
+
     interface Listener {
 
         boolean pressed(PlayerId player, KeySignal signal);

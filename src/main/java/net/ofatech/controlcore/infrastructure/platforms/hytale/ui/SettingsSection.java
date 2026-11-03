@@ -17,6 +17,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
+import net.ofatech.controlcore.domain.model.settings.SettingSearch;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
 import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
@@ -98,6 +99,10 @@ final class SettingsSection {
         return tr.translate(snapshot.definition().type().describeText());
     }
 
+    boolean keys() {
+        return keys;
+    }
+
     String name(SettingSnapshot snapshot) {
         return tr.translate(snapshot.definition().nameText());
     }
@@ -112,13 +117,7 @@ final class SettingsSection {
 
     String description(SettingSnapshot snapshot) {
         SettingDefinition<?> definition = snapshot.definition();
-        String text = tr.translate(definition.descriptionText()).strip();
-        if (keys) {
-            String rest = KeyPicker.read(snapshot.value()).rest();
-            if (!rest.isEmpty()) {
-                text = text + (text.isBlank() ? "" : " · ") + tr.t("controlcore.panel.keypick.also", "keys", rest);
-            }
-        }
+        String text = SettingSearch.description(snapshot, tr, keys);
         String details = snapshot.access() == SettingAccess.READ_ONLY
                 ? tr.t("controlcore.panel.row_read_only")
                 : tr.t(

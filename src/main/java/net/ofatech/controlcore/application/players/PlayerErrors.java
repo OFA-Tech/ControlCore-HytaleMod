@@ -1,15 +1,16 @@
 package net.ofatech.controlcore.application.players;
 
 import net.ofatech.controlcore.application.bans.BansService;
+import net.ofatech.controlcore.application.text.CommonErrors;
 import net.ofatech.controlcore.application.text.PlainText;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.result.Error;
 
-final class PlayerErrors {
+public final class PlayerErrors {
 
     private PlayerErrors() {}
 
-    static Error forbidden() {
+    public static Error forbidden() {
         return Error.forbidden(
                 "Players.Forbidden",
                 Text.key("controlcore.errors.players.forbidden", "You are not allowed to do that."));
@@ -23,7 +24,7 @@ final class PlayerErrors {
                         "Only admins (operators) can change operators and groups."));
     }
 
-    static Error protectedAdmin(String player) {
+    public static Error protectedAdmin(String player) {
         return BansService.protectedAdmin(shown(player));
     }
 
@@ -99,6 +100,10 @@ final class PlayerErrors {
         return Error.validation(
                 "Players.PlayersOnly",
                 Text.key("controlcore.errors.players.players_only", "Only players in the game can do that."));
+    }
+
+    static Error badChoice(String choices) {
+        return CommonErrors.badChoice("Players.BadChoice", choices);
     }
 
     private static String shown(String input) {

@@ -17,7 +17,8 @@ joins. Changes apply at once.
 
 Mods can add their own HUD to the same list (it shows under "<mod name>: HUD").
 
-**Hide everything:** bind the key action **Hide or show the HUD** (`controlcore:toggle-hud`) in Keymaps, for example
+**Hide everything:** turn on **Hide the whole HUD** at the top of **Player Prefs -> ControlCore: HUD**, run
+`/cc-hud hide`, or bind the key action **Hide or show the HUD** (`controlcore:toggle-hud`) in Keymaps, for example
 `/cc-bind controlcore:toggle-hud alt+3`. It hides the game's HUD and every mod HUD until pressed again or until you
 leave. It has no default key.
 

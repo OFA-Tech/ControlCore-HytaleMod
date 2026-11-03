@@ -7,7 +7,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.ofatech.controlcore.domain.model.keys.Key;
 import net.ofatech.controlcore.domain.model.keys.KeyBinds;
@@ -102,7 +101,7 @@ final class KeyPicker {
             return new Picked(NONE, NONE, "", "");
         }
         String first = combos.getFirst().toString();
-        String rest = combos.stream().skip(1).map(KeyCombo::toString).collect(Collectors.joining(" | "));
+        String rest = parsed.value().extras();
         List<KeyInput> inputs = combos.getFirst().inputs();
         boolean alone = inputs.size() == 1;
         String hold = NONE;

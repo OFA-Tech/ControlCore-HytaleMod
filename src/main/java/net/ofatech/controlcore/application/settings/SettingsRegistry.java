@@ -1,6 +1,5 @@
 package net.ofatech.controlcore.application.settings;
 
-import com.google.auto.service.AutoService;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -12,7 +11,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.api.ControlCoreEvents;
 import net.ofatech.controlcore.api.Setting;
-import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -21,6 +19,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingPermission;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
+import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.config.SettingStore;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
@@ -29,8 +28,7 @@ import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
-@AutoService(SettingsApi.class)
-public final class SettingsRegistry implements SettingsApi {
+public final class SettingsRegistry implements SettingsEditor {
 
     public static final String PLAYER_KEY_PREFIX = "setting:";
 
@@ -63,7 +61,6 @@ public final class SettingsRegistry implements SettingsApi {
         this.modNames = modNames;
     }
 
-    @Override
     public <T> Result<Setting<T>> register(SettingDefinition<T> definition) {
         Objects.requireNonNull(definition, "definition");
         definition = definition.withModName(modNames.of(definition.id().namespace()));
@@ -84,7 +81,6 @@ public final class SettingsRegistry implements SettingsApi {
         return Result.success(new Handle<>(definition.id(), definition.type().valueType()));
     }
 
-    @Override
     public void setModName(String modId, Text name) {
         Objects.requireNonNull(modId, "modId");
         modNames.set(modId, name);
@@ -93,12 +89,10 @@ public final class SettingsRegistry implements SettingsApi {
                 id.namespace().equalsIgnoreCase(modId.strip()) ? definition.withModName(shown) : definition);
     }
 
-    @Override
     public Text modName(String modId) {
         return modNames.of(modId);
     }
 
-    @Override
     public void setCategoryPermission(String category, SettingPermission rule) {
         Objects.requireNonNull(category, "category");
         Objects.requireNonNull(rule, "rule");
@@ -110,7 +104,6 @@ public final class SettingsRegistry implements SettingsApi {
         }
     }
 
-    @Override
     public SettingPermission categoryPermission(String category) {
         return category == null
                 ? SettingPermission.INHERIT
@@ -118,12 +111,10 @@ public final class SettingsRegistry implements SettingsApi {
                         category.strip().toLowerCase(Locale.ROOT), SettingPermission.INHERIT);
     }
 
-    @Override
     public Optional<SettingDefinition<?>> definition(SettingId id) {
         return Optional.ofNullable(definitions.get(id));
     }
 
-    @Override
     public List<SettingDefinition<?>> definitions() {
         return definitions.values().stream()
                 .sorted(Comparator.comparing(SettingDefinition::id))

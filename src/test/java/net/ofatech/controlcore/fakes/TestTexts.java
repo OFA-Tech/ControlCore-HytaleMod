@@ -1,6 +1,5 @@
 package net.ofatech.controlcore.fakes;
 
-import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.event.DomainEventBus;
 import net.ofatech.controlcore.application.settings.ModNames;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
@@ -14,7 +13,7 @@ public final class TestTexts {
 
     private TestTexts() {}
 
-    public static Texts of(SettingsApi settings, FakePlayers players) {
+    public static Texts of(SettingsRegistry settings, FakePlayers players) {
         return new Texts(BUNDLED, players);
     }
 

@@ -12,12 +12,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import net.ofatech.controlcore.api.KeymapsApi;
+import java.util.function.BooleanSupplier;
 import net.ofatech.controlcore.api.Setting;
-import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.application.history.ChangeRecorder;
+import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.application.settings.ModNames;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
+import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
 import net.ofatech.controlcore.domain.model.keys.KeyAction;
@@ -38,8 +39,8 @@ public final class ModsEditor {
     static final String SELF = "OFATech:ControlCore";
 
     private final ModCatalog catalog;
-    private final SettingsApi settings;
-    private final KeymapsApi keymaps;
+    private final SettingsRegistry settings;
+    private final KeymapRegistry keymaps;
     private final ModNames modNames;
     private final SettingPermissionPolicy permissions;
     private final Log log;
@@ -48,8 +49,8 @@ public final class ModsEditor {
 
     public ModsEditor(
             ModCatalog catalog,
-            SettingsApi settings,
-            KeymapsApi keymaps,
+            SettingsRegistry settings,
+            KeymapRegistry keymaps,
             ModNames modNames,
             SettingPermissionPolicy permissions,
             Log log,
@@ -73,8 +74,7 @@ public final class ModsEditor {
     }
 
     public ModsView viewedBy(Optional<PlayerId> viewer) {
-        boolean admin = viewer.isEmpty() || permissions.isAdmin(viewer.get());
-        return new View(admin);
+        return new View(() -> viewer.isEmpty() || permissions.isAdmin(viewer.get()));
     }
 
     public List<Text> pendingRestart() {
@@ -98,14 +98,15 @@ public final class ModsEditor {
 
     private final class View implements ModsView {
 
-        private final boolean admin;
+        private final BooleanSupplier stillAdmin;
 
-        View(boolean admin) {
-            this.admin = admin;
+        View(BooleanSupplier stillAdmin) {
+            this.stillAdmin = stillAdmin;
         }
 
         @Override
         public List<Entry> list() {
+            boolean admin = stillAdmin.getAsBoolean();
             Set<String> serverNamespaces = new HashSet<>();
             Set<String> preferenceNamespaces = new HashSet<>();
             for (SettingDefinition<?> definition : settings.definitions()) {
@@ -148,11 +149,43 @@ public final class ModsEditor {
 
         @Override
         public boolean canManage() {
-            return admin;
+            return stillAdmin.getAsBoolean();
         }
 
         @Override
         public Result<Entry> setEnabled(String modId, boolean enabled) {
+            Result<Entry> found = manageable(modId);
+            if (found.isFailure()) {
+                return found;
+            }
+            Entry entry = found.value();
+            Result<List<Entry>> planned = plan(entry, enabled);
+            if (planned.isFailure()) {
+                return Result.failure(planned.error());
+            }
+            for (Entry other : planned.value()) {
+                Result<ModInfo> changed = change(other, enabled);
+                if (changed.isFailure()) {
+                    return Result.failure(changed.error());
+                }
+            }
+            return change(entry, enabled)
+                    .map(changed -> new Entry(
+                            changed,
+                            entry.namespace(),
+                            entry.hasServerSettings(),
+                            entry.hasPreferences(),
+                            entry.hasKeys(),
+                            true,
+                            entry.neededBy()));
+        }
+
+        @Override
+        public Result<List<Entry>> plan(String modId, boolean enabled) {
+            return manageable(modId).flatMap(entry -> plan(entry, enabled));
+        }
+
+        private Result<Entry> manageable(String modId) {
             Optional<Entry> entry = list().stream()
                     .filter(candidate -> candidate.mod().id().equalsIgnoreCase(modId))
                     .findFirst();
@@ -168,36 +201,30 @@ public final class ModsEditor {
                         Text.key("controlcore.errors.mods.forbidden", "You may not turn {name} on or off.")
                                 .with("name", entry.get().mod().name())));
             }
-            List<Entry> others = alsoChanged(modId, enabled);
+            return Result.success(entry.get());
+        }
+
+        private Result<List<Entry>> plan(Entry entry, boolean enabled) {
+            List<Entry> others = alsoChanged(entry.mod().id(), enabled);
             for (Entry other : others) {
                 if (!other.manageable()) {
                     return Result.failure(Error.forbidden(
                             "Mods.Required",
-                            Text.key(
-                                            "controlcore.errors.mods.required",
-                                            "{name} is needed by {other}, which can't be turned off here.")
+                            (enabled
+                                            ? Text.key(
+                                                    "controlcore.errors.mods.required_on",
+                                                    "{name} needs {other}, which can't be turned on here.")
+                                            : Text.key(
+                                                    "controlcore.errors.mods.required",
+                                                    "{name} is needed by {other}, which can't be turned off here."))
                                     .with(
                                             "name",
-                                            entry.get().mod().name(),
+                                            entry.mod().name(),
                                             "other",
                                             other.mod().name())));
                 }
             }
-            for (Entry other : others) {
-                Result<ModInfo> changed = change(other, enabled);
-                if (changed.isFailure()) {
-                    return Result.failure(changed.error());
-                }
-            }
-            return change(entry.get(), enabled)
-                    .map(changed -> new Entry(
-                            changed,
-                            entry.get().namespace(),
-                            entry.get().hasServerSettings(),
-                            entry.get().hasPreferences(),
-                            entry.get().hasKeys(),
-                            true,
-                            entry.get().neededBy()));
+            return Result.success(others);
         }
 
         private Result<ModInfo> change(Entry entry, boolean enabled) {
@@ -257,6 +284,9 @@ public final class ModsEditor {
 
         @Override
         public List<ModCatalog.ConfigFile> configFiles(String modId) {
+            if (!stillAdmin.getAsBoolean()) {
+                return List.of();
+            }
             boolean visible = list().stream().anyMatch(entry -> entry.mod().id().equalsIgnoreCase(modId));
             if (!visible) {
                 return List.of();
