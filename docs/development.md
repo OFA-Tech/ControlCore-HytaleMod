@@ -2,7 +2,8 @@
 
 Practical knowledge for working on ControlCore: how to run it, where things break, and what is next.
 Architecture and rules are in [architecture.md](architecture.md); Hytale and mod translations in
-[platforms.md](platforms.md).
+[platforms.md](platforms.md). Every feature must be usable from the panel, a command and the API; the map is
+[parity.md](parity.md), and `ParityDocTest` fails when a command or API method is missing from it.
 
 ## Environment
 

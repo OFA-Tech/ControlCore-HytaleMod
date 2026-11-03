@@ -28,6 +28,7 @@
   `setGameActionMode`); `controlPanel().openForMod(player, modId)`. Each section acts with full rights by default
   (History: "a mod"), or with exactly a player's panel rights through `actingFor(playerId)` (History: that player).
   See the wiki page Server management API.
+- `docs/parity.md`: every operation mapped to its panel place, command and API method, kept in sync by a test.
 
 ### Changed
 - The panel's **Restore defaults** button now runs through the same service as `/cc-restore-defaults`.

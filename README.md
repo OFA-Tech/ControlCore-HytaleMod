@@ -164,6 +164,7 @@ Its pages live in [wiki/](wiki) and are published to the GitHub wiki on every pu
 | [docs/components.md](docs/components.md) | Writing commands, event handlers, modules, tasks; injection |
 | [docs/platforms.md](docs/platforms.md) | Translating Hytale features; integrating other mods |
 | [docs/api.md](docs/api.md) | Exact API reference for other mods; publishing |
+| [docs/parity.md](docs/parity.md) | Every operation in the panel, as a command and in the API |
 | [docs/development.md](docs/development.md) | Running, debugging, custom UI gotchas, known limits |
 
 ## Releasing
