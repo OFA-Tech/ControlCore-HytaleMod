@@ -816,7 +816,7 @@ public final class SnapshotService {
             });
         }
         if (snapshot.has(Part.PLAYERS)) {
-            playerChanges(snapshot, tr, changes, skipped);
+            playerChanges(snapshot, tr, adminOnly, skipped);
         }
         adminOnly.forEach(change -> changes.add(change.onlyForAdmins()));
         return new Plan(snapshot, changes, skipped[0]);
