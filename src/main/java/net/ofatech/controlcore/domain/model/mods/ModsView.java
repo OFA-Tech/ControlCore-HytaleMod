@@ -2,7 +2,9 @@ package net.ofatech.controlcore.domain.model.mods;
 
 import java.util.List;
 import java.util.Optional;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.mods.ModCatalog;
+import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
 public interface ModsView {
@@ -16,6 +18,20 @@ public interface ModsView {
     List<Entry> alsoChanged(String modId, boolean enabled);
 
     List<ModCatalog.ConfigFile> configFiles(String modId);
+
+    default Result<Entry> find(String input) {
+        String wanted = input == null ? "" : input.strip();
+        return list().stream()
+                .filter(entry -> entry.mod().id().equalsIgnoreCase(wanted)
+                        || entry.mod().name().equalsIgnoreCase(wanted)
+                        || entry.namespace().filter(wanted::equalsIgnoreCase).isPresent())
+                .findFirst()
+                .map(Result::success)
+                .orElseGet(() -> Result.failure(Error.notFound(
+                        "Mods.Unknown",
+                        Text.key("controlcore.errors.mods.unknown", "There is no mod {id}.")
+                                .with("id", wanted))));
+    }
 
     record Entry(
             ModInfo mod,

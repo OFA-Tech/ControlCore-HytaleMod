@@ -38,24 +38,10 @@ public final class ModCommands {
         return texts.forSender(context.sender());
     }
 
-    static Result<ModsView.Entry> find(ModsView view, String input) {
-        String wanted = input == null ? "" : input.strip();
-        return view.list().stream()
-                .filter(entry -> entry.mod().id().equalsIgnoreCase(wanted)
-                        || entry.mod().name().equalsIgnoreCase(wanted)
-                        || entry.namespace().filter(wanted::equalsIgnoreCase).isPresent())
-                .findFirst()
-                .map(Result::success)
-                .orElseGet(() -> Result.failure(Error.notFound(
-                        "Mods.Unknown",
-                        Text.key("controlcore.errors.mods.unknown", "There is no mod {id}.")
-                                .with("id", wanted))));
-    }
-
     Result<Reply> details(CommandContext context, String input) {
         ModsView view = view(context);
         Translator tr = tr(context);
-        return find(view, input).map(entry -> {
+        return view.find(input).map(entry -> {
             ModInfo mod = entry.mod();
             List<String> lines = new ArrayList<>();
             lines.add(mod.name() + " " + version(mod) + " (" + mod.id() + ") - "
@@ -135,7 +121,7 @@ public final class ModCommands {
                             .with("choices", "check, all")));
         }
         boolean all = confirm.equals("all");
-        Result<ModsView.Entry> found = find(view, context.string("mod"));
+        Result<ModsView.Entry> found = view.find(context.string("mod"));
         if (found.isFailure()) {
             return Result.failure(found.error());
         }
@@ -189,7 +175,7 @@ public final class ModCommands {
                     "Mods.ConfigForbidden",
                     Text.key("controlcore.errors.mods.config_forbidden", "Only admins can read mod config files.")));
         }
-        return find(view, context.string("mod"))
+        return view.find(context.string("mod"))
                 .map(entry -> Reply.of(tr.t(
                                 "controlcore.panel.mods.config_title",
                                 "name",

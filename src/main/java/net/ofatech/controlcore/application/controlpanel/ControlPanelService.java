@@ -133,39 +133,27 @@ public final class ControlPanelService implements ControlPanelApi {
     }
 
     public Result<Void> openBestFor(PlayerId player) {
-        ControlPanelRequest request = mayOpenAdminPanel(player) && settings.panelEnabled()
+        return open(player, bestRequest(player));
+    }
+
+    private ControlPanelRequest bestRequest(PlayerId player) {
+        return mayOpenAdminPanel(player) && settings.panelEnabled()
                 ? ControlPanelRequest.ALL
                 : ControlPanelRequest.PLAYER_PREFERENCES;
-        return open(player, request);
     }
 
     @Override
     public Result<Void> openForMod(PlayerId player, String mod) {
-        String wanted = mod == null ? "" : mod.strip();
-        var entry = mods.viewedBy(Optional.of(player)).list().stream()
-                .filter(candidate -> candidate.mod().id().equalsIgnoreCase(wanted)
-                        || candidate.mod().name().equalsIgnoreCase(wanted)
-                        || candidate
-                                .namespace()
-                                .filter(wanted::equalsIgnoreCase)
-                                .isPresent())
-                .findFirst();
-        if (entry.isEmpty()) {
-            return Result.failure(Error.notFound(
-                    "Mods.Unknown",
-                    Text.key("controlcore.errors.mods.unknown", "There is no mod {id}.")
-                            .with("id", wanted)));
-        }
-        if (entry.get().namespace().isEmpty()) {
-            return Result.failure(Error.notFound(
-                    "Mods.NoSettings",
-                    Text.key("controlcore.errors.mods.no_settings", "{name} has no settings in ControlCore.")
-                            .with("name", entry.get().mod().name())));
-        }
-        ControlPanelRequest request = mayOpenAdminPanel(player) && settings.panelEnabled()
-                ? ControlPanelRequest.ALL
-                : ControlPanelRequest.PLAYER_PREFERENCES;
-        return open(player, request, entry.get().namespace());
+        return mods.viewedBy(Optional.of(player))
+                .find(mod)
+                .flatMap(entry -> entry.namespace().isEmpty()
+                        ? Result.failure(Error.notFound(
+                                "Mods.NoSettings",
+                                Text.key(
+                                                "controlcore.errors.mods.no_settings",
+                                                "{name} has no settings in ControlCore.")
+                                        .with("name", entry.mod().name())))
+                        : open(player, bestRequest(player), entry.namespace()));
     }
 
     private Result<Void> open(PlayerId player, ControlPanelRequest request, Optional<String> focus) {
