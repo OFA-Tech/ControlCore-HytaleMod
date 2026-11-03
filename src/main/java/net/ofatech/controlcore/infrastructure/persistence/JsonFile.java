@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 import java.io.IOException;
-import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Type;
 import java.nio.charset.CharacterCodingException;
@@ -38,11 +37,11 @@ final class JsonFile {
         if (!Files.exists(file)) {
             return Optional.empty();
         }
-        try (Reader reader = Files.newBufferedReader(file)) {
-            return Optional.ofNullable(GSON.fromJson(reader, type));
-        } catch (CharacterCodingException | JsonParseException e) {
-            log.error("Could not read " + contents + " from " + file + "; " + moveAside(), e);
-            return Optional.empty();
+        String text;
+        try {
+            text = Files.readString(file);
+        } catch (CharacterCodingException e) {
+            return broken(e);
         } catch (IOException e) {
             readOnly = true;
             log.error(
@@ -51,6 +50,16 @@ final class JsonFile {
                     e);
             return Optional.empty();
         }
+        try {
+            return Optional.ofNullable(GSON.fromJson(text, type));
+        } catch (JsonParseException e) {
+            return broken(e);
+        }
+    }
+
+    private <T> Optional<T> broken(Exception e) {
+        log.error("Could not read " + contents + " from " + file + "; " + moveAside(), e);
+        return Optional.empty();
     }
 
     private String moveAside() {
