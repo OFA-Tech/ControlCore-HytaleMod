@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.application.settings.ModNames;
+import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
@@ -47,6 +48,10 @@ public final class KeymapsEditor implements SettingsEditor, CustomKeyBindEditor 
         this.tr = tr;
         this.modNames = modNames;
         this.mayChangeServer = mayChangeServer;
+    }
+
+    public KeymapsEditor viewedBy(PlayerId viewer, SettingPermissionPolicy policy) {
+        return viewedBy(viewer, () -> policy.isAdmin(viewer));
     }
 
     public KeymapsEditor viewedBy(PlayerId viewer, BooleanSupplier mayChangeServer) {

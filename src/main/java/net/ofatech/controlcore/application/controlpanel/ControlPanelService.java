@@ -177,7 +177,7 @@ public final class ControlPanelService implements ControlPanelApi {
                     "ControlPanel.PlayerNotFound",
                     Text.key("controlcore.errors.controlpanel.player_offline", "That player is not online.")));
         }
-        KeymapsEditor keys = keymaps.viewedBy(player, () -> permissions.isAdmin(player));
+        KeymapsEditor keys = keymaps.viewedBy(player, permissions);
         Result<Void> opened = view.open(
                 player,
                 request,

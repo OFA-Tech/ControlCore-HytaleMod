@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import net.ofatech.controlcore.api.KeymapsApi;
 import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
@@ -42,9 +43,7 @@ public final class KeymapsApiService implements KeymapsApi {
         this.policy = policy;
         this.directory = directory;
         this.actor = actor;
-        this.editor = actor.who()
-                .map(player -> editor.viewedBy(player, () -> policy.isAdmin(player)))
-                .orElse(editor);
+        this.editor = actor.who().map(player -> editor.viewedBy(player, policy)).orElse(editor);
     }
 
     @Override
@@ -110,8 +109,7 @@ public final class KeymapsApiService implements KeymapsApi {
 
     @Override
     public List<CustomKeyBind> customBinds() {
-        return registry.actions().stream()
-                .filter(action -> action.modId().equals(KeymapRegistry.CUSTOM))
+        return customActions()
                 .flatMap(action -> registry.findCustom(action.id().key()).stream())
                 .sorted(Comparator.comparing(CustomKeyBind::name))
                 .toList();
@@ -119,7 +117,18 @@ public final class KeymapsApiService implements KeymapsApi {
 
     @Override
     public Optional<CustomKeyBind> findCustom(String name) {
-        return registry.findCustom(name);
+        return registry.findCustom(name)
+                .filter(bind ->
+                        customActions().anyMatch(action -> action.id().key().equals(bind.name())));
+    }
+
+    private Stream<KeyAction> customActions() {
+        return registry.actions().stream()
+                .filter(action -> action.modId().equals(KeymapRegistry.CUSTOM))
+                .filter(action -> actor.plain()
+                        || actor.who()
+                                .map(player -> registry.canUse(action, player))
+                                .orElse(true));
     }
 
     @Override

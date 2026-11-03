@@ -156,6 +156,18 @@ class ServerApiRuntimeTest extends RuntimeTestBase {
     }
 
     @Test
+    void customBindsAPlayerCannotUseAreHiddenFromThem() {
+        ok(api.keymaps().addCustom("announce", "ALT + 3", "say hi", true));
+
+        assertThat(api.keymaps().customBinds()).extracting(bind -> bind.name()).contains("announce");
+        assertThat(api.keymaps().actingFor(guest.id()).customBinds())
+                .extracting(bind -> bind.name())
+                .doesNotContain("announce");
+        assertThat(api.keymaps().actingFor(guest.id()).findCustom("announce")).isEmpty();
+        assertThat(api.keymaps().actingFor(admin.id()).findCustom("announce")).isPresent();
+    }
+
+    @Test
     void permissionRulesAreForAdmins() {
         ok(api.permissions().set("server:motd", "view", "everyone"));
         assertMadeByMod();

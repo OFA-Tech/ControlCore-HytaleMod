@@ -208,7 +208,7 @@ public final class DefaultsService {
     }
 
     private KeymapsEditor keys(PlayerId player) {
-        return keymaps.viewedBy(player, () -> policy.isAdmin(player));
+        return keymaps.viewedBy(player, policy);
     }
 
     private boolean admin(Optional<PlayerId> who) {
