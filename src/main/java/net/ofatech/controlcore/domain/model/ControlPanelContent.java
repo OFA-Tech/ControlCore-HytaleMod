@@ -11,6 +11,7 @@ import net.ofatech.controlcore.domain.model.history.HistoryView;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.players.PlayersView;
+import net.ofatech.controlcore.domain.model.settings.DefaultsView;
 import net.ofatech.controlcore.domain.model.settings.PermissionsView;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.model.snapshot.ProfilesView;
@@ -43,7 +44,8 @@ public record ControlPanelContent(
         Optional<AutomationView> automation,
         KeyDetection keyDetection,
         Supplier<PanelRights> rights,
-        BooleanSupplier stillAdmin) {
+        BooleanSupplier stillAdmin,
+        DefaultsView defaults) {
 
     public ControlPanelContent {
         Guard.notNull(server, "server");
@@ -68,5 +70,6 @@ public record ControlPanelContent(
         Guard.notNull(keyDetection, "keyDetection");
         Guard.notNull(rights, "rights");
         Guard.notNull(stillAdmin, "stillAdmin");
+        Guard.notNull(defaults, "defaults");
     }
 }

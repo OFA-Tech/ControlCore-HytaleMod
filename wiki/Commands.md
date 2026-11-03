@@ -24,6 +24,14 @@ Admin commands also work from the server console; commands about your own prefer
 | `/cc-prefs` | any player | list your preferences |
 | `/cc-pref <id> <value>` | any player | change one of your preferences |
 | `/cc-pref-reset <id>` | any player | put a preference back to its default |
+| `/cc-configs [world\|-] [search]` | who may see the keys | list the `config.json` keys, or a world's keys, by heading, with value, default and `LIVE`, `RESTART` or `READ-ONLY`; only keys you may see |
+| `/cc-restart-pending` | admins | what was changed (config keys, mods) and only applies after a restart |
+| `/cc-restore-defaults <section> <check\|confirm> [search]` | like the panel | the panel's **Restore defaults** button: `check` says how many rows would change, `confirm` does it |
+
+`/cc-restore-defaults` sections: `mod-settings`, `prefs` (yours), `server-configs`, `world:<name>`, `keymaps-server`
+(admins), `keymaps-mine` (yours) and `permissions` (admins). Only rows you may change and that differ from their
+default are reset; read-only rows are skipped. Server-wide sections first save a `before-defaults` snapshot when you
+may use snapshots, and every reset is in History. `[search]` limits it to rows whose id, name or heading has the text.
 
 Ids look like `mod:key`, for example `controlcore:welcome-message`. The server's `config.json` keys are `server:…`,
 for example `server:motd` or `server:connection-timeouts.play-timeout`; `/cc-set` says when a key only applies after a
@@ -119,6 +127,8 @@ Also in the panel: **History** → **Snapshots**. All need admins or `ofatech.co
 | `/cc-snapshots-clear` | delete every snapshot that is not used as a profile |
 | `/cc-profiles` | list the profiles and show which one is active |
 | `/cc-profile <id>` | switch to a profile: `@vanilla`, `@pvp`, `@creative`, `@event` or a snapshot marked as profile (saves `before-<name>` first) |
+| `/cc-profile-mark <snapshot>` | mark a snapshot as a profile |
+| `/cc-profile-unmark <profile>` | turn a profile back into a plain snapshot; only admins change a snapshot once it is a profile |
 
 ```
 /cc-snapshot-save pvp-weekend --parts=config+settings+keys
@@ -137,6 +147,28 @@ Also in the panel's **Automation** tab (see [Automation](Automation)). Admins on
 | `/cc-rule-toggle <id>` | turn a rule on or off |
 | `/cc-rule-test <id>` | run a rule once now, ignoring its trigger, condition and cooldown |
 | `/cc-rule-remove <id>` | delete a rule |
+| `/cc-rule-add <fields>` | create a rule, with the same checks as the panel |
+| `/cc-rule-edit <id> <fields>` | change a rule; fields you leave out stay as they are, any `do=` replaces all actions |
+
+`<fields>` are `key=value` parts joined with `;`:
+
+| Field | Value |
+|---|---|
+| `name=` | the rule's name |
+| `when=` | the trigger and its value after a `:`, e.g. `join`, `every-minutes:30`, `daily-at:08:30`, `cron:0 20 * * FRI`, `tps-below:15`, `setting-changed:homes:max-homes` |
+| `if=` | optional condition and value, e.g. `has-permission:vip`, `in-world:default`, `time-between:18:00-23:00`; `if=none` removes it |
+| `do=` | an action and its value, in order, up to 8, e.g. `message-player:Hi {player}`, `toast-all:warning:Restart\|in 5 min`, `set-setting:homes:max-homes=5` |
+| `cooldown=` | seconds; empty for the trigger's default |
+| `on=` | `yes` or `no` |
+
+Ids for triggers, conditions and actions are the panel's choices in lower case with `-`. Avoid commas: Hytale cuts
+command text at commas.
+
+```
+/cc-rule-add name=Welcome; when=join; do=message-player:Welcome {player}!; do=toast-player:success:Hi|Have fun
+/cc-rule-add name=Night; when=daily-at:22:00; do=message-all:Night mode; do=set-setting:homes:max-homes=2
+/cc-rule-edit welcome cooldown=60; on=no
+```
 
 ## Diagnostics
 
@@ -166,6 +198,23 @@ See [Key binds](Key-Binds) for the key syntax and which keys work.
 | Command | Who | Does |
 |---|---|---|
 | `/cc-mods` | `ofatech.controlcore.settings` | list the server's mods and whether they run |
+| `/cc-mod-info <mod>` | anyone (mods hidden from players stay hidden) | the panel's **Details**: requires, can use, needed by and the Hytale version |
+| `/cc-mod-on <mod> [all]` | admins | turn a mod on from the next start; if it needs mods that are off, it lists them and needs `all` to turn them on too |
+| `/cc-mod-off <mod> [all]` | admins | turn a mod off from the next start; if other mods need it, it lists them and needs `all` to turn them off too |
+| `/cc-mod-configs <mod>` | admins | show the mod's config files (read-only) |
+
+`<mod>` is the mod's id (`Group:Name`), name or settings namespace.
+
+## HUD and notifications
+
+| Command | Who | Does |
+|---|---|---|
+| `/cc-hud <hide\|show\|toggle>` | any player | hide or show your whole HUD |
+| `/cc-toast <player\|everyone\|admins> <style> <text>` | admins | a small timed message; style is `info`, `success`, `warning` or `error`; `Title\|text` adds a title |
+| `/cc-warn <player\|everyone\|admins> <seconds> <text>` | admins | a warning bar; `0` seconds keeps it until cleared; start the text with `warning:` (or `info:`, `success:`, `error:`) for a style |
+| `/cc-warn-clear <player\|everyone\|admins>` | admins | take away the warning bar from `/cc-warn` |
+
+The same limits as automation actions: up to 256 characters. `everyone` warnings also reach players who join later.
 
 ## Debug tools
 

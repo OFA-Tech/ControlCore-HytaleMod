@@ -135,14 +135,24 @@ public final class ProfileService {
 
             @Override
             public Result<String> unmark(String id) {
-                return snapshots.setProfile(id, false, who).map(saved -> {
-                    if (active.get().filter(saved.name()::equals).isPresent()) {
-                        active.set(Optional.empty());
-                    }
-                    return tr.t("controlcore.profiles.unmarked", "name", saved.name());
-                });
+                return ProfileService.this.unmark(id, who, tr);
             }
         };
+    }
+
+    public Result<String> unmark(String id, Optional<PlayerId> who, Translator tr) {
+        return snapshots.setProfile(id, false, who).map(saved -> {
+            if (active.get().filter(saved.name()::equals).isPresent()) {
+                active.set(Optional.empty());
+            }
+            return tr.t("controlcore.profiles.unmarked", "name", saved.name());
+        });
+    }
+
+    public Result<String> mark(String name, Optional<PlayerId> who, Translator tr) {
+        return snapshots
+                .setProfile(name, true, who)
+                .map(saved -> tr.t("controlcore.profiles.marked", "name", saved.name()));
     }
 
     public List<ProfilesView.Entry> list(Translator tr) {

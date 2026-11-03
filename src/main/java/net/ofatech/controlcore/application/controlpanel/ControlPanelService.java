@@ -14,6 +14,7 @@ import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.mods.ModsEditor;
 import net.ofatech.controlcore.application.players.PlayersService;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
+import net.ofatech.controlcore.application.settings.DefaultsService;
 import net.ofatech.controlcore.application.settings.PermissionsEditor;
 import net.ofatech.controlcore.application.settings.PermittedSettingsEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
@@ -59,6 +60,7 @@ public final class ControlPanelService implements ControlPanelApi {
     private final ProfileService profiles;
     private final DiagnosticsService diagnostics;
     private final AutomationService automation;
+    private final DefaultsService defaults;
 
     public ControlPanelService(
             ControlPanelSettings settings,
@@ -80,8 +82,10 @@ public final class ControlPanelService implements ControlPanelApi {
             SnapshotService snapshots,
             ProfileService profiles,
             DiagnosticsService diagnostics,
-            AutomationService automation) {
+            AutomationService automation,
+            DefaultsService defaults) {
         this.settings = settings;
+        this.defaults = defaults;
         this.players = players;
         this.server = server;
         this.view = view;
@@ -225,7 +229,8 @@ public final class ControlPanelService implements ControlPanelApi {
                                 : Optional.empty(),
                         keyDetection.viewedBy(player),
                         () -> rights(player),
-                        () -> permissions.isAdmin(player)));
+                        () -> permissions.isAdmin(player),
+                        defaults.viewedBy(player, nameOf(player))));
         opened.onSuccess(nothing -> keyDetection.cancel(player));
         return opened;
     }

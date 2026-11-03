@@ -69,6 +69,10 @@ public final class ServerConfigEditor implements SettingsEditor {
         return new SettingId(WORLD_NAMESPACE, slug(world) + "." + idOf(path).key());
     }
 
+    public static boolean inWorld(SettingId id, Optional<String> world) {
+        return world.isEmpty() ? !isWorld(id) : isWorld(id) && id.key().startsWith(worldPrefix(world.get()));
+    }
+
     public static String worldPrefix(String world) {
         return slug(world) + ".";
     }

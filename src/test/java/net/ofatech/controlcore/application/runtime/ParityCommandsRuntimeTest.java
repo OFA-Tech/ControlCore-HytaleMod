@@ -1,0 +1,231 @@
+package net.ofatech.controlcore.application.runtime;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.List;
+import java.util.Map;
+import net.ofatech.controlcore.api.ControlCoreApi;
+import net.ofatech.controlcore.domain.event.PlayerJoined;
+import net.ofatech.controlcore.domain.model.PlayerInfo;
+import net.ofatech.controlcore.domain.model.automation.Rule;
+import net.ofatech.controlcore.domain.model.hud.Overlay;
+import net.ofatech.controlcore.domain.model.mods.ModDependency;
+import net.ofatech.controlcore.domain.model.mods.ModInfo;
+import net.ofatech.controlcore.domain.model.settings.DefaultsView;
+import net.ofatech.controlcore.domain.ports.command.Reply;
+import net.ofatech.controlcore.domain.ports.mods.ModCatalog;
+import net.ofatech.controlcore.domain.result.Result;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+class ParityCommandsRuntimeTest extends RuntimeTestBase {
+
+    private PlayerInfo admin;
+    private PlayerInfo builder;
+
+    @BeforeEach
+    void startUp() {
+        platform.modCatalog.add("Test:Base", false);
+        platform.modCatalog.add(
+                "Test:Addon", false, new ModDependency("Test:Base", "", false, ModDependency.Status.OK));
+        platform.modCatalog.files.put("Test:Base", List.of(new ModCatalog.ConfigFile("config.json", List.of("{}"))));
+        runtime.setup();
+        runtime.start();
+        admin = platform.players.join("Admin");
+        builder = platform.players.join("Builder");
+        platform.deniedNodesFor.put(builder.id(), List.of("settings", "admin"));
+        platform.connectedPublisher.publish(new PlayerJoined(admin));
+        platform.connectedPublisher.publish(new PlayerJoined(builder));
+    }
+
+    private static String text(Result<Reply> result) {
+        assertThat(result.isSuccess()).as("%s", result).isTrue();
+        return result.value().text().orElseThrow();
+    }
+
+    private static String code(Result<Reply> result) {
+        assertThat(result.isFailure()).as("%s", result).isTrue();
+        return result.error().code();
+    }
+
+    private Result<Reply> console(String name, Map<String, Object> args) {
+        return platform.commands.runAsConsole(name, args);
+    }
+
+    @Test
+    void modsCanBeInspectedAndTurnedOffOnlyWithConfirmationWhenOthersFollow() {
+        assertThat(text(console("cc-mod-info", Map.of("mod", "Base"))))
+                .contains("Base", "Test:Base", "Requires", "Needed by", "Addon", "Hytale");
+
+        assertThat(code(console("cc-mod-off", Map.of("mod", "Test:Base")))).isEqualTo("Mods.Confirm");
+        assertThat(platform.modCatalog.mods).allMatch(ModInfo::enabledAfterRestart);
+
+        assertThat(text(console("cc-mod-off", Map.of("mod", "Test:Base", "confirm", "all"))))
+                .contains("Addon");
+        assertThat(platform.modCatalog.mods).noneMatch(ModInfo::enabledAfterRestart);
+
+        assertThat(text(console("cc-mod-on", Map.of("mod", "Test:Addon", "confirm", "all"))))
+                .contains("Base");
+        assertThat(text(console("cc-mod-configs", Map.of("mod", "Test:Base")))).contains("config.json", "{}");
+
+        assertThat(code(platform.commands.run("cc-mod-off", builder, Map.of("mod", "Test:Addon"))))
+                .isEqualTo("Mods.Forbidden");
+        assertThat(code(platform.commands.run("cc-mod-configs", builder, Map.of("mod", "Test:Base"))))
+                .isEqualTo("Mods.ConfigForbidden");
+        assertThat(code(console("cc-mod-info", Map.of("mod", "Nope")))).isEqualTo("Mods.Unknown");
+    }
+
+    @Test
+    void rulesAreCreatedAndEditedWithThePanelsValidation() {
+        String added = text(
+                console(
+                        "cc-rule-add",
+                        Map.of(
+                                "rule",
+                                "name=Hello; when=join; if=has-permission:vip; do=message-player:Hi {player}; do=toast-player:success:Hey; cooldown=30")));
+        assertThat(added).contains("Hello", "hello");
+        Rule rule = platform.automationRules.all().getFirst();
+        assertThat(rule.actions()).hasSize(2);
+        assertThat(rule.cooldownSeconds()).isEqualTo(30);
+        assertThat(rule.enabled()).isTrue();
+
+        text(console("cc-rule-edit", Map.of("id", "hello", "changes", "cooldown=60; on=no")));
+        Rule edited = platform.automationRules.all().getFirst();
+        assertThat(edited.cooldownSeconds()).isEqualTo(60);
+        assertThat(edited.enabled()).isFalse();
+        assertThat(edited.actions()).hasSize(2);
+        assertThat(edited.conditions()).hasSize(1);
+
+        assertThat(code(console(
+                        "cc-rule-add", Map.of("rule", "name=Tick; when=every-minutes:5; do=message-player:hi"))))
+                .isEqualTo("Automation.NeedsPlayer");
+        assertThat(code(console("cc-rule-add", Map.of("rule", "name=Cron; when=cron:nope; do=message-all:hi"))))
+                .isEqualTo("Automation.InvalidTriggerValue");
+        assertThat(code(console("cc-rule-add", Map.of("rule", "name=X; when=join; colour=red"))))
+                .isEqualTo("Automation.BadField");
+        assertThat(code(console("cc-rule-add", Map.of("rule", "name=X; when=join; do=explode:now"))))
+                .isEqualTo("Automation.UnknownAction");
+        assertThat(code(console("cc-rule-add", Map.of("rule", "name=X; when=join"))))
+                .isEqualTo("Automation.NoAction");
+        assertThat(code(console("cc-rule-edit", Map.of("id", "nope", "changes", "on=yes"))))
+                .isEqualTo("Automation.Unknown");
+        assertThat(code(platform.commands.run(
+                        "cc-rule-add", builder, Map.of("rule", "name=Mine; when=join; do=message-all:hi"))))
+                .isEqualTo("Automation.Forbidden");
+        assertThat(platform.automationRules.all()).hasSize(1);
+    }
+
+    @Test
+    void onlyAdminsChangeAProfileOnceItIsOne() {
+        text(platform.commands.run("cc-snapshot-save", admin, Map.of("name", "weekend", "parts", "config")));
+
+        assertThat(text(platform.commands.run("cc-profile-mark", builder, Map.of("snapshot", "weekend"))))
+                .contains("weekend");
+        assertThat(platform.snapshots.find("weekend").orElseThrow().profile()).isTrue();
+        assertThat(code(platform.commands.run("cc-profile-unmark", builder, Map.of("profile", "weekend"))))
+                .isEqualTo("Snapshots.ProfileReplace");
+
+        assertThat(text(console("cc-profile-unmark", Map.of("profile", "weekend"))))
+                .contains("weekend");
+        assertThat(platform.snapshots.find("weekend").orElseThrow().profile()).isFalse();
+    }
+
+    @Test
+    void configKeysAreListedPerWorldAndFiltered() {
+        assertThat(text(console("cc-configs", Map.of())))
+                .contains("server:server-name", "LIVE", "RESTART", "READ-ONLY")
+                .doesNotContain("world:");
+        assertThat(text(console("cc-configs", Map.of("world", "default", "search", "pvp"))))
+                .contains("world:default.is-pvp-enabled")
+                .doesNotContain("server:");
+        assertThat(code(console("cc-configs", Map.of("world", "moon")))).isEqualTo("ServerConfig.UnknownWorld");
+        assertThat(code(platform.commands.run("cc-configs", builder, Map.of()))).isEqualTo("ServerConfig.NoneVisible");
+    }
+
+    @Test
+    void restartPendingListsWhatWaits() {
+        assertThat(text(console("cc-restart-pending", Map.of()))).contains("Nothing");
+        console("cc-set", Map.of("id", "server:backup.enabled", "value", "true"));
+        console("cc-mod-off", Map.of("mod", "Test:Addon"));
+
+        assertThat(text(console("cc-restart-pending", Map.of()))).contains("Addon");
+        assertThat(code(platform.commands.run("cc-restart-pending", builder, Map.of())))
+                .isEqualTo("ServerConfig.Forbidden");
+    }
+
+    @Test
+    void restoringDefaultsNeedsConfirmAndSavesASnapshotFirst() {
+        text(console("cc-set", Map.of("id", "server:server-name", "value", "Renamed")));
+
+        assertThat(text(console(
+                        "cc-restore-defaults", Map.of("section", "server-configs", "step", "check", "search", "name"))))
+                .contains("1 row(s)", "snapshot");
+        assertThat(code(console("cc-restore-defaults", Map.of("section", "server-configs", "step", "now"))))
+                .isEqualTo("Defaults.Confirm");
+        assertThat(text(console("cc-get", Map.of("id", "server:server-name")))).contains("Renamed");
+
+        assertThat(text(console(
+                        "cc-restore-defaults",
+                        Map.of("section", "server-configs", "step", "confirm", "search", "name"))))
+                .contains("1 row(s)");
+        assertThat(text(console("cc-get", Map.of("id", "server:server-name")))).doesNotContain("Renamed");
+        assertThat(platform.snapshots.all())
+                .anyMatch(snapshot -> snapshot.name().contains("defaults"));
+
+        assertThat(code(console("cc-restore-defaults", Map.of("section", "prefs", "step", "confirm"))))
+                .isEqualTo("Commands.PlayersOnly");
+        assertThat(code(platform.commands.run(
+                        "cc-restore-defaults", builder, Map.of("section", "permissions", "step", "check"))))
+                .isEqualTo("Defaults.Forbidden");
+        assertThat(code(console("cc-restore-defaults", Map.of("section", "everything", "step", "check"))))
+                .isEqualTo("Defaults.UnknownSection");
+    }
+
+    @Test
+    void thePanelRestoresTheSameWayThroughItsDefaultsView() {
+        platform.commands.run("cc-pref", builder, Map.of("id", "controlcore:panel-start-tab", "value", "mod settings"));
+        platform.commands.run("prefs", builder, Map.of());
+        DefaultsView defaults = platform.controlPanel.lastContent.defaults();
+
+        assertThat(defaults.count(DefaultsView.Section.PREFS, id -> true)).isEqualTo(1);
+        assertThat(defaults.savesFirst(DefaultsView.Section.PREFS)).isFalse();
+        assertThat(defaults.restore(DefaultsView.Section.PREFS, id -> true).value())
+                .contains("1 row(s)");
+        assertThat(defaults.count(DefaultsView.Section.PREFS, id -> true)).isZero();
+    }
+
+    @Test
+    void hudToastsAndWarningsFromCommands() {
+        assertThat(code(console("cc-hud", Map.of("action", "hide")))).isEqualTo("Commands.PlayersOnly");
+        text(platform.commands.run("cc-hud", admin, Map.of("action", "toggle")));
+        assertThat(ControlCoreApi.get().huds().isHidden(admin.id())).isTrue();
+        text(platform.commands.run("cc-hud", admin, Map.of("action", "show")));
+        assertThat(ControlCoreApi.get().huds().isHidden(admin.id())).isFalse();
+
+        assertThat(text(console("cc-toast", Map.of("target", "Builder", "style", "success", "text", "Hi|there"))))
+                .contains("Builder");
+        assertThat(overlay(builder).toasts()).extracting(Overlay.Line::text).containsExactly("there");
+        assertThat(code(console("cc-toast", Map.of("target", "everyone", "style", "loud", "text", "x"))))
+                .isEqualTo("Notify.BadStyle");
+
+        text(console("cc-warn", Map.of("target", "everyone", "seconds", 0, "text", "warning: Restart soon")));
+        assertThat(overlay(builder).warnings()).extracting(Overlay.Line::text).containsExactly("Restart soon");
+        text(console("cc-warn-clear", Map.of("target", "everyone")));
+        assertThat(overlay(builder).warnings()).isEmpty();
+        text(console("cc-warn", Map.of("target", "admins", "seconds", 30, "text", "Only you")));
+        assertThat(overlay(admin).warnings()).extracting(Overlay.Line::text).containsExactly("Only you");
+        assertThat(overlay(builder).warnings()).isEmpty();
+
+        assertThat(code(platform.commands.run(
+                        "cc-toast", builder, Map.of("target", "everyone", "style", "info", "text", "x"))))
+                .isEqualTo("Notify.Forbidden");
+        assertThat(code(console("cc-warn", Map.of("target", "Nobody", "seconds", 0, "text", "x"))))
+                .isEqualTo("Notify.NotOnline");
+        assertThat(code(console("cc-warn", Map.of("target", "everyone", "seconds", -1, "text", "x"))))
+                .isEqualTo("Notify.InvalidSeconds");
+    }
+
+    private Overlay overlay(PlayerInfo player) {
+        return platform.overlay.shown.get(player.id());
+    }
+}

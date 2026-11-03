@@ -6,6 +6,13 @@
 - Commands for player management, also from the console, with the same rights as the Players tab: `/cc-kick`,
   `/cc-mute`, `/cc-unmute`, `/cc-freeze`, `/cc-unfreeze`, `/cc-gamemode`, `/cc-tp`, `/cc-bring`, `/cc-whitelist`,
   `/cc-op`, `/cc-deop`, `/cc-group`, `/cc-groups`, `/cc-group-perm`, `/cc-player`, `/cc-inventory` and `/cc-chat`.
+- Commands for the rest of the panel, with the panel's rights: `/cc-mod-info`, `/cc-mod-on`, `/cc-mod-off` (asks for
+  `all` when other mods change too), `/cc-mod-configs`, `/cc-rule-add` and `/cc-rule-edit` (`key=value; ...` fields,
+  the panel's checks), `/cc-profile-mark`, `/cc-profile-unmark`, `/cc-configs`, `/cc-restart-pending`,
+  `/cc-restore-defaults` (`check`, then `confirm`), `/cc-hud`, `/cc-toast`, `/cc-warn` and `/cc-warn-clear`.
+
+### Changed
+- The panel's **Restore defaults** button now runs through the same service as `/cc-restore-defaults`.
 
 ## 0.19.0 - 2026-10-29
 

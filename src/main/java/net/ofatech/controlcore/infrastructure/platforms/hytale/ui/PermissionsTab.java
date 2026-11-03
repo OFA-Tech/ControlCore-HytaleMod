@@ -5,6 +5,8 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import net.ofatech.controlcore.domain.model.settings.PermissionsView;
 import net.ofatech.controlcore.domain.model.settings.SettingSearch;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
@@ -106,23 +108,11 @@ final class PermissionsTab {
         return true;
     }
 
-    int ruledShown() {
-        return (int)
-                entries.stream().filter(entry -> matches(entry) && ruled(entry)).count();
-    }
-
-    int restoreShown() {
-        int done = 0;
-        for (PermissionsView.Entry entry : List.copyOf(entries)) {
-            if (matches(entry) && ruled(entry) && view.reset(entry.target()).isSuccess()) {
-                done++;
-            }
-        }
-        return done;
-    }
-
-    private static boolean ruled(PermissionsView.Entry entry) {
-        return !entry.view().isBlank() || !entry.edit().isBlank();
+    Set<String> shownTargets() {
+        return entries.stream()
+                .filter(this::matches)
+                .map(PermissionsView.Entry::target)
+                .collect(Collectors.toSet());
     }
 
     void search(SettingSearch current, UICommandBuilder commands) {

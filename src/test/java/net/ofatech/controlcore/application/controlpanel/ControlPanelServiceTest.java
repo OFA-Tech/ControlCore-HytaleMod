@@ -21,6 +21,7 @@ import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
 import net.ofatech.controlcore.application.mods.ModsEditor;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
+import net.ofatech.controlcore.application.settings.DefaultsService;
 import net.ofatech.controlcore.application.settings.ModNames;
 import net.ofatech.controlcore.application.settings.PermissionsEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
@@ -236,6 +237,8 @@ class ControlPanelServiceTest {
                 new FakeClock(),
                 TestTexts.of(registry, players),
                 log);
+        var keymaps = new KeymapsEditor(keyRegistry, TestTexts.of(registry, players), modNames);
+        var permissionRules = new PermissionsEditor(registry, serverConfig, policy);
         return new ControlPanelService(
                 new ControlPanelSettings(registry, settings),
                 players,
@@ -244,11 +247,11 @@ class ControlPanelServiceTest {
                 registry,
                 serverConfig,
                 playerAdmin,
-                new KeymapsEditor(keyRegistry, TestTexts.of(registry, players), modNames),
+                keymaps,
                 policy,
                 TestTexts.of(registry, players),
                 mods,
-                new PermissionsEditor(registry, serverConfig, policy),
+                permissionRules,
                 probe,
                 KeyDetections.NONE,
                 (player, node) -> !node.equals("debug") || debugAllowed,
@@ -264,7 +267,15 @@ class ControlPanelServiceTest {
                         TestTexts.of(registry, players),
                         new FakeClock(),
                         log),
-                automation);
+                automation,
+                new DefaultsService(
+                        registry,
+                        serverConfig,
+                        keymaps,
+                        policy,
+                        permissionRules,
+                        snapshots,
+                        TestTexts.of(registry, players)));
     }
 
     @Test

@@ -649,6 +649,15 @@ public final class AutomationService {
 
     public Result<String> save(
             Optional<String> editing, AutomationView.Form form, Optional<PlayerId> who, Translator tr) {
+        return save(editing, form, Optional.empty(), who, tr);
+    }
+
+    public Result<String> save(
+            Optional<String> editing,
+            AutomationView.Form form,
+            Optional<Boolean> enabled,
+            Optional<PlayerId> who,
+            Translator tr) {
         if (!mayManage(who)) {
             return forbidden();
         }
@@ -656,7 +665,7 @@ public final class AutomationService {
         if (built.isFailure()) {
             return Result.failure(built.error());
         }
-        Rule rule = built.value();
+        Rule rule = enabled.map(built.value()::withEnabled).orElse(built.value());
         List<Rule> rules = new ArrayList<>(store.all());
         int index = -1;
         for (int i = 0; i < rules.size(); i++) {

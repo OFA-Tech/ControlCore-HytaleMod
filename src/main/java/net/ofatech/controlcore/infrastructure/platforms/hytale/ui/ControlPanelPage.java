@@ -16,7 +16,6 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
 import com.hypixel.hytale.server.core.universe.world.storage.EntityStore;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -48,13 +47,12 @@ import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.keys.GameActionMode;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
+import net.ofatech.controlcore.domain.model.settings.DefaultsView;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSearch;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
-import net.ofatech.controlcore.domain.model.snapshot.Snapshot;
-import net.ofatech.controlcore.domain.model.snapshot.SnapshotsView;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.game.InputProbe;
@@ -163,7 +161,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private final Optional<ProfilesTab> profilesTab;
     private final Optional<HealthTab> healthTab;
     private final Optional<AutomationTab> automationTab;
-    private final Optional<SnapshotsView> snapshotsView;
+    private final DefaultsView defaults;
     private HistoryMode historyMode = HistoryMode.CHANGES;
     private Optional<PanelSection> armedDefaults = Optional.empty();
 
@@ -219,7 +217,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         this.healthTab = shownSections.includeServerSettings()
                 ? content.diagnostics().map(view -> new HealthTab(view, tr, hooks))
                 : Optional.empty();
-        this.snapshotsView = shownSections.includeServerSettings() ? content.snapshots() : Optional.empty();
+        this.defaults = content.defaults();
         this.automationTab = shownSections.includeServerSettings()
                 ? content.automation().map(view -> new AutomationTab(view, tr, hooks))
                 : Optional.empty();
@@ -883,8 +881,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         if (permissions && permissionsTab.isEmpty()) {
             return;
         }
-        List<SettingSnapshot> rows = permissions ? List.of() : resettable(key);
-        int count = permissions ? permissionsTab.get().ruledShown() : rows.size();
+        DefaultsView.Section section = defaultsSection(key);
+        Set<String> shown = permissions ? permissionsTab.get().shownTargets() : shownIds(key);
+        int count = defaults.count(section, shown::contains);
         UICommandBuilder update = new UICommandBuilder();
         if (count == 0) {
             armedDefaults = Optional.empty();
@@ -892,13 +891,12 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             sendUpdate(update, false);
             return;
         }
-        boolean serverWide = key != PanelSection.PREFS && key != PanelSection.KEYMAPS;
         if (armedDefaults.filter(key::equals).isEmpty()) {
             armedDefaults = Optional.of(key);
             footer(
                     update,
                     tr.t(
-                            serverWide && snapshotsView.isPresent()
+                            defaults.savesFirst(section)
                                     ? "controlcore.panel.defaults.confirm_safe"
                                     : "controlcore.panel.defaults.confirm",
                             "count",
@@ -908,51 +906,38 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             return;
         }
         armedDefaults = Optional.empty();
-        String safety = "";
-        if (serverWide && snapshotsView.isPresent()) {
-            Result<String> saved = snapshotsView.get().saveBefore("defaults", defaultsParts(key));
-            if (saved.isFailure()) {
-                footer(update, tr.error(saved.error()));
-                sendUpdate(update, false);
-                return;
-            }
-            safety = " " + tr.t("controlcore.snapshots.safety_saved", "name", saved.value());
-        }
-        int done = 0;
-        if (permissions) {
-            done = permissionsTab.get().restoreShown();
-        } else {
-            SettingsSection section = sections.get(key);
-            for (SettingSnapshot row : rows) {
-                if (section.reset(row.id().toString()).isSuccess()) {
-                    done++;
-                }
-            }
+        Result<String> restored = defaults.restore(section, shown::contains);
+        if (restored.isFailure()) {
+            footer(update, tr.error(restored.error()));
+            sendUpdate(update, false);
+            return;
         }
         rebuild();
         UICommandBuilder after = new UICommandBuilder();
-        footer(after, tr.t("controlcore.panel.defaults.done", "count", done) + safety);
+        footer(after, restored.value());
         showRestartNotice(after);
         sendUpdate(after, false);
     }
 
-    private static Set<Snapshot.Part> defaultsParts(PanelSection key) {
+    private static DefaultsView.Section defaultsSection(PanelSection key) {
         return switch (key) {
-            case SERVER_CONFIG -> EnumSet.of(Snapshot.Part.CONFIG, Snapshot.Part.WORLDS);
-            case SERVER_KEYMAPS -> EnumSet.of(Snapshot.Part.KEYS);
-            case PERMISSIONS -> EnumSet.of(Snapshot.Part.PERMISSIONS);
-            default -> EnumSet.of(Snapshot.Part.SETTINGS);
+            case SERVER_CONFIG -> DefaultsView.Section.SERVER_CONFIGS;
+            case SETTINGS -> DefaultsView.Section.MOD_SETTINGS;
+            case PREFS -> DefaultsView.Section.PREFS;
+            case KEYMAPS -> DefaultsView.Section.KEYMAPS_MINE;
+            case SERVER_KEYMAPS -> DefaultsView.Section.KEYMAPS_SERVER;
+            case PERMISSIONS -> DefaultsView.Section.PERMISSIONS;
         };
     }
 
-    private List<SettingSnapshot> resettable(PanelSection key) {
+    private Set<String> shownIds(PanelSection key) {
         SettingsSection section = sections.get(key);
         if (section == null) {
-            return List.of();
+            return Set.of();
         }
         SettingSearch search = searches.getOrDefault(key, SettingSearch.ALL);
         SettingRows.State legend = legendFilters.get(key);
-        List<SettingSnapshot> found = new ArrayList<>();
+        Set<String> found = new HashSet<>();
         for (SettingsSection.Entry entry : built.getOrDefault(key, List.of())) {
             if (!(entry instanceof SettingsSection.Row row) || row.kind() == SettingsSection.Kind.INFO) {
                 continue;
@@ -963,13 +948,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                     || (legend != null && state(key, snapshot) != legend)) {
                 continue;
             }
-            if (snapshot.overridden() && snapshot.access() != SettingAccess.READ_ONLY) {
-                found.add(snapshot);
-            }
-            row.color()
-                    .map(color -> latest.getOrDefault(shownKey(key, color.id()), color))
-                    .filter(color -> color.overridden() && color.access() != SettingAccess.READ_ONLY)
-                    .ifPresent(found::add);
+            found.add(row.id().toString());
+            row.color().ifPresent(color -> found.add(color.id().toString()));
         }
         return found;
     }
