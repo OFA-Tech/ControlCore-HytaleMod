@@ -39,8 +39,18 @@ final class JsonFile {
         try (Reader reader = Files.newBufferedReader(file)) {
             return Optional.ofNullable(GSON.fromJson(reader, type));
         } catch (IOException | JsonParseException e) {
-            log.error("Could not read " + contents + " from " + file + "; starting empty", e);
+            log.error("Could not read " + contents + " from " + file + "; " + moveAside(), e);
             return Optional.empty();
+        }
+    }
+
+    private String moveAside() {
+        Path broken = file.resolveSibling(file.getFileName() + ".broken-" + System.currentTimeMillis());
+        try {
+            Files.move(file, broken);
+            return "moved it to " + broken + " and starting empty";
+        } catch (IOException e) {
+            return "could not move it aside (" + e.getMessage() + "); starting empty";
         }
     }
 

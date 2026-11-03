@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBind;
 import net.ofatech.controlcore.domain.model.settings.SettingPermission;
 import net.ofatech.controlcore.fakes.RecordingLog;
@@ -55,5 +56,27 @@ class JsonRuleStoresTest {
 
         assertThat(store.all()).isEmpty();
         assertThat(log.contains("Could not read custom key binds")).isTrue();
+        assertMovedAside("CustomKeyBinds.json", "{ not json");
+    }
+
+    @Test
+    void anUnreadableAutomationFileIsMovedAsideNotOverwritten() throws IOException {
+        Path file = folder.resolve("AutomationRules.json");
+        Files.writeString(file, "[ broken");
+
+        var store = new JsonAutomationRuleStore(file, log);
+
+        assertThat(store.all()).isEmpty();
+        store.saveAll(List.of());
+        assertThat(log.contains("Could not read automation rules")).isTrue();
+        assertMovedAside("AutomationRules.json", "[ broken");
+    }
+
+    private void assertMovedAside(String name, String original) throws IOException {
+        try (var files = Files.list(folder)) {
+            assertThat(files.filter(p -> p.getFileName().toString().startsWith(name + ".broken-")))
+                    .singleElement()
+                    .satisfies(p -> assertThat(p).hasContent(original));
+        }
     }
 }

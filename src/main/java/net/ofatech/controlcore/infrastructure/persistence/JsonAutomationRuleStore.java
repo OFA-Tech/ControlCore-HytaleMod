@@ -1,13 +1,6 @@
 package net.ofatech.controlcore.infrastructure.persistence;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonParseException;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -20,15 +13,12 @@ import net.ofatech.controlcore.domain.ports.system.Log;
 
 public final class JsonAutomationRuleStore implements AutomationRuleStore {
 
-    private static final Gson GSON =
-            new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
-
-    private final Path file;
+    private final JsonFile file;
     private final Log log;
     private List<Rule> cached;
 
     public JsonAutomationRuleStore(Path file, Log log) {
-        this.file = file;
+        this.file = new JsonFile(file, log, "automation rules");
         this.log = log;
     }
 
@@ -47,35 +37,18 @@ public final class JsonAutomationRuleStore implements AutomationRuleStore {
         for (Rule rule : rules) {
             form.add(FileRule.of(rule));
         }
-        try {
-            Files.createDirectories(file.getParent());
-            Path temp = file.resolveSibling(file.getFileName() + ".tmp");
-            Files.writeString(temp, GSON.toJson(form), StandardCharsets.UTF_8);
-            Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-        } catch (IOException e) {
-            log.error("Could not save " + file, e);
-        }
+        file.write(form.toArray(FileRule[]::new), FileRule[].class);
     }
 
     private List<Rule> read() {
         List<Rule> rules = new ArrayList<>();
-        if (!Files.isRegularFile(file)) {
-            return rules;
-        }
-        try {
-            FileRule[] saved = GSON.fromJson(Files.readString(file, StandardCharsets.UTF_8), FileRule[].class);
-            if (saved != null) {
-                for (FileRule rule : saved) {
-                    Optional<Rule> parsed = rule == null ? Optional.empty() : rule.toRule();
-                    if (parsed.isPresent()) {
-                        rules.add(parsed.get());
-                    } else {
-                        log.warn("Skipping an automation rule in " + file + " that could not be read");
-                    }
-                }
+        for (FileRule rule : file.<FileRule[]>read(FileRule[].class).orElse(new FileRule[0])) {
+            Optional<Rule> parsed = rule == null ? Optional.empty() : rule.toRule();
+            if (parsed.isPresent()) {
+                rules.add(parsed.get());
+            } else {
+                log.warn("Skipping an automation rule in " + file.path() + " that could not be read");
             }
-        } catch (IOException | JsonParseException e) {
-            log.error("Could not read " + file, e);
         }
         return rules;
     }
