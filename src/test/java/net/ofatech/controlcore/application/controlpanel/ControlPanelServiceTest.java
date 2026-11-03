@@ -169,7 +169,7 @@ class ControlPanelServiceTest {
                 new net.ofatech.controlcore.fakes.FakeScheduler(),
                 playersChanges);
         var playerAccess = new net.ofatech.controlcore.application.players.PlayerAccess(
-                directory, guard, access, changes, playersChanges, serverConfig);
+                directory, guard, access, changes, playersChanges, serverConfig, policy);
         var control = new net.ofatech.controlcore.application.players.PlayerControl(
                 directory, guard, notices, playerAdminPort, changes, playersChanges, log);
         var listing = new net.ofatech.controlcore.application.players.PlayerListing(

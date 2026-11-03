@@ -115,6 +115,26 @@ class PanelParityRuntimeTest extends RuntimeTestBase {
     }
 
     @Test
+    void requiringTheWhitelistAlsoFollowsTheKeysEditRule() {
+        platform.deniedNodesFor.put(other.id(), List.of("settings", "admin"));
+
+        assertThat(platform.commands
+                        .run("cc-whitelist-require", other, Map.of("state", "on"))
+                        .isFailure())
+                .isTrue();
+        assertThat(required()).isEqualTo("false");
+
+        assertThat(ControlCoreApi.get()
+                        .permissions()
+                        .set("server:require-join-permission", "edit", "everyone")
+                        .isSuccess())
+                .isTrue();
+        assertThat(text(platform.commands.run("cc-whitelist-require", other, Map.of("state", "on"))))
+                .contains("required");
+        assertThat(required()).isEqualTo("true");
+    }
+
+    @Test
     void setAsOnlyGroupLeavesExactlyThatGroupAndRecordsEachStep() {
         platform.access.addToGroup(builder.id(), ADMIN_GROUP);
         platform.access.addToGroup(builder.id(), "hytale:Builder");

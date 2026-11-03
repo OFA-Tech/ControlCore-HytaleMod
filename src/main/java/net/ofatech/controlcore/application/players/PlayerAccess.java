@@ -7,6 +7,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.regex.Pattern;
 import net.ofatech.controlcore.application.history.ChangeHistory;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
+import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
 import net.ofatech.controlcore.domain.model.players.PlayersView;
@@ -30,6 +31,7 @@ public final class PlayerAccess {
     private final ChangeHistory history;
     private final PlayersChanges changes;
     private final ServerConfigEditor serverConfig;
+    private final SettingPermissionPolicy policy;
 
     public PlayerAccess(
             PlayerDirectory directory,
@@ -37,13 +39,15 @@ public final class PlayerAccess {
             AccessLists access,
             ChangeHistory history,
             PlayersChanges changes,
-            ServerConfigEditor serverConfig) {
+            ServerConfigEditor serverConfig,
+            SettingPermissionPolicy policy) {
         this.directory = directory;
         this.guard = guard;
         this.access = access;
         this.history = history;
         this.changes = changes;
         this.serverConfig = serverConfig;
+        this.policy = policy;
     }
 
     public boolean whitelistRequired() {
@@ -68,7 +72,8 @@ public final class PlayerAccess {
                             : "controlcore.errors.players.whitelist_not_required",
                     on ? "The whitelist is already required." : "The whitelist is not required."));
         }
-        Result<SettingSnapshot> written = serverConfig.write(REQUIRE_WHITELIST, Optional.empty(), String.valueOf(on));
+        Result<SettingSnapshot> written =
+                policy.editor(serverConfig, who).write(REQUIRE_WHITELIST, Optional.empty(), String.valueOf(on));
         if (written.isFailure()) {
             return Result.failure(written.error());
         }
