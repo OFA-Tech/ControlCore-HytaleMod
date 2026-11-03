@@ -51,6 +51,7 @@ class SnapshotRuntimeTest extends RuntimeTestBase {
 
     @Test
     void someoneWithOnlyTheSnapshotsNodeCannotRestoreKeysOrPermissions() {
+        run("cc-perm", Map.of("target", WELCOME, "side", "edit", "node", "everyone"));
         run("cc-keybind-add", Map.of("name", "warp", "keys", "ctrl+r", "command", "warp spawn"));
         run("cc-set", Map.of("id", WELCOME, "value", "Saved"));
         assertThat(run("cc-snapshot-save", Map.of("name", "base")).isSuccess()).isTrue();

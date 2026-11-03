@@ -258,7 +258,7 @@ public final class ProfileService {
             Snapshot snapshot = presetSnapshot(preset.get());
             return Result.success(
                     preset.get() == Preset.VANILLA
-                            ? snapshots.defaultsPlan(snapshot, tr)
+                            ? snapshots.forViewer(snapshots.defaultsPlan(snapshot, tr), who)
                             : snapshots.differences(snapshot, tr, who));
         }
         return snapshots
