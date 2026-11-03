@@ -102,6 +102,16 @@ public final class ChangeHistory implements ChangeRecorder {
         return records.stream().anyMatch(record -> record.undoes() == id);
     }
 
+    public synchronized Set<Long> rolledBackIds() {
+        Set<Long> ids = new HashSet<>();
+        records.forEach(record -> ids.add(record.undoes()));
+        return ids;
+    }
+
+    public synchronized int size() {
+        return records.size();
+    }
+
     private Instant cutoff() {
         return clock.now().minus(Duration.ofDays(keepDays));
     }

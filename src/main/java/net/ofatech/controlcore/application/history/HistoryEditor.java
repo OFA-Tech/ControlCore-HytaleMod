@@ -4,8 +4,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import net.ofatech.controlcore.application.bans.BansService;
@@ -19,6 +21,7 @@ import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Actor;
+import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
 import net.ofatech.controlcore.domain.model.history.HistoryView;
 import net.ofatech.controlcore.domain.model.keys.GameActionMode;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
@@ -88,9 +91,18 @@ public final class HistoryEditor {
         return new HistoryView() {
             @Override
             public List<Entry> entries() {
-                return history.newestFirst().stream()
-                        .map(record -> entry(record, tr, who))
-                        .toList();
+                return HistoryEditor.this.entries(history.newestFirst(), tr, who);
+            }
+
+            @Override
+            public List<Entry> entries(int newest) {
+                List<ChangeRecord> records = history.newestFirst();
+                return HistoryEditor.this.entries(records.subList(0, Math.min(newest, records.size())), tr, who);
+            }
+
+            @Override
+            public int total() {
+                return history.size();
             }
 
             @Override
@@ -143,9 +155,26 @@ public final class HistoryEditor {
     }
 
     public List<HistoryView.Entry> entries(Translator tr, Optional<PlayerId> viewer) {
-        return history.newestFirst().stream()
-                .map(record -> entry(record, tr, viewer))
+        return entries(history.newestFirst(), tr, viewer);
+    }
+
+    private List<HistoryView.Entry> entries(List<ChangeRecord> records, Translator tr, Optional<PlayerId> viewer) {
+        Set<Long> rolledBack = history.rolledBackIds();
+        boolean mayRollBack = mayRollBack(viewer);
+        Map<String, String> modNames =
+                records.stream().anyMatch(record -> record.kind() == Kind.MOD) ? modNames() : Map.of();
+        return records.stream()
+                .map(record -> entry(record, tr, rolledBack.contains(record.id()), mayRollBack, modNames))
                 .toList();
+    }
+
+    private Map<String, String> modNames() {
+        Map<String, String> names = new HashMap<>();
+        mods.viewedBy(Optional.empty())
+                .list()
+                .forEach(entry -> names.putIfAbsent(
+                        entry.mod().id().toLowerCase(Locale.ROOT), entry.mod().name()));
+        return names;
     }
 
     public Result<String> rollback(long id, Optional<PlayerId> who, Actor actor, Translator tr) {
@@ -225,8 +254,8 @@ public final class HistoryEditor {
                 Text.key("controlcore.errors.history.admin_only", "Only admins can roll this change back.")));
     }
 
-    private HistoryView.Entry entry(ChangeRecord record, Translator tr, Optional<PlayerId> viewer) {
-        boolean rolledBack = history.rolledBack(record.id());
+    private HistoryView.Entry entry(
+            ChangeRecord record, Translator tr, boolean rolledBack, boolean mayRollBack, Map<String, String> modNames) {
         return new HistoryView.Entry(
                 record.id(),
                 record.kind(),
@@ -234,13 +263,15 @@ public final class HistoryEditor {
                 WHEN.format(record.at().atZone(ZoneId.systemDefault())),
                 who(record.actor(), tr),
                 tr.t("controlcore.history.source." + record.source().name().toLowerCase(Locale.ROOT)),
-                what(record, tr),
+                record.kind() == Kind.MOD
+                        ? modNames.getOrDefault(record.target().toLowerCase(Locale.ROOT), record.target())
+                        : what(record, tr),
                 shown(record.kind(), record.target(), record.oldValue(), tr),
                 shown(record.kind(), record.target(), record.newValue(), tr),
                 record.restart(),
                 record.isRollback(),
                 rolledBack,
-                !rolledBack && mayRollBack(viewer));
+                !rolledBack && mayRollBack);
     }
 
     public String who(Actor actor, Translator tr) {

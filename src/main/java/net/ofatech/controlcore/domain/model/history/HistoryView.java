@@ -66,6 +66,10 @@ public interface HistoryView {
 
     List<Entry> entries();
 
+    List<Entry> entries(int newest);
+
+    int total();
+
     long newest();
 
     Set<String> targets();

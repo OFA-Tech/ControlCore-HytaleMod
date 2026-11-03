@@ -56,11 +56,10 @@ final class HistoryTab {
     }
 
     void build(UICommandBuilder commands, UIEventBuilder events) {
-        List<HistoryView.Entry> all = view.entries();
         targets = null;
-        total = all.size();
-        newest = all.isEmpty() ? 0 : all.getFirst().id();
-        entries = all.subList(0, Math.min(ROWS, all.size()));
+        entries = view.entries(ROWS);
+        total = Math.max(entries.size(), view.total());
+        newest = entries.isEmpty() ? 0 : entries.getFirst().id();
         commands.set(
                 "#HistoryFilter.Entries",
                 Arrays.stream(Filter.values())
