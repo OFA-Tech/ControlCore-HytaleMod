@@ -38,6 +38,13 @@
 
 ### Changed
 - The panel's **Restore defaults** button now runs through the same service as `/cc-restore-defaults`.
+- Words you type after a command are now always required arguments, because Hytale only accepts optional ones as
+  `--name=value`: the whitelist is `/cc-whitelist` (list), `/cc-whitelist-add <player>`, `/cc-whitelist-remove
+  <player>` and `/cc-whitelist-require <on|off>`, and `/cc-mod-on|off <mod> <check|all>`. Optional arguments are shown
+  as `--name=` everywhere (`/cc-configs [--world=] [--search=]`, `/cc-restore-defaults ... [--search=]`), and a test
+  keeps the wiki that way.
+- `--search=` in `/cc-configs`, `/cc-restore-defaults` and the defaults API is the panel's search (every word,
+  `name:`/`id:`/`is:changed` prefixes, `-word`), so all three pick the same rows.
 
 ### Fixed
 - An unreadable data file (for example a typo in `SettingValues.json`) is now moved aside as `<file>.broken-<time>` instead of being overwritten with empty data on the next save. A data file that can't be opened at all (locked, no
@@ -48,6 +55,16 @@
 - The History tab no longer slows the server down when the history is long.
 - Joining and leaving no longer rewrites the whole player data file each time; it is saved every 5 minutes and at shutdown.
 - A player who leaves and comes back no longer keeps stale held keys, which could stop "stand still + key" binds from firing.
+- Restoring a snapshot's players part (preferences and binds of every player) is admin-only; a non-admin restore no
+  longer rewrites an admin's preferences.
+- Requiring the whitelist also follows `RequireJoinPermission`'s own edit rule, not only the whitelist node.
+- Acting for a non-admin, the API no longer returns mod config files, pending restarts or custom binds they can't use,
+  and History shows mod names only for mods the viewer may see.
+- `/cc-warn-clear` says when there was nothing to clear and when a warning for everyone is still shown; toasts and
+  warnings refuse texts over the 200 characters the HUD shows, and a toast or warning with no text after `Title|` or
+  `warning:`.
+- `/cc-rule-add` and `/cc-rule-edit` with an unknown or missing `when=` list the triggers; rule ids and group names
+  match ignoring case.
 
 ## 0.19.0 - 2026-10-29
 
