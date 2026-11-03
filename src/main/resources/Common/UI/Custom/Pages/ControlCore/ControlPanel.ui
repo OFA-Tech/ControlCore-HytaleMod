@@ -60,7 +60,7 @@ $C.@PageOverlay {
   LayoutMode: Middle;
 
   Group {
-    Anchor: (Width: 1320);
+    Anchor: (Width: 1320, Height: 842);
     LayoutMode: Top;
     Background: #2c4252;
     Padding: (Full: 1);
@@ -68,6 +68,7 @@ $C.@PageOverlay {
     Group #Frame {
       LayoutMode: Top;
       Background: #13202a;
+      FlexWeight: 1;
 
       Group #TitleBar {
         LayoutMode: Left;
@@ -1830,6 +1831,10 @@ $C.@PageOverlay {
             }
           }
         }
+      }
+
+      Group {
+        FlexWeight: 1;
       }
 
       Group {
