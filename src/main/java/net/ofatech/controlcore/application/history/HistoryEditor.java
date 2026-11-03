@@ -234,19 +234,22 @@ public final class HistoryEditor {
     }
 
     public Result<String> rollback(long id, Optional<PlayerId> who, Actor actor, Translator tr) {
-        Optional<ChangeRecord> found =
-                history.find(id).filter(record -> !visible(List.of(record), who).isEmpty());
+        Error unknown = Error.notFound(
+                "History.Unknown",
+                Text.key("controlcore.errors.history.unknown", "There is no change #{id}.")
+                        .with("id", id));
+        Optional<ChangeRecord> found = history.find(id);
         if (found.isEmpty()) {
-            return Result.failure(Error.notFound(
-                    "History.Unknown",
-                    Text.key("controlcore.errors.history.unknown", "There is no change #{id}.")
-                            .with("id", id)));
+            return Result.failure(unknown);
         }
         ChangeRecord record = found.get();
         if (!mayRollBack(who)) {
             return Result.failure(Error.forbidden(
                     "History.Forbidden",
                     Text.key("controlcore.errors.history.forbidden", "You may not roll changes back.")));
+        }
+        if (visible(List.of(record), who).isEmpty()) {
+            return Result.failure(unknown);
         }
         if (history.rolledBack(id)) {
             return Result.failure(Error.validation(
