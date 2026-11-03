@@ -6,9 +6,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.ofatech.controlcore.domain.model.automation.ActionKind;
 import net.ofatech.controlcore.domain.model.automation.AutomationView;
 import net.ofatech.controlcore.domain.model.automation.ConditionKind;
+import net.ofatech.controlcore.domain.model.automation.Trigger;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
@@ -46,6 +48,9 @@ final class RuleSpec {
                 case "name" -> name = value;
                 case "when" -> {
                     String[] parts = split(value);
+                    if (Trigger.of(parts[0]).isEmpty()) {
+                        return unknown("Automation.UnknownTrigger", parts[0], triggers());
+                    }
                     trigger = parts[0];
                     triggerValue = parts[1];
                 }
@@ -95,12 +100,22 @@ final class RuleSpec {
                 }
             }
         }
+        if (trigger.isEmpty()) {
+            return Result.failure(Error.validation(
+                    "Automation.UnknownTrigger",
+                    Text.key("controlcore.errors.automation.no_trigger", "A rule needs when=, one of: {choices}.")
+                            .with("choices", triggers().collect(Collectors.joining(", ")))));
+        }
         if (!newActions) {
             base.ifPresent(form -> actions.addAll(form.actions()));
         }
         return Result.success(new Parsed(
                 new AutomationView.Form(name, trigger, triggerValue, condition, conditionValue, actions, cooldown),
                 enabled));
+    }
+
+    private static Stream<String> triggers() {
+        return Arrays.stream(Trigger.values()).map(Trigger::id);
     }
 
     private static String[] split(String value) {
@@ -122,7 +137,7 @@ final class RuleSpec {
                         .with("field", field, "fields", FIELDS)));
     }
 
-    private static <T> Result<T> unknown(String code, String kind, java.util.stream.Stream<String> ids) {
+    private static <T> Result<T> unknown(String code, String kind, Stream<String> ids) {
         return Result.failure(Error.validation(
                 code,
                 Text.key("controlcore.errors.automation.unknown_kind", "'{kind}' is not one of: {choices}.")

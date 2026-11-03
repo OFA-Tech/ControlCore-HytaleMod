@@ -1203,6 +1203,7 @@ errors.configs.none_visible = You may not see any server config keys.
 errors.configs.unknown_world = There is no world {world}. Worlds: {worlds}.
 errors.automation.bad_field = '{field}' is not a rule field. Write key=value parts joined with ;, using {fields}.
 errors.automation.unknown_kind = '{kind}' is not one of: {choices}.
+errors.automation.no_trigger = A rule needs when=, one of: {choices}.
 automation.command.id = Its id is {id}.
 errors.defaults.forbidden = Only admins can restore that section.
 errors.defaults.unknown_section = '{section}' is not a section. Use {sections}.

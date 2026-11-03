@@ -5,6 +5,9 @@ Permission nodes start with ControlCore's base permission, **`ofatech.controlcor
 
 Admin commands also work from the server console; commands about your own preferences, keys or panel need a player.
 
+Hytale cuts command text at commas, so no text you type (values, messages, reasons, rule fields) can contain a `,`.
+Arguments in `[--name=value]` are optional and must be typed with their name, for example `--search=pvp`.
+
 ## Panel
 
 | Command | Who | Does |
@@ -166,8 +169,8 @@ Also in the panel's **Automation** tab (see [Automation](Automation)). Admins on
 | `cooldown=` | seconds; empty for the trigger's default |
 | `on=` | `yes` or `no` |
 
-Ids for triggers, conditions and actions are the panel's choices in lower case with `-`. Avoid commas: Hytale cuts
-command text at commas.
+Ids for triggers, conditions and actions are the panel's choices in lower case with `-`; an unknown or missing
+`when=` lists them. A value can't contain `;` (it starts the next field) or `,` (see the top of this page).
 
 ```
 /cc-rule-add name=Welcome; when=join; do=message-player:Welcome {player}!; do=toast-player:success:Hi|Have fun

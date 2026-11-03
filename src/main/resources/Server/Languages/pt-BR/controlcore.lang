@@ -1203,6 +1203,7 @@ errors.configs.none_visible = Você não pode ver nenhuma chave de configuraçã
 errors.configs.unknown_world = Não existe o mundo {world}. Mundos: {worlds}.
 errors.automation.bad_field = '{field}' não é um campo de regra. Escreva partes chave=valor separadas por ;, usando {fields}.
 errors.automation.unknown_kind = '{kind}' não é uma destas opções: {choices}.
+errors.automation.no_trigger = Uma regra precisa de when=, uma destas opções: {choices}.
 automation.command.id = O id dela é {id}.
 errors.defaults.forbidden = Só admins podem restaurar essa seção.
 errors.defaults.unknown_section = '{section}' não é uma seção. Use {sections}.
