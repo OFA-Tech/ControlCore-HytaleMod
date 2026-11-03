@@ -47,6 +47,11 @@ public final class HytalePlayerInput implements PlayerInput, PlayerPacketFilter 
     }
 
     @Override
+    public void forget(PlayerId player) {
+        states.remove(player.value());
+    }
+
+    @Override
     public synchronized void stop() {
         listener = null;
         hooks.remove(this);

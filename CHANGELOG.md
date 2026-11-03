@@ -37,6 +37,15 @@
 ### Changed
 - The panel's **Restore defaults** button now runs through the same service as `/cc-restore-defaults`.
 
+### Fixed
+- An unreadable data file (for example a typo in `SettingValues.json`) is now moved aside as `<file>.broken-<time>` instead of being overwritten with empty data on the next save.
+- Someone who loses admin while the panel is open can no longer change permission rules or turn mods on or off from it.
+- Snapshot and profile restores by non-admins skip settings they may not change, and the preview hides settings they may not see.
+- Two admins saving automation rules at the same time no longer lose one of them.
+- The History tab no longer slows the server down when the history is long.
+- Joining and leaving no longer rewrites the whole player data file each time; it is saved every 5 minutes and at shutdown.
+- A player who leaves and comes back no longer keeps stale held keys, which could stop "stand still + key" binds from firing.
+
 ## 0.19.0 - 2026-10-29
 
 Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.5. The API for other mods

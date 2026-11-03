@@ -48,6 +48,13 @@ class KeyDetectBancaTest extends RuntimeTestBase {
     }
 
     @Test
+    void leavingForgetsTheHeldKeysOfThePlayer() {
+        platform.connectedPublisher.publish(new PlayerLeft(admin));
+
+        assertThat(platform.input.forgotten).containsExactly(admin.id());
+    }
+
+    @Test
     void leavingWhileDetectingFromTheGameDropsTheDetection() {
         List<Optional<String>> results = new ArrayList<>();
         detection().detect(detection().mode(), results::add);
