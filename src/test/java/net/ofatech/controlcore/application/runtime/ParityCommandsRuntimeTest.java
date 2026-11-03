@@ -83,6 +83,22 @@ class ParityCommandsRuntimeTest extends RuntimeTestBase {
     }
 
     @Test
+    void turningAModToTheStateItIsAlreadyInSaysSoAndRecordsNothing() {
+        assertThat(text(console("cc-mod-on", Map.of("mod", "Test:Base", "confirm", "check"))))
+                .isEqualTo("Base is already on after the next restart.");
+        assertThat(text(console("cc-mod-on", Map.of("mod", "Test:Base", "confirm", "all"))))
+                .isEqualTo("Base is already on after the next restart.");
+        text(console("cc-mod-off", Map.of("mod", "Test:Addon", "confirm", "all")));
+        assertThat(text(console("cc-mod-off", Map.of("mod", "Test:Addon", "confirm", "all"))))
+                .isEqualTo("Addon is already off after the next restart.");
+        assertThat(text(console("cc-mod-off", Map.of("mod", "Test:Addon", "confirm", "check"))))
+                .isEqualTo("Addon is already off after the next restart.");
+
+        assertThat(ControlCoreApi.get().history().list(Optional.of(HistoryApi.Kind.MOD), "", 0))
+                .hasSize(1);
+    }
+
+    @Test
     void rulesAreCreatedAndEditedWithThePanelsValidation() {
         String added = text(
                 console(

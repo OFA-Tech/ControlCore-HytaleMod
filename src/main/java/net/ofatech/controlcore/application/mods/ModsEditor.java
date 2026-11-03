@@ -154,14 +154,15 @@ public final class ModsEditor {
 
         @Override
         public Result<Entry> setEnabled(String modId, boolean enabled) {
-            Result<List<Entry>> planned = plan(modId, enabled);
+            Result<Entry> found = manageable(modId);
+            if (found.isFailure()) {
+                return found;
+            }
+            Entry entry = found.value();
+            Result<List<Entry>> planned = plan(entry, enabled);
             if (planned.isFailure()) {
                 return Result.failure(planned.error());
             }
-            Entry entry = list().stream()
-                    .filter(candidate -> candidate.mod().id().equalsIgnoreCase(modId))
-                    .findFirst()
-                    .orElseThrow();
             for (Entry other : planned.value()) {
                 Result<ModInfo> changed = change(other, enabled);
                 if (changed.isFailure()) {
@@ -181,6 +182,10 @@ public final class ModsEditor {
 
         @Override
         public Result<List<Entry>> plan(String modId, boolean enabled) {
+            return manageable(modId).flatMap(entry -> plan(entry, enabled));
+        }
+
+        private Result<Entry> manageable(String modId) {
             Optional<Entry> entry = list().stream()
                     .filter(candidate -> candidate.mod().id().equalsIgnoreCase(modId))
                     .findFirst();
@@ -196,7 +201,11 @@ public final class ModsEditor {
                         Text.key("controlcore.errors.mods.forbidden", "You may not turn {name} on or off.")
                                 .with("name", entry.get().mod().name())));
             }
-            List<Entry> others = alsoChanged(modId, enabled);
+            return Result.success(entry.get());
+        }
+
+        private Result<List<Entry>> plan(Entry entry, boolean enabled) {
+            List<Entry> others = alsoChanged(entry.mod().id(), enabled);
             for (Entry other : others) {
                 if (!other.manageable()) {
                     return Result.failure(Error.forbidden(
@@ -206,7 +215,7 @@ public final class ModsEditor {
                                             "{name} is needed by {other}, which can't be turned off here.")
                                     .with(
                                             "name",
-                                            entry.get().mod().name(),
+                                            entry.mod().name(),
                                             "other",
                                             other.mod().name())));
                 }

@@ -213,7 +213,7 @@ See [Key binds](Key-Binds) for the key syntax and which keys work.
 | `/cc-mod-off <mod> <check\|all>` | admins | turn a mod off from the next start; `check` changes nothing and says what `all` would do, including mods that need it; `all` turns it and those mods off |
 | `/cc-mod-configs <mod>` | admins | show the mod's config files (read-only) |
 
-`<mod>` is the mod's id (`Group:Name`), name or settings namespace.
+`<mod>` is the mod's id (`Group:Name`), name or settings namespace. A mod that is already on (or off) after the next restart says so for both `check` and `all`, and nothing is changed or recorded.
 
 ## HUD and notifications
 

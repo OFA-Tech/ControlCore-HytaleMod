@@ -128,6 +128,10 @@ public final class ModCommands {
         if (planned.isFailure()) {
             return Result.failure(planned.error());
         }
+        if (mod.enabledAfterRestart() == enabled) {
+            return Result.success(Reply.of(tr.t(
+                    enabled ? "controlcore.mods.already_on" : "controlcore.mods.already_off", "name", mod.name())));
+        }
         List<ModsView.Entry> others = planned.value();
         String names = String.join(
                 ", ", others.stream().map(entry -> entry.mod().name()).toList());

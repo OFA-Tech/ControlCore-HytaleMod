@@ -1249,4 +1249,6 @@ mods.check_on = Nada ha cambiado aún: {name} se activaría tras el próximo rei
 mods.check_off = Nada ha cambiado aún: {name} se desactivaría tras el próximo reinicio, y ningún otro mod cambia.
 mods.check_on_also = Nada ha cambiado aún: {name} necesita {mods}, que están desactivados, así que todos se activarían tras el próximo reinicio.
 mods.check_off_also = Nada ha cambiado aún: desactivar {name} también desactivaría {mods}, porque lo necesitan.
+mods.already_on = {name} ya está activado tras el próximo reinicio.
+mods.already_off = {name} ya está desactivado tras el próximo reinicio.
 errors.notify.empty_after = Escribe el mensaje después de '{prefix}'.
