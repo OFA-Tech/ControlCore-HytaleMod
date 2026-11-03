@@ -1244,3 +1244,4 @@ players.list.none = No players match.
 players.list.header = Players, {filter} ({count}):
 players.list.line = - {player} ({id}){badges}: {status}
 players.list.more = ... and {count} more. Narrow it down with --search=.
+errors.storage.not_saved = The change was not saved because its file could not be written. The server log has the details.

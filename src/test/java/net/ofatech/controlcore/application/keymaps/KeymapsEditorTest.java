@@ -95,6 +95,31 @@ class KeymapsEditorTest {
             });
         }
 
+        @Test
+        void aCustomBindThatCouldNotBeSavedIsNotAddedOrRemoved() {
+            FakeCustomKeyBindStore binds = new FakeCustomKeyBindStore();
+            KeymapRegistry registry = new KeymapRegistry(
+                    new FakeKeyBindStore(),
+                    binds,
+                    new FakeKeyGameActionStore(),
+                    new FakePlayerData(),
+                    (player, node) -> true,
+                    new RecordingLog(),
+                    ChangeRecorder.NONE);
+            registry.addCustom("warp", "ctrl+r", "warp spawn", false);
+            binds.failWrites = true;
+
+            assertThat(registry.addCustom("other", "ctrl+t", "spawn", false)
+                            .error()
+                            .code())
+                    .isEqualTo("Storage.NotSaved");
+            assertThat(registry.removeCustom("warp").error().code()).isEqualTo("Storage.NotSaved");
+            assertThat(registry.findCustom("other")).isEmpty();
+            assertThat(registry.findCustom("warp")).isPresent();
+            assertThat(registry.find(SettingId.of("custom:other"))).isEmpty();
+            assertThat(registry.find(SettingId.of("custom:warp"))).isPresent();
+        }
+
         private String value(Optional<PlayerId> player) {
             return editor.read(HOME, player).value().value();
         }

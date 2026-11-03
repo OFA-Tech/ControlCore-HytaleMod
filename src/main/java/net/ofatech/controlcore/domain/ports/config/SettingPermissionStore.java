@@ -7,5 +7,5 @@ public interface SettingPermissionStore {
 
     Map<String, SettingPermission> all();
 
-    void put(String target, SettingPermission rule);
+    boolean put(String target, SettingPermission rule);
 }

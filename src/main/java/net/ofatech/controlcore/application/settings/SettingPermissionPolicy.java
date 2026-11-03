@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import net.ofatech.controlcore.application.history.ChangeRecorder;
 import net.ofatech.controlcore.application.history.HistoryValues;
+import net.ofatech.controlcore.application.text.CommonErrors;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
@@ -113,7 +114,7 @@ public final class SettingPermissionPolicy {
             if (!sideText.equals("view")) {
                 rule = rule.withEdit(newNode);
             }
-            return Result.success(store(key.value(), rule));
+            return store(key.value(), rule);
         } catch (RuntimeException e) {
             return Result.failure(Error.validation("Settings.InvalidPermission", e.getMessage()));
         }
@@ -127,7 +128,7 @@ public final class SettingPermissionPolicy {
         try {
             SettingPermission rule =
                     SettingPermission.INHERIT.withView(nodeOrNone(view)).withEdit(nodeOrNone(edit));
-            return Result.success(store(key.value(), rule));
+            return store(key.value(), rule);
         } catch (RuntimeException e) {
             return Result.failure(Error.validation("Settings.InvalidPermission", e.getMessage()));
         }
@@ -137,11 +138,13 @@ public final class SettingPermissionPolicy {
         return store.all().getOrDefault(targetKey, SettingPermission.INHERIT);
     }
 
-    private SettingPermission store(String target, SettingPermission rule) {
+    private Result<SettingPermission> store(String target, SettingPermission rule) {
         String before = HistoryValues.rule(rule(target));
-        store.put(target, rule);
+        if (!store.put(target, rule)) {
+            return Result.failure(CommonErrors.notSaved());
+        }
         history.record(Kind.PERMISSION, target, before, HistoryValues.rule(rule), false);
-        return rule;
+        return Result.success(rule);
     }
 
     private static String nodeOrNone(String text) {

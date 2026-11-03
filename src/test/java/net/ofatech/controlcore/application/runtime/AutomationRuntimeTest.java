@@ -58,6 +58,20 @@ class AutomationRuntimeTest extends RuntimeTestBase {
     }
 
     @Test
+    void aRuleThatCouldNotBeSavedIsReportedAndNotKept() {
+        save(form("Hello", "join", "", "none", "", "message-player", "Hi", "none", "", ""));
+        platform.automationRules.failWrites = true;
+
+        Result<String> saved =
+                view().save(Optional.empty(), form("Bye", "join", "", "none", "", "message-player", "Bye", ""));
+        Result<String> removed = view().remove("hello");
+
+        assertThat(saved.error().code()).isEqualTo("Storage.NotSaved");
+        assertThat(removed.error().code()).isEqualTo("Storage.NotSaved");
+        assertThat(platform.automationRules.rules).extracting(rule -> rule.id()).containsExactly("hello");
+    }
+
+    @Test
     void timersWaitForTheirPeriod() {
         save(form(
                 "Vote",

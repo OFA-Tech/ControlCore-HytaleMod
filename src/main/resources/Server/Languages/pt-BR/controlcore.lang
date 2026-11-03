@@ -1244,3 +1244,4 @@ players.list.none = Nenhum jogador encontrado.
 players.list.header = Jogadores, {filter} ({count}):
 players.list.line = - {player} ({id}){badges}: {status}
 players.list.more = ... e mais {count}. Filtre com --search=.
+errors.storage.not_saved = A mudança não foi salva porque o arquivo dela não pôde ser gravado. O log do servidor tem os detalhes.

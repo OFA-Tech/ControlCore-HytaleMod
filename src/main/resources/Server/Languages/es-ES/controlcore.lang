@@ -1244,3 +1244,4 @@ players.list.none = Ningún jugador coincide.
 players.list.header = Jugadores, {filter} ({count}):
 players.list.line = - {player} ({id}){badges}: {status}
 players.list.more = ... y {count} más. Acota con --search=.
+errors.storage.not_saved = El cambio no se guardó porque no se pudo escribir su archivo. El registro del servidor tiene los detalles.

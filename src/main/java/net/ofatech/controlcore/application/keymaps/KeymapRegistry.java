@@ -10,6 +10,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import net.ofatech.controlcore.application.history.ChangeRecorder;
 import net.ofatech.controlcore.application.history.HistoryValues;
+import net.ofatech.controlcore.application.text.CommonErrors;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -193,36 +194,37 @@ public final class KeymapRegistry {
     }
 
     public Result<KeyAction> addCustom(String name, String keys, String command, boolean runAsServer) {
-        return customAction(name, keys, command, runAsServer)
-                .flatMap(action -> put(action).map(registered -> {
-                    String before = HistoryValues.bind(findCustom(action.id().key()));
-                    CustomKeyBind bind = new CustomKeyBind(
-                            action.id().key(),
-                            action.defaultKeys().toString(),
-                            action.command().orElseThrow(),
-                            runAsServer);
-                    customBinds.put(bind);
-                    history.record(
-                            Kind.CUSTOM_BIND,
-                            action.id().toString(),
-                            before,
-                            HistoryValues.bind(Optional.of(bind)),
-                            false);
-                    return registered;
-                }));
+        return customAction(name, keys, command, runAsServer).flatMap(action -> {
+            String before = HistoryValues.bind(findCustom(action.id().key()));
+            CustomKeyBind bind = new CustomKeyBind(
+                    action.id().key(),
+                    action.defaultKeys().toString(),
+                    action.command().orElseThrow(),
+                    runAsServer);
+            if (!customBinds.put(bind)) {
+                return Result.failure(CommonErrors.notSaved());
+            }
+            return put(action).map(registered -> {
+                history.record(
+                        Kind.CUSTOM_BIND, action.id().toString(), before, HistoryValues.bind(Optional.of(bind)), false);
+                return registered;
+            });
+        });
     }
 
     public Result<KeyAction> removeCustom(String name) {
-        return customId(name).flatMap(this::known).map(action -> {
+        return customId(name).flatMap(this::known).flatMap(action -> {
             String before = HistoryValues.bind(findCustom(action.id().key()));
+            if (!customBinds.remove(action.id().key())) {
+                return Result.failure(CommonErrors.notSaved());
+            }
             actions.remove(action.id());
-            customBinds.remove(action.id().key());
             serverBinds.remove(action.id());
             serverBinds.flush();
             gameActions.remove(action.id());
             gameActions.flush();
             history.record(Kind.CUSTOM_BIND, action.id().toString(), before, "", false);
-            return action;
+            return Result.success(action);
         });
     }
 

@@ -49,6 +49,29 @@ class JsonRuleStoresTest {
     }
 
     @Test
+    void storesWhoseFileCouldNotBeOpenedRefuseChangesAndSaySoOncePerFile() throws IOException {
+        var permissions =
+                new JsonSettingPermissionStore(Files.createDirectory(folder.resolve("SettingPermissions.json")), log);
+        var binds = new JsonCustomKeyBindStore(Files.createDirectory(folder.resolve("CustomKeyBinds.json")), log);
+        var rules = new JsonAutomationRuleStore(Files.createDirectory(folder.resolve("AutomationRules.json")), log);
+        rules.all();
+
+        assertThat(permissions.put("mod:chat", SettingPermission.of("chat.staff")))
+                .isFalse();
+        assertThat(permissions.put("mod:chat", SettingPermission.of("chat.staff")))
+                .isFalse();
+        assertThat(binds.put(new CustomKeyBind("warp", "CTRL + R", "warp", false)))
+                .isFalse();
+        assertThat(binds.remove("warp")).as("nothing to remove").isTrue();
+        assertThat(rules.saveAll(List.of())).isFalse();
+
+        assertThat(permissions.all()).isEmpty();
+        assertThat(binds.all()).isEmpty();
+        assertThat(log.lines.stream().filter(line -> line.contains("was not saved: it could not be read at start")))
+                .hasSize(3);
+    }
+
+    @Test
     void anUnreadableFileStartsEmptyAndIsLogged() throws IOException {
         Path file = folder.resolve("CustomKeyBinds.json");
         Files.writeString(file, "{ not json");

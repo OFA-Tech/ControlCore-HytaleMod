@@ -25,6 +25,7 @@ import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.application.snapshot.ProfileService;
+import net.ofatech.controlcore.application.text.CommonErrors;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
@@ -698,7 +699,9 @@ public final class AutomationService {
         } else {
             rules.add(rule);
         }
-        store.saveAll(rules);
+        if (!store.saveAll(rules)) {
+            return Result.failure(CommonErrors.notSaved());
+        }
         timerStart.remove(rule.id());
         dailyDone.remove(rule.id());
         cronDone.remove(rule.id());
@@ -885,7 +888,9 @@ public final class AutomationService {
         for (Rule rule : store.all()) {
             rules.add(rule.id().equals(updated.id()) ? updated : rule);
         }
-        store.saveAll(rules);
+        if (!store.saveAll(rules)) {
+            return Result.failure(CommonErrors.notSaved());
+        }
         timerStart.remove(updated.id());
         return Result.success(tr.t(
                 updated.enabled() ? "controlcore.automation.turned_on" : "controlcore.automation.turned_off",
@@ -919,7 +924,9 @@ public final class AutomationService {
         }
         List<Rule> rules = new ArrayList<>(store.all());
         rules.removeIf(rule -> rule.id().equals(found.get().id()));
-        store.saveAll(rules);
+        if (!store.saveAll(rules)) {
+            return Result.failure(CommonErrors.notSaved());
+        }
         log.info("Automation rule removed: " + found.get().name());
         return Result.success(
                 tr.t("controlcore.automation.removed", "name", found.get().name()));

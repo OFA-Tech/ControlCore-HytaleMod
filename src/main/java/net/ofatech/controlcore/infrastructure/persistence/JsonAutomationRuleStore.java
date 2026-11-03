@@ -31,13 +31,16 @@ public final class JsonAutomationRuleStore implements AutomationRuleStore {
     }
 
     @Override
-    public synchronized void saveAll(List<Rule> rules) {
-        cached = List.copyOf(rules);
+    public synchronized boolean saveAll(List<Rule> rules) {
         List<FileRule> form = new ArrayList<>();
         for (Rule rule : rules) {
             form.add(FileRule.of(rule));
         }
-        file.write(form.toArray(FileRule[]::new), FileRule[].class);
+        if (!file.write(form.toArray(FileRule[]::new), FileRule[].class)) {
+            return false;
+        }
+        cached = List.copyOf(rules);
+        return true;
     }
 
     private List<Rule> read() {

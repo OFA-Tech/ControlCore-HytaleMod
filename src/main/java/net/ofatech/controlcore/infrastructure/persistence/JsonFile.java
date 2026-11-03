@@ -22,6 +22,7 @@ final class JsonFile {
     private final Log log;
     private final String contents;
     private volatile boolean readOnly;
+    private volatile boolean toldReadOnly;
 
     JsonFile(Path file, Log log, String contents) {
         this.file = file;
@@ -74,6 +75,10 @@ final class JsonFile {
 
     boolean write(Object value, Type type) {
         if (readOnly) {
+            if (!toldReadOnly) {
+                toldReadOnly = true;
+                log.warn(file + " was not saved: it could not be read at start; fix the file and restart");
+            }
             return false;
         }
         try {
