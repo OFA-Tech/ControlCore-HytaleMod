@@ -295,4 +295,13 @@ class KeyModelTest {
             assertThat(trigger.error().message().params()).containsValue("NUMPAD /");
         }
     }
+
+    @Test
+    void extrasAreTheCombosAfterTheMainOne() {
+        assertThat(KeyBinds.parse("ctrl+f | alt+3 | mouse_middle").value().extras())
+                .isEqualTo(KeyCombo.parse("alt+3").value() + " | "
+                        + KeyCombo.parse("mouse_middle").value());
+        assertThat(KeyBinds.parse("ctrl+f").value().extras()).isEmpty();
+        assertThat(KeyBinds.UNBOUND.extras()).isEmpty();
+    }
 }

@@ -3,9 +3,7 @@ package net.ofatech.controlcore.domain.model.settings;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 import net.ofatech.controlcore.domain.model.keys.KeyBinds;
-import net.ofatech.controlcore.domain.model.keys.KeyCombo;
 import net.ofatech.controlcore.domain.model.text.Translator;
 
 public final class SettingSearch {
@@ -191,13 +189,7 @@ public final class SettingSearch {
         if (!keys) {
             return text;
         }
-        var parsed = KeyBinds.parse(snapshot.value());
-        String rest = parsed.isFailure()
-                ? ""
-                : parsed.value().combos().stream()
-                        .skip(1)
-                        .map(KeyCombo::toString)
-                        .collect(Collectors.joining(" | "));
+        String rest = KeyBinds.parse(snapshot.value()).map(KeyBinds::extras).orElse("");
         return rest.isEmpty()
                 ? text
                 : text + (text.isBlank() ? "" : " · ") + tr.t("controlcore.panel.keypick.also", "keys", rest);
