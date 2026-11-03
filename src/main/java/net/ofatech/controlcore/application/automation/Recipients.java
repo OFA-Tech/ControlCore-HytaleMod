@@ -61,16 +61,15 @@ public final class Recipients {
             return checked;
         }
         String text = checked.value();
-        int bar = text.indexOf('|');
-        String title = bar < 0 ? "" : text.substring(0, bar).strip();
-        String body = (bar < 0 ? text : text.substring(bar + 1)).strip();
-        if (body.isEmpty()) {
-            return Result.failure(emptyAfter(text.substring(0, bar + 1).strip()));
+        AutomationService.HudText shown = AutomationService.HudText.toast(text);
+        if (shown.body().isEmpty()) {
+            return Result.failure(
+                    emptyAfter(text.substring(0, text.indexOf('|') + 1).strip()));
         }
         return resolve(who, target).map(found -> {
             found.players()
-                    .forEach(player ->
-                            notifications.toast(player, title, body, level.get(), AutomationService.TOAST_SECONDS));
+                    .forEach(player -> notifications.toast(
+                            player, shown.title(), shown.body(), level.get(), AutomationService.TOAST_SECONDS));
             return tr.t(
                     "controlcore.notify.toast_sent",
                     "target",

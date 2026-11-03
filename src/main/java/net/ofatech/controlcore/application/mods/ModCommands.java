@@ -124,13 +124,13 @@ public final class ModCommands {
             return Result.failure(found.error());
         }
         ModInfo mod = found.value().mod();
+        if (found.value().manageable() && mod.enabledAfterRestart() == enabled) {
+            return Result.success(Reply.of(tr.t(
+                    enabled ? "controlcore.mods.already_on" : "controlcore.mods.already_off", "name", mod.name())));
+        }
         Result<List<ModsView.Entry>> planned = view.plan(mod.id(), enabled);
         if (planned.isFailure()) {
             return Result.failure(planned.error());
-        }
-        if (mod.enabledAfterRestart() == enabled) {
-            return Result.success(Reply.of(tr.t(
-                    enabled ? "controlcore.mods.already_on" : "controlcore.mods.already_off", "name", mod.name())));
         }
         List<ModsView.Entry> others = planned.value();
         String names = String.join(

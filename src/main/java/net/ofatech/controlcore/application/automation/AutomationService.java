@@ -72,6 +72,28 @@ public final class AutomationService {
         }
     }
 
+    record HudText(String title, String body, int minutes) {
+
+        static HudText toast(String text) {
+            int bar = text.indexOf('|');
+            return new HudText(
+                    bar < 0 ? "" : text.substring(0, bar).strip(),
+                    (bar < 0 ? text : text.substring(bar + 1)).strip(),
+                    0);
+        }
+
+        static HudText warning(String text) {
+            int bar = text.lastIndexOf('|');
+            if (bar >= 0 && text.substring(bar + 1).strip().matches("\\d{1,4}")) {
+                return new HudText(
+                        "",
+                        text.substring(0, bar).strip(),
+                        Integer.parseInt(text.substring(bar + 1).strip()));
+            }
+            return new HudText("", text.strip(), 0);
+        }
+    }
+
     public static final int MAX_ACTIONS = 8;
 
     private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("H:mm");
@@ -373,25 +395,17 @@ public final class AutomationService {
             }
             case TOAST_PLAYER, TOAST_ALL -> {
                 Leveled leveled = Leveled.of(text);
-                int bar = leveled.text().indexOf('|');
-                String title = bar < 0 ? "" : leveled.text().substring(0, bar).strip();
-                String body = (bar < 0 ? leveled.text() : leveled.text().substring(bar + 1)).strip();
+                HudText shown = HudText.toast(leveled.text());
                 if (action.kind() == ActionKind.TOAST_ALL) {
-                    notifications.toastAll(title, body, leveled.level(), TOAST_SECONDS);
+                    notifications.toastAll(shown.title(), shown.body(), leveled.level(), TOAST_SECONDS);
                 } else {
-                    notifications.toast(player.get(), title, body, leveled.level(), TOAST_SECONDS);
+                    notifications.toast(player.get(), shown.title(), shown.body(), leveled.level(), TOAST_SECONDS);
                 }
             }
             case WARNING_ALL -> {
                 Leveled leveled = Leveled.of(text);
-                int bar = leveled.text().lastIndexOf('|');
-                String body = leveled.text();
-                int minutes = 0;
-                if (bar >= 0 && leveled.text().substring(bar + 1).strip().matches("\\d{1,4}")) {
-                    minutes = Integer.parseInt(leveled.text().substring(bar + 1).strip());
-                    body = leveled.text().substring(0, bar).strip();
-                }
-                notifications.warningAll(rule.id(), body, leveled.level(), minutes * 60);
+                HudText shown = HudText.warning(leveled.text());
+                notifications.warningAll(rule.id(), shown.body(), leveled.level(), shown.minutes() * 60);
             }
             case CLEAR_WARNING -> {
                 String target = action.value().strip();
@@ -849,15 +863,11 @@ public final class AutomationService {
             return Result.failure(Recipients.invalidText());
         }
         if (shownOnHud && !value.isBlank()) {
-            String body = Leveled.of(value).text();
-            int bar = kind == ActionKind.WARNING_ALL ? body.lastIndexOf('|') : value.indexOf('|');
-            if (kind != ActionKind.WARNING_ALL && bar >= 0) {
-                body = value.substring(bar + 1);
-            } else if (bar >= 0 && body.substring(bar + 1).strip().matches("\\d{1,4}")) {
-                body = body.substring(0, bar);
-            }
-            if (body.isBlank()) {
-                String prefix = kind != ActionKind.WARNING_ALL && bar >= 0
+            String text = Leveled.of(value).text();
+            boolean warning = kind == ActionKind.WARNING_ALL;
+            if ((warning ? HudText.warning(text) : HudText.toast(text)).body().isEmpty()) {
+                int bar = value.indexOf('|');
+                String prefix = !warning && bar >= 0
                         ? value.substring(0, bar + 1).strip()
                         : value.substring(0, value.indexOf(':') + 1).strip();
                 return Result.failure(prefix.isEmpty() ? Recipients.invalidText() : Recipients.emptyAfter(prefix));

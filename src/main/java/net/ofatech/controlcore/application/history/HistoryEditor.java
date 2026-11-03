@@ -5,7 +5,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -198,20 +197,24 @@ public final class HistoryEditor {
         if (everything(viewer)) {
             return records;
         }
-        Set<String> hiddenMods = new HashSet<>();
-        if (records.stream().anyMatch(record -> record.kind() == Kind.MOD)) {
-            hiddenMods.addAll(modNames(Optional.empty()).keySet());
-            hiddenMods.removeAll(modNames(viewer).keySet());
-        }
+        Set<String> shownMods = records.stream().anyMatch(record -> record.kind() == Kind.MOD)
+                ? modNames(viewer).keySet()
+                : Set.of();
         Map<String, Boolean> seen = new HashMap<>();
         return records.stream()
                 .filter(record -> switch (record.kind()) {
-                    case MOD -> !hiddenMods.contains(record.target().toLowerCase(Locale.ROOT));
+                    case MOD -> shownMods.contains(record.target().toLowerCase(Locale.ROOT));
                     case SETTING ->
                         seen.computeIfAbsent("s" + record.target(), key -> mayView(settings, record.target(), viewer));
                     case SERVER_CONFIG ->
                         seen.computeIfAbsent(
                                 "c" + record.target(), key -> mayView(serverConfig, record.target(), viewer));
+                    case PERMISSION ->
+                        !record.target().startsWith(SettingPermissionPolicy.SETTING)
+                                || seen.computeIfAbsent("p" + record.target(), key -> {
+                                    String id = record.target().substring(SettingPermissionPolicy.SETTING.length());
+                                    return mayView(settings, id, viewer) || mayView(serverConfig, id, viewer);
+                                });
                     default -> true;
                 })
                 .toList();
@@ -221,7 +224,7 @@ public final class HistoryEditor {
         return SettingId.parse(target)
                 .flatMap(id -> editor.read(id, Optional.empty()))
                 .map(snapshot -> policy.rights(viewer, snapshot.definition()) != SettingRights.NONE)
-                .orElse(true);
+                .orElse(false);
     }
 
     private Map<String, String> modNames(Optional<PlayerId> viewer) {
