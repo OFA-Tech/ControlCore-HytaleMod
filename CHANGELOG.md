@@ -68,8 +68,9 @@
   warnings refuse texts over the 200 characters the HUD shows, and a toast or warning with no text after `Title|` or
   `warning:` (saying so). Automation toast and warning actions are held to the same 200 characters instead of being
   cut when shown.
-- History leaves out mod changes for players who can't see that mod (hidden from players), in the panel, `/cc-history`
-  and the API.
+- History leaves out mod changes for players who can't see that mod (hidden from players), and setting, config.json
+  and world changes for players with no view right on that setting, in the panel, `/cc-history` and the API. The
+  panel's newest rows and count are taken after that, and rolling back a change you can't see says it doesn't exist.
 - `/cc-rule-add` and `/cc-rule-edit` with an unknown or missing `when=` list the triggers; rule ids and group names
   match ignoring case.
 - Turning a mod on when a mod it needs can't be turned on here now says "{name} needs {other}" instead of the

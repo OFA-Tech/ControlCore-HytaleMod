@@ -60,7 +60,7 @@ final class HistoryTab {
         targets = null;
         entries = view.entries(ROWS);
         total = Math.max(entries.size(), view.total());
-        newest = entries.isEmpty() ? 0 : entries.getFirst().id();
+        newest = view.newest();
         commands.set(
                 "#HistoryFilter.Entries",
                 Arrays.stream(Filter.values())

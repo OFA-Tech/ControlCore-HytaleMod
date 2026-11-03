@@ -11,6 +11,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.application.mods.ModsEditor;
@@ -26,6 +27,7 @@ import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
 import net.ofatech.controlcore.domain.model.history.HistoryView;
 import net.ofatech.controlcore.domain.model.keys.GameActionMode;
 import net.ofatech.controlcore.domain.model.settings.SettingId;
+import net.ofatech.controlcore.domain.model.settings.SettingRights;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
@@ -97,13 +99,15 @@ public final class HistoryEditor {
 
             @Override
             public List<Entry> entries(int newest) {
-                List<ChangeRecord> records = history.newestFirst();
+                List<ChangeRecord> records = visible(history.newestFirst(), who);
                 return HistoryEditor.this.entries(records.subList(0, Math.min(newest, records.size())), tr, who);
             }
 
             @Override
             public int total() {
-                return history.size();
+                return everything(who)
+                        ? history.size()
+                        : visible(history.newestFirst(), who).size();
             }
 
             @Override
@@ -113,7 +117,12 @@ public final class HistoryEditor {
 
             @Override
             public Set<String> targets() {
-                return history.targets();
+                if (everything(who)) {
+                    return history.targets();
+                }
+                return visible(history.newestFirst(), who).stream()
+                        .map(ChangeRecord::target)
+                        .collect(Collectors.toSet());
             }
 
             @Override
@@ -172,19 +181,47 @@ public final class HistoryEditor {
     private List<Listed> listed(List<ChangeRecord> records, Translator tr, Optional<PlayerId> viewer) {
         Set<Long> rolledBack = history.rolledBackIds();
         boolean mayRollBack = mayRollBack(viewer);
-        boolean anyMod = records.stream().anyMatch(record -> record.kind() == Kind.MOD);
-        Map<String, String> modNames = anyMod ? modNames(viewer) : Map.of();
-        Set<String> hidden = new HashSet<>();
-        if (anyMod && viewer.isPresent()) {
-            hidden.addAll(modNames(Optional.empty()).keySet());
-            hidden.removeAll(modNames.keySet());
-        }
-        return records.stream()
-                .filter(record -> record.kind() != Kind.MOD
-                        || !hidden.contains(record.target().toLowerCase(Locale.ROOT)))
+        List<ChangeRecord> shown = visible(records, viewer);
+        Map<String, String> modNames =
+                shown.stream().anyMatch(record -> record.kind() == Kind.MOD) ? modNames(viewer) : Map.of();
+        return shown.stream()
                 .map(record ->
                         new Listed(record, entry(record, tr, rolledBack.contains(record.id()), mayRollBack, modNames)))
                 .toList();
+    }
+
+    private boolean everything(Optional<PlayerId> viewer) {
+        return viewer.isEmpty() || policy.isAdmin(viewer.get());
+    }
+
+    private List<ChangeRecord> visible(List<ChangeRecord> records, Optional<PlayerId> viewer) {
+        if (everything(viewer)) {
+            return records;
+        }
+        Set<String> hiddenMods = new HashSet<>();
+        if (records.stream().anyMatch(record -> record.kind() == Kind.MOD)) {
+            hiddenMods.addAll(modNames(Optional.empty()).keySet());
+            hiddenMods.removeAll(modNames(viewer).keySet());
+        }
+        Map<String, Boolean> seen = new HashMap<>();
+        return records.stream()
+                .filter(record -> switch (record.kind()) {
+                    case MOD -> !hiddenMods.contains(record.target().toLowerCase(Locale.ROOT));
+                    case SETTING ->
+                        seen.computeIfAbsent("s" + record.target(), key -> mayView(settings, record.target(), viewer));
+                    case SERVER_CONFIG ->
+                        seen.computeIfAbsent(
+                                "c" + record.target(), key -> mayView(serverConfig, record.target(), viewer));
+                    default -> true;
+                })
+                .toList();
+    }
+
+    private boolean mayView(SettingsEditor editor, String target, Optional<PlayerId> viewer) {
+        return SettingId.parse(target)
+                .flatMap(id -> editor.read(id, Optional.empty()))
+                .map(snapshot -> policy.rights(viewer, snapshot.definition()) != SettingRights.NONE)
+                .orElse(true);
     }
 
     private Map<String, String> modNames(Optional<PlayerId> viewer) {
@@ -197,7 +234,8 @@ public final class HistoryEditor {
     }
 
     public Result<String> rollback(long id, Optional<PlayerId> who, Actor actor, Translator tr) {
-        Optional<ChangeRecord> found = history.find(id);
+        Optional<ChangeRecord> found =
+                history.find(id).filter(record -> !visible(List.of(record), who).isEmpty());
         if (found.isEmpty()) {
             return Result.failure(Error.notFound(
                     "History.Unknown",

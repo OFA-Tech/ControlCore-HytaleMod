@@ -10,6 +10,7 @@ import net.ofatech.controlcore.api.HistoryApi;
 import net.ofatech.controlcore.domain.event.PlayerJoined;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.automation.Rule;
+import net.ofatech.controlcore.domain.model.history.HistoryView;
 import net.ofatech.controlcore.domain.model.hud.Overlay;
 import net.ofatech.controlcore.domain.model.mods.ModDependency;
 import net.ofatech.controlcore.domain.model.mods.ModInfo;
@@ -198,6 +199,29 @@ class ParityCommandsRuntimeTest extends RuntimeTestBase {
         assertThat(history.actingFor(builder.id()).list(Optional.of(HistoryApi.Kind.MOD), "", 0))
                 .extracting(HistoryApi.Change::target)
                 .containsExactly("Test:Base");
+    }
+
+    @Test
+    void historyLeavesOutSettingsTheViewerCantSeeBeforeTakingTheNewest() {
+        text(console("cc-mod-off", Map.of("mod", "Test:Addon", "confirm", "all")));
+        text(console("cc-set", Map.of("id", "server:server-name", "value", "Renamed")));
+        text(console("cc-set", Map.of("id", "controlcore:mods-hidden", "value", "Nothing")));
+        HistoryApi history = ControlCoreApi.get().history();
+        assertThat(history.list(Optional.empty(), "", 0)).hasSize(3);
+        long config =
+                history.list(Optional.empty(), "server-name", 0).getFirst().id();
+
+        platform.commands.run(COMMAND, builder, Map.of());
+        HistoryView view = platform.controlPanel.lastContent.history().orElseThrow();
+        assertThat(view.entries(1)).extracting(HistoryView.Entry::target).containsExactly("Test:Addon");
+        assertThat(view.total()).isEqualTo(1);
+        assertThat(view.targets()).containsExactly("Test:Addon");
+        assertThat(code(view.rollback(config).map(Reply::of))).isEqualTo("History.Unknown");
+        assertThat(history.actingFor(builder.id()).list(Optional.empty(), "", 0))
+                .extracting(HistoryApi.Change::target)
+                .containsExactly("Test:Addon");
+        assertThat(code(history.actingFor(builder.id()).rollback(config).map(Reply::of)))
+                .isEqualTo("History.Unknown");
     }
 
     @Test

@@ -161,7 +161,8 @@ Admins only: who may see and change each setting, `config.json` key, category or
 Admins (and players with `ofatech.controlcore.history`) see every server-wide change: `config.json` keys, mod
 settings, the server's keys, custom binds, permission rules and mods turned on or off. Each line shows what changed,
 `old -> new`, and `#number · when · who · from where` (panel, command, mod or rollback). Players' own preferences
-are not recorded.
+are not recorded. Non-admins don't see changes to mods hidden from players or to settings, `config.json` keys and
+world keys they have no view right on.
 
 - The dropdown limits the list to one kind; the search matches names, people, values and `#number`. The newest 200
   changes are listed; `/cc-history --filter=<text>` searches further back.
