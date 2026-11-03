@@ -221,7 +221,7 @@ public final class Recipients {
                         .with("max", NotificationService.MAX_TEXT));
     }
 
-    private static Error emptyAfter(String prefix) {
+    static Error emptyAfter(String prefix) {
         return Error.validation(
                 "Notify.EmptyText",
                 Text.key("controlcore.errors.notify.empty_after", "Write the message after '{prefix}'.")

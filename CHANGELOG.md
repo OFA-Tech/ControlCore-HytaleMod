@@ -66,8 +66,9 @@
   and History shows mod names only for mods the viewer may see.
 - `/cc-warn-clear` says when there was nothing to clear and when a warning for everyone is still shown; toasts and
   warnings refuse texts over the 200 characters the HUD shows, and a toast or warning with no text after `Title|` or
-  `warning:` (saying so). Automation toast and warning actions are held to the same 200 characters instead of being
-  cut when shown.
+  `warning:` (saying so). Automation toast and warning actions are held to the same 200 characters, before
+  placeholders are filled, instead of being cut when shown, and one with no text after its style or `Title|` says so
+  the same way.
 - History leaves out mod changes for players who can't see that mod (hidden from players), and setting, config.json
   and world changes for players with no view right on that setting, in the panel, `/cc-history` and the API. The
   panel's newest rows and count are taken after that, and rolling back a change you can't see says it doesn't exist.

@@ -163,6 +163,20 @@ class ParityCommandsRuntimeTest extends RuntimeTestBase {
     }
 
     @Test
+    void ruleToastsAndWarningsWithNoTextSayWhereItIsMissing() {
+        Result<Reply> toast = console("cc-rule-add", Map.of("rule", "name=T; when=join; do=toast-all:success:Title|"));
+        assertThat(code(toast)).isEqualTo("Notify.EmptyText");
+        assertThat(toast.error().message().fallbackText()).isEqualTo("Write the message after 'success:Title|'.");
+
+        Result<Reply> warning = console("cc-rule-add", Map.of("rule", "name=W; when=join; do=warning-all:error:|5"));
+        assertThat(code(warning)).isEqualTo("Notify.EmptyText");
+        assertThat(warning.error().message().fallbackText()).isEqualTo("Write the message after 'error:'.");
+
+        text(console("cc-rule-add", Map.of("rule", "name=Ok; when=join; do=warning-all:error:Closing|5")));
+        assertThat(platform.automationRules.all()).hasSize(1);
+    }
+
+    @Test
     void onlyAdminsChangeAProfileOnceItIsOne() {
         text(platform.commands.run("cc-snapshot-save", admin, Map.of("name", "weekend", "parts", "config")));
 

@@ -848,6 +848,21 @@ public final class AutomationService {
         if (shownOnHud && value.length() > NotificationService.MAX_TEXT) {
             return Result.failure(Recipients.invalidText());
         }
+        if (shownOnHud && !value.isBlank()) {
+            String body = Leveled.of(value).text();
+            int bar = kind == ActionKind.WARNING_ALL ? body.lastIndexOf('|') : value.indexOf('|');
+            if (kind != ActionKind.WARNING_ALL && bar >= 0) {
+                body = value.substring(bar + 1);
+            } else if (bar >= 0 && body.substring(bar + 1).strip().matches("\\d{1,4}")) {
+                body = body.substring(0, bar);
+            }
+            if (body.isBlank()) {
+                String prefix = kind != ActionKind.WARNING_ALL && bar >= 0
+                        ? value.substring(0, bar + 1).strip()
+                        : value.substring(0, value.indexOf(':') + 1).strip();
+                return Result.failure(prefix.isEmpty() ? Recipients.invalidText() : Recipients.emptyAfter(prefix));
+            }
+        }
         boolean ok = switch (kind) {
             case PROFILE -> profiles.ids().contains(value);
             case SET_SETTING ->
