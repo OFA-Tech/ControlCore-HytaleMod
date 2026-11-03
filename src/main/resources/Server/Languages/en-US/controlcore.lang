@@ -387,6 +387,7 @@ panel.mods.enabled_restart = {name} turns on after the next restart.
 panel.mods.disabled_restart = {name} turns off after the next restart.
 errors.mods.unknown = There is no mod {id}.
 errors.mods.forbidden = You may not turn {name} on or off.
+errors.permissions.admins_only = Only admins can change setting permissions.
 errors.mods.no_settings = {name} has no settings in ControlCore.
 settings.mods_hidden.name = Mods hidden from players
 settings.mods_hidden.desc = Mods (Group:Name or name) that players do not see in the Mods tab. Admins see every mod.

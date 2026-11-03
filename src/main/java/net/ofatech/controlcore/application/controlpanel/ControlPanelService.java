@@ -209,7 +209,8 @@ public final class ControlPanelService implements ControlPanelApi {
                         },
                         mods.viewedBy(Optional.of(player)),
                         permissions.isAdmin(player)
-                                ? Optional.of(permissionRules.viewedBy(texts.forPlayer(Optional.of(player))))
+                                ? Optional.of(permissionRules.viewedBy(
+                                        texts.forPlayer(Optional.of(player)), () -> permissions.isAdmin(player)))
                                 : Optional.empty(),
                         history.maySee(Optional.of(player))
                                 ? Optional.of(history.viewedBy(player, nameOf(player)))

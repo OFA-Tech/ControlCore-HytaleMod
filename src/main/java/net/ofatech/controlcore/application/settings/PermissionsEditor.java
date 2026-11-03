@@ -7,13 +7,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.domain.model.settings.PermissionsView;
 import net.ofatech.controlcore.domain.model.settings.SettingDefinition;
 import net.ofatech.controlcore.domain.model.settings.SettingPermission;
 import net.ofatech.controlcore.domain.model.settings.SettingScope;
 import net.ofatech.controlcore.domain.model.settings.SettingSnapshot;
+import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.model.text.Translator;
+import net.ofatech.controlcore.domain.result.Error;
 import net.ofatech.controlcore.domain.result.Result;
 
 public final class PermissionsEditor {
@@ -30,7 +33,11 @@ public final class PermissionsEditor {
     }
 
     public PermissionsView viewedBy(Translator tr) {
-        return new View(tr);
+        return viewedBy(tr, () -> true);
+    }
+
+    public PermissionsView viewedBy(Translator tr, BooleanSupplier stillAdmin) {
+        return new View(tr, stillAdmin);
     }
 
     private Map<String, List<SettingDefinition<?>>> definitionsByMod() {
@@ -55,9 +62,11 @@ public final class PermissionsEditor {
     private final class View implements PermissionsView {
 
         private final Translator tr;
+        private final BooleanSupplier stillAdmin;
 
-        private View(Translator tr) {
+        private View(Translator tr, BooleanSupplier stillAdmin) {
             this.tr = tr;
+            this.stillAdmin = stillAdmin;
         }
 
         @Override
@@ -106,6 +115,13 @@ public final class PermissionsEditor {
 
         @Override
         public Result<String> save(String target, String view, String edit) {
+            if (!stillAdmin.getAsBoolean()) {
+                return Result.failure(Error.forbidden(
+                        "Permissions.AdminsOnly",
+                        Text.key(
+                                "controlcore.errors.permissions.admins_only",
+                                "Only admins can change setting permissions.")));
+            }
             return policy.replaceRule(target, view, edit)
                     .flatMap(rule -> SettingPermissionPolicy.target(target)
                             .map(key -> tr.t(

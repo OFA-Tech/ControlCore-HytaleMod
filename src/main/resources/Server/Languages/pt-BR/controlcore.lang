@@ -387,6 +387,7 @@ panel.mods.enabled_restart = {name} liga após o próximo reinício.
 panel.mods.disabled_restart = {name} desliga após o próximo reinício.
 errors.mods.unknown = Não existe o mod {id}.
 errors.mods.forbidden = Você não pode ligar ou desligar {name}.
+errors.permissions.admins_only = Só admins podem mudar as permissões das configurações.
 errors.mods.no_settings = {name} não tem configurações no ControlCore.
 settings.mods_hidden.name = Mods ocultos dos jogadores
 settings.mods_hidden.desc = Mods (Grupo:Nome ou nome) que os jogadores não veem na aba Mods. Admins veem todos.

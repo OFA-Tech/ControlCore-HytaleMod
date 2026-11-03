@@ -12,6 +12,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 import net.ofatech.controlcore.api.Setting;
 import net.ofatech.controlcore.application.history.ChangeRecorder;
 import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
@@ -73,8 +74,7 @@ public final class ModsEditor {
     }
 
     public ModsView viewedBy(Optional<PlayerId> viewer) {
-        boolean admin = viewer.isEmpty() || permissions.isAdmin(viewer.get());
-        return new View(admin);
+        return new View(() -> viewer.isEmpty() || permissions.isAdmin(viewer.get()));
     }
 
     public List<Text> pendingRestart() {
@@ -98,14 +98,15 @@ public final class ModsEditor {
 
     private final class View implements ModsView {
 
-        private final boolean admin;
+        private final BooleanSupplier stillAdmin;
 
-        View(boolean admin) {
-            this.admin = admin;
+        View(BooleanSupplier stillAdmin) {
+            this.stillAdmin = stillAdmin;
         }
 
         @Override
         public List<Entry> list() {
+            boolean admin = stillAdmin.getAsBoolean();
             Set<String> serverNamespaces = new HashSet<>();
             Set<String> preferenceNamespaces = new HashSet<>();
             for (SettingDefinition<?> definition : settings.definitions()) {
@@ -148,7 +149,7 @@ public final class ModsEditor {
 
         @Override
         public boolean canManage() {
-            return admin;
+            return stillAdmin.getAsBoolean();
         }
 
         @Override

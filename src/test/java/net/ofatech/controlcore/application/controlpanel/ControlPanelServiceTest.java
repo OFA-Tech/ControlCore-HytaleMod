@@ -78,6 +78,8 @@ class ControlPanelServiceTest {
     private final PlayerInfo admin = players.join("Admin");
     private SettingsRegistry registry;
     private boolean debugAllowed = true;
+    private boolean stillAdmin = true;
+    private final FakeModCatalog catalog = new FakeModCatalog();
     private final InputProbe probe = new InputProbe() {
         @Override
         public boolean toggle(PlayerId player) {
@@ -110,10 +112,9 @@ class ControlPanelServiceTest {
                 log,
                 ChangeRecorder.NONE);
         var policy = new SettingPermissionPolicy(
-                new FakeSettingPermissionStore(), (player, node) -> true, registry, ChangeRecorder.NONE);
+                new FakeSettingPermissionStore(), (player, node) -> stillAdmin, registry, ChangeRecorder.NONE);
         var serverConfig = new ServerConfigEditor(server, Worlds.NONE, bus, bus, log);
-        var mods =
-                new ModsEditor(new FakeModCatalog(), registry, keyRegistry, modNames, policy, log, ChangeRecorder.NONE);
+        var mods = new ModsEditor(catalog, registry, keyRegistry, modNames, policy, log, ChangeRecorder.NONE);
         var changes = new ChangeHistory(new FakeChangeLogStore(), new FakeClock());
         var bans = new BansService(
                 Bans.NONE,
@@ -342,6 +343,27 @@ class ControlPanelServiceTest {
                 .singleElement()
                 .satisfies(entry -> assertThat(entry.adminRule()).isFalse());
         assertThat(builtIn.lastContent.debug()).isPresent();
+    }
+
+    @Test
+    void losingAdminWhileThePanelIsOpenTakesAwayPermissionsAndModsRights() {
+        catalog.add("Acme:Homes", false);
+        var service = service();
+        service.open(admin.id(), ControlPanelRequest.ALL);
+        PermissionsView rules = builtIn.lastContent.permissions().orElseThrow();
+        var mods = builtIn.lastContent.mods();
+        assertThat(mods.canManage()).isTrue();
+
+        stillAdmin = false;
+
+        assertThat(rules.save("setting:server:server-name", "", "staff.name")
+                        .error()
+                        .type())
+                .isEqualTo(ErrorType.FORBIDDEN);
+        assertThat(rules.reset("setting:server:server-name").error().type()).isEqualTo(ErrorType.FORBIDDEN);
+        assertThat(mods.canManage()).isFalse();
+        assertThat(mods.setEnabled("Acme:Homes", false).error().type()).isEqualTo(ErrorType.FORBIDDEN);
+        assertThat(catalog.mods.getFirst().enabledAfterRestart()).isTrue();
     }
 
     @Test
