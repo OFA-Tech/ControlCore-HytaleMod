@@ -77,6 +77,8 @@ class SettingsRuntimeTest extends RuntimeTestBase {
         platform.deniedNodes.add("players");
         platform.deniedNodes.add("bans");
         platform.deniedNodes.add("announcements");
+        platform.deniedNodes.add("backups");
+        platform.deniedNodes.add("restart");
         assertThat(platform.commands.run(COMMAND, moderator, Map.of()).error().code())
                 .isEqualTo("ControlPanel.Forbidden");
     }

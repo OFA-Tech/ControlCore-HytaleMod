@@ -187,7 +187,7 @@ public interface ControlCoreApi {
     DefaultsApi defaults();
 
     /**
-     * The server as a whole: maintenance mode.
+     * The server as a whole: maintenance mode and restarts.
      *
      * @return the server API
      * @since API 2.5.0
@@ -201,4 +201,12 @@ public interface ControlCoreApi {
      * @since API 2.5.0
      */
     AnnouncementsApi announcements();
+
+    /**
+     * Backups of the universe and restoring one at the next start.
+     *
+     * @return the backups API
+     * @since API 2.5.0
+     */
+    BackupsApi backups();
 }

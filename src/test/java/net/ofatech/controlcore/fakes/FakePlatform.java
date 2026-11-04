@@ -79,6 +79,9 @@ public final class FakePlatform implements Platform {
     public final FakeJoinGate joins = new FakeJoinGate();
     public final FakeMaintenanceStore maintenance = new FakeMaintenanceStore();
     public final FakeAnnouncementStore announcements = new FakeAnnouncementStore();
+    public final FakeServerBackups backups = new FakeServerBackups();
+    public final FakeServerControl control = new FakeServerControl();
+    public final FakePendingRestoreStore pendingRestore = new FakePendingRestoreStore();
     public final java.util.Map<PlayerId, net.ofatech.controlcore.domain.ports.game.PlayerContext.Context> context =
             new java.util.concurrent.ConcurrentHashMap<>();
     public final FakeReportWriter reports = new FakeReportWriter();
@@ -157,6 +160,9 @@ public final class FakePlatform implements Platform {
         binder.bind(net.ofatech.controlcore.domain.ports.game.JoinGate.class, joins);
         binder.bind(net.ofatech.controlcore.domain.ports.config.MaintenanceStore.class, maintenance);
         binder.bind(net.ofatech.controlcore.domain.ports.config.AnnouncementStore.class, announcements);
+        binder.bind(net.ofatech.controlcore.domain.ports.game.ServerBackups.class, backups);
+        binder.bind(net.ofatech.controlcore.domain.ports.game.ServerControl.class, control);
+        binder.bind(net.ofatech.controlcore.domain.ports.config.PendingRestoreStore.class, pendingRestore);
         binder.bind(
                 net.ofatech.controlcore.domain.ports.game.PlayerContext.class,
                 player -> context.getOrDefault(

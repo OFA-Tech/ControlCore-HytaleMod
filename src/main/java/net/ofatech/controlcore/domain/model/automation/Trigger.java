@@ -17,7 +17,9 @@ public enum Trigger {
     ONLINE_REACHES(Value.REQUIRED, 60, false),
     SERVER_EMPTY(Value.NONE, 60, false),
     SETTING_CHANGED(Value.OPTIONAL, 0, false),
-    MOD_TRIGGER(Value.REQUIRED, 0, false);
+    MOD_TRIGGER(Value.REQUIRED, 0, false),
+    RESTART_STARTED(Value.NONE, 0, false),
+    SERVER_STOPPING(Value.NONE, 0, false);
 
     public enum Value {
         NONE,

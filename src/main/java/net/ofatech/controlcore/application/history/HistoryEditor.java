@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import net.ofatech.controlcore.application.automation.AnnouncementService;
+import net.ofatech.controlcore.application.backups.BackupService;
 import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
 import net.ofatech.controlcore.application.maintenance.MaintenanceService;
@@ -57,6 +58,7 @@ public final class HistoryEditor {
     private final Clock clock;
     private final MaintenanceService maintenance;
     private final AnnouncementService announcements;
+    private final BackupService backups;
 
     public HistoryEditor(
             ChangeHistory history,
@@ -71,7 +73,8 @@ public final class HistoryEditor {
             PlayerHistory players,
             Clock clock,
             MaintenanceService maintenance,
-            AnnouncementService announcements) {
+            AnnouncementService announcements,
+            BackupService backups) {
         this.history = history;
         this.settings = settings;
         this.serverConfig = serverConfig;
@@ -85,6 +88,7 @@ public final class HistoryEditor {
         this.clock = clock;
         this.maintenance = maintenance;
         this.announcements = announcements;
+        this.backups = backups;
     }
 
     public boolean maySee(Optional<PlayerId> viewer) {
@@ -311,6 +315,7 @@ public final class HistoryEditor {
                                 id, GameActionMode.parse(old).orElse(GameActionMode.SERVER_SETTING)));
             case MAINTENANCE -> maintenance.rollback(old, who);
             case ANNOUNCEMENT -> announcements.rollback(record.target(), old, who);
+            case BACKUP -> backups.rollback(record.target(), old, record.newValue(), who);
         };
     }
 
@@ -390,6 +395,7 @@ public final class HistoryEditor {
                         .orElse(target);
             case MAINTENANCE -> tr.t("controlcore.history.what.maintenance");
             case ANNOUNCEMENT -> announcements.what(target, tr);
+            case BACKUP -> backups.what(target, tr);
         };
     }
 
@@ -426,6 +432,7 @@ public final class HistoryEditor {
             case MAINTENANCE ->
                 tr.t("on".equals(value) ? "controlcore.history.value.on" : "controlcore.history.value.off");
             case ANNOUNCEMENT -> announcements.shown(target, value, tr);
+            case BACKUP -> backups.shown(value, tr);
             case MOD ->
                 tr.t(Boolean.parseBoolean(value) ? "controlcore.history.value.on" : "controlcore.history.value.off");
             case BAN -> bans.shown(value, tr);

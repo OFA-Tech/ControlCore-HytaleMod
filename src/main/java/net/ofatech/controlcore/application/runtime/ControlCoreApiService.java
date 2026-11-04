@@ -3,6 +3,7 @@ package net.ofatech.controlcore.application.runtime;
 import com.google.auto.service.AutoService;
 import net.ofatech.controlcore.api.ActionsApi;
 import net.ofatech.controlcore.api.AnnouncementsApi;
+import net.ofatech.controlcore.api.BackupsApi;
 import net.ofatech.controlcore.api.ControlCoreApi;
 import net.ofatech.controlcore.api.ControlCoreEvents;
 import net.ofatech.controlcore.api.ControlPanelApi;
@@ -158,5 +159,10 @@ public final class ControlCoreApiService implements ControlCoreApi {
     @Override
     public AnnouncementsApi announcements() {
         return server.announcements();
+    }
+
+    @Override
+    public BackupsApi backups() {
+        return server.backups();
     }
 }

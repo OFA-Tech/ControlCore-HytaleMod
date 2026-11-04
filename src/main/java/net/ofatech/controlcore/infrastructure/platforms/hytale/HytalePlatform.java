@@ -11,6 +11,7 @@ import net.ofatech.controlcore.domain.ports.config.CustomKeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.KeyBindStore;
 import net.ofatech.controlcore.domain.ports.config.KeyGameActionStore;
 import net.ofatech.controlcore.domain.ports.config.MaintenanceStore;
+import net.ofatech.controlcore.domain.ports.config.PendingRestoreStore;
 import net.ofatech.controlcore.domain.ports.config.ReportWriter;
 import net.ofatech.controlcore.domain.ports.config.SettingPermissionStore;
 import net.ofatech.controlcore.domain.ports.config.SettingStore;
@@ -36,7 +37,9 @@ import net.ofatech.controlcore.domain.ports.game.PlayerInput;
 import net.ofatech.controlcore.domain.ports.game.PlayerTuning;
 import net.ofatech.controlcore.domain.ports.game.Players;
 import net.ofatech.controlcore.domain.ports.game.Scheduler;
+import net.ofatech.controlcore.domain.ports.game.ServerBackups;
 import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
+import net.ofatech.controlcore.domain.ports.game.ServerControl;
 import net.ofatech.controlcore.domain.ports.game.Worlds;
 import net.ofatech.controlcore.domain.ports.mods.ModCatalog;
 import net.ofatech.controlcore.domain.ports.mods.ModLookup;
@@ -57,6 +60,7 @@ import net.ofatech.controlcore.infrastructure.persistence.JsonKeyBindStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonKeyGameActionStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonLinesChangeLog;
 import net.ofatech.controlcore.infrastructure.persistence.JsonMaintenanceStore;
+import net.ofatech.controlcore.infrastructure.persistence.JsonPendingRestoreStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonPlayerDataStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonSettingPermissionStore;
 import net.ofatech.controlcore.infrastructure.persistence.JsonSettingStore;
@@ -86,7 +90,9 @@ import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytalePlay
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytalePlayerTuning;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.player.HytalePlayers;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.server.HytaleBans;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.server.HytaleServerBackups;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.server.HytaleServerConfiguration;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.server.HytaleServerControl;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.server.HytaleServerHealth;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.server.HytaleWorlds;
 import net.ofatech.controlcore.infrastructure.platforms.hytale.ui.HytaleControlPanelView;
@@ -147,6 +153,8 @@ public final class HytalePlatform implements Platform {
         binder.bind(AccessLists.class, new HytaleAccessLists());
         binder.bind(ChatGate.class, new HytaleChatGate(plugin.getEventRegistry(), log));
         binder.bind(JoinGate.class, new HytaleJoinGate(plugin.getEventRegistry(), log));
+        binder.bind(ServerBackups.class, new HytaleServerBackups());
+        binder.bind(ServerControl.class, new HytaleServerControl(plugin.getEventRegistry(), log));
         binder.bind(Bans.class, new HytaleBans(log));
         binder.bind(ModCatalog.class, new HytaleModCatalog(serverConfiguration, log));
         binder.bind(ControlPanelView.class, new HytaleControlPanelView(log));
@@ -176,6 +184,9 @@ public final class HytalePlatform implements Platform {
         binder.bind(
                 MaintenanceStore.class,
                 new JsonMaintenanceStore(plugin.getDataDirectory().resolve("Maintenance.json"), log));
+        binder.bind(
+                PendingRestoreStore.class,
+                new JsonPendingRestoreStore(plugin.getDataDirectory().resolve("PendingRestore.json"), log));
         binder.bind(
                 AnnouncementStore.class,
                 new JsonAnnouncementStore(plugin.getDataDirectory().resolve("Announcements.json"), log));

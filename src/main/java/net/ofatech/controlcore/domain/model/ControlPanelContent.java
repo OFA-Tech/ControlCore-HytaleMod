@@ -12,7 +12,9 @@ import net.ofatech.controlcore.domain.model.history.HistoryView;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.players.PlayersView;
+import net.ofatech.controlcore.domain.model.server.BackupsView;
 import net.ofatech.controlcore.domain.model.server.MaintenanceView;
+import net.ofatech.controlcore.domain.model.server.RestartView;
 import net.ofatech.controlcore.domain.model.settings.DefaultsView;
 import net.ofatech.controlcore.domain.model.settings.PermissionsView;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
@@ -49,7 +51,9 @@ public record ControlPanelContent(
         BooleanSupplier stillAdmin,
         DefaultsView defaults,
         Optional<MaintenanceView> maintenance,
-        Optional<AnnouncementsView> announcements) {
+        Optional<AnnouncementsView> announcements,
+        Optional<BackupsView> backups,
+        Optional<RestartView> restart) {
 
     public ControlPanelContent {
         Guard.notNull(server, "server");
@@ -77,5 +81,7 @@ public record ControlPanelContent(
         Guard.notNull(defaults, "defaults");
         Guard.notNull(maintenance, "maintenance");
         Guard.notNull(announcements, "announcements");
+        Guard.notNull(backups, "backups");
+        Guard.notNull(restart, "restart");
     }
 }

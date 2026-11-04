@@ -19,7 +19,9 @@ public enum ActionKind {
     SET_SETTING(false),
     MOD_ACTION(false),
     MAINTENANCE_ON(false),
-    MAINTENANCE_OFF(false);
+    MAINTENANCE_OFF(false),
+    BACKUP(false),
+    RESTART(false);
 
     private final boolean needsPlayer;
 

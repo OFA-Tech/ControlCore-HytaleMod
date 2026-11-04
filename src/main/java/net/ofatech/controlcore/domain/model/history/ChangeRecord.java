@@ -28,7 +28,8 @@ public record ChangeRecord(
         PLAYER,
         GAME_ACTION,
         MAINTENANCE,
-        ANNOUNCEMENT
+        ANNOUNCEMENT,
+        BACKUP
     }
 
     public enum Source {

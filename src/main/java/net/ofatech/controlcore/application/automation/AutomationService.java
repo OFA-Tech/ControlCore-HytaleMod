@@ -20,8 +20,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.ofatech.controlcore.api.ActionContext;
 import net.ofatech.controlcore.api.AutomationAction;
+import net.ofatech.controlcore.application.backups.BackupService;
 import net.ofatech.controlcore.application.history.ChangeContext;
 import net.ofatech.controlcore.application.maintenance.MaintenanceService;
+import net.ofatech.controlcore.application.restart.RestartService;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
@@ -128,6 +130,8 @@ public final class AutomationService {
     private final ServerPlaceholders serverValues;
     private final MaintenanceService maintenance;
     private final AnnouncementService announcements;
+    private final BackupService backups;
+    private final RestartService restart;
 
     private final Map<String, Instant> lastRun = new ConcurrentHashMap<>();
     private final Map<String, Instant> timerStart = new ConcurrentHashMap<>();
@@ -156,7 +160,11 @@ public final class AutomationService {
             Recipients recipients,
             ServerPlaceholders serverValues,
             MaintenanceService maintenance,
-            AnnouncementService announcements) {
+            AnnouncementService announcements,
+            BackupService backups,
+            RestartService restart) {
+        this.backups = backups;
+        this.restart = restart;
         this.recipients = recipients;
         this.serverValues = serverValues;
         this.maintenance = maintenance;
@@ -183,6 +191,22 @@ public final class AutomationService {
                 fired.player().flatMap(sessions::world),
                 fired.variables(),
                 id));
+        restart.listen(new RestartService.Listener() {
+            @Override
+            public void started(Duration delay, String reason) {
+                fire(
+                        Trigger.RESTART_STARTED,
+                        Optional.empty(),
+                        Optional.empty(),
+                        Map.of("seconds", Long.toString(delay.toSeconds()), "reason", reason),
+                        "");
+            }
+
+            @Override
+            public void stopping() {
+                fire(Trigger.SERVER_STOPPING, Optional.empty(), Optional.empty(), Map.of(), "");
+            }
+        });
     }
 
     public boolean mayManage(Optional<PlayerId> who) {
@@ -477,6 +501,19 @@ public final class AutomationService {
                 Result<String> off = maintenance.turnOff(Optional.empty(), tr);
                 if (off.isFailure()) {
                     return Result.failure(off.error());
+                }
+            }
+            case BACKUP -> {
+                var started = backups.create(Optional.empty(), tr);
+                if (started.isDone() && started.join().isFailure()) {
+                    return Result.failure(started.join().error());
+                }
+            }
+            case RESTART -> {
+                Result<String> started = RestartService.delay(seconds(text))
+                        .flatMap(delay -> restart.start(delay, "", Optional.empty(), tr));
+                if (started.isFailure()) {
+                    return Result.failure(started.error());
                 }
             }
         }
@@ -900,7 +937,8 @@ public final class AutomationService {
             case MOD_ACTION -> value.matches("[a-z0-9][a-z0-9_-]*:[a-z0-9][a-z0-9_-]*(\\s.*)?");
             case CLEAR_WARNING -> value.equalsIgnoreCase("all") || value.matches("[a-z0-9][a-z0-9-]*");
             case MAINTENANCE_ON -> value.length() <= MAX_TEXT;
-            case MAINTENANCE_OFF -> true;
+            case MAINTENANCE_OFF, BACKUP -> true;
+            case RESTART -> RestartService.delay(seconds(value)).isSuccess();
             default -> !value.isEmpty() && value.length() <= MAX_TEXT;
         };
         return ok
@@ -909,6 +947,11 @@ public final class AutomationService {
                         "Automation.InvalidActionValue",
                         Text.key("controlcore.errors.automation.invalid_action_value", "'{value}' does not fit: {hint}")
                                 .with("value", value, "hint", hint("action", kind.id(), texts.forServer())));
+    }
+
+    private static String seconds(String value) {
+        String text = value.strip();
+        return text.matches("\\d+") ? text + "s" : text;
     }
 
     private String freeId(String name) {

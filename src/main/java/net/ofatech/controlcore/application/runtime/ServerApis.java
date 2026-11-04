@@ -1,6 +1,7 @@
 package net.ofatech.controlcore.application.runtime;
 
 import net.ofatech.controlcore.api.AnnouncementsApi;
+import net.ofatech.controlcore.api.BackupsApi;
 import net.ofatech.controlcore.api.DefaultsApi;
 import net.ofatech.controlcore.api.HealthApi;
 import net.ofatech.controlcore.api.HistoryApi;
@@ -23,4 +24,5 @@ public record ServerApis(
         PlayersApi players,
         DefaultsApi defaults,
         ServerApi server,
-        AnnouncementsApi announcements) {}
+        AnnouncementsApi announcements,
+        BackupsApi backups) {}

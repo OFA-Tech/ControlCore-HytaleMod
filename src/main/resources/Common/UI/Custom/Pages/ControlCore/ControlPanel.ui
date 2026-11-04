@@ -271,6 +271,17 @@ $C.@PageOverlay {
             Style: @BannerStyle;
             FlexWeight: 1;
           }
+
+          $C.@DropdownBox #RestartDelay {
+            Visible: false;
+            Anchor: (Width: 150, Height: 30, Top: 3, Left: 6);
+          }
+
+          $C.@SmallSecondaryTextButton #RestartNow {
+            @Text = %controlcore.ui.restart.now;
+            Visible: false;
+            Anchor: (Width: 190, Height: 30, Top: 3, Left: 6);
+          }
         }
 
         Group #Columns {
@@ -303,6 +314,13 @@ $C.@PageOverlay {
               TextButton #ServerModePlayers {
                 Text: %controlcore.ui.server.modePlayers;
                 Style: @SegmentStyle;
+                Anchor: (Width: 180, Right: 2);
+              }
+
+              TextButton #ServerModeBackups {
+                Text: %controlcore.ui.server.modeBackups;
+                Style: @SegmentStyle;
+                Visible: false;
                 Anchor: (Width: 180, Right: 12);
               }
 
@@ -566,6 +584,88 @@ $C.@PageOverlay {
                   Anchor: (Height: 470);
                   Padding: (Right: 10);
                 }
+              }
+            }
+            Group #BackupsPanel {
+              LayoutMode: Top;
+              Visible: false;
+
+              Label {
+                Text: %controlcore.ui.backups.intro;
+                Style: @NoteStyle;
+                Anchor: (Bottom: 8);
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 36, Bottom: 8);
+                Background: #1b2f44;
+                Padding: (Horizontal: 10);
+
+                Label #BackupsSetupText {
+                  Style: @BannerStyle;
+                  FlexWeight: 1;
+                }
+
+                $C.@TextField #BackupsDirectory {
+                  Anchor: (Width: 260, Height: 30, Top: 3, Left: 6);
+                }
+
+                $C.@SmallSecondaryTextButton #BackupsSetDirectory {
+                  @Text = %controlcore.ui.backups.setDirectory;
+                  Anchor: (Width: 170, Height: 30, Top: 3, Left: 6);
+                }
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 34, Bottom: 4);
+
+                Label #BackupsStatus {
+                  Style: @BannerStyle;
+                  FlexWeight: 1;
+                }
+
+                $C.@SmallSecondaryTextButton #BackupsNow {
+                  @Text = %controlcore.ui.backups.now;
+                  Anchor: (Width: 190, Height: 32, Left: 6);
+                }
+              }
+
+              Label #BackupsSettings {
+                Style: @NoteStyle;
+                Anchor: (Bottom: 8);
+              }
+
+              Group #BackupsPendingRow {
+                LayoutMode: Left;
+                Visible: false;
+                Anchor: (Height: 36, Bottom: 8);
+                Background: #3a2a1c;
+                Padding: (Horizontal: 10);
+
+                Label #BackupsPendingText {
+                  Style: @BannerStyle;
+                  FlexWeight: 1;
+                }
+
+                $C.@SmallTertiaryTextButton #BackupsCancelRestore {
+                  @Text = %controlcore.ui.backups.cancelRestore;
+                  Anchor: (Width: 190, Height: 30, Top: 3, Left: 6);
+                }
+              }
+
+              Label #BackupsEmpty {
+                Text: %controlcore.ui.backups.empty;
+                Style: @NoteStyle;
+                Visible: false;
+              }
+
+              Group #BackupsList {
+                LayoutMode: TopScrolling;
+                ScrollbarStyle: $C.@DefaultScrollbarStyle;
+                Anchor: (Height: 380);
+                Padding: (Right: 10);
               }
             }
           }
@@ -1506,6 +1606,35 @@ $C.@PageOverlay {
                 @Text = %controlcore.ui.health.report;
                 Anchor: (Width: 200, Height: 32, Left: 6);
               }
+            }
+
+            Group #HealthRestartRow {
+              LayoutMode: Left;
+              Visible: false;
+              Anchor: (Height: 36, Bottom: 4);
+              Background: #1b2f44;
+              Padding: (Horizontal: 10);
+
+              Label #HealthRestartText {
+                Style: @BannerStyle;
+                FlexWeight: 1;
+              }
+
+              $C.@DropdownBox #HealthRestartDelay {
+                Anchor: (Width: 150, Height: 30, Top: 3, Left: 6);
+              }
+
+              $C.@SmallSecondaryTextButton #HealthRestart {
+                @Text = %controlcore.ui.restart.now;
+                Anchor: (Width: 190, Height: 30, Top: 3, Left: 6);
+              }
+            }
+
+            Label #HealthRestartNote {
+              Text: %controlcore.ui.restart.hostNote;
+              Style: @NoteStyle;
+              Visible: false;
+              Anchor: (Bottom: 8);
             }
 
             Group #HealthList {

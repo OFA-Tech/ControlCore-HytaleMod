@@ -95,7 +95,13 @@ public interface HistoryApi {
          *
          * @since API 2.5.0
          */
-        ANNOUNCEMENT
+        ANNOUNCEMENT,
+        /**
+         * A backup made or deleted, or its restore planned, cancelled or applied at startup.
+         *
+         * @since API 2.5.0
+         */
+        BACKUP
     }
 
     /** Where a change was made. */

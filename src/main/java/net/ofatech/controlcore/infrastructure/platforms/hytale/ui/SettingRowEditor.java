@@ -35,6 +35,8 @@ final class SettingRowEditor {
     interface Host {
         PlayerRef viewer();
 
+        void restartBanner(UICommandBuilder update, boolean pending);
+
         void rebuild();
 
         void send(UICommandBuilder update);
@@ -639,6 +641,7 @@ final class SettingRowEditor {
                                 "controlcore.panel.restart_pending",
                                 "keys",
                                 names.stream().map(tr::translate).collect(Collectors.joining(", "))));
+        host.restartBanner(commands, !names.isEmpty());
     }
 
     void restoreDefaults(String sectionName) {

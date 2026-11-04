@@ -1,0 +1,26 @@
+package net.ofatech.controlcore.fakes;
+
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import net.ofatech.controlcore.domain.ports.game.ServerControl;
+
+public final class FakeServerControl implements ServerControl {
+
+    public final List<String> stops = new CopyOnWriteArrayList<>();
+    private final List<Runnable> listeners = new CopyOnWriteArrayList<>();
+
+    @Override
+    public void stop(String message) {
+        stops.add(message);
+        shutdown();
+    }
+
+    @Override
+    public void onStopping(Runnable listener) {
+        listeners.add(listener);
+    }
+
+    public void shutdown() {
+        listeners.forEach(Runnable::run);
+    }
+}

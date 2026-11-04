@@ -98,7 +98,9 @@ class ModRuntimeTest extends RuntimeTestBase {
                         Duration.ofSeconds(10),
                         Duration.ofSeconds(10),
                         Duration.ofSeconds(15),
-                        Duration.ofSeconds(1));
+                        Duration.ofSeconds(1),
+                        Duration.ofSeconds(1),
+                        null);
         platform.scheduler.runAll();
         assertThat(platform.playerData.flushes).isEqualTo(1);
 

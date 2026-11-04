@@ -7,15 +7,15 @@ import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.result.Result;
 
 /**
- * The server as a whole: maintenance mode, as in the control panel's Server Configs -> Players view (Whitelisted
- * filter) and {@code /cc-maintenance}. Get it with {@link ControlCoreApi#server()}.
+ * The server as a whole: maintenance mode and restarts. Maintenance mode is as in the control panel's Server Configs -> Players view (Whitelisted
+ * filter) and {@code /cc-maintenance}; restarts as the Restart buttons and {@code /cc-restart}. Get it with {@link ControlCoreApi#server()}.
  *
  * <p>While maintenance mode is on, only admins and players with {@code ofatech.controlcore.maintenance.join} may
  * join; turning it on kicks every other online player with the maintenance message. A maintenance MOTD, if given,
  * replaces config.json {@code MOTD} while it is on and the old one comes back when it is turned off.
  *
  * <p>The API acts with full rights, like the console. {@link #actingFor(PlayerId)} gives the same API with a
- * player's rights: admins and players with {@code ofatech.controlcore.maintenance} may change it.
+ * player's rights: admins and players with {@code ofatech.controlcore.maintenance} may change maintenance mode, admins and players with {@code ofatech.controlcore.restart} may restart.
  *
  * <pre>{@code
  * api.server().setMaintenance(true, new MaintenanceOptions("Back at 18:00", "", Optional.of(Duration.ofHours(1))));
@@ -52,6 +52,42 @@ public interface ServerApi {
      *     {@code Maintenance.AlreadyOff}, {@code Maintenance.InvalidText} or {@code Maintenance.Forbidden}
      */
     Result<String> setMaintenance(boolean on, MaintenanceOptions options);
+
+    /**
+     * Starts a restart countdown, as the Restart button and {@code /cc-restart} do. Everyone is warned along the
+     * way; at zero ControlCore makes a backup first if "Back up before restarting" is on, kicks the players with a
+     * "back soon" message and stops the server. The host must start the server again: a server cannot start itself.
+     * Admins and players with {@code ofatech.controlcore.restart} may restart.
+     *
+     * @param delay the countdown from 10 seconds to 24 hours; {@code null} for the "Restart countdown" setting
+     * @param reason shown to players with the warnings; {@code null} or empty for none
+     * @return a message, or an error such as {@code Restart.Running}, {@code Restart.BadDelay} or
+     *     {@code Restart.Forbidden}
+     */
+    Result<String> restart(Duration delay, String reason);
+
+    /**
+     * Cancels the restart countdown and tells everyone.
+     *
+     * @return a message, or an error such as {@code Restart.NotRunning} or {@code Restart.TooLate}
+     */
+    Result<String> cancelRestart();
+
+    /**
+     * Reads the restart countdown.
+     *
+     * @return whether a restart counts down, how long is left and its reason
+     */
+    RestartStatus restartStatus();
+
+    /**
+     * The restart countdown as it is now.
+     *
+     * @param counting whether a restart is counting down or the server is stopping
+     * @param remaining time left; empty when not counting
+     * @param reason the reason shown to players; empty for none
+     */
+    record RestartStatus(boolean counting, Optional<Duration> remaining, String reason) {}
 
     /**
      * Maintenance mode as it is now.

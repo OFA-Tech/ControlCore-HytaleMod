@@ -217,6 +217,30 @@ class ControlPanelServiceTest {
                 changes,
                 new FakeClock(),
                 texts);
+        var backups = new net.ofatech.controlcore.application.backups.BackupService(
+                new net.ofatech.controlcore.fakes.FakeServerBackups(),
+                new net.ofatech.controlcore.fakes.FakePendingRestoreStore(),
+                (player, node) -> true,
+                policy,
+                serverConfig,
+                changes,
+                new net.ofatech.controlcore.fakes.FakeMessenger(),
+                new FakeClock(),
+                texts,
+                log);
+        var restart = new net.ofatech.controlcore.application.restart.RestartService(
+                new net.ofatech.controlcore.application.restart.RestartSettings(registry),
+                backups,
+                new net.ofatech.controlcore.fakes.FakeServerControl(),
+                players,
+                playerAdminPort,
+                notifications,
+                new net.ofatech.controlcore.fakes.FakeMessenger(),
+                (player, node) -> true,
+                policy,
+                new FakeClock(),
+                texts,
+                log);
         var history = new HistoryEditor(
                 changes,
                 registry,
@@ -230,7 +254,8 @@ class ControlPanelServiceTest {
                 new net.ofatech.controlcore.application.players.PlayerHistory(moderation, playerAccess, control, texts),
                 new FakeClock(),
                 maintenance,
-                announcements);
+                announcements,
+                backups);
         var snapshots = new SnapshotService(
                 new FakeSnapshotStore(),
                 registry,
@@ -270,7 +295,9 @@ class ControlPanelServiceTest {
                 new Recipients(players, policy, notifications),
                 placeholders,
                 maintenance,
-                announcements);
+                announcements,
+                backups,
+                restart);
         var keymaps = new KeymapsEditor(keyRegistry, TestTexts.of(registry, players), modNames);
         var permissionRules = new PermissionsEditor(registry, serverConfig, policy);
         return new ControlPanelService(
@@ -312,7 +339,9 @@ class ControlPanelServiceTest {
                         TestTexts.of(registry, players)),
                 new net.ofatech.controlcore.application.hud.HudPrefs(hud),
                 maintenance,
-                announcements);
+                announcements,
+                backups,
+                restart);
     }
 
     @Test
