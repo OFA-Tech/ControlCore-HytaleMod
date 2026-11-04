@@ -11,8 +11,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import net.ofatech.controlcore.application.automation.AnnouncementService;
 import net.ofatech.controlcore.application.bans.BansService;
 import net.ofatech.controlcore.application.keymaps.KeymapRegistry;
+import net.ofatech.controlcore.application.maintenance.MaintenanceService;
 import net.ofatech.controlcore.application.mods.ModsEditor;
 import net.ofatech.controlcore.application.players.PlayerHistory;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
@@ -53,6 +55,8 @@ public final class HistoryEditor {
     private final BansService bans;
     private final PlayerHistory players;
     private final Clock clock;
+    private final MaintenanceService maintenance;
+    private final AnnouncementService announcements;
 
     public HistoryEditor(
             ChangeHistory history,
@@ -65,7 +69,9 @@ public final class HistoryEditor {
             Texts texts,
             BansService bans,
             PlayerHistory players,
-            Clock clock) {
+            Clock clock,
+            MaintenanceService maintenance,
+            AnnouncementService announcements) {
         this.history = history;
         this.settings = settings;
         this.serverConfig = serverConfig;
@@ -77,6 +83,8 @@ public final class HistoryEditor {
         this.bans = bans;
         this.players = players;
         this.clock = clock;
+        this.maintenance = maintenance;
+        this.announcements = announcements;
     }
 
     public boolean maySee(Optional<PlayerId> viewer) {
@@ -301,6 +309,8 @@ public final class HistoryEditor {
                         .flatMap(ok -> SettingId.parse(record.target()))
                         .flatMap(id -> keymaps.setGameAction(
                                 id, GameActionMode.parse(old).orElse(GameActionMode.SERVER_SETTING)));
+            case MAINTENANCE -> maintenance.rollback(old, who);
+            case ANNOUNCEMENT -> announcements.rollback(record.target(), old, who);
         };
     }
 
@@ -378,6 +388,8 @@ public final class HistoryEditor {
                         .findFirst()
                         .map(entry -> entry.mod().name())
                         .orElse(target);
+            case MAINTENANCE -> tr.t("controlcore.history.what.maintenance");
+            case ANNOUNCEMENT -> announcements.what(target, tr);
         };
     }
 
@@ -411,6 +423,9 @@ public final class HistoryEditor {
                         "edit",
                         rule.edit().isEmpty() ? fallback : rule.edit());
             }
+            case MAINTENANCE ->
+                tr.t("on".equals(value) ? "controlcore.history.value.on" : "controlcore.history.value.off");
+            case ANNOUNCEMENT -> announcements.shown(target, value, tr);
             case MOD ->
                 tr.t(Boolean.parseBoolean(value) ? "controlcore.history.value.on" : "controlcore.history.value.off");
             case BAN -> bans.shown(value, tr);

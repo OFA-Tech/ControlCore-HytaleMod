@@ -17,7 +17,9 @@ public enum ActionKind {
     COMMAND_PLAYER(true),
     PROFILE(false),
     SET_SETTING(false),
-    MOD_ACTION(false);
+    MOD_ACTION(false),
+    MAINTENANCE_ON(false),
+    MAINTENANCE_OFF(false);
 
     private final boolean needsPlayer;
 

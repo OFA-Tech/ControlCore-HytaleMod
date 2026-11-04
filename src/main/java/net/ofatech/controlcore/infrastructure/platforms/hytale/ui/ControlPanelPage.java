@@ -164,11 +164,13 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 ? content.diagnostics().map(view -> new HealthTab(view, tr, hooks))
                 : Optional.empty();
         this.automationTab = shownSections.includeServerSettings()
-                ? content.automation().map(view -> new AutomationTab(view, tr, hooks))
+                ? (content.automation().isPresent() || content.announcements().isPresent()
+                        ? Optional.of(new AutomationTab(content.automation(), content.announcements(), tr, hooks))
+                        : Optional.empty())
                 : Optional.empty();
         this.historyMode = historyTab.isPresent() ? HistoryMode.CHANGES : HistoryMode.SNAPSHOTS;
         this.playersTab = shownSections.includeServerSettings()
-                ? content.players().map(view -> new PlayersTab(view, tr, hooks, log))
+                ? content.players().map(view -> new PlayersTab(view, content.maintenance(), tr, hooks, log))
                 : Optional.empty();
         this.viewerId = PlayerId.of(player.getUuid());
         this.viewerName = player.getUsername();

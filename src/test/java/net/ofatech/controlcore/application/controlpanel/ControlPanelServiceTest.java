@@ -193,6 +193,30 @@ class ControlPanelServiceTest {
                 bans,
                 texts,
                 net.ofatech.controlcore.domain.ports.game.ChatGate.NONE);
+        var maintenance = new net.ofatech.controlcore.application.maintenance.MaintenanceService(
+                new net.ofatech.controlcore.fakes.FakeMaintenanceStore(),
+                net.ofatech.controlcore.domain.ports.game.JoinGate.NONE,
+                players,
+                playerAdminPort,
+                (player, node) -> true,
+                policy,
+                serverConfig,
+                changes,
+                new FakeClock(),
+                texts,
+                log);
+        var placeholders = new net.ofatech.controlcore.application.automation.ServerPlaceholders(
+                players, new FakeServerHealth(), new FakeClock());
+        var announcements = new net.ofatech.controlcore.application.automation.AnnouncementService(
+                new net.ofatech.controlcore.fakes.FakeAnnouncementStore(),
+                notifications,
+                placeholders,
+                players,
+                policy,
+                (player, node) -> true,
+                changes,
+                new FakeClock(),
+                texts);
         var history = new HistoryEditor(
                 changes,
                 registry,
@@ -204,7 +228,9 @@ class ControlPanelServiceTest {
                 TestTexts.of(registry, players),
                 bans,
                 new net.ofatech.controlcore.application.players.PlayerHistory(moderation, playerAccess, control, texts),
-                new FakeClock());
+                new FakeClock(),
+                maintenance,
+                announcements);
         var snapshots = new SnapshotService(
                 new FakeSnapshotStore(),
                 registry,
@@ -220,7 +246,8 @@ class ControlPanelServiceTest {
                 history,
                 TestTexts.of(registry, players),
                 new FakeClock(),
-                log);
+                log,
+                announcements);
         var profiles = new ProfileService(
                 snapshots, serverConfig, new FakeActiveProfileStore(), TestTexts.of(registry, players), log);
         var automation = new AutomationService(
@@ -240,7 +267,10 @@ class ControlPanelServiceTest {
                 new FakeClock(),
                 TestTexts.of(registry, players),
                 log,
-                new Recipients(players, policy, notifications));
+                new Recipients(players, policy, notifications),
+                placeholders,
+                maintenance,
+                announcements);
         var keymaps = new KeymapsEditor(keyRegistry, TestTexts.of(registry, players), modNames);
         var permissionRules = new PermissionsEditor(registry, serverConfig, policy);
         return new ControlPanelService(
@@ -280,7 +310,9 @@ class ControlPanelServiceTest {
                         permissionRules,
                         snapshots,
                         TestTexts.of(registry, players)),
-                new net.ofatech.controlcore.application.hud.HudPrefs(hud));
+                new net.ofatech.controlcore.application.hud.HudPrefs(hud),
+                maintenance,
+                announcements);
     }
 
     @Test

@@ -1,5 +1,6 @@
 package net.ofatech.controlcore.application.runtime;
 
+import net.ofatech.controlcore.api.AnnouncementsApi;
 import net.ofatech.controlcore.api.DefaultsApi;
 import net.ofatech.controlcore.api.HealthApi;
 import net.ofatech.controlcore.api.HistoryApi;
@@ -8,6 +9,7 @@ import net.ofatech.controlcore.api.PermissionsApi;
 import net.ofatech.controlcore.api.PlayersApi;
 import net.ofatech.controlcore.api.ProfilesApi;
 import net.ofatech.controlcore.api.RulesApi;
+import net.ofatech.controlcore.api.ServerApi;
 import net.ofatech.controlcore.api.SnapshotsApi;
 
 public record ServerApis(
@@ -19,4 +21,6 @@ public record ServerApis(
         HealthApi health,
         RulesApi rules,
         PlayersApi players,
-        DefaultsApi defaults) {}
+        DefaultsApi defaults,
+        ServerApi server,
+        AnnouncementsApi announcements) {}

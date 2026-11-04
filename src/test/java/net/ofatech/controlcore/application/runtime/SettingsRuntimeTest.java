@@ -76,6 +76,7 @@ class SettingsRuntimeTest extends RuntimeTestBase {
         platform.commands.run("cc-perm", admin, Map.of("target", welcome, "side", "view", "node", "default"));
         platform.deniedNodes.add("players");
         platform.deniedNodes.add("bans");
+        platform.deniedNodes.add("announcements");
         assertThat(platform.commands.run(COMMAND, moderator, Map.of()).error().code())
                 .isEqualTo("ControlPanel.Forbidden");
     }

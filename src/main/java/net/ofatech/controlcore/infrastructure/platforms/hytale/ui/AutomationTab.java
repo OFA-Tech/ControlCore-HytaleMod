@@ -3,6 +3,7 @@ package net.ofatech.controlcore.infrastructure.platforms.hytale.ui;
 import com.hypixel.hytale.protocol.packets.interface_.CustomUIEventBindingType;
 import com.hypixel.hytale.server.core.ui.DropdownEntryInfo;
 import com.hypixel.hytale.server.core.ui.LocalizableString;
+import com.hypixel.hytale.server.core.ui.Value;
 import com.hypixel.hytale.server.core.ui.builder.EventData;
 import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
@@ -12,6 +13,7 @@ import java.util.Locale;
 import java.util.Optional;
 import net.ofatech.controlcore.application.automation.AutomationService;
 import net.ofatech.controlcore.domain.model.automation.ActionKind;
+import net.ofatech.controlcore.domain.model.automation.AnnouncementsView;
 import net.ofatech.controlcore.domain.model.automation.AutomationView;
 import net.ofatech.controlcore.domain.model.automation.ConditionKind;
 import net.ofatech.controlcore.domain.model.automation.Trigger;
@@ -21,6 +23,9 @@ import net.ofatech.controlcore.domain.result.Result;
 final class AutomationTab {
 
     static final int LIST_HEIGHT = 560;
+    static final int MODES_HEIGHT = 40;
+    private static final String MODE_RULES = "AutomationModeRules";
+    private static final String MODE_ANNOUNCEMENTS = "AutomationModeAnnouncements";
     private static final int FORM_BASE = 300;
     private static final int STEP_HEIGHT = 42;
 
@@ -62,7 +67,9 @@ final class AutomationTab {
         void resize(String element, int height, UICommandBuilder update);
     }
 
-    private final AutomationView view;
+    private final Optional<AutomationView> rules;
+    private final Optional<AnnouncementsSection> announcements;
+    private boolean showingRules;
     private final Translator tr;
     private final Host host;
     private boolean formOpen;
@@ -72,14 +79,41 @@ final class AutomationTab {
     private boolean noticeOpen;
     private AutomationView.Notice notice = new AutomationView.Notice("everyone", "toast", "info", "", "");
 
-    AutomationTab(AutomationView view, Translator tr, Host host) {
-        this.view = view;
+    AutomationTab(Optional<AutomationView> rules, Optional<AnnouncementsView> announcements, Translator tr, Host host) {
+        this.rules = rules;
+        this.announcements = announcements.map(view -> new AnnouncementsSection(view, tr, host, rules.isPresent()));
+        this.showingRules = rules.isPresent();
         this.tr = tr;
         this.host = host;
     }
 
     void build(UICommandBuilder commands, UIEventBuilder events) {
-        commands.set("#AutomationOff.Visible", !view.globallyOn());
+        showMode(commands);
+        for (String mode : List.of(MODE_RULES, MODE_ANNOUNCEMENTS)) {
+            events.addEventBinding(
+                    CustomUIEventBindingType.Activating, "#" + mode, EventData.of(PanelAction.KEY, mode));
+        }
+        announcements.ifPresent(section -> section.build(commands, events));
+        if (rules.isPresent()) {
+            buildRules(commands, events);
+        }
+    }
+
+    private void showMode(UICommandBuilder commands) {
+        boolean both = rules.isPresent() && announcements.isPresent();
+        commands.set("#AutomationModeButtons.Visible", both);
+        commands.set("#RulesPanel.Visible", showingRules);
+        commands.set("#AnnouncePanel.Visible", !showingRules);
+        commands.set("#AutomationModeRules.Style", segment(showingRules));
+        commands.set("#AutomationModeAnnouncements.Style", segment(!showingRules));
+    }
+
+    private static Value<String> segment(boolean on) {
+        return Value.ref(ControlPanelPage.LAYOUT, on ? "SegmentOnStyle" : "SegmentStyle");
+    }
+
+    private void buildRules(UICommandBuilder commands, UIEventBuilder events) {
+        commands.set("#AutomationOff.Visible", !view().globallyOn());
         commands.set("#AutomationOffText.Text", tr.t("controlcore.panel.automation.globally_off"));
         commands.set("#RuleTrigger.Entries", options("trigger", ids(Trigger.values()), false));
         commands.set("#RuleCondition.Entries", options("condition", ids(ConditionKind.values()), true));
@@ -99,7 +133,7 @@ final class AutomationTab {
         }
         buildSteps(commands, events);
         buildNotice(commands, events);
-        List<AutomationView.Entry> entries = view.list();
+        List<AutomationView.Entry> entries = view().list();
         commands.set("#RuleEmpty.Visible", entries.isEmpty());
         for (int index = 0; index < entries.size(); index++) {
             AutomationView.Entry entry = entries.get(index);
@@ -146,7 +180,7 @@ final class AutomationTab {
             commands.set(row + " #Kind.Entries", kinds);
             commands.set(row + " #Kind.Value", step.kind());
             commands.set(row + " #Value.Value", step.value());
-            commands.set(row + " #Value.PlaceholderText", view.hint("action", step.kind()));
+            commands.set(row + " #Value.PlaceholderText", view().hint("action", step.kind()));
             commands.set(row + " #Up.Visible", index > 0);
             commands.set(row + " #Down.Visible", index < steps.size() - 1);
             commands.set(row + " #Remove.Visible", steps.size() > 1);
@@ -165,7 +199,7 @@ final class AutomationTab {
     }
 
     private void buildNotice(UICommandBuilder commands, UIEventBuilder events) {
-        List<AutomationView.Choice> choices = view.noticeTargets();
+        List<AutomationView.Choice> choices = view().noticeTargets();
         List<DropdownEntryInfo> targets = new ArrayList<>();
         for (AutomationView.Choice choice : choices) {
             targets.add(new DropdownEntryInfo(LocalizableString.fromString(choice.label()), choice.id()));
@@ -213,7 +247,7 @@ final class AutomationTab {
                 action.form("NoticeStyle").isEmpty() ? notice.style() : action.form("NoticeStyle"),
                 action.form("NoticeSeconds"),
                 action.form("NoticeText"));
-        Result<String> result = view.send(notice);
+        Result<String> result = view().send(notice);
         UICommandBuilder update = new UICommandBuilder();
         if (result.isSuccess()) {
             notice = new AutomationView.Notice(notice.target(), notice.kind(), notice.style(), notice.seconds(), "");
@@ -249,6 +283,19 @@ final class AutomationTab {
     }
 
     boolean handle(PanelAction action) {
+        if (MODE_RULES.equals(action.name()) || MODE_ANNOUNCEMENTS.equals(action.name())) {
+            showingRules = rules.isPresent() && MODE_RULES.equals(action.name());
+            UICommandBuilder update = new UICommandBuilder();
+            showMode(update);
+            host.send(update);
+            return true;
+        }
+        if (announcements.isPresent() && announcements.get().handle(action)) {
+            return true;
+        }
+        if (rules.isEmpty()) {
+            return false;
+        }
         switch (action.name()) {
             case NEW -> {
                 editing = Optional.empty();
@@ -263,7 +310,7 @@ final class AutomationTab {
                 host.send(update);
             }
             case EDIT -> {
-                Optional<AutomationView.Form> form = view.form(action.id);
+                Optional<AutomationView.Form> form = view().form(action.id);
                 if (form.isPresent()) {
                     editing = Optional.of(action.id);
                     draft = form.get();
@@ -276,8 +323,8 @@ final class AutomationTab {
             case PICKED -> picked(action);
             case ADD_STEP, STEP_UP, STEP_DOWN, STEP_REMOVE -> changeSteps(action);
             case SAVE -> save(action);
-            case TOGGLE -> refreshAfter(view.toggle(action.id));
-            case TEST -> footer(view.test(action.id));
+            case TOGGLE -> refreshAfter(view().toggle(action.id));
+            case TEST -> footer(view().test(action.id));
             case REMOVE -> remove(action.id);
             case NOTICE_OPEN, NOTICE_CLOSE -> {
                 noticeOpen = NOTICE_OPEN.equals(action.name());
@@ -303,10 +350,10 @@ final class AutomationTab {
         String item = action.item == null ? "" : action.item;
         String value = action.value == null ? "" : action.value;
         if (item.matches("\\d+")) {
-            update.set(STEPS + "[" + item + "] #Value.PlaceholderText", view.hint("action", value));
+            update.set(STEPS + "[" + item + "] #Value.PlaceholderText", view().hint("action", value));
         } else {
             String kind = item.equals("Trigger") ? "trigger" : "condition";
-            String hint = view.hint(kind, value);
+            String hint = view().hint(kind, value);
             update.set("#Rule" + item + "Value.PlaceholderText", hint);
             update.set("#Rule" + item + "Value.Visible", !hint.isEmpty());
         }
@@ -346,7 +393,7 @@ final class AutomationTab {
     private void save(PanelAction action) {
         AutomationView.Form form = captured(action);
         draft = form;
-        Result<String> result = view.save(editing, form);
+        Result<String> result = view().save(editing, form);
         if (result.isSuccess()) {
             formOpen = false;
             editing = Optional.empty();
@@ -354,6 +401,10 @@ final class AutomationTab {
             host.rebuild();
         }
         footer(result);
+    }
+
+    private AutomationView view() {
+        return rules.orElseThrow();
     }
 
     private AutomationView.Form captured(PanelAction action) {
@@ -386,7 +437,7 @@ final class AutomationTab {
             return;
         }
         armedRemove = Optional.empty();
-        refreshAfter(view.remove(id));
+        refreshAfter(view().remove(id));
     }
 
     private void refreshAfter(Result<String> result) {
@@ -427,12 +478,13 @@ final class AutomationTab {
         commands.set("#NoticeForm.Visible", noticeOpen);
         commands.set("#NoticeOpen.Visible", !noticeOpen);
         int form = formOpen ? FORM_BASE + STEP_HEIGHT * draft.actions().size() : 0;
-        int height = LIST_HEIGHT - form - (noticeOpen ? NOTICE_HEIGHT : 0);
-        host.resize(LIST, height < LIST_HEIGHT ? Math.max(120, height) : LIST_HEIGHT, commands);
+        int full = LIST_HEIGHT - (announcements.isPresent() ? MODES_HEIGHT : 0);
+        int height = full - form - (noticeOpen ? NOTICE_HEIGHT : 0);
+        host.resize(LIST, height < full ? Math.max(120, height) : full, commands);
     }
 
     private void hints(UICommandBuilder commands, String field, String kind, String value) {
-        String hint = view.hint(kind, value);
+        String hint = view().hint(kind, value);
         commands.set("#Rule" + field + "Value.PlaceholderText", hint);
         commands.set("#Rule" + field + "Value.Visible", !hint.isEmpty());
     }

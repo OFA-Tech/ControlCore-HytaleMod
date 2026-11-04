@@ -107,7 +107,13 @@ public interface SnapshotsApi {
         /** Which mods are on; admins only. */
         MODS,
         /** Players' whitelist, groups, mutes and freezes. */
-        PLAYERS;
+        PLAYERS,
+        /**
+         * Rotating announcements and their settings; restoring them needs admin rights.
+         *
+         * @since API 2.5.0
+         */
+        ANNOUNCEMENTS;
 
         /**
          * Tells whether only admins may save and restore this part.

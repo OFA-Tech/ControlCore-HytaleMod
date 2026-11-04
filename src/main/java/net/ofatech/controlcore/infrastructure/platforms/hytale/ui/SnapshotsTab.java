@@ -47,8 +47,8 @@ final class SnapshotsTab {
     private final SnapshotsView view;
     private final Translator tr;
     private final Host host;
-    private final Set<Part> parts =
-            EnumSet.of(Part.CONFIG, Part.WORLDS, Part.SETTINGS, Part.KEYS, Part.PERMISSIONS, Part.MODS);
+    private final Set<Part> parts = EnumSet.of(
+            Part.CONFIG, Part.WORLDS, Part.SETTINGS, Part.KEYS, Part.PERMISSIONS, Part.MODS, Part.ANNOUNCEMENTS);
     private String name = "";
     private String mod = ALL_MODS;
     private Optional<String> previewing = Optional.empty();

@@ -5,12 +5,14 @@ import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import net.ofatech.controlcore.domain.guard.Guard;
+import net.ofatech.controlcore.domain.model.automation.AnnouncementsView;
 import net.ofatech.controlcore.domain.model.automation.AutomationView;
 import net.ofatech.controlcore.domain.model.diagnostics.DiagnosticsView;
 import net.ofatech.controlcore.domain.model.history.HistoryView;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBindEditor;
 import net.ofatech.controlcore.domain.model.mods.ModsView;
 import net.ofatech.controlcore.domain.model.players.PlayersView;
+import net.ofatech.controlcore.domain.model.server.MaintenanceView;
 import net.ofatech.controlcore.domain.model.settings.DefaultsView;
 import net.ofatech.controlcore.domain.model.settings.PermissionsView;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
@@ -45,7 +47,9 @@ public record ControlPanelContent(
         KeyDetection keyDetection,
         Supplier<PanelRights> rights,
         BooleanSupplier stillAdmin,
-        DefaultsView defaults) {
+        DefaultsView defaults,
+        Optional<MaintenanceView> maintenance,
+        Optional<AnnouncementsView> announcements) {
 
     public ControlPanelContent {
         Guard.notNull(server, "server");
@@ -71,5 +75,7 @@ public record ControlPanelContent(
         Guard.notNull(rights, "rights");
         Guard.notNull(stillAdmin, "stillAdmin");
         Guard.notNull(defaults, "defaults");
+        Guard.notNull(maintenance, "maintenance");
+        Guard.notNull(announcements, "announcements");
     }
 }

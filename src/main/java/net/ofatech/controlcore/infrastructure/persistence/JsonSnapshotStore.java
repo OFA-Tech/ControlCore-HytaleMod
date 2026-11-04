@@ -122,6 +122,7 @@ public final class JsonSnapshotStore implements SnapshotStore {
         private Map<String, Rule> permissions;
         private Map<String, Boolean> modsEnabled;
         private Map<String, Map<String, String>> players;
+        private JsonAnnouncementStore.FileForm announcements;
         private boolean profile;
         private boolean partial;
 
@@ -148,6 +149,9 @@ public final class JsonSnapshotStore implements SnapshotStore {
             form.modsEnabled = new TreeMap<>(snapshot.modsEnabled());
             form.players = new TreeMap<>();
             snapshot.players().forEach((player, values) -> form.players.put(player, sorted(values)));
+            form.announcements = snapshot.announcements()
+                    .map(JsonAnnouncementStore.FileForm::of)
+                    .orElse(null);
             form.profile = snapshot.profile();
             form.partial = snapshot.partial();
             return form;
@@ -177,6 +181,7 @@ public final class JsonSnapshotStore implements SnapshotStore {
                     rules,
                     modsEnabled,
                     players,
+                    Optional.ofNullable(announcements).map(JsonAnnouncementStore.FileForm::toAnnouncements),
                     profile,
                     partial);
         }

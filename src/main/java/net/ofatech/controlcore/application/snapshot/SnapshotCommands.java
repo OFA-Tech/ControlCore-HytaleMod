@@ -40,8 +40,14 @@ final class SnapshotCommands {
                 continue;
             }
             if (part.equalsIgnoreCase("all")) {
-                parts.addAll(
-                        EnumSet.of(Part.CONFIG, Part.WORLDS, Part.SETTINGS, Part.KEYS, Part.PERMISSIONS, Part.MODS));
+                parts.addAll(EnumSet.of(
+                        Part.CONFIG,
+                        Part.WORLDS,
+                        Part.SETTINGS,
+                        Part.KEYS,
+                        Part.PERMISSIONS,
+                        Part.MODS,
+                        Part.ANNOUNCEMENTS));
                 continue;
             }
             if (part.toLowerCase(java.util.Locale.ROOT).startsWith("settings:")) {
@@ -60,7 +66,7 @@ final class SnapshotCommands {
                         Text.key(
                                         "controlcore.errors.snapshots.unknown_part",
                                         "'{part}' is not a part. Use all, config, settings, settings:<mod>/<mod>,"
-                                                + " keys, permissions, mods or players.")
+                                                + " keys, permissions, mods, players or announcements.")
                                 .with("part", part)));
             }
             parts.add(found.get());

@@ -239,6 +239,46 @@ final class PanelAction {
                     (action, value) -> action.form.put("NoticeText", value),
                     action -> action.form.get("NoticeText"))
             .add()
+            .append(
+                    new KeyedCodec<>("@MaintenanceMessage", Codec.STRING),
+                    (action, value) -> action.form.put("MaintenanceMessage", value),
+                    action -> action.form.get("MaintenanceMessage"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@MaintenanceMotd", Codec.STRING),
+                    (action, value) -> action.form.put("MaintenanceMotd", value),
+                    action -> action.form.get("MaintenanceMotd"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@MaintenanceOffAfter", Codec.STRING),
+                    (action, value) -> action.form.put("MaintenanceOffAfter", value),
+                    action -> action.form.get("MaintenanceOffAfter"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@AnnounceInterval", Codec.STRING),
+                    (action, value) -> action.form.put("AnnounceInterval", value),
+                    action -> action.form.get("AnnounceInterval"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@AnnounceOrder", Codec.STRING),
+                    (action, value) -> action.form.put("AnnounceOrder", value),
+                    action -> action.form.get("AnnounceOrder"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@AnnounceChannel", Codec.STRING),
+                    (action, value) -> action.form.put("AnnounceChannel", value),
+                    action -> action.form.get("AnnounceChannel"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@AnnounceMin", Codec.STRING),
+                    (action, value) -> action.form.put("AnnounceMin", value),
+                    action -> action.form.get("AnnounceMin"))
+            .add()
+            .append(
+                    new KeyedCodec<>("@AnnounceText", Codec.STRING),
+                    (action, value) -> action.form.put("AnnounceText", value),
+                    action -> action.form.get("AnnounceText"))
+            .add()
             .build();
 
     String name;

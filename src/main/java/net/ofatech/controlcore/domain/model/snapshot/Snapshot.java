@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 import net.ofatech.controlcore.domain.guard.Guard;
+import net.ofatech.controlcore.domain.model.automation.Announcements;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBind;
 import net.ofatech.controlcore.domain.model.settings.SettingPermission;
 import net.ofatech.controlcore.domain.model.text.Text;
@@ -30,6 +31,7 @@ public record Snapshot(
         Map<String, SettingPermission> permissions,
         Map<String, Boolean> modsEnabled,
         Map<String, Map<String, String>> players,
+        Optional<Announcements> announcements,
         boolean profile,
         boolean partial) {
 
@@ -40,7 +42,8 @@ public record Snapshot(
         KEYS,
         PERMISSIONS,
         MODS,
-        PLAYERS;
+        PLAYERS,
+        ANNOUNCEMENTS;
 
         public String id() {
             return name().toLowerCase(Locale.ROOT);
@@ -73,6 +76,7 @@ public record Snapshot(
         permissions = permissions == null ? Map.of() : Map.copyOf(permissions);
         modsEnabled = modsEnabled == null ? Map.of() : Map.copyOf(modsEnabled);
         players = players == null ? Map.of() : Map.copyOf(players);
+        announcements = announcements == null ? Optional.empty() : announcements;
     }
 
     public boolean has(Part part) {
@@ -94,6 +98,7 @@ public record Snapshot(
                 permissions,
                 modsEnabled,
                 players,
+                announcements,
                 isProfile,
                 partial);
     }

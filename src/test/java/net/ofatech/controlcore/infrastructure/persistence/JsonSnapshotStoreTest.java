@@ -40,6 +40,14 @@ class JsonSnapshotStoreTest {
                 Map.of("setting:server:motd", SettingPermission.of("staff.view", "staff.edit")),
                 Map.of("Test:Mod", false),
                 Map.of("3a030bb2-462f-4acd-93e2-7d2f76cbba79", Map.of("keybind:controlcore:open-preferences", "F")),
+                Optional.of(new net.ofatech.controlcore.domain.model.automation.Announcements(
+                        true,
+                        5,
+                        net.ofatech.controlcore.domain.model.automation.Announcements.Order.RANDOM,
+                        net.ofatech.controlcore.domain.model.automation.Announcements.Channel.TOAST,
+                        2,
+                        List.of(new net.ofatech.controlcore.domain.model.automation.Announcements.Item(
+                                "1", "Vote!", false)))),
                 true,
                 false);
 
