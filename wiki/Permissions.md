@@ -21,6 +21,9 @@ All nodes start with **`ofatech.controlcore`**. Operators have every node.
 | `ofatech.controlcore.players.mute` | mute and unmute players |
 | `ofatech.controlcore.players.freeze` | freeze and unfreeze players |
 | `ofatech.controlcore.players.inventory` | see a player's inventory on their Details page |
+| `ofatech.controlcore.maintenance` | turn maintenance mode on and off (`/cc-maintenance`, the maintenance bar in Players); may also join during maintenance |
+| `ofatech.controlcore.maintenance.join` | join, and stay online, while maintenance mode is on |
+| `ofatech.controlcore.announcements` | manage rotating announcements (Automation -> Announcements, `/cc-announce-*`) |
 
 Players without any node can still use `/prefs`, their own preferences and keys, `/cc-keys`, `/cc-settings` (showing
 only what they may see) and the Mods tab.

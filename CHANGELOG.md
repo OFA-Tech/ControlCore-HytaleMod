@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Added
+- **Maintenance mode**: a bar in Server Configs -> Players (Whitelisted filter) and `/cc-maintenance <on|off|status>
+  [--message=] [--motd=] [--for=]`. Turning it on (press twice in the panel) kicks every online player who is not an
+  admin and lacks `ofatech.controlcore.maintenance.join`, and refuses them until it is off. Optional message, a MOTD
+  shown while it is on (the old one comes back after) and an automatic end (15 min to 4 h, or `--for=30m`). Needs
+  `ofatech.controlcore.maintenance`; recorded in History, where rolling it back turns it the other way. New automation
+  actions **Turn maintenance on** (value: the message) and **Turn maintenance off**.
+- **Rotating announcements**: a **Rules | Announcements** switch in the Automation tab, and `/cc-announce-list`,
+  `-add`, `-remove`, `-toggle`, `-move`, `-now` and `-set`. Messages sent to everyone every N minutes, in turn or at
+  random (never the same twice in a row), in chat, as a toast or on the warning bar, only from a number of players
+  online; each can be turned off, moved and sent now. Placeholders as in rules. Needs
+  `ofatech.controlcore.announcements` (admins have it); every change is in History with rollback, and snapshots can hold
+  them (new part `announcements`, restoring it needs an admin).
+- **API 2.5.0** (additive; mods built for 2.0.0 and later keep working): `server()` with `maintenance()` and
+  `setMaintenance(on, MaintenanceOptions)`, `announcements()` with `list`, `add`, `remove`, `setEnabled`, `move`,
+  `settings`, `setSettings`, `sendNow` and `send`, both with `actingFor(player)`; `SnapshotsApi.Part.ANNOUNCEMENTS`.
+
 ## 0.20.0 - 2026-11-03
 
 Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.5. Everything the panel does now

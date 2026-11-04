@@ -81,6 +81,7 @@ The console counts as an admin; `/cc-tp` and `/cc-bring` need a player.
 | `/cc-whitelist` | `ofatech.controlcore.players.whitelist` | list the whitelist, 20 at most |
 | `/cc-whitelist-add <player>` / `/cc-whitelist-remove <player>` | `ofatech.controlcore.players.whitelist` | add a player to the whitelist or remove one |
 | `/cc-whitelist-require <on\|off>` | `ofatech.controlcore.players.whitelist` | whether joining needs the whitelist (config.json `RequireJoinPermission`, live, in History) |
+| `/cc-maintenance <on\|off\|status> [--message=] [--motd=] [--for=]` | `ofatech.controlcore.maintenance` (`status`: anyone) | maintenance mode: `on` kicks every online player who isn't an admin and lacks `ofatech.controlcore.maintenance.join` and refuses them until it is off; `--message=` is what they see (one word, see the top; empty for the default), `--motd=` replaces the MOTD while it is on, `--for=` turns it off by itself (`30m`, `2h`, `never`). In History |
 | `/cc-op <player>` / `/cc-deop <player>` | admins | make or remove an operator |
 | `/cc-group <add\|remove> <player> <group>` | admins | add a player to a permission group or remove them |
 | `/cc-group set <player> <group>` | admins | make that group the player's only group (one History line per group changed) |
@@ -180,6 +181,20 @@ Ids for triggers, conditions and actions are the panel's choices in lower case w
 /cc-rule-edit welcome cooldown=60; on=no
 ```
 
+## Announcements
+
+Rotating announcements, also in the panel's **Automation** tab, **Announcements** view (see [Automation](Automation)).
+Admins or `ofatech.controlcore.announcements`.
+
+| Command | Does |
+|---|---|
+| `/cc-announce-list` | list the announcements with their ids, and the settings |
+| `/cc-announce-add <text>` | add an announcement at the end, turned on; placeholders such as `{online}` work |
+| `/cc-announce-remove <id>` | delete an announcement |
+| `/cc-announce-toggle <on\|off> [--id=]` | turn the rotation on or off, or with `--id=` one announcement |
+| `/cc-announce-move <id> <up\|down>` | move an announcement one place up or down |
+| `/cc-announce-now [--id=]` | send the next announcement now, or with `--id=` that one |
+| `/cc-announce-set [--interval=] [--order=] [--channel=] [--min-players=]` | minutes between announcements (1 to 1440), `in-turn` or `random`, `chat`, `toast` or `warning`, and the players online needed (0 for always) |
 ## Diagnostics
 
 | Command | Who | Does |

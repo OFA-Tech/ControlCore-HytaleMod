@@ -141,6 +141,22 @@ Ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`.
 | Built-in triggers, conditions and actions | Rule form dropdowns | `/cc-rule-add` lists them for an unknown id | `rules().triggers`, `rules().conditions`, `rules().actions` |
 | Triggers and actions mods offer | Rule form dropdowns | `/cc-rules` | `rules().modTriggers`, `rules().modActions` |
 
+## Announcements
+
+Rotating announcements, in the Automation tab's **Announcements** view. Players need
+`ofatech.controlcore.announcements` (or admin); the API acts with full rights or a player's through `actingFor`.
+
+| Operation | Panel (where) | Command | API method |
+|---|---|---|---|
+| List the announcements and settings | Automation -> Announcements | `/cc-announce-list` | `announcements().list`, `announcements().settings` |
+| Add an announcement | Automation -> Announcements: text, Add announcement | `/cc-announce-add <text>` | `announcements().add` |
+| Delete an announcement | Announcements row: Remove (press twice) | `/cc-announce-remove <id>` | `announcements().remove` |
+| Turn one announcement on or off | Announcements row: Turn on / Turn off | `/cc-announce-toggle <on or off> --id=<id>` | `announcements().setEnabled` |
+| Move an announcement | Announcements row: Up / Down | `/cc-announce-move <id> <up or down>` | `announcements().move` |
+| Turn announcements on or off | Announcements: Turn announcements on / off | `/cc-announce-toggle <on or off>` | `announcements().setSettings` |
+| Interval, order, channel, minimum players | Announcements: fields, Save settings | `/cc-announce-set [--interval=] [--order=] [--channel=] [--min-players=]` | `announcements().setSettings` |
+| Send the next one now | - (each row has Send now) | `/cc-announce-now` | `announcements().sendNow` |
+| Send one announcement now | Announcements row: Send now | `/cc-announce-now --id=<id>` | `announcements().send` |
 ## Players & moderation
 
 `<player>` is a name or UUID.
@@ -165,6 +181,9 @@ Ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`.
 | Add to or remove from the whitelist | + Player action | `/cc-whitelist-add <player>`, `/cc-whitelist-remove <player>` | `players().whitelist` |
 | List the whitelist | Players: Whitelisted filter | `/cc-whitelist` | `players().list` (`WHITELISTED`) |
 | Require the whitelist to join | Players, Whitelisted filter: Require whitelist / Stop requiring | `/cc-whitelist-require <on or off>` | `players().whitelistRequired`, `players().requireWhitelist` |
+| Maintenance mode status | Players, Whitelisted filter: maintenance bar | `/cc-maintenance status` | `server().maintenance` |
+| Turn maintenance mode on (kicks who may not join) | Players, Whitelisted filter: message, MOTD, turn off after, Maintenance on (press twice) | `/cc-maintenance on [--message=] [--motd=] [--for=]` | `server().setMaintenance` (`true`) |
+| Turn maintenance mode off | Players, Whitelisted filter: Maintenance off | `/cc-maintenance off` | `server().setMaintenance` (`false`) |
 | Make or remove an operator | + Player action: Make / Remove operator | `/cc-op <player>`, `/cc-deop <player>` | `players().operator` |
 | List groups and their permissions | + Player action: group dropdown | `/cc-groups` | `players().groups`, `players().groupPermissions` |
 | Add to or remove from a group | + Player action | `/cc-group <add or remove> <player> <group>` | `players().group` |

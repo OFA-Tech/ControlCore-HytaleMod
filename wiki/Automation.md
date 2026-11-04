@@ -65,6 +65,8 @@ The value field shows what it expects for the option you picked.
 | Switch to a profile | `@vanilla`, `@pvp`, `@creative`, `@event` or a profile's name |
 | Change a setting | `id=value`, for example `server:motd=Event tonight!` |
 | Mod action | `mod:action`, optionally followed by a value; listed by `/cc-rules` |
+| Turn maintenance on | the message kicked and refused players see; empty for the default (kicks everyone who may not join, see [Commands](Commands) `/cc-maintenance`) |
+| Turn maintenance off | nothing |
 
 Placeholders work in every value: `{player}`, `{world}`, `{online}`, `{max}`, `{tps}`, `{time}`, `{rule}`, plus
 `{setting}`, `{old}` and `{value}` for "A setting changes" and whatever a mod's trigger adds.
@@ -96,6 +98,24 @@ trigger, condition and cooldown), **Edit** and **Remove** (press twice). The ser
 
 Rules are saved in `mods/OFATech_ControlCore/AutomationRules.json`.
 
+## Announcements
+
+The **Rules | Announcements** switch at the top of the Automation tab opens rotating announcements: messages sent to
+everyone every few minutes. Admins, and players with `ofatech.controlcore.announcements` (they see only this view),
+manage them.
+
+- **Turn announcements on/off** starts or stops the rotation.
+- **Every N minutes** (1 to 1440), the **order** (*in turn*, or *random*: never the same one twice in a row), the
+  **channel** (*chat*, *toast* or *warning bar*) and **Min. players online** (0 for always), then **Save settings**.
+  When fewer players are online, that turn is skipped.
+- Write a text and press **Add announcement**. Each row has **Up**, **Down**, **Turn on/off** (announcements that
+  are off are skipped), **Send now** and **Remove** (press twice).
+
+Texts take the same placeholders and colours as a rule's messages (`{online}`, `{max}`, `{time}`, `{tps}`). For a toast
+write `title | text`, optionally starting with `success:`, `warning:` or `error:`; the warning bar stays until the
+next announcement. Every change is in History (rollback works), and snapshots can hold them (part
+`announcements`; restoring needs an admin). Saved in `mods/OFATech_ControlCore/Announcements.json`. Commands:
+`/cc-announce-*` (see [Commands](Commands)).
 ## Examples
 
 - Welcome new players: *A player joins for the first time* -> *Title for the player* `Welcome {player}! | Read /rules`

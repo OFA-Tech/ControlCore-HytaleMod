@@ -78,6 +78,7 @@ net/ofatech/controlcore/
 │   │                                  /open-admin-config, /prefs, /cc-config
 │   ├── hud/                           HudService (HudApi), HudModule, join and leave handlers
 │   ├── mods/                          ModsEditor, /cc-mods
+│   ├── maintenance/                   MaintenanceService, /cc-maintenance, auto-off task
 │   ├── welcome/                       WelcomeSettings, WelcomeMessageHandler
 │   └── persistence/                   PlayerDataFlushTask
 └── infrastructure/

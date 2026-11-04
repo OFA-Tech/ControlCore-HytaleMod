@@ -311,6 +311,14 @@ lists the player may not see are empty. `players().teleportTo` and `bring` move 
 `actingFor`. The input probe and "Detect key" are not part of the API. Details:
 [Server management API](https://github.com/OFA-Tech/ControlCore-HytaleMod/wiki/Server-Management-API).
 
+## Maintenance and announcements (API 2.5.0)
+
+`server()` reads and switches maintenance mode (`maintenance()`, `setMaintenance(on, MaintenanceOptions)`); turning it
+on kicks every online player who is not an admin and lacks `ofatech.controlcore.maintenance.join`. `announcements()`
+manages rotating announcements (`list`, `add`, `remove`, `setEnabled`, `move`, `settings`/`setSettings`, `sendNow`,
+`send`). Both have `actingFor(playerId)` like the other server sections; the nodes are
+`ofatech.controlcore.maintenance` and `ofatech.controlcore.announcements`. `SnapshotsApi.Part.ANNOUNCEMENTS` is new.
+
 ## Using it from another mod
 
 1. **Dependency.** Releases are published to GitHub Packages. GitHub asks for a login even for public

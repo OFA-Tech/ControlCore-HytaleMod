@@ -98,7 +98,12 @@ Operators and groups can only be changed by admins, because adding someone to `h
 With the **Whitelisted** filter, a bar above the list shows whether joining needs the whitelist, with a **Require
 whitelist** / **Stop requiring** button (players with the whitelist right). It is the **Require join permission** key
 in config.json, applies at once and shows up in History as that key. **Set as only group** is recorded as one History
-line per group added or removed; nobody can take their own operator group away this way. All of these changes are in
+line per group added or removed; nobody can take their own operator group away this way. Under it, the
+**maintenance bar** (admins and `ofatech.controlcore.maintenance`) shows "Maintenance on since 18:00 - 3 players kept"
+or that it is off, with fields for the message kicked players see, a MOTD to show while it is on and when to turn it
+off by itself (never, 15 min to 4 h). **Maintenance on** (press twice) kicks every online player who is not an admin
+and lacks `ofatech.controlcore.maintenance.join`, and refuses them until **Maintenance off**; the old MOTD comes back
+then. It is in History (rolling it back turns it the other way) and is the same as `/cc-maintenance`. All of these changes are in
 History and can be rolled back. Moderators can't use these actions on an admin; only admins can. A freeze stays until it is lifted, even if the player leaves and joins again; an offline player can be frozen and is held in place when they join. Nobody can lift their own mute or freeze or take themselves off the whitelist; another admin or the console has to. Mute only blocks normal chat messages; commands from other mods that send messages are not covered.
 
 World ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`, so `/cc-get`, `/cc-set`,
