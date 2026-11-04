@@ -8,6 +8,7 @@
 - [Key binds](Key-Binds)
 - [HUD](HUD)
 - [Mods tab](Mods-Tab)
+- [Backups and restarts](Backups-And-Restarts)
 - [Automation](Automation)
 - [Files and settings](Files-And-Settings)
 - [Troubleshooting](Troubleshooting)

@@ -157,6 +157,26 @@ Rotating announcements, in the Automation tab's **Announcements** view. Players 
 | Interval, order, channel, minimum players | Announcements: fields, Save settings | `/cc-announce-set [--interval=] [--order=] [--channel=] [--min-players=]` | `announcements().setSettings` |
 | Send the next one now | - (each row has Send now) | `/cc-announce-now` | `announcements().sendNow` |
 | Send one announcement now | Announcements row: Send now | `/cc-announce-now --id=<id>` | `announcements().send` |
+## Backups & restarts
+
+Backups are Hytale's own universe zips in config.json's `Backup.Directory`; a restore happens at the next start, before
+the worlds load. Backups need `ofatech.controlcore.backups`, restarts `ofatech.controlcore.restart` (admins have both);
+the API acts with full rights or a player's through `actingFor`.
+
+| Operation | Panel (where) | Command | API method |
+|---|---|---|---|
+| Is a backup directory set | Server Configs -> Backups: top line | `/cc-backups` | `backups().configured` |
+| Set the backup directory | Server Configs -> Backups: folder, Set directory | `/cc-backup --directory=<folder>` | `backups().setDirectory` |
+| Back up now | Server Configs -> Backups: Back up now | `/cc-backup` | `backups().create` |
+| List the backups | Server Configs -> Backups: list | `/cc-backups` | `backups().list` |
+| Delete a backup | Backups row: Delete (press twice) | `/cc-backup-delete <name> confirm` | `backups().delete` |
+| Restore a backup at the next start | Backups row: Restore on next start (press twice) | `/cc-backup-restore <name> confirm` | `backups().restoreOnNextStart` |
+| Show the planned restore | Server Configs -> Backups: orange bar | `/cc-backups` | `backups().pendingRestore` |
+| Cancel the planned restore | Backups: Cancel restore | `/cc-backup-restore-cancel` | `backups().cancelRestore` |
+| Restart after a countdown | Restart banner, Health tab: countdown, Restart (press twice) | `/cc-restart [--in=] [--reason=]` | `server().restart` |
+| Cancel the restart | Restart banner or Health tab: Cancel restart | `/cc-restart-cancel` | `server().cancelRestart` |
+| Restart countdown and next scheduled restart | Restart banner, Health tab | `/cc-restart-status` | `server().restartStatus` |
+| Countdown length, backup first, scheduled restarts | Mod Settings: Restarts | `/cc-set controlcore:restart-countdown <seconds>` | `settings().write` |
 ## Players & moderation
 
 `<player>` is a name or UUID.

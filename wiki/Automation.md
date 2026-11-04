@@ -41,6 +41,8 @@ The value field shows what it expects for the option you picked.
 | Players online reaches | a number; fires when the count reaches it |
 | The server becomes empty | - |
 | A setting changes | a setting id like `server:motd`, empty for any |
+| A restart countdown starts | - (adds `{seconds}` and `{reason}`) |
+| The server is stopping | - (any stop, also Hytale's `/stop`, before players are disconnected) |
 | A mod's trigger | `mod:trigger`, listed by `/cc-rules` |
 
 ### If
@@ -67,6 +69,8 @@ The value field shows what it expects for the option you picked.
 | Mod action | `mod:action`, optionally followed by a value; listed by `/cc-rules` |
 | Turn maintenance on | the message kicked and refused players see; empty for the default (kicks everyone who may not join, see [Commands](Commands) `/cc-maintenance`) |
 | Turn maintenance off | nothing |
+| Make a backup | nothing (needs a backup directory, see [Backups and restarts](Backups-And-Restarts)) |
+| Restart the server | the countdown in seconds or like `5m`; empty for the Restart countdown setting |
 
 Placeholders work in every value: `{player}`, `{world}`, `{online}`, `{max}`, `{tps}`, `{time}`, `{rule}`, plus
 `{setting}`, `{old}` and `{value}` for "A setting changes" and whatever a mod's trigger adds.

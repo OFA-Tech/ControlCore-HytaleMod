@@ -23,6 +23,8 @@ All nodes start with **`ofatech.controlcore`**. Operators have every node.
 | `ofatech.controlcore.players.inventory` | see a player's inventory on their Details page |
 | `ofatech.controlcore.maintenance` | turn maintenance mode on and off (`/cc-maintenance`, the maintenance bar in Players); may also join during maintenance |
 | `ofatech.controlcore.maintenance.join` | join, and stay online, while maintenance mode is on |
+| `ofatech.controlcore.backups` | make, list, delete and restore backups (Server Configs -> Backups, `/cc-backup*`) |
+| `ofatech.controlcore.restart` | restart the server and cancel a restart (Restart buttons, `/cc-restart`) |
 | `ofatech.controlcore.announcements` | manage rotating announcements (Automation -> Announcements, `/cc-announce-*`) |
 
 Players without any node can still use `/prefs`, their own preferences and keys, `/cc-keys`, `/cc-settings` (showing

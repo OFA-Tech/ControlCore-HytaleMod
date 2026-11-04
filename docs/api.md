@@ -319,6 +319,13 @@ manages rotating announcements (`list`, `add`, `remove`, `setEnabled`, `move`, `
 `send`). Both have `actingFor(playerId)` like the other server sections; the nodes are
 `ofatech.controlcore.maintenance` and `ofatech.controlcore.announcements`. `SnapshotsApi.Part.ANNOUNCEMENTS` is new.
 
+## Backups and restarts (API 2.5.0)
+
+`backups()` makes, lists and deletes universe backups (`configured`, `setDirectory`, `create` returning a
+`CompletableFuture<Result<Backup>>`, `list`, `delete`) and plans a restore at the next start (`restoreOnNextStart`,
+`pendingRestore`, `cancelRestore`). `server()` also restarts: `restart(delay, reason)`, `cancelRestart()`,
+`restartStatus()`. Both have `actingFor(playerId)`; the nodes are `ofatech.controlcore.backups` and
+`ofatech.controlcore.restart`. `HistoryApi.Kind.BACKUP` is new.
 ## Using it from another mod
 
 1. **Dependency.** Releases are published to GitHub Packages. GitHub asks for a login even for public

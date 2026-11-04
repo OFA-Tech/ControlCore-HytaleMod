@@ -15,9 +15,28 @@
   online; each can be turned off, moved and sent now. Placeholders as in rules. Needs
   `ofatech.controlcore.announcements` (admins have it); every change is in History with rollback, and snapshots can hold
   them (new part `announcements`, restoring it needs an admin).
-- **API 2.5.0** (additive; mods built for 2.0.0 and later keep working): `server()` with `maintenance()` and
+- **Backups**: a **Backups** view in Server Configs (next to config.json | Worlds | Players) and `/cc-backup
+  [--directory=]`, `/cc-backups`, `/cc-backup-delete <name> confirm`. It uses Hytale's own universe backup: set the
+  backup directory right there if none is set, **Back up now** (one at a time, refused when the disk has less free
+  space than the universe), the list of latest and archived backups with date and size, and Delete (press twice).
+  Needs `ofatech.controlcore.backups` (admins have it); recorded in History. New automation action **Make a backup**.
+- **Restore on next start**: **Restore on next start** (press twice) or `/cc-backup-restore <name> confirm` plans a
+  restore; `/cc-backup-restore-cancel` or **Cancel restore** cancels it. At the next start, before any world loads,
+  ControlCore moves the current universe to `universe-before-restore-<date>` and unpacks the backup (entries outside
+  the universe folder are refused); if anything fails the universe is left or put back as it was. The result is in
+  History, the log, the Health tab's problems (on failure) and a chat line for the first admin who joins.
+- **Restarts**: a **Restart** button (press twice, with a 10 s to 10 min or default countdown) in the restart banner,
+  which also shows after mod changes in the Mods tab, and in the Health tab, plus `/cc-restart [--in=] [--reason=]`,
+  `/cc-restart-cancel` and `/cc-restart-status`. Everyone gets a warning bar and chat warnings at 10 min, 5 min, 1 min,
+  30 s and 10 s; at zero players are kicked with "Server restarting, back soon!" and the server stops (the host must
+  start it again). New settings **Restart countdown** (10 to 600 s, default 60), **Back up before restarting** and
+  **Scheduled restarts** (daily `HH:mm` times and cron schedules). Needs `ofatech.controlcore.restart`. New automation
+  action **Restart the server** and triggers **A restart countdown starts** and **The server is stopping** (every
+  stop, before players are disconnected).- **API 2.5.0** (additive; mods built for 2.0.0 and later keep working): `server()` with `maintenance()` and
   `setMaintenance(on, MaintenanceOptions)`, `announcements()` with `list`, `add`, `remove`, `setEnabled`, `move`,
-  `settings`, `setSettings`, `sendNow` and `send`, both with `actingFor(player)`; `SnapshotsApi.Part.ANNOUNCEMENTS`.
+  `settings`, `setSettings`, `sendNow` and `send`, both with `actingFor(player)`; `SnapshotsApi.Part.ANNOUNCEMENTS`;
+  `server().restart`, `cancelRestart` and `restartStatus`; `backups()` with `configured`, `setDirectory`, `create`,
+  `list`, `delete`, `restoreOnNextStart`, `pendingRestore` and `cancelRestore`; `HistoryApi.Kind.BACKUP`.
 
 ## 0.20.0 - 2026-11-03
 

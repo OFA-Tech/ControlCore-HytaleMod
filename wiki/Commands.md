@@ -195,6 +195,22 @@ Admins or `ofatech.controlcore.announcements`.
 | `/cc-announce-move <id> <up\|down>` | move an announcement one place up or down |
 | `/cc-announce-now [--id=]` | send the next announcement now, or with `--id=` that one |
 | `/cc-announce-set [--interval=] [--order=] [--channel=] [--min-players=]` | minutes between announcements (1 to 1440), `in-turn` or `random`, `chat`, `toast` or `warning`, and the players online needed (0 for always) |
+## Backups and restarts
+
+Backups need `ofatech.controlcore.backups`, restarts `ofatech.controlcore.restart`; admins have both. See
+[Backups and restarts](Backups-And-Restarts).
+
+| Command | Who | Does |
+|---|---|---|
+| `/cc-backup [--directory=]` | `ofatech.controlcore.backups` | back up the universe now (Hytale's own backup, one at a time, refused when the disk is too full); `--directory=` sets config.json `Backup.Directory` first, for example `--directory=backups`. In History |
+| `/cc-backups` | `ofatech.controlcore.backups` | list the backups (latest and archived, newest first) and the planned restore |
+| `/cc-backup-delete <name> confirm` | `ofatech.controlcore.backups` | delete a backup; the second word must be `confirm`. Archived ones are named `archive/<file>.zip`. In History |
+| `/cc-backup-restore <name> confirm` | `ofatech.controlcore.backups` | restore that backup at the next server start, before the worlds load; the current universe is moved to `universe-before-restore-<date>`. In History |
+| `/cc-backup-restore-cancel` | `ofatech.controlcore.backups` | cancel the planned restore |
+| `/cc-restart [--in=] [--reason=]` | `ofatech.controlcore.restart` | restart after a countdown (`--in=30s`, `5m`, `1h`; default: the Restart countdown setting). Everyone is warned at 10 min, 5 min, 1 min, 30 s and 10 s; at zero players are kicked with "back soon" and the server stops. Your host must start it again |
+| `/cc-restart-cancel` | `ofatech.controlcore.restart` | cancel the countdown and tell everyone |
+| `/cc-restart-status` | anyone | the countdown and the next scheduled restart |
+
 ## Diagnostics
 
 | Command | Who | Does |

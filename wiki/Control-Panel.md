@@ -37,7 +37,7 @@ World map, …).
 - **Applies at once:** server name, message of the day, max players, max view radius, require join permission and the
   connection timeouts.
 - **Applies after a restart:** default world, game mode and hardcore mode, rate limit, backup, update, world map and
-  "display tmp tags". A banner at the top lists every changed key that waits for a restart, until you restart.
+  "display tmp tags". A banner at the top lists every changed key that waits for a restart, until you restart, with a **Restart** button for admins.
 - **Read-only:** the password, storage settings, modules, mods and log levels. Edit those in `config.json` while the
   server is stopped.
 - **Default** puts back the value of a fresh Hytale server. Two keys have no such value (backup directory, update
@@ -109,6 +109,10 @@ History and can be rolled back. Moderators can't use these actions on an admin; 
 World ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`, so `/cc-get`, `/cc-set`,
 permissions, History and snapshots work on them like on `config.json` keys.
 
+#### Backups
+
+The **Backups** button of the switch (admins and `ofatech.controlcore.backups`) lists the universe backups and makes,
+deletes and restores them; a restore happens at the next start. See [Backups and restarts](Backups-And-Restarts).
 ### Mod Settings
 
 Every server setting that mods registered with ControlCore, under `<mod name>: <category>` headings. Each row has the
@@ -216,6 +220,11 @@ world's players, loaded chunks, TPS target and tick time, with a warning when a 
 to load; and ControlCore's latest warnings and errors. **Refresh** reads it again. **Write report** saves a text file
 in `mods/OFATech_ControlCore/diagnostics/` with passwords, tokens and IP addresses removed, ready to attach to a bug
 report. `/cc-diagnostics` does the same from chat or the console.
+
+Admins and players with `ofatech.controlcore.restart` also get a **Restart** row at the top: pick a countdown and press
+Restart twice; while it counts down it shows "Restarting in 0:42" and **Cancel restart**. The same button is in the
+restart banner when changes wait for a restart. The server only comes back if the host starts it again automatically,
+see [Backups and restarts](Backups-And-Restarts).
 
 ## Restore defaults
 
