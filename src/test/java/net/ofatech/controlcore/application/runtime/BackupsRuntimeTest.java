@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import net.ofatech.controlcore.api.BackupsApi;
 import net.ofatech.controlcore.api.ControlCoreApi;
 import net.ofatech.controlcore.api.HistoryApi;
@@ -423,6 +424,69 @@ class BackupsRuntimeTest extends RuntimeTestBase {
     }
 
     @Test
+    void aHalfSwappedRestoreNextToAUniverseKeepsEveryFolderAndStopsTheServer() throws IOException {
+        Path aside = Files.createDirectories(root.resolve("universe-before-restore-2026-01-01_00-00-00/worlds"));
+        Path staging = root.resolve("universe-restoring-2026-01-01_00-00-00");
+        Files.createDirectories(staging.resolve("worlds/default"));
+        Files.writeString(staging.resolve("worlds/default/new.txt"), "new");
+        Path other = Files.createDirectories(root.resolve("universe-restoring-2025-01-01_00-00-00/worlds"));
+
+        startUp();
+
+        assertThat(platform.control.stops).hasSize(1);
+        assertThat(staging).doesNotExist();
+        assertThat(root.resolve("universe-failed-restore-2026-01-01_00-00-00/worlds/default/new.txt"))
+                .hasContent("new");
+        assertThat(aside).exists();
+        assertThat(universe.resolve("worlds/default/old.txt")).exists();
+        assertThat(other)
+                .as("a staging folder with no before-restore partner is junk")
+                .doesNotExist();
+        assertThat(platform.log.contains("universe-failed-restore-2026-01-01_00-00-00"))
+                .isTrue();
+    }
+
+    @Test
+    void rollingBackACancelledRestoreDoesNotWaitForTheCopy() throws Exception {
+        platform.pendingRestore.copies = root.resolve("pending-restore");
+        startUp();
+        String name = api().create().join().value().name();
+        assertThat(api().restoreOnNextStart(name).join().isSuccess()).isTrue();
+        assertThat(api().cancelRestore().isSuccess()).isTrue();
+        HistoryApi.Change cancelled = history().getFirst();
+        CompletableFuture<Void> gate = new CompletableFuture<>();
+        platform.backups.spaceGate = gate;
+
+        try {
+            Result<?> rolledBack = CompletableFuture.supplyAsync(
+                            () -> ControlCoreApi.get().history().rollback(cancelled.id()))
+                    .get(5, TimeUnit.SECONDS);
+            assertThat(rolledBack.isSuccess()).isTrue();
+        } finally {
+            platform.backups.spaceGate = null;
+            gate.complete(null);
+        }
+        awaitPending();
+        assertThat(api().pendingRestore()).map(BackupsApi.PendingRestore::name).contains(name);
+    }
+
+    @Test
+    void aRestoreCannotBePlannedWhileABackupRuns() {
+        startUp();
+        String name = api().create().join().value().name();
+        CompletableFuture<Void> running = new CompletableFuture<>();
+        platform.backups.next = running;
+        CompletableFuture<Result<BackupsApi.Backup>> backup = api().create();
+        awaitRun(2);
+
+        assertThat(api().restoreOnNextStart(name).join().error().code()).isEqualTo("Backup.Running");
+
+        platform.backups.next = null;
+        running.complete(null);
+        backup.join();
+    }
+
+    @Test
     void aPlanOlderThanSevenDaysIsNotAppliedAndAdminsAreTold() throws IOException {
         Path copies = Files.createDirectories(root.resolve("pending-restore"));
         Path copy = copies.resolve("old.zip");
@@ -436,23 +500,56 @@ class BackupsRuntimeTest extends RuntimeTestBase {
         assertThat(universe.resolve("worlds/default/old.txt")).exists();
         assertThat(universe.resolve("worlds/default/new.txt")).doesNotExist();
         assertThat(copy).exists();
-        assertThat(platform.pendingRestore.restore).isPresent();
+        assertThat(platform.pendingRestore.restore)
+                .as("an expired plan is dropped")
+                .isEmpty();
+        assertThat(api().restoreOnNextStart("old.zip").join().error().code())
+                .as("planning again is not blocked by the old plan")
+                .isNotEqualTo("Backup.RestorePending");
         PlayerInfo admin = platform.players.join("Admin");
         platform.connectedPublisher.publish(new PlayerJoined(admin));
         assertThat(platform.messenger.textsTo(admin.id()))
                 .anyMatch(text -> text.contains("7 days")
                         && text.contains(copy.toAbsolutePath().toString()));
+        platform.scheduler.runAll();
+        assertThat(history()).extracting(HistoryApi.Change::after).anyMatch(after -> after.contains("dropped"));
     }
 
     @Test
-    void copiesNoPlanUsesAreDeletedAtStartAndWhenPlanning() throws IOException {
+    void anOldPlanIsAppliedWhenTheServerRanWithItUntilRecently() throws IOException {
+        Files.createDirectories(folder);
+        FakeServerBackups.zip(folder.resolve("good.zip"), "worlds/default/new.txt", "new");
+        Instant planned = platform.clock.now.minus(Duration.ofDays(8));
+        platform.pendingRestore.restore = Optional.of(
+                new PendingRestore("good.zip", "Admin", planned, "", platform.clock.now.minus(Duration.ofMinutes(1))));
+
+        startUp();
+
+        assertThat(universe.resolve("worlds/default/new.txt")).hasContent("new");
+    }
+
+    @Test
+    void stoppingTheServerNotesThatThePlanIsStillWanted() {
+        platform.pendingRestore.copies = root.resolve("pending-restore");
+        startUp();
+        String name = api().create().join().value().name();
+        assertThat(api().restoreOnNextStart(name).join().isSuccess()).isTrue();
+        platform.clock.now = platform.clock.now.plus(Duration.ofDays(8));
+
+        platform.control.shutdown();
+
+        assertThat(platform.pendingRestore.restore.orElseThrow().seen()).isEqualTo(platform.clock.now);
+    }
+
+    @Test
+    void leftoverCopiesAreKeptAtStartAndDeletedWhenPlanning() throws IOException {
         Path copies = Files.createDirectories(root.resolve("pending-restore"));
         Path stale = copies.resolve("stale.zip");
         FakeServerBackups.zip(stale, "worlds/a.txt", "a");
         platform.pendingRestore.copies = copies;
 
         startUp();
-        assertThat(stale).doesNotExist();
+        assertThat(stale).as("it may be the copy a failed restore said it kept").exists();
 
         FakeServerBackups.zip(stale, "worlds/a.txt", "a");
         String name = api().create().join().value().name();

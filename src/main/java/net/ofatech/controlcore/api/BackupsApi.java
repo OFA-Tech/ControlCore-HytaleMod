@@ -85,14 +85,17 @@ public interface BackupsApi {
 
     /**
      * Plans a restore of a backup at the next server start. ControlCore checks the zip and copies it to its own
-     * folder in the background, so this returns at once; while the copy runs, other plans, backups and cancels are
-     * refused with {@code Backup.PreparingRestore}. Recorded in History, where rolling it back cancels it. A plan
-     * older than 7 days is not applied at start; it stays planned until cancelled.
+     * folder in the background, so this returns at once. Refused while a backup runs ({@code Backup.Running}).
+     * While the copy runs, {@link #create()}, another plan and {@link #cancelRestore()} are refused with
+     * {@code Backup.PreparingRestore}, and a restart that is due waits for the copy (up to 10 minutes). Recorded in
+     * History, where rolling it back cancels it. A plan never expires while the server runs; if the server was off
+     * for more than 7 days after the plan, it is dropped at start instead of applied.
      *
      * @param name the name as {@link Backup#name()} gives it
      * @return a future completed with a message, or an error such as {@code Backup.Unknown},
-     *     {@code Backup.RestorePending}, {@code Backup.PreparingRestore}, {@code Backup.NotUniverse} or
-     *     {@code Backup.UniverseNotSwappable} (the universe folder is a link or a separate mount)
+     *     {@code Backup.Running}, {@code Backup.RestorePending}, {@code Backup.PreparingRestore},
+     *     {@code Backup.NotUniverse} or {@code Backup.UniverseNotSwappable} (the universe folder is a link or a
+     *     separate mount)
      */
     CompletableFuture<Result<String>> restoreOnNextStart(String name);
 

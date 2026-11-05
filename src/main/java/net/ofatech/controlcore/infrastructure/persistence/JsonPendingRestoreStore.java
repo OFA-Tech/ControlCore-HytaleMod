@@ -42,6 +42,7 @@ public final class JsonPendingRestoreStore implements PendingRestoreStore {
         form.by = restore.by();
         form.at = restore.at().toString();
         form.copy = restore.copy();
+        form.seen = restore.seen().toString();
         return file.write(form, FileForm.class);
     }
 
@@ -61,18 +62,21 @@ public final class JsonPendingRestoreStore implements PendingRestoreStore {
         private String by;
         private String at;
         private String copy;
+        private String seen;
 
         Optional<PendingRestore> toRestore() {
             if (name == null || name.isBlank()) {
                 return Optional.empty();
             }
-            Instant when;
+            return Optional.of(new PendingRestore(name, by, instant(at), copy, instant(seen)));
+        }
+
+        private static Instant instant(String text) {
             try {
-                when = at == null ? Instant.EPOCH : Instant.parse(at);
+                return text == null ? Instant.EPOCH : Instant.parse(text);
             } catch (DateTimeParseException e) {
-                when = Instant.EPOCH;
+                return Instant.EPOCH;
             }
-            return Optional.of(new PendingRestore(name, by, when, copy));
         }
     }
 }
