@@ -87,6 +87,7 @@ public final class RestartService {
     private boolean stopFired;
     private Instant backupUntil;
     private Instant waitUntil;
+    private long attempt;
     private volatile Instant refreshed;
 
     public RestartService(
@@ -165,6 +166,7 @@ public final class RestartService {
         }
         Instant now = clock.now();
         at = now.plus(length);
+        waitUntil = null;
         reason = text;
         warned.clear();
         long seconds = length.toSeconds();
@@ -198,6 +200,7 @@ public final class RestartService {
                     Text.key("controlcore.errors.restart.not_running", "No restart is counting down.")));
         }
         at = null;
+        waitUntil = null;
         reason = "";
         notifications.clearWarningAll(BAR);
         for (PlayerInfo player : players.online()) {
@@ -217,7 +220,7 @@ public final class RestartService {
         if (finishing) {
             if (backupUntil != null && !now.isBefore(backupUntil)) {
                 backupTimedOut();
-                proceed();
+                proceed(attempt);
             }
             return;
         }
@@ -291,48 +294,41 @@ public final class RestartService {
         at = null;
         finishing = true;
         stopStarted = false;
+        long mine = ++attempt;
         changed();
         boolean wanted = backUp && settings.backupFirst() && backups.configured();
         if (wanted && backups.pending().isPresent()) {
             log.info("Not backing up before the restart: a backup restore is planned for the next start");
-            notifications.toAdmins(texts.forServer().t("controlcore.restart.backup_skipped_restore"));
+            toAdmins("controlcore.restart.backup_skipped_restore");
             wanted = false;
         }
         if (wanted) {
             showAll("controlcore.restart.backing_up", true);
             backupUntil = clock.now().plus(BACKUP_LIMIT);
-            ChangeContext.as(
-                            new ChangeContext.Attribution(
-                                    Actor.console(texts.forServer().t("controlcore.restart.actor")),
-                                    Source.AUTOMATION,
-                                    0),
-                            () -> backups.create(Optional.empty(), texts.forServer()))
-                    .whenComplete((result, failure) -> {
-                        if (failure != null || result.isFailure()) {
-                            String why = failure != null
-                                    ? String.valueOf(failure.getMessage())
-                                    : texts.forServer().error(result.error());
-                            log.warn("The backup before restarting failed, restarting anyway: " + why);
-                            notifications.toAdmins(
-                                    texts.forServer().t("controlcore.restart.backup_failed", "reason", why));
-                        }
-                        proceed();
-                    });
+            var made = ChangeContext.as(
+                    new ChangeContext.Attribution(
+                            Actor.console(texts.forServer().t("controlcore.restart.actor")), Source.AUTOMATION, 0),
+                    () -> backups.create(Optional.empty(), texts.forServer()));
+            backups.tellAdminsIfFailed(made, "controlcore.restart.backup_failed");
+            made.whenComplete((result, failure) -> proceed(mine));
             return;
         }
-        proceed();
+        proceed(mine);
     }
 
     private void backupTimedOut() {
         log.warn("The backup before restarting did not finish within " + BACKUP_LIMIT.toMinutes()
                 + " minutes, restarting anyway");
-        notifications.toAdmins(
-                texts.forServer().t("controlcore.restart.backup_timeout", "minutes", BACKUP_LIMIT.toMinutes()));
+        toAdmins("controlcore.restart.backup_timeout", "minutes", BACKUP_LIMIT.toMinutes());
     }
 
-    private void proceed() {
+    private void toAdmins(String key, Object... nameValuePairs) {
+        notifications.toEachAdmin(player -> texts.forPlayer(Optional.of(player)).t(key, nameValuePairs));
+    }
+
+    private void proceed(long mine) {
         synchronized (this) {
-            if (stopStarted) {
+            if (stopStarted || !finishing || mine != attempt) {
                 return;
             }
             stopStarted = true;
@@ -345,8 +341,9 @@ public final class RestartService {
             synchronized (this) {
                 finishing = false;
                 stopStarted = false;
+                stopFired = false;
             }
-            notifications.toAdmins(texts.forServer().t("controlcore.restart.stop_failed", "reason", e.getMessage()));
+            toAdmins("controlcore.restart.stop_failed", "reason", String.valueOf(e.getMessage()));
             changed();
         }
     }

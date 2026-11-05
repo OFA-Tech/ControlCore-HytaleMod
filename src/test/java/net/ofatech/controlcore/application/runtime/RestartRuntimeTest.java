@@ -234,6 +234,32 @@ class RestartRuntimeTest extends RuntimeTestBase {
     }
 
     @Test
+    void aBackupThatEndsAfterAFailedStopDoesNotStopTheServerLater(@TempDir Path root) {
+        platform.backups.universe = root.resolve("universe");
+        platform.backups.directory = Optional.of(root.resolve("backups"));
+        java.util.concurrent.CompletableFuture<Void> backup = new java.util.concurrent.CompletableFuture<>();
+        platform.backups.next = backup;
+        platform.commands.runAsConsole("cc-set", Map.of("id", "controlcore:restart-backup-first", "value", "on"));
+        api().restart(Duration.ofSeconds(10), "");
+        after(Duration.ofSeconds(10));
+        awaitRuns(1);
+
+        platform.control.failStop = true;
+        after(Duration.ofMinutes(10));
+        assertThat(api().restartStatus().counting()).isFalse();
+        platform.control.failStop = false;
+        platform.backups.next = null;
+        backup.complete(null);
+        after(Duration.ofSeconds(1));
+
+        assertThat(platform.control.stops).isEmpty();
+        assertThat(api().restart(Duration.ofSeconds(10), "").isSuccess()).isTrue();
+        after(Duration.ofSeconds(10));
+        awaitStop();
+        assertThat(platform.control.stops).hasSize(1);
+    }
+
+    @Test
     void noBackupIsMadeBeforeRestartingWhileARestoreIsPlanned(@TempDir Path root) {
         platform.backups.universe = root.resolve("universe");
         platform.backups.directory = Optional.of(root.resolve("backups"));
