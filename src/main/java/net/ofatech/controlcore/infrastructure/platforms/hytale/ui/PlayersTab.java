@@ -83,8 +83,7 @@ final class PlayersTab {
     private String query = "";
     private Optional<PlayersView.Details> details = Optional.empty();
     private int detailsRequest;
-    private Optional<String> armed = Optional.empty();
-    private long armedAt;
+    private final ConfirmGate confirm = new ConfirmGate(CONFIRM_MILLIS);
     private Optional<String> footer = Optional.empty();
     private List<PlayersView.Entry> rows = List.of();
     private int generation;
@@ -299,20 +298,16 @@ final class PlayersTab {
         }
         MaintenanceView shown = maintenance.get();
         if (shown.on()) {
-            armed = Optional.empty();
+            confirm.disarm();
             show(shown.turnOff());
             return;
         }
-        boolean fresh = System.currentTimeMillis() - armedAt < CONFIRM_MILLIS;
-        if (armed.filter(MAINTENANCE::equals).isEmpty() || !fresh) {
-            armed = Optional.of(MAINTENANCE);
-            armedAt = System.currentTimeMillis();
+        if (!confirm.confirmed(MAINTENANCE)) {
             UICommandBuilder update = new UICommandBuilder();
             update.set("#FooterStatus.Text", tr.t("controlcore.panel.maintenance.confirm_on"));
             host.send(update);
             return;
         }
-        armed = Optional.empty();
         show(shown.turnOn(
                 action.form("MaintenanceMessage"), action.form("MaintenanceMotd"), action.form("MaintenanceOffAfter")));
     }
@@ -377,7 +372,7 @@ final class PlayersTab {
         switch (action.name()) {
             case DETAILS -> openDetails(action);
             case CHAT -> {
-                armed = Optional.empty();
+                confirm.disarm();
                 detailsRequest++;
                 details = Optional.of(view.chat());
                 host.rebuild();
@@ -390,7 +385,7 @@ final class PlayersTab {
             case FILTER, SEARCH -> narrow(action);
             case MAINTENANCE -> toggleMaintenance(action);
             case REQUIRE -> {
-                armed = Optional.empty();
+                confirm.disarm();
                 Result<String> result = view.requireWhitelist(!view.whitelistRequired());
                 UICommandBuilder update = new UICommandBuilder();
                 showRequire(update);
@@ -400,7 +395,7 @@ final class PlayersTab {
             case UNBAN -> confirmed(action, "controlcore.panel.players.confirm_unban", () -> view.unban(action.id));
             case KICK -> confirmed(action, "controlcore.players.confirm_kick", () -> view.kick(action.id, ""));
             case BAN -> {
-                armed = Optional.empty();
+                confirm.disarm();
                 if (form.busy()) {
                     showError(PlayerErrorText.busy(tr));
                     return true;
@@ -466,7 +461,7 @@ final class PlayersTab {
     }
 
     private void openDetails(PanelAction action) {
-        armed = Optional.empty();
+        confirm.disarm();
         int request = ++detailsRequest;
         String id = text(action.id);
         UICommandBuilder waiting = new UICommandBuilder();
@@ -488,7 +483,7 @@ final class PlayersTab {
     }
 
     private void narrow(PanelAction action) {
-        armed = Optional.empty();
+        confirm.disarm();
         if (FILTER.equals(action.name())) {
             filter = PlayersView.Filter.of(action.value);
         } else {
@@ -511,22 +506,17 @@ final class PlayersTab {
             host.send(new UICommandBuilder());
             return;
         }
-        String key = action.name() + ":" + action.id;
-        boolean fresh = System.currentTimeMillis() - armedAt < CONFIRM_MILLIS;
-        if (armed.filter(key::equals).isEmpty() || !fresh) {
-            armed = Optional.of(key);
-            armedAt = System.currentTimeMillis();
+        if (!confirm.confirmed(action.name() + ":" + action.id)) {
             UICommandBuilder update = new UICommandBuilder();
             update.set("#FooterStatus.Text", tr.t(question, "player", nameOf(action.id)));
             host.send(update);
             return;
         }
-        armed = Optional.empty();
         show(work.get());
     }
 
     private void finish(CompletableFuture<Result<String>> pending, Consumer<Result<String>> done) {
-        armed = Optional.empty();
+        confirm.disarm();
         host.send(new UICommandBuilder());
         pending.whenComplete((result, failure) -> host.later(() -> {
             Result<String> outcome = failure == null ? result : Result.failure(failed(failure));

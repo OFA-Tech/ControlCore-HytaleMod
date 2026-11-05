@@ -35,8 +35,7 @@ final class RestartControls {
     private final Optional<RestartView> view;
     private final Translator tr;
     private final Host host;
-    private Optional<String> armed = Optional.empty();
-    private long armedAt;
+    private final ConfirmGate confirm = new ConfirmGate(CONFIRM_MILLIS);
 
     RestartControls(Optional<RestartView> view, Translator tr, Host host) {
         this.view = view;
@@ -118,20 +117,16 @@ final class RestartControls {
             return true;
         }
         if (view.get().counting()) {
-            armed = Optional.empty();
+            confirm.disarm();
             show(view.get().cancel());
             return true;
         }
-        boolean fresh = System.currentTimeMillis() - armedAt < CONFIRM_MILLIS;
-        if (armed.filter(name::equals).isEmpty() || !fresh) {
-            armed = Optional.of(name);
-            armedAt = System.currentTimeMillis();
+        if (!confirm.confirmed(name)) {
             UICommandBuilder update = new UICommandBuilder();
             update.set("#FooterStatus.Text", tr.t("controlcore.panel.restart.confirm"));
             host.send(update);
             return true;
         }
-        armed = Optional.empty();
         show(view.get().restart(action.value == null ? "" : action.value));
         return true;
     }

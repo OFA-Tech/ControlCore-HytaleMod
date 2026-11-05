@@ -8,7 +8,6 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import net.ofatech.controlcore.domain.model.automation.Announcements;
 import net.ofatech.controlcore.domain.model.automation.AnnouncementsView;
 import net.ofatech.controlcore.domain.model.text.Translator;
@@ -35,8 +34,7 @@ final class AnnouncementsSection {
     private final Translator tr;
     private final AutomationTab.Host host;
     private final boolean withModes;
-    private Optional<String> armedRemove = Optional.empty();
-    private long armedAt;
+    private final ConfirmGate confirm = new ConfirmGate(CONFIRM_MILLIS);
 
     AnnouncementsSection(AnnouncementsView view, Translator tr, AutomationTab.Host host, boolean withModes) {
         this.view = view;
@@ -110,7 +108,7 @@ final class AnnouncementsSection {
             }
         }
         host.resize(LIST, LIST_HEIGHT - (withModes ? AutomationTab.MODES_HEIGHT : 0), commands);
-        armedRemove = Optional.empty();
+        confirm.disarm();
     }
 
     boolean handle(PanelAction action) {
@@ -136,16 +134,12 @@ final class AnnouncementsSection {
     }
 
     private void remove(String id) {
-        boolean fresh = System.currentTimeMillis() - armedAt < CONFIRM_MILLIS;
-        if (armedRemove.filter(id::equals).isEmpty() || !fresh) {
-            armedRemove = Optional.of(id);
-            armedAt = System.currentTimeMillis();
+        if (!confirm.confirmed(id)) {
             UICommandBuilder update = new UICommandBuilder();
             update.set("#FooterStatus.Text", tr.t("controlcore.panel.announce.confirm_remove", "id", id));
             host.send(update);
             return;
         }
-        armedRemove = Optional.empty();
         refreshAfter(view.remove(id));
     }
 
