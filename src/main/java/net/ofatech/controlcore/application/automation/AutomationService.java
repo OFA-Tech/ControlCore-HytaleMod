@@ -99,7 +99,7 @@ public final class AutomationService {
 
     public static final int MAX_ACTIONS = 8;
 
-    private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("H:mm");
+    static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("H:mm");
     private static final DateTimeFormatter WHEN = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final ThreadLocal<Boolean> RUNNING = ThreadLocal.withInitial(() -> false);
 
@@ -508,10 +508,19 @@ public final class AutomationService {
                 if (started.isDone() && started.join().isFailure()) {
                     return Result.failure(started.join().error());
                 }
+                started.whenComplete((made, failure) -> {
+                    if (failure == null && made.isSuccess()) {
+                        return;
+                    }
+                    String why = failure != null ? String.valueOf(failure.getMessage()) : tr.error(made.error());
+                    log.warn("Automation rule " + rule.name() + ": " + why);
+                    notifications.toAdmins(
+                            tr.t("controlcore.automation.backup_failed", "name", rule.name(), "reason", why));
+                });
             }
             case RESTART -> {
-                Result<String> started = RestartService.delay(seconds(text))
-                        .flatMap(delay -> restart.start(delay, "", Optional.empty(), tr));
+                Result<String> started =
+                        RestartService.delay(text).flatMap(delay -> restart.start(delay, "", Optional.empty(), tr));
                 if (started.isFailure()) {
                     return Result.failure(started.error());
                 }
@@ -938,7 +947,7 @@ public final class AutomationService {
             case CLEAR_WARNING -> value.equalsIgnoreCase("all") || value.matches("[a-z0-9][a-z0-9-]*");
             case MAINTENANCE_ON -> value.length() <= MAX_TEXT;
             case MAINTENANCE_OFF, BACKUP -> true;
-            case RESTART -> RestartService.delay(seconds(value)).isSuccess();
+            case RESTART -> RestartService.delay(value).isSuccess();
             default -> !value.isEmpty() && value.length() <= MAX_TEXT;
         };
         return ok
@@ -947,11 +956,6 @@ public final class AutomationService {
                         "Automation.InvalidActionValue",
                         Text.key("controlcore.errors.automation.invalid_action_value", "'{value}' does not fit: {hint}")
                                 .with("value", value, "hint", hint("action", kind.id(), texts.forServer())));
-    }
-
-    private static String seconds(String value) {
-        String text = value.strip();
-        return text.matches("\\d+") ? text + "s" : text;
     }
 
     private String freeId(String name) {
@@ -1052,7 +1056,7 @@ public final class AutomationService {
         return number >= min && number <= max ? Optional.of(number) : Optional.empty();
     }
 
-    static Optional<LocalTime> clockTime(String text) {
+    public static Optional<LocalTime> clockTime(String text) {
         try {
             return Optional.of(LocalTime.parse(text == null ? "" : text.strip(), CLOCK));
         } catch (DateTimeParseException e) {

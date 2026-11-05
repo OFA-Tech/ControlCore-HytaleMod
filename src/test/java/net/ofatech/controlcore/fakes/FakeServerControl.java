@@ -8,9 +8,13 @@ public final class FakeServerControl implements ServerControl {
 
     public final List<String> stops = new CopyOnWriteArrayList<>();
     private final List<Runnable> listeners = new CopyOnWriteArrayList<>();
+    public volatile boolean failStop;
 
     @Override
     public void stop(String message) {
+        if (failStop) {
+            throw new IllegalStateException("cannot stop");
+        }
         stops.add(message);
         shutdown();
     }

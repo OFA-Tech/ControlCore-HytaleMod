@@ -186,7 +186,10 @@ public final class HytalePlatform implements Platform {
                 new JsonMaintenanceStore(plugin.getDataDirectory().resolve("Maintenance.json"), log));
         binder.bind(
                 PendingRestoreStore.class,
-                new JsonPendingRestoreStore(plugin.getDataDirectory().resolve("PendingRestore.json"), log));
+                new JsonPendingRestoreStore(
+                        plugin.getDataDirectory().resolve("PendingRestore.json"),
+                        plugin.getDataDirectory().resolve("pending-restore"),
+                        log));
         binder.bind(
                 AnnouncementStore.class,
                 new JsonAnnouncementStore(plugin.getDataDirectory().resolve("Announcements.json"), log));

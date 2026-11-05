@@ -99,6 +99,7 @@ public final class FakePlatform implements Platform {
     public final Set<String> deniedNodes = ConcurrentHashMap.newKeySet();
     public final java.util.Map<PlayerId, java.util.List<String>> deniedNodesFor = new ConcurrentHashMap<>();
     public final Set<PlayerId> probing = ConcurrentHashMap.newKeySet();
+    public volatile boolean permissionsFail;
 
     public final FakeServerConfiguration serverConfig = new FakeServerConfiguration(
             new ServerSettings("Test Server", "Welcome", false, 10, 5, java.time.Duration.ofMinutes(10)));
@@ -120,12 +121,13 @@ public final class FakePlatform implements Platform {
         binder.bind(Players.class, players);
         binder.bind(Translations.class, translations);
         binder.bind(Messenger.class, messenger);
-        binder.bind(
-                Permissions.class,
-                (player, node) -> !deniedNodes.contains(node)
-                        && !deniedNodesFor
-                                .getOrDefault(player, java.util.List.of())
-                                .contains(node));
+        binder.bind(Permissions.class, (player, node) -> {
+            if (permissionsFail) {
+                throw new IllegalStateException("permissions are down");
+            }
+            return !deniedNodes.contains(node)
+                    && !deniedNodesFor.getOrDefault(player, java.util.List.of()).contains(node);
+        });
         binder.bind(PlayerData.class, playerData);
         binder.bind(SettingStore.class, settingStore);
         binder.bind(Scheduler.class, scheduler);

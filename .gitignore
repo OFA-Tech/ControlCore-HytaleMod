@@ -31,6 +31,7 @@ src/main/resources/Announcements.json
 src/main/resources/Announcements.json.tmp
 src/main/resources/PendingRestore.json
 src/main/resources/PendingRestore.json.tmp
+src/main/resources/pending-restore/
 src/main/resources/diagnostics/
 
 ### IntelliJ IDEA ###

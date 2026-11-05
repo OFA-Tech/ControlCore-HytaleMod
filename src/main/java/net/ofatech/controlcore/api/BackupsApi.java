@@ -13,8 +13,9 @@ import net.ofatech.controlcore.domain.result.Result;
  *
  * <p>Backups are Hytale's own zip files, made in config.json's {@code Backup.Directory}; older ones are moved to its
  * {@code archive} folder by Hytale. Only one backup runs at a time. A restore never happens while the server runs:
- * {@link #restoreOnNextStart(String)} plans it, and ControlCore applies it at the next start, before the worlds
- * load, after moving the current universe aside to {@code universe-before-restore-<date>}.
+ * {@link #restoreOnNextStart(String)} plans it (keeping its own copy of the zip), and ControlCore applies it at the
+ * next start, before the worlds load, after moving the current universe aside to
+ * {@code universe-before-restore-<date>}.
  *
  * <p>The API acts with full rights, like the console. {@link #actingFor(PlayerId)} gives the same API with a
  * player's rights: admins and players with {@code ofatech.controlcore.backups} may use it.
@@ -45,11 +46,13 @@ public interface BackupsApi {
     boolean configured();
 
     /**
-     * Sets config.json's {@code Backup.Directory}. Recorded in History like any config.json change.
+     * Sets config.json's {@code Backup.Directory}. Recorded in History like any config.json change. Acting for a
+     * player, only admins may change it ({@code Backup.DirectoryForbidden} otherwise).
      *
-     * @param directory the folder, relative to the server folder or absolute; {@code null} or empty for
-     *     {@code backups}
-     * @return a message, or an error such as {@code Backup.Forbidden}
+     * @param directory a folder inside the server folder, relative to it (no drive letter, no {@code ..}, no leading
+     *     slash); {@code null} or empty for {@code backups}
+     * @return a message, or an error such as {@code Backup.Forbidden}, {@code Backup.DirectoryForbidden} or
+     *     {@code Backup.BadDirectory}
      */
     Result<String> setDirectory(String directory);
 

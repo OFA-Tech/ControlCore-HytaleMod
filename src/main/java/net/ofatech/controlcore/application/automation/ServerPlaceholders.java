@@ -2,7 +2,6 @@ package net.ofatech.controlcore.application.automation;
 
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -11,8 +10,6 @@ import net.ofatech.controlcore.domain.ports.system.Clock;
 import net.ofatech.controlcore.domain.ports.system.ServerHealth;
 
 public final class ServerPlaceholders {
-
-    private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("H:mm");
 
     private final Players players;
     private final ServerHealth health;
@@ -36,7 +33,7 @@ public final class ServerPlaceholders {
                         .findFirst()
                         .map(found -> Long.toString(Math.round(AutomationService.effectiveTps(found))))
                         .orElse(""));
-        values.put("time", CLOCK.format(LocalTime.ofInstant(clock.now(), ZoneId.systemDefault())));
+        values.put("time", AutomationService.CLOCK.format(LocalTime.ofInstant(clock.now(), ZoneId.systemDefault())));
         return values;
     }
 

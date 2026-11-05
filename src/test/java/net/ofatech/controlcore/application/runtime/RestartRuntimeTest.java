@@ -184,6 +184,95 @@ class RestartRuntimeTest extends RuntimeTestBase {
     }
 
     @Test
+    void aBackupBeforeRestartingThatNeverEndsTimesOut(@TempDir Path root) {
+        platform.backups.universe = root.resolve("universe");
+        platform.backups.directory = Optional.of(root.resolve("backups"));
+        platform.backups.next = new java.util.concurrent.CompletableFuture<>();
+        platform.commands.runAsConsole("cc-set", Map.of("id", "controlcore:restart-backup-first", "value", "on"));
+
+        api().restart(Duration.ofSeconds(10), "");
+        after(Duration.ofSeconds(10));
+        awaitRuns(1);
+        after(Duration.ofMinutes(5));
+        assertThat(platform.control.stops).isEmpty();
+
+        after(Duration.ofMinutes(5));
+        assertThat(platform.control.stops).hasSize(1);
+        assertThat(chat()).anyMatch(text -> text.contains("did not finish within 10 minutes"));
+    }
+
+    @Test
+    void aManualBackupThatNeverEndsDoesNotHoldTheRestartForever(@TempDir Path root) {
+        platform.backups.universe = root.resolve("universe");
+        platform.backups.directory = Optional.of(root.resolve("backups"));
+        platform.backups.next = new java.util.concurrent.CompletableFuture<>();
+        ControlCoreApi.get().backups().create();
+        awaitRuns(1);
+
+        api().restart(Duration.ofSeconds(10), "");
+        after(Duration.ofSeconds(10));
+        after(Duration.ofMinutes(9));
+        assertThat(platform.control.stops).isEmpty();
+
+        after(Duration.ofMinutes(1));
+        assertThat(platform.control.stops).hasSize(1);
+    }
+
+    @Test
+    void aStopThatFailsCanBeRetried() {
+        platform.control.failStop = true;
+        api().restart(Duration.ofSeconds(10), "");
+        after(Duration.ofSeconds(10));
+
+        assertThat(api().restartStatus().counting()).isFalse();
+        assertThat(platform.log.contains("Could not stop the server")).isTrue();
+
+        platform.control.failStop = false;
+        assertThat(api().restart(Duration.ofSeconds(10), "").isSuccess()).isTrue();
+        after(Duration.ofSeconds(10));
+        assertThat(platform.control.stops).hasSize(1);
+    }
+
+    @Test
+    void noBackupIsMadeBeforeRestartingWhileARestoreIsPlanned(@TempDir Path root) {
+        platform.backups.universe = root.resolve("universe");
+        platform.backups.directory = Optional.of(root.resolve("backups"));
+        platform.pendingRestore.restore = Optional.of(
+                new net.ofatech.controlcore.domain.model.server.PendingRestore("a.zip", "Admin", platform.clock.now));
+        platform.commands.runAsConsole("cc-set", Map.of("id", "controlcore:restart-backup-first", "value", "on"));
+
+        api().restart(Duration.ofSeconds(10), "");
+        after(Duration.ofSeconds(10));
+
+        assertThat(platform.backups.runs.get()).isZero();
+        assertThat(platform.control.stops).hasSize(1);
+        assertThat(platform.log.contains("a backup restore is planned")).isTrue();
+    }
+
+    @Test
+    void aScheduledRestartStillStartsWhenTheServerComesUpInsideTheCountdown() {
+        LocalDateTime now = LocalDateTime.ofInstant(platform.clock.now, ZoneId.systemDefault());
+        LocalDateTime target = now.truncatedTo(ChronoUnit.MINUTES).plusMinutes(5);
+        platform.commands.runAsConsole("cc-set", Map.of("id", "controlcore:restart-countdown", "value", "300"));
+        platform.commands.runAsConsole(
+                "cc-set",
+                Map.of(
+                        "id",
+                        "controlcore:restart-schedule",
+                        "value",
+                        target.format(DateTimeFormatter.ofPattern("HH:mm")) + "; " + target.getMinute() + " "
+                                + target.getHour() + " * * *"));
+
+        platform.clock.now = target.atZone(ZoneId.systemDefault()).toInstant().minusSeconds(30);
+        platform.scheduler.runAll();
+
+        assertThat(api().restartStatus().remaining()).contains(Duration.ofSeconds(30));
+        api().cancelRestart();
+        platform.scheduler.runAll();
+        assertThat(api().restartStatus().counting()).isFalse();
+    }
+
+    @Test
     void theAutomationActionRestarts() {
         RulesApi rules = ControlCoreApi.get().rules();
         var saved = rules.save(
@@ -202,6 +291,14 @@ class RestartRuntimeTest extends RuntimeTestBase {
     private void after(Duration time) {
         platform.clock.now = platform.clock.now.plus(time);
         platform.scheduler.runAll();
+    }
+
+    private void awaitRuns(int runs) {
+        long until = System.currentTimeMillis() + 5_000;
+        while (platform.backups.runs.get() < runs && System.currentTimeMillis() < until) {
+            Thread.onSpinWait();
+        }
+        assertThat(platform.backups.runs.get()).isEqualTo(runs);
     }
 
     private void awaitStop() {

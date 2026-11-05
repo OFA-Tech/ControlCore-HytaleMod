@@ -13,11 +13,18 @@ import net.ofatech.controlcore.domain.ports.system.Log;
 public final class JsonPendingRestoreStore implements PendingRestoreStore {
 
     private final JsonFile file;
+    private final Path copies;
     private final Log log;
 
-    public JsonPendingRestoreStore(Path file, Log log) {
+    public JsonPendingRestoreStore(Path file, Path copies, Log log) {
         this.file = new JsonFile(file, log, "planned backup restore");
+        this.copies = copies;
         this.log = log;
+    }
+
+    @Override
+    public Path copies() {
+        return copies;
     }
 
     @Override
@@ -34,6 +41,7 @@ public final class JsonPendingRestoreStore implements PendingRestoreStore {
         form.name = restore.name();
         form.by = restore.by();
         form.at = restore.at().toString();
+        form.copy = restore.copy();
         return file.write(form, FileForm.class);
     }
 
@@ -52,6 +60,7 @@ public final class JsonPendingRestoreStore implements PendingRestoreStore {
         private String name;
         private String by;
         private String at;
+        private String copy;
 
         Optional<PendingRestore> toRestore() {
             if (name == null || name.isBlank()) {
@@ -63,7 +72,7 @@ public final class JsonPendingRestoreStore implements PendingRestoreStore {
             } catch (DateTimeParseException e) {
                 when = Instant.EPOCH;
             }
-            return Optional.of(new PendingRestore(name, by, when));
+            return Optional.of(new PendingRestore(name, by, when, copy));
         }
     }
 }

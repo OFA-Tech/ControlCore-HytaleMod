@@ -29,12 +29,14 @@ final class AnnouncementsSection {
     private static final String LIST = "#AnnounceList";
     private static final String ROW = "Pages/ControlCore/AnnouncementRow.ui";
     private static final List<String> SETTINGS = List.of("Interval", "Order", "Channel", "Min");
+    private static final long CONFIRM_MILLIS = 10_000;
 
     private final AnnouncementsView view;
     private final Translator tr;
     private final AutomationTab.Host host;
     private final boolean withModes;
     private Optional<String> armedRemove = Optional.empty();
+    private long armedAt;
 
     AnnouncementsSection(AnnouncementsView view, Translator tr, AutomationTab.Host host, boolean withModes) {
         this.view = view;
@@ -134,8 +136,10 @@ final class AnnouncementsSection {
     }
 
     private void remove(String id) {
-        if (armedRemove.filter(id::equals).isEmpty()) {
+        boolean fresh = System.currentTimeMillis() - armedAt < CONFIRM_MILLIS;
+        if (armedRemove.filter(id::equals).isEmpty() || !fresh) {
             armedRemove = Optional.of(id);
+            armedAt = System.currentTimeMillis();
             UICommandBuilder update = new UICommandBuilder();
             update.set("#FooterStatus.Text", tr.t("controlcore.panel.announce.confirm_remove", "id", id));
             host.send(update);

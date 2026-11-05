@@ -6,6 +6,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class RestartScheduleTest {
@@ -24,10 +25,24 @@ class RestartScheduleTest {
         LocalDateTime early = LocalDateTime.of(2026, 11, 4, 3, 58, 59);
         LocalDateTime start = LocalDateTime.of(2026, 11, 4, 3, 59, 0);
 
-        assertThat(RestartService.hit(entries, at(early).plus(Duration.ofSeconds(60))))
+        assertThat(RestartService.due(entries, at(early), Duration.ofSeconds(60), Set.of()))
                 .isEmpty();
-        assertThat(RestartService.hit(entries, at(start).plus(Duration.ofSeconds(60))))
+        assertThat(RestartService.due(entries, at(start), Duration.ofSeconds(60), Set.of()))
                 .contains(LocalDateTime.of(2026, 11, 4, 4, 0));
+    }
+
+    @Test
+    void aStartInsideTheCountdownWindowStillFiresOnceForTwoEntriesOnTheSameMinute() {
+        var entries = RestartService.schedule("04:00; 0 4 * * *").valid();
+        LocalDateTime target = LocalDateTime.of(2026, 11, 4, 4, 0);
+        Instant late = at(LocalDateTime.of(2026, 11, 4, 3, 59, 45));
+
+        assertThat(RestartService.due(entries, late, Duration.ofSeconds(60), Set.of()))
+                .contains(target);
+        assertThat(RestartService.due(entries, late, Duration.ofSeconds(60), Set.of(target)))
+                .isEmpty();
+        assertThat(RestartService.due(entries, at(target), Duration.ofSeconds(60), Set.of()))
+                .isEmpty();
     }
 
     @Test

@@ -89,7 +89,7 @@ val runtimeDataFiles = listOf("Settings.json", "Settings.json.bak", "players.jso
     "SettingValues.json", "SettingValues.json.tmp", "KeyBinds.json", "KeyBinds.json.tmp",
     "CustomKeyBinds.json", "CustomKeyBinds.json.tmp", "KeyGameActions.json", "KeyGameActions.json.tmp", "ActiveProfile.json", "ActiveProfile.json.tmp", "AutomationRules.json", "AutomationRules.json.tmp", "Maintenance.json", "Maintenance.json.tmp", "Announcements.json", "Announcements.json.tmp", "PendingRestore.json", "PendingRestore.json.tmp",
     "SettingPermissions.json", "SettingPermissions.json.tmp",
-    "WorldSettings.json", "WorldSettings.json.tmp", "history/**", "snapshots/**", "diagnostics/**", "*.broken-*")
+    "WorldSettings.json", "WorldSettings.json.tmp", "history/**", "snapshots/**", "diagnostics/**", "pending-restore/**", "*.broken-*")
 
 tasks.processResources {
     exclude(runtimeDataFiles)

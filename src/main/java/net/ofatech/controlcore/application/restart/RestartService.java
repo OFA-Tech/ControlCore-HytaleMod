@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import net.ofatech.controlcore.application.automation.AutomationService;
 import net.ofatech.controlcore.application.automation.NotificationService;
 import net.ofatech.controlcore.application.backups.BackupService;
 import net.ofatech.controlcore.application.history.ChangeContext;
@@ -48,11 +49,12 @@ public final class RestartService {
     static final Duration MIN = Duration.ofSeconds(10);
     static final Duration MAX = Duration.ofHours(24);
     static final Duration REFRESH = Duration.ofSeconds(10);
+    static final Duration STATUS_REFRESH = Duration.ofMinutes(1);
+    static final Duration BACKUP_LIMIT = Duration.ofMinutes(10);
     static final String BAR = "controlcore-restart";
     static final int MAX_REASON = 256;
 
     private static final Pattern DELAY = Pattern.compile("(\\d{1,6})\\s*([smh]?)");
-    private static final Pattern DAILY = Pattern.compile("([01]?\\d|2[0-3]):([0-5]\\d)");
     private static final DateTimeFormatter WHEN = DateTimeFormatter.ofPattern("EEE HH:mm", Locale.ROOT);
 
     public interface Listener {
@@ -81,7 +83,11 @@ public final class RestartService {
     private String reason = "";
     private Instant shown;
     private boolean finishing;
+    private boolean stopStarted;
     private boolean stopFired;
+    private Instant backupUntil;
+    private Instant waitUntil;
+    private volatile Instant refreshed;
 
     public RestartService(
             RestartSettings settings,
@@ -204,10 +210,17 @@ public final class RestartService {
     }
 
     public synchronized void tick() {
+        Instant now = clock.now();
+        if (counting() && (refreshed == null || !now.isBefore(refreshed.plus(STATUS_REFRESH)))) {
+            changed();
+        }
         if (finishing) {
+            if (backupUntil != null && !now.isBefore(backupUntil)) {
+                backupTimedOut();
+                proceed();
+            }
             return;
         }
-        Instant now = clock.now();
         if (at == null) {
             checkSchedule(now);
             return;
@@ -215,10 +228,20 @@ public final class RestartService {
         Duration left = Duration.between(now, at);
         if (!left.isPositive()) {
             if (backups.running()) {
-                showAll("controlcore.restart.waiting_backup", false);
+                if (waitUntil == null) {
+                    waitUntil = now.plus(BACKUP_LIMIT);
+                }
+                if (now.isBefore(waitUntil)) {
+                    showAll("controlcore.restart.waiting_backup", false);
+                    return;
+                }
+                backupTimedOut();
+                waitUntil = null;
+                finish(false);
                 return;
             }
-            finish();
+            waitUntil = null;
+            finish(true);
             return;
         }
         long seconds = (left.toMillis() + 999) / 1000;
@@ -264,12 +287,20 @@ public final class RestartService {
         }
     }
 
-    private void finish() {
+    private void finish(boolean backUp) {
         at = null;
         finishing = true;
+        stopStarted = false;
         changed();
-        if (settings.backupFirst() && backups.configured()) {
+        boolean wanted = backUp && settings.backupFirst() && backups.configured();
+        if (wanted && backups.pending().isPresent()) {
+            log.info("Not backing up before the restart: a backup restore is planned for the next start");
+            notifications.toAdmins(texts.forServer().t("controlcore.restart.backup_skipped_restore"));
+            wanted = false;
+        }
+        if (wanted) {
             showAll("controlcore.restart.backing_up", true);
+            backupUntil = clock.now().plus(BACKUP_LIMIT);
             ChangeContext.as(
                             new ChangeContext.Attribution(
                                     Actor.console(texts.forServer().t("controlcore.restart.actor")),
@@ -285,11 +316,39 @@ public final class RestartService {
                             notifications.toAdmins(
                                     texts.forServer().t("controlcore.restart.backup_failed", "reason", why));
                         }
-                        stopNow();
+                        proceed();
                     });
             return;
         }
-        stopNow();
+        proceed();
+    }
+
+    private void backupTimedOut() {
+        log.warn("The backup before restarting did not finish within " + BACKUP_LIMIT.toMinutes()
+                + " minutes, restarting anyway");
+        notifications.toAdmins(
+                texts.forServer().t("controlcore.restart.backup_timeout", "minutes", BACKUP_LIMIT.toMinutes()));
+    }
+
+    private void proceed() {
+        synchronized (this) {
+            if (stopStarted) {
+                return;
+            }
+            stopStarted = true;
+            backupUntil = null;
+        }
+        try {
+            stopNow();
+        } catch (RuntimeException e) {
+            log.error("Could not stop the server for the restart", e);
+            synchronized (this) {
+                finishing = false;
+                stopStarted = false;
+            }
+            notifications.toAdmins(texts.forServer().t("controlcore.restart.stop_failed", "reason", e.getMessage()));
+            changed();
+        }
     }
 
     private void stopNow() {
@@ -323,10 +382,11 @@ public final class RestartService {
             return;
         }
         Duration countdown = settings.countdown();
-        Optional<LocalDateTime> hit = hit(entries, now.plus(countdown));
-        if (hit.isEmpty() || !scheduledDone.add(hit.get())) {
+        Optional<LocalDateTime> hit = due(entries, now, countdown, scheduledDone);
+        if (hit.isEmpty()) {
             return;
         }
+        scheduledDone.add(hit.get());
         Instant target = hit.get().atZone(ZoneId.systemDefault()).toInstant();
         Duration delay = Duration.between(now, target);
         Translator tr = texts.forServer();
@@ -353,20 +413,28 @@ public final class RestartService {
             if (entry.isEmpty()) {
                 continue;
             }
-            Matcher daily = DAILY.matcher(entry);
-            Optional<CronExpression> cron = daily.matches()
-                    ? CronExpression.parse(
-                            Integer.parseInt(daily.group(2)) + " " + Integer.parseInt(daily.group(1)) + " * * *")
-                    : CronExpression.parse(entry);
+            Optional<CronExpression> cron = AutomationService.clockTime(entry)
+                    .map(time -> CronExpression.parse(time.getMinute() + " " + time.getHour() + " * * *"))
+                    .orElseGet(() -> CronExpression.parse(entry));
             cron.ifPresentOrElse(valid::add, () -> invalid.add(entry));
         }
         return new Schedule(valid, invalid);
     }
 
-    static Optional<LocalDateTime> hit(List<CronExpression> entries, Instant when) {
-        LocalDateTime minute =
-                LocalDateTime.ofInstant(when, ZoneId.systemDefault()).truncatedTo(ChronoUnit.MINUTES);
-        return entries.stream().anyMatch(cron -> cron.matches(minute)) ? Optional.of(minute) : Optional.empty();
+    static Optional<LocalDateTime> due(
+            List<CronExpression> entries, Instant now, Duration countdown, Set<LocalDateTime> done) {
+        LocalDateTime until = LocalDateTime.ofInstant(now.plus(countdown), ZoneId.systemDefault());
+        for (LocalDateTime minute = LocalDateTime.ofInstant(now, ZoneId.systemDefault())
+                        .truncatedTo(ChronoUnit.MINUTES)
+                        .plusMinutes(1);
+                !minute.isAfter(until);
+                minute = minute.plusMinutes(1)) {
+            LocalDateTime candidate = minute;
+            if (!done.contains(candidate) && entries.stream().anyMatch(cron -> cron.matches(candidate))) {
+                return Optional.of(candidate);
+            }
+        }
+        return Optional.empty();
     }
 
     public Optional<LocalDateTime> nextScheduled() {
@@ -427,6 +495,7 @@ public final class RestartService {
     }
 
     private void changed() {
+        refreshed = clock.now();
         for (Runnable watcher : watchers) {
             try {
                 watcher.run();

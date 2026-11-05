@@ -250,8 +250,8 @@ public final class AnnouncementService {
             return Result.failure(forbidden());
         }
         Announcements now = state();
-        Optional<Integer> minutes =
-                interval.map(text -> number(text, 1, MAX_INTERVAL)).orElse(Optional.of(now.intervalMinutes()));
+        Optional<Integer> minutes = interval.map(text -> AutomationService.number(text, 1, MAX_INTERVAL))
+                .orElse(Optional.of(now.intervalMinutes()));
         if (minutes.isEmpty()) {
             return Result.failure(invalid(
                     "Announcements.InvalidInterval",
@@ -266,7 +266,9 @@ public final class AnnouncementService {
         if (newChannel.isEmpty()) {
             return Result.failure(CommonErrors.badChoice("Announcements.InvalidChannel", "chat, toast, warning"));
         }
-        Optional<Integer> min = minPlayers.map(text -> number(text, 0, 100_000)).orElse(Optional.of(now.minPlayers()));
+        Optional<Integer> min = minPlayers
+                .map(text -> AutomationService.number(text, 0, 100_000))
+                .orElse(Optional.of(now.minPlayers()));
         if (min.isEmpty()) {
             return Result.failure(invalid(
                     "Announcements.InvalidMinPlayers",
@@ -452,10 +454,10 @@ public final class AnnouncementService {
         }
         return base.withSettings(
                 parts[0].equals("on"),
-                number(parts[1], 1, MAX_INTERVAL).orElse(base.intervalMinutes()),
+                AutomationService.number(parts[1], 1, MAX_INTERVAL).orElse(base.intervalMinutes()),
                 Order.of(parts[2]).orElse(base.order()),
                 Channel.of(parts[3]).orElse(base.channel()),
-                number(parts[4], 0, 100_000).orElse(base.minPlayers()));
+                AutomationService.number(parts[4], 0, 100_000).orElse(base.minPlayers()));
     }
 
     private static String order(List<Item> items) {
@@ -486,15 +488,6 @@ public final class AnnouncementService {
                 .max()
                 .orElse(0);
         return Integer.toString(max + 1);
-    }
-
-    static Optional<Integer> number(String text, int min, int max) {
-        String value = clean(text);
-        if (!value.matches("\\d{1,7}")) {
-            return Optional.empty();
-        }
-        int number = Integer.parseInt(value);
-        return number >= min && number <= max ? Optional.of(number) : Optional.empty();
     }
 
     public AnnouncementsView viewedBy(PlayerId viewer) {

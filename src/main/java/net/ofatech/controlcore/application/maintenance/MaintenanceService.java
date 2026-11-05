@@ -100,10 +100,16 @@ public final class MaintenanceService {
 
     Optional<String> refuse(PlayerId player, String name) {
         MaintenanceState now = state();
-        if (!now.on() || mayJoin(player)) {
+        if (!now.on()) {
             return Optional.empty();
         }
-        return Optional.of(messageFor(now, texts.forServer()));
+        Translator tr = texts.forPlayer(Optional.of(player));
+        try {
+            return mayJoin(player) ? Optional.empty() : Optional.of(messageFor(now, tr));
+        } catch (RuntimeException e) {
+            log.error("The maintenance join check failed for " + name + "; refusing the join", e);
+            return Optional.of(tr.t("controlcore.maintenance.try_later"));
+        }
     }
 
     public static String messageFor(MaintenanceState state, Translator tr) {
@@ -116,7 +122,9 @@ public final class MaintenanceService {
             return Result.failure(forbidden());
         }
         String text = clean(message);
-        String newMotd = clean(motd);
+        boolean motdIgnored =
+                who.isPresent() && !policy.isAdmin(who.get()) && !clean(motd).isEmpty();
+        String newMotd = motdIgnored ? "" : clean(motd);
         if (text.length() > MAX_TEXT || newMotd.length() > MAX_TEXT) {
             return Result.failure(Error.validation(
                     "Maintenance.InvalidText",
@@ -130,15 +138,13 @@ public final class MaintenanceService {
                     "Maintenance.AlreadyOn",
                     Text.key("controlcore.errors.maintenance.already_on", "Maintenance mode is already on.")));
         }
-        Optional<String> saved = Optional.empty();
+        Optional<String> saved = now.savedMotd();
+        boolean writeMotd = false;
         if (!newMotd.isEmpty()) {
             Result<SettingSnapshot> current = serverConfig.read(MOTD, Optional.empty());
             if (current.isSuccess() && !current.value().value().equals(newMotd)) {
-                Result<SettingSnapshot> written = serverConfig.write(MOTD, Optional.empty(), newMotd);
-                if (written.isFailure()) {
-                    return Result.failure(written.error());
-                }
-                saved = Optional.of(current.value().value());
+                writeMotd = true;
+                saved = now.savedMotd().or(() -> Optional.of(current.value().value()));
             }
         }
         Instant at = clock.now();
@@ -150,8 +156,14 @@ public final class MaintenanceService {
                 offAfter.filter(time -> !time.isZero()).map(at::plus),
                 saved);
         if (!store.save(next)) {
-            saved.ifPresent(old -> serverConfig.write(MOTD, Optional.empty(), old));
             return Result.failure(CommonErrors.notSaved());
+        }
+        if (writeMotd) {
+            Result<SettingSnapshot> written = serverConfig.write(MOTD, Optional.empty(), newMotd);
+            if (written.isFailure()) {
+                store.save(now);
+                return Result.failure(written.error());
+            }
         }
         state = next;
         history.record(Kind.MAINTENANCE, TARGET, "off", "on", false);
@@ -165,7 +177,8 @@ public final class MaintenanceService {
             }
         }
         log.info("Maintenance mode is on; " + kicked + " players kicked, " + kept + " kept");
-        return Result.success(tr.t("controlcore.maintenance.turned_on", "kicked", kicked, "kept", kept));
+        String done = tr.t("controlcore.maintenance.turned_on", "kicked", kicked, "kept", kept);
+        return Result.success(motdIgnored ? done + " " + tr.t("controlcore.maintenance.motd_ignored") : done);
     }
 
     public synchronized Result<String> turnOff(Optional<PlayerId> who, Translator tr) {

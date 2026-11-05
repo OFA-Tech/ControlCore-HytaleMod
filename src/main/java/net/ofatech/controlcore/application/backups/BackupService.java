@@ -2,8 +2,10 @@ package net.ofatech.controlcore.application.backups;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.time.Instant;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -12,9 +14,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import net.ofatech.controlcore.application.history.ChangeContext;
 import net.ofatech.controlcore.application.history.ChangeHistory;
@@ -56,7 +60,12 @@ public final class BackupService {
     private static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
     private static final DateTimeFormatter WHEN = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
-    record Outcome(String name, boolean ok, String detail) {}
+    record Outcome(String name, boolean ok, Text detail, List<Text> notes, String original) {
+
+        Outcome(String name, boolean ok, Text detail) {
+            this(name, ok, detail, List.of(), "");
+        }
+    }
 
     private final ServerBackups backups;
     private final PendingRestoreStore store;
@@ -101,6 +110,10 @@ public final class BackupService {
         return who.isEmpty() || policy.isAdmin(who.get()) || permissions.hasOwn(who.get(), NODE);
     }
 
+    public boolean mayChangeDirectory(Optional<PlayerId> who) {
+        return who.isEmpty() || policy.isAdmin(who.get());
+    }
+
     public boolean configured() {
         return backups.directory().isPresent();
     }
@@ -132,7 +145,8 @@ public final class BackupService {
         try (Stream<Path> files = Files.list(folder)) {
             for (Path file : files.toList()) {
                 String name = file.getFileName().toString();
-                if (Files.isRegularFile(file) && name.toLowerCase(Locale.ROOT).endsWith(".zip")) {
+                if (Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)
+                        && name.toLowerCase(Locale.ROOT).endsWith(".zip")) {
                     found.add(new BackupFile(
                             prefix + name, Files.getLastModifiedTime(file).toInstant(), Files.size(file), archived));
                 }
@@ -153,6 +167,14 @@ public final class BackupService {
         if (directory.isEmpty()) {
             return Result.failure(notConfigured());
         }
+        if (!UniverseFiles.NAME.matcher(wanted).matches() && find(wanted).isPresent()) {
+            return Result.failure(Error.validation(
+                    "Backup.BadName",
+                    Text.key(
+                                    "controlcore.errors.backup.bad_name",
+                                    "{name} can't be used: backup names may only have letters, digits, . _ and -. Rename the file.")
+                            .with("name", wanted)));
+        }
         return UniverseFiles.resolve(directory.get(), wanted)
                 .map(Result::success)
                 .orElseGet(() -> Result.failure(Error.notFound(
@@ -172,46 +194,50 @@ public final class BackupService {
             return CompletableFuture.completedFuture(Result.failure(notConfigured()));
         }
         if (!running.compareAndSet(false, true)) {
-            return CompletableFuture.completedFuture(Result.failure(Error.conflict(
-                    "Backup.Running",
-                    Text.key(
-                            "controlcore.errors.backup.running",
-                            "A backup is already running. Wait for it to finish."))));
+            return CompletableFuture.completedFuture(Result.failure(busy()));
         }
         ChangeContext.Attribution by = ChangeContext.current();
-        Instant started = clock.now();
         CompletableFuture<Result<BackupFile>> work;
         try {
-            work = CompletableFuture.supplyAsync(() -> room(directory.get()))
-                    .thenCompose(room -> room.isFailure()
-                            ? CompletableFuture.completedFuture(Result.<BackupFile>failure(room.error()))
-                            : backups.run().thenApply(done -> newest(directory.get(), started)));
+            work = CompletableFuture.supplyAsync(() -> room(directory.get())).thenCompose(room -> {
+                if (room.isFailure()) {
+                    return CompletableFuture.completedFuture(Result.<BackupFile>failure(room.error()));
+                }
+                Set<String> before = names();
+                return backups.run().thenApply(done -> newest(directory.get(), before));
+            });
         } catch (RuntimeException e) {
             work = CompletableFuture.failedFuture(e);
         }
         return work.handle((result, failure) -> {
-            Result<BackupFile> done = failure == null ? result : Result.failure(failed(failure));
-            if (done.isSuccess()) {
-                ChangeContext.as(by, () -> {
-                    history.record(Kind.BACKUP, done.value().name(), "", CREATED, false);
-                    return null;
-                });
-                last = Optional.of(Text.key("controlcore.backups.done", "Done: {name} ({size}).")
-                        .with(
-                                "name",
-                                done.value().name(),
-                                "size",
-                                size(done.value().size())));
-                log.info("Backup made: " + done.value().name() + " ("
-                        + size(done.value().size()) + ")");
-            } else {
-                last = Optional.of(Text.key("controlcore.backups.failed", "The backup failed: {reason}")
-                        .with("reason", texts.forServer().error(done.error())));
-                log.warn("Backup failed: " + texts.forServer().error(done.error()));
+            try {
+                return finished(failure == null ? result : Result.failure(failed(failure)), by);
+            } finally {
+                running.set(false);
             }
-            running.set(false);
-            return done;
         });
+    }
+
+    private Result<BackupFile> finished(Result<BackupFile> done, ChangeContext.Attribution by) {
+        if (done.isSuccess()) {
+            ChangeContext.as(by, () -> {
+                history.record(Kind.BACKUP, done.value().name(), "", CREATED, false);
+                return null;
+            });
+            last = Optional.of(Text.key("controlcore.backups.done", "Done: {name} ({size}).")
+                    .with("name", done.value().name(), "size", size(done.value().size())));
+            log.info("Backup made: " + done.value().name() + " ("
+                    + size(done.value().size()) + ")");
+        } else {
+            last = Optional.of(Text.key("controlcore.backups.failed", "The backup failed: {reason}")
+                    .with("reason", texts.forServer().error(done.error())));
+            log.warn("Backup failed: " + texts.forServer().error(done.error()));
+        }
+        return done;
+    }
+
+    private Set<String> names() {
+        return list().stream().map(BackupFile::name).collect(Collectors.toSet());
     }
 
     Result<Boolean> room(Path directory) {
@@ -232,12 +258,10 @@ public final class BackupService {
         }
     }
 
-    private Result<BackupFile> newest(Path directory, Instant started) {
-        Instant since = started.minusSeconds(5);
+    private Result<BackupFile> newest(Path directory, Set<String> before) {
         return list().stream()
-                .filter(file -> !file.archived() && !file.at().isBefore(since))
+                .filter(file -> !file.archived() && !before.contains(file.name()))
                 .findFirst()
-                .or(() -> list().stream().filter(file -> !file.archived()).findFirst())
                 .map(Result::success)
                 .orElseGet(() -> Result.failure(Error.failure(
                         "Backup.Missing",
@@ -292,13 +316,77 @@ public final class BackupService {
                                     "The restore of {name} is already planned. Cancel it first.")
                             .with("name", now.get().name())));
         }
+        Result<Path> copy = copyForRestore(file.value(), shown);
+        if (copy.isFailure()) {
+            return Result.failure(copy.error());
+        }
         String by = ChangeContext.current().actor().name();
-        if (!store.save(new PendingRestore(shown, by, clock.now()))) {
+        if (!store.save(new PendingRestore(shown, by, clock.now(), copy.value().toString()))) {
+            deleteCopy(copy.value());
             return Result.failure(CommonErrors.notSaved());
         }
         history.record(Kind.BACKUP, shown, "", RESTORE, false);
         log.info("Backup " + shown + " will be restored at the next start");
         return Result.success(tr.t("controlcore.backups.restore_planned", "name", shown));
+    }
+
+    private Result<Path> copyForRestore(Path source, String shown) {
+        try {
+            UniverseFiles.layout(source, backups.universe());
+        } catch (UniverseFiles.NotUniverse e) {
+            return Result.failure(Error.validation("Backup.NotUniverse", notUniverse()));
+        } catch (IOException | RuntimeException e) {
+            return Result.failure(Error.validation(
+                    "Backup.Unreadable",
+                    Text.key("controlcore.errors.backup.unreadable", "{name} can't be restored: {reason}")
+                            .with("name", shown, "reason", String.valueOf(e.getMessage()))));
+        }
+        Path folder = store.copies();
+        Path copy = folder.resolve(source.getFileName().toString());
+        try {
+            long needed = Files.size(source);
+            long free = backups.usableSpace(UniverseFiles.nearestExisting(folder));
+            if (free >= 0 && free < needed) {
+                return Result.failure(Error.conflict(
+                        "Backup.NoSpace",
+                        Text.key(
+                                        "controlcore.errors.backup.no_space_copy",
+                                        "Not enough free disk space to keep a copy of {name} for the restore: it is {needed}, the disk has {free} free.")
+                                .with("name", shown, "needed", size(needed), "free", size(free))));
+            }
+            Files.createDirectories(folder);
+            Files.copy(source, copy, StandardCopyOption.REPLACE_EXISTING);
+            return Result.success(copy);
+        } catch (IOException | RuntimeException e) {
+            deleteCopy(copy);
+            return Result.failure(Error.failure(
+                    "Backup.CopyFailed",
+                    Text.key("controlcore.errors.backup.copy_failed", "Could not copy {name} for the restore: {reason}")
+                            .with("name", shown, "reason", String.valueOf(e.getMessage()))));
+        }
+    }
+
+    private Optional<Path> copyOf(PendingRestore restore) {
+        if (restore.copy().isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            Path copy = Path.of(restore.copy()).toAbsolutePath().normalize();
+            Path folder = store.copies().toAbsolutePath().normalize();
+            return copy.startsWith(folder) && Files.isRegularFile(copy, LinkOption.NOFOLLOW_LINKS)
+                    ? Optional.of(copy)
+                    : Optional.empty();
+        } catch (InvalidPathException e) {
+            return Optional.empty();
+        }
+    }
+
+    private void deleteCopy(Path copy) {
+        try {
+            Files.deleteIfExists(copy);
+        } catch (IOException e) {
+            log.warn("Could not delete the restore copy " + copy + ": " + e.getMessage());
+        }
     }
 
     public synchronized Result<String> cancelRestore(Optional<PlayerId> who, Translator tr) {
@@ -313,6 +401,7 @@ public final class BackupService {
         if (!store.clear()) {
             return Result.failure(CommonErrors.notSaved());
         }
+        copyOf(now.get()).ifPresent(this::deleteCopy);
         history.record(Kind.BACKUP, now.get().name(), RESTORE, "", false);
         log.info("Restore of backup " + now.get().name() + " cancelled");
         return Result.success(
@@ -356,31 +445,89 @@ public final class BackupService {
                     "Could not delete PendingRestore.json, so backup " + name
                             + " was not restored (it would restore again at every start). Delete the file by hand.",
                     null);
-            startup = Optional.of(new Outcome(name, false, "PendingRestore.json could not be deleted"));
+            startup = Optional.of(new Outcome(name, false, Text.of("PendingRestore.json could not be deleted")));
             return;
         }
         Path universe = backups.universe();
         Path aside = UniverseFiles.asideOf(
                 universe, STAMP.format(LocalDateTime.ofInstant(clock.now(), ZoneId.systemDefault())));
-        Optional<Path> zip = backups.directory().flatMap(directory -> UniverseFiles.resolve(directory, name));
+        Optional<Path> copy = copyOf(pending.get());
+        Optional<Path> zip =
+                copy.or(() -> backups.directory().flatMap(directory -> UniverseFiles.resolve(directory, name)));
         if (zip.isEmpty()) {
             log.error(
                     "Backup " + name + " was not restored: the file is gone or the backup directory is not set."
                             + " The universe was left as it was.",
                     null);
-            startup = Optional.of(new Outcome(name, false, "the backup file is gone"));
+            startup = Optional.of(new Outcome(name, false, Text.of("the backup file is gone")));
             return;
         }
         try {
-            UniverseFiles.restore(zip.get(), universe, aside);
+            UniverseFiles.Layout layout = UniverseFiles.layout(zip.get(), universe);
+            long free = backups.usableSpace(UniverseFiles.nearestExisting(universe));
+            if (free >= 0 && free < layout.unpackedSize()) {
+                throw new NoSpace(layout.unpackedSize(), free);
+            }
+            UniverseFiles.restore(zip.get(), universe, aside, layout);
             log.info("Backup " + name + " restored; the previous universe was moved to " + aside);
-            startup = Optional.of(new Outcome(name, true, aside.getFileName().toString()));
+            startup = Optional.of(
+                    new Outcome(name, true, Text.of(aside.getFileName().toString())));
+            copy.ifPresent(this::deleteCopy);
         } catch (IOException | RuntimeException e) {
-            boolean kept = Files.exists(universe) || !Files.exists(aside);
-            String where = kept ? " The universe was left as it was." : " The old universe is in " + aside + ".";
-            log.error("Backup " + name + " could not be restored." + where, e);
-            startup = Optional.of(new Outcome(name, false, String.valueOf(e.getMessage()) + where));
+            startup = Optional.of(failedRestore(name, e, universe, aside, copy));
+            Outcome failed = startup.get();
+            Translator tr = texts.forServer();
+            log.error(
+                    "Backup " + name + " could not be restored: " + tr.translate(failed.detail()) + " "
+                            + String.join(
+                                    " ",
+                                    failed.notes().stream().map(tr::translate).toList()),
+                    e);
         }
+    }
+
+    private static final class NoSpace extends IOException {
+        private static final long serialVersionUID = 1L;
+        private final long needed;
+        private final long free;
+
+        NoSpace(long needed, long free) {
+            super("not enough free disk space");
+            this.needed = needed;
+            this.free = free;
+        }
+    }
+
+    private Outcome failedRestore(String name, Exception e, Path universe, Path aside, Optional<Path> copy) {
+        Text reason = switch (e) {
+            case UniverseFiles.NotUniverse ignored -> notUniverse();
+            case NoSpace space ->
+                Text.key(
+                                "controlcore.errors.backup.no_space_restore",
+                                "Not enough free disk space to restore: the backup unpacks to {needed}, the disk has {free} free.")
+                        .with("needed", size(space.needed), "free", size(space.free));
+            default -> Text.of(String.valueOf(e.getMessage()));
+        };
+        List<Text> notes = new ArrayList<>();
+        String original = "";
+        if (Files.exists(aside)) {
+            original = aside.toString();
+            notes.add(Text.key(
+                            "controlcore.backups.universe_aside",
+                            "The original universe is in {aside}; the universe folder may be missing or incomplete.")
+                    .with("aside", aside.toString()));
+        } else {
+            notes.add(Text.key("controlcore.backups.universe_kept", "The universe was left as it was."));
+        }
+        Path partial = UniverseFiles.failedOf(aside);
+        if (Files.exists(partial)) {
+            notes.add(Text.key("controlcore.backups.universe_partial", "The partly restored files are in {folder}.")
+                    .with("folder", partial.toString()));
+        }
+        copy.ifPresent(
+                kept -> notes.add(Text.key("controlcore.backups.copy_kept", "The copy of the backup is kept in {copy}.")
+                        .with("copy", kept.toString())));
+        return new Outcome(name, false, reason, List.copyOf(notes), original);
     }
 
     public void recordStartup() {
@@ -398,7 +545,11 @@ public final class BackupService {
                             Kind.BACKUP,
                             outcome.get().name(),
                             RESTORE,
-                            outcome.get().ok() ? RESTORED : FAILED,
+                            outcome.get().ok()
+                                    ? RESTORED
+                                    : outcome.get().original().isEmpty()
+                                            ? FAILED
+                                            : FAILED + ":" + outcome.get().original(),
                             false);
                     return null;
                 });
@@ -406,13 +557,21 @@ public final class BackupService {
 
     public Optional<String> startupText(Translator tr) {
         return startup.map(outcome -> outcome.ok()
-                ? tr.t("controlcore.backups.restored_at_start", "name", outcome.name(), "aside", outcome.detail())
-                : tr.t(
-                        "controlcore.backups.restore_failed_at_start",
+                ? tr.t(
+                        "controlcore.backups.restored_at_start",
                         "name",
                         outcome.name(),
-                        "reason",
-                        outcome.detail()));
+                        "aside",
+                        tr.translate(outcome.detail()))
+                : tr.t(
+                                "controlcore.backups.restore_failed_at_start",
+                                "name",
+                                outcome.name(),
+                                "reason",
+                                tr.translate(outcome.detail()))
+                        + outcome.notes().stream()
+                                .map(note -> " " + tr.translate(note))
+                                .collect(Collectors.joining()));
     }
 
     public void showStartupTo(PlayerId player) {
@@ -473,12 +632,46 @@ public final class BackupService {
         if (!mayManage(who)) {
             return Result.failure(forbidden());
         }
+        if (!mayChangeDirectory(who)) {
+            return Result.failure(Error.forbidden(
+                    "Backup.DirectoryForbidden",
+                    Text.key(
+                            "controlcore.errors.backup.directory_forbidden",
+                            "Only admins and the console may change the backup directory.")));
+        }
         String value = directory == null || directory.isBlank() ? DEFAULT_DIRECTORY : directory.strip();
+        if (!insideServerFolder(value)) {
+            return Result.failure(Error.validation(
+                    "Backup.BadDirectory",
+                    Text.key(
+                                    "controlcore.errors.backup.bad_directory",
+                                    "'{directory}' can't be the backup directory: use a folder inside the server folder, for example backups (no drive letter, no .. and no leading slash).")
+                            .with("directory", value)));
+        }
         Result<SettingSnapshot> written = serverConfig.write(DIRECTORY, Optional.empty(), value);
         if (written.isFailure()) {
             return Result.failure(written.error());
         }
         return Result.success(tr.t("controlcore.backups.directory_set", "directory", value));
+    }
+
+    static boolean insideServerFolder(String value) {
+        if (value.startsWith("/") || value.startsWith("\\") || value.contains(":")) {
+            return false;
+        }
+        for (String part : value.split("[/\\\\]")) {
+            if (part.strip().equals("..")) {
+                return false;
+            }
+        }
+        try {
+            Path server = Path.of("").toAbsolutePath().normalize();
+            Path relative = Path.of(value);
+            Path resolved = server.resolve(relative).normalize();
+            return !relative.isAbsolute() && resolved.startsWith(server) && !resolved.equals(server);
+        } catch (InvalidPathException e) {
+            return false;
+        }
     }
 
     public String describe(BackupFile file, Translator tr) {
@@ -501,6 +694,9 @@ public final class BackupService {
     }
 
     public String shown(String value, Translator tr) {
+        if (value.startsWith(FAILED + ":")) {
+            return tr.t("controlcore.history.value.backup_failed_aside", "aside", value.substring(FAILED.length() + 1));
+        }
         return switch (value) {
             case CREATED -> tr.t("controlcore.history.value.backup_created");
             case DELETED -> tr.t("controlcore.history.value.backup_deleted");
@@ -614,6 +810,18 @@ public final class BackupService {
                 "Backup.Failed",
                 Text.key("controlcore.errors.backup.failed", "The backup failed: {reason}")
                         .with("reason", String.valueOf(cause.getMessage())));
+    }
+
+    static Error busy() {
+        return Error.conflict(
+                "Backup.Running",
+                Text.key("controlcore.errors.backup.running", "A backup is already running. Wait for it to finish."));
+    }
+
+    private static Text notUniverse() {
+        return Text.key(
+                "controlcore.errors.backup.not_universe",
+                "This zip is not a Hytale universe backup (it has no worlds folder).");
     }
 
     static Error forbidden() {

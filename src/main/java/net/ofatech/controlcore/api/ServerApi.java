@@ -10,12 +10,15 @@ import net.ofatech.controlcore.domain.result.Result;
  * The server as a whole: maintenance mode and restarts. Maintenance mode is as in the control panel's Server Configs -> Players view (Whitelisted
  * filter) and {@code /cc-maintenance}; restarts as the Restart buttons and {@code /cc-restart}. Get it with {@link ControlCoreApi#server()}.
  *
- * <p>While maintenance mode is on, only admins and players with {@code ofatech.controlcore.maintenance.join} may
- * join; turning it on kicks every other online player with the maintenance message. A maintenance MOTD, if given,
- * replaces config.json {@code MOTD} while it is on and the old one comes back when it is turned off.
+ * <p>While maintenance mode is on, only admins and players with {@code ofatech.controlcore.maintenance.join} or
+ * {@code ofatech.controlcore.maintenance} may join; turning it on kicks every other online player with the
+ * maintenance message. A maintenance MOTD, if given, replaces config.json {@code MOTD} while it is on and the old one
+ * comes back when it is turned off.
  *
  * <p>The API acts with full rights, like the console. {@link #actingFor(PlayerId)} gives the same API with a
- * player's rights: admins and players with {@code ofatech.controlcore.maintenance} may change maintenance mode, admins and players with {@code ofatech.controlcore.restart} may restart.
+ * player's rights: admins and players with {@code ofatech.controlcore.maintenance} may change maintenance mode
+ * (only admins may set its MOTD; for others the MOTD is ignored and the reply says so), admins and players with
+ * {@code ofatech.controlcore.restart} may restart.
  *
  * <pre>{@code
  * api.server().setMaintenance(true, new MaintenanceOptions("Back at 18:00", "", Optional.of(Duration.ofHours(1))));

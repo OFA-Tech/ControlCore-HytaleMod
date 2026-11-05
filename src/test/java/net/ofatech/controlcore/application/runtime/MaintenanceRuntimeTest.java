@@ -171,6 +171,42 @@ class MaintenanceRuntimeTest extends RuntimeTestBase {
         assertThat(platform.admin.kicked).containsExactly(guest.id() + ":Closed for tonight");
     }
 
+    @Test
+    void onlyAdminsChangeTheMotdAndOthersAreTold() {
+        platform.deniedNodesFor.put(guest.id(), List.of("admin", "settings", "maintenance.join"));
+
+        Result<String> on = api().actingFor(guest.id())
+                .setMaintenance(true, new ServerApi.MaintenanceOptions("Later", "Closed", Optional.empty()));
+
+        assertThat(on.isSuccess()).isTrue();
+        assertThat(on.value()).contains("only admins");
+        assertThat(motd()).isEqualTo("Welcome");
+        assertThat(platform.maintenance.state.savedMotd()).isEmpty();
+    }
+
+    @Test
+    void maintenanceIsSavedBeforeTheMotdIsWritten() {
+        platform.maintenance.failWrites = true;
+
+        assertThat(api().setMaintenance(true, new ServerApi.MaintenanceOptions("", "Closed", Optional.empty()))
+                        .isFailure())
+                .isTrue();
+        assertThat(platform.serverConfig.writes).isEmpty();
+        assertThat(motd()).isEqualTo("Welcome");
+    }
+
+    @Test
+    void aBrokenJoinCheckRefusesWhileMaintenanceIsOnAndAllowsWhileOff() {
+        platform.permissionsFail = true;
+        assertThat(platform.joins.connect(guest.id(), "Guest")).isEmpty();
+
+        platform.permissionsFail = false;
+        api().setMaintenance(true, ServerApi.MaintenanceOptions.DEFAULT);
+        platform.permissionsFail = true;
+
+        assertThat(platform.joins.connect(admin.id(), "Admin").orElseThrow()).contains("try again later");
+    }
+
     private static ServerApi api() {
         return ControlCoreApi.get().server();
     }
