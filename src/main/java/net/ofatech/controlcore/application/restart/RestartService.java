@@ -229,12 +229,15 @@ public final class RestartService {
         }
         Duration left = Duration.between(now, at);
         if (!left.isPositive()) {
-            if (backups.running()) {
+            boolean preparing = backups.preparingRestore();
+            if (backups.running() || preparing) {
                 if (waitUntil == null) {
                     waitUntil = now.plus(BACKUP_LIMIT);
                 }
                 if (now.isBefore(waitUntil)) {
-                    showAll("controlcore.restart.waiting_backup", false);
+                    showAll(
+                            preparing ? "controlcore.restart.waiting_restore" : "controlcore.restart.waiting_backup",
+                            false);
                     return;
                 }
                 backupTimedOut();

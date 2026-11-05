@@ -12,6 +12,7 @@ import net.ofatech.controlcore.api.ControlCoreApi;
 import net.ofatech.controlcore.api.ServerApi;
 import net.ofatech.controlcore.application.restart.RestartService;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
+import net.ofatech.controlcore.domain.result.Result;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -27,6 +28,7 @@ class RestartWaitTest extends RuntimeTestBase {
     void startUp() {
         platform.backups.universe = root.resolve("universe");
         platform.backups.directory = Optional.of(root.resolve("backups"));
+        platform.pendingRestore.copies = root.resolve("pending-restore");
         runtime.setup();
         runtime.start();
         player = platform.players.join("Steve");
@@ -53,6 +55,33 @@ class RestartWaitTest extends RuntimeTestBase {
                 .isEmpty();
         after(Duration.ofMinutes(10));
         assertThat(platform.control.stops).hasSize(1);
+    }
+
+    @Test
+    void aRestartWaitsWhileTheRestoreCopyIsBeingMade() {
+        String name = ControlCoreApi.get().backups().create().join().value().name();
+        CompletableFuture<Void> gate = new CompletableFuture<>();
+        platform.backups.spaceGate = gate;
+        CompletableFuture<Result<String>> planning =
+                ControlCoreApi.get().backups().restoreOnNextStart(name);
+
+        ControlCoreApi.get().server().restart(Duration.ofSeconds(10), "");
+        after(Duration.ofSeconds(11));
+
+        try {
+            assertThat(platform.control.stops)
+                    .as("stopping now kills the copy, so the planned restore silently never happens")
+                    .isEmpty();
+        } finally {
+            platform.backups.spaceGate = null;
+            gate.complete(null);
+            planning.join();
+        }
+        assertThat(planning.join().isSuccess()).isTrue();
+        after(Duration.ofSeconds(10));
+        assertThat(platform.control.stops)
+                .as("the copy is done, so the restart goes on")
+                .hasSize(1);
     }
 
     @Test
