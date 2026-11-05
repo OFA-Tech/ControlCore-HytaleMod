@@ -31,7 +31,7 @@ final class SettingRowEditor {
 
     static final String RESTORE_DEFAULTS = "RestoreDefaults";
     static final String HISTORY_LINK = "HistoryOf";
-    static final int BANNER_NAMES = 3;
+    static final int BANNER_NAMES = 2;
 
     interface Host {
         PlayerRef viewer();

@@ -14,9 +14,8 @@ class RestartNoticeTest {
     @Test
     void aFewChangesAreListedAndManyAreCounted() {
         assertThat(SettingRowEditor.pendingText(List.of(), tr)).isEmpty();
-        assertThat(SettingRowEditor.pendingText(List.of("A", "B", "C"), tr))
-                .isEqualTo("Restart the server to apply: A, B, C.");
+        assertThat(SettingRowEditor.pendingText(List.of("A", "B"), tr)).isEqualTo("Restart the server to apply: A, B.");
         assertThat(SettingRowEditor.pendingText(List.of("A", "B", "C", "D", "E"), tr))
-                .isEqualTo("5 changes need a restart: A, B, C and 2 more.");
+                .isEqualTo("5 changes need a restart: A, B and 3 more.");
     }
 }
