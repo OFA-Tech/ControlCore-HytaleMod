@@ -5,8 +5,10 @@
 ### Added
 - **Maintenance mode**: a bar in Server Configs -> Players (Whitelisted filter) and `/cc-maintenance <on|off|status>
   [--message=] [--motd=] [--for=]`. Turning it on (press twice in the panel) kicks every online player who is not an
-  admin and lacks `ofatech.controlcore.maintenance.join`, and refuses them until it is off. Optional message, a MOTD
-  shown while it is on (the old one comes back after) and an automatic end (15 min to 4 h, or `--for=30m`). Needs
+  admin and lacks `ofatech.controlcore.maintenance.join` and `ofatech.controlcore.maintenance`, and refuses them until
+  it is off (if that check itself fails while maintenance is on, the join is refused with "try again later"). Optional
+  message, a MOTD shown while it is on (admins and the console only; for others it is ignored and the reply says so; the
+  old one comes back after) and an automatic end (15 min to 4 h, or `--for=30m`). Needs
   `ofatech.controlcore.maintenance`; recorded in History, where rolling it back turns it the other way. New automation
   actions **Turn maintenance on** (value: the message) and **Turn maintenance off**.
 - **Rotating announcements**: a **Rules | Announcements** switch in the Automation tab, and `/cc-announce-list`,
@@ -17,22 +19,30 @@
   them (new part `announcements`, restoring it needs an admin).
 - **Backups**: a **Backups** view in Server Configs (next to config.json | Worlds | Players) and `/cc-backup
   [--directory=]`, `/cc-backups`, `/cc-backup-delete <name> confirm`. It uses Hytale's own universe backup: set the
-  backup directory right there if none is set, **Back up now** (one at a time, refused when the disk has less free
-  space than the universe), the list of latest and archived backups with date and size, and Delete (press twice).
+  backup directory right there if none is set (admins and the console only, and only a folder inside the server
+  folder), **Back up now** (one at a time, refused when the disk has less free space than the universe; a run that
+  writes no new zip is reported as failed), the list of latest and archived backups with date and size, and Delete
+  (press twice). Backup names may only use letters, digits, `.`, `_` and `-`; others are listed with a clear error.
   Needs `ofatech.controlcore.backups` (admins have it); recorded in History. New automation action **Make a backup**.
 - **Restore on next start**: **Restore on next start** (press twice) or `/cc-backup-restore <name> confirm` plans a
-  restore; `/cc-backup-restore-cancel` or **Cancel restore** cancels it. At the next start, before any world loads,
-  ControlCore moves the current universe to `universe-before-restore-<date>` and unpacks the backup (entries outside
-  the universe folder are refused); if anything fails the universe is left or put back as it was. The result is in
-  History, the log, the Health tab's problems (on failure) and a chat line for the first admin who joins.
+  restore; `/cc-backup-restore-cancel` or **Cancel restore** cancels it. Planning copies the zip to ControlCore's
+  `pending-restore` folder, so Hytale's backup rotation cannot remove it; only zips with a `worlds` folder can be
+  planned (a zip with everything inside one top folder is unpacked without it). At the next start, before any world
+  loads, ControlCore checks the free space, moves the current universe to `universe-before-restore-<date>` and
+  unpacks the copy (entries outside the universe folder are refused), then deletes the copy; if anything fails the
+  universe is left or put back as it was (or, if that is impossible, the message says where the original is) and the
+  copy is kept. The result is in History, the log, the Health tab's problems (on failure) and a chat line for the
+  first admin who joins.
 - **Restarts**: a **Restart** button (press twice, with a 10 s to 10 min or default countdown) in the restart banner,
   which also shows after mod changes in the Mods tab, and in the Health tab, plus `/cc-restart [--in=] [--reason=]`,
   `/cc-restart-cancel` and `/cc-restart-status`. Everyone gets a warning bar and chat warnings at 10 min, 5 min, 1 min,
   30 s and 10 s; at zero players are kicked with "Server restarting, back soon!" and the server stops (the host must
-  start it again). New settings **Restart countdown** (10 to 600 s, default 60), **Back up before restarting** and
-  **Scheduled restarts** (daily `HH:mm` times and cron schedules). Needs `ofatech.controlcore.restart`. New automation
-  action **Restart the server** and triggers **A restart countdown starts** and **The server is stopping** (every
-  stop, before players are disconnected).- **API 2.5.0** (additive; mods built for 2.0.0 and later keep working): `server()` with `maintenance()` and
+  start it again). New settings **Restart countdown** (10 to 600 s, default 60), **Back up before restarting** (skipped
+  while a restore is planned; the restart waits at most 10 minutes for a backup) and **Scheduled restarts** (daily
+  `HH:mm` times and cron schedules; also started when the server comes up inside the countdown). Needs
+  `ofatech.controlcore.restart`. New automation action **Restart the server** and triggers **A restart countdown
+  starts** and **The server is stopping** (every stop, before players are disconnected).
+- **API 2.5.0** (additive; mods built for 2.0.0 and later keep working): `server()` with `maintenance()` and
   `setMaintenance(on, MaintenanceOptions)`, `announcements()` with `list`, `add`, `remove`, `setEnabled`, `move`,
   `settings`, `setSettings`, `sendNow` and `send`, both with `actingFor(player)`; `SnapshotsApi.Part.ANNOUNCEMENTS`;
   `server().restart`, `cancelRestart` and `restartStatus`; `backups()` with `configured`, `setDirectory`, `create`,

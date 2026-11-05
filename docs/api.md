@@ -314,7 +314,8 @@ lists the player may not see are empty. `players().teleportTo` and `bring` move 
 ## Maintenance and announcements (API 2.5.0)
 
 `server()` reads and switches maintenance mode (`maintenance()`, `setMaintenance(on, MaintenanceOptions)`); turning it
-on kicks every online player who is not an admin and lacks `ofatech.controlcore.maintenance.join`. `announcements()`
+on kicks every online player who is not an admin and lacks `ofatech.controlcore.maintenance.join` and
+`ofatech.controlcore.maintenance` (only admins may set the maintenance MOTD). `announcements()`
 manages rotating announcements (`list`, `add`, `remove`, `setEnabled`, `move`, `settings`/`setSettings`, `sendNow`,
 `send`). Both have `actingFor(playerId)` like the other server sections; the nodes are
 `ofatech.controlcore.maintenance` and `ofatech.controlcore.announcements`. `SnapshotsApi.Part.ANNOUNCEMENTS` is new.

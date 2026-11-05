@@ -81,7 +81,7 @@ The console counts as an admin; `/cc-tp` and `/cc-bring` need a player.
 | `/cc-whitelist` | `ofatech.controlcore.players.whitelist` | list the whitelist, 20 at most |
 | `/cc-whitelist-add <player>` / `/cc-whitelist-remove <player>` | `ofatech.controlcore.players.whitelist` | add a player to the whitelist or remove one |
 | `/cc-whitelist-require <on\|off>` | `ofatech.controlcore.players.whitelist` | whether joining needs the whitelist (config.json `RequireJoinPermission`, live, in History) |
-| `/cc-maintenance <on\|off\|status> [--message=] [--motd=] [--for=]` | `ofatech.controlcore.maintenance` (`status`: anyone) | maintenance mode: `on` kicks every online player who isn't an admin and lacks `ofatech.controlcore.maintenance.join` and refuses them until it is off; `--message=` is what they see (one word, see the top; empty for the default), `--motd=` replaces the MOTD while it is on, `--for=` turns it off by itself (`30m`, `2h`, `never`). In History |
+| `/cc-maintenance <on\|off\|status> [--message=] [--motd=] [--for=]` | `ofatech.controlcore.maintenance` (`status`: anyone) | maintenance mode: `on` kicks every online player who isn't an admin and lacks `ofatech.controlcore.maintenance.join` and `ofatech.controlcore.maintenance` and refuses them until it is off; `--message=` is what they see (one word, see the top; empty for the default; shown in the server's language, because Hytale gives no language before a player joins), `--motd=` replaces the MOTD while it is on (admins and the console only; ignored for others), `--for=` turns it off by itself (`30m`, `2h`, `never`). In History |
 | `/cc-op <player>` / `/cc-deop <player>` | admins | make or remove an operator |
 | `/cc-group <add\|remove> <player> <group>` | admins | add a player to a permission group or remove them |
 | `/cc-group set <player> <group>` | admins | make that group the player's only group (one History line per group changed) |
@@ -202,7 +202,7 @@ Backups need `ofatech.controlcore.backups`, restarts `ofatech.controlcore.restar
 
 | Command | Who | Does |
 |---|---|---|
-| `/cc-backup [--directory=]` | `ofatech.controlcore.backups` | back up the universe now (Hytale's own backup, one at a time, refused when the disk is too full); `--directory=` sets config.json `Backup.Directory` first, for example `--directory=backups`. In History |
+| `/cc-backup [--directory=]` | `ofatech.controlcore.backups` | back up the universe now (Hytale's own backup, one at a time, refused when the disk is too full); `--directory=` sets config.json `Backup.Directory` first, for example `--directory=backups` (admins and the console only, a folder inside the server folder, not while a backup runs). In History |
 | `/cc-backups` | `ofatech.controlcore.backups` | list the backups (latest and archived, newest first) and the planned restore |
 | `/cc-backup-delete <name> confirm` | `ofatech.controlcore.backups` | delete a backup; the second word must be `confirm`. Archived ones are named `archive/<file>.zip`. In History |
 | `/cc-backup-restore <name> confirm` | `ofatech.controlcore.backups` | restore that backup at the next server start, before the worlds load; the current universe is moved to `universe-before-restore-<date>`. In History |

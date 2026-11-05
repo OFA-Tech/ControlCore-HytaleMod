@@ -102,7 +102,8 @@ line per group added or removed; nobody can take their own operator group away t
 **maintenance bar** (admins and `ofatech.controlcore.maintenance`) shows "Maintenance on since 18:00 - 3 players kept"
 or that it is off, with fields for the message kicked players see, a MOTD to show while it is on and when to turn it
 off by itself (never, 15 min to 4 h). **Maintenance on** (press twice) kicks every online player who is not an admin
-and lacks `ofatech.controlcore.maintenance.join`, and refuses them until **Maintenance off**; the old MOTD comes back
+and lacks `ofatech.controlcore.maintenance.join` and `ofatech.controlcore.maintenance`, and refuses them until
+**Maintenance off** (only admins may set the MOTD); the old MOTD comes back
 then. It is in History (rolling it back turns it the other way) and is the same as `/cc-maintenance`. All of these changes are in
 History and can be rolled back. Moderators can't use these actions on an admin; only admins can. A freeze stays until it is lifted, even if the player leaves and joins again; an offline player can be frozen and is held in place when they join. Nobody can lift their own mute or freeze or take themselves off the whitelist; another admin or the console has to. Mute only blocks normal chat messages; commands from other mods that send messages are not covered.
 
