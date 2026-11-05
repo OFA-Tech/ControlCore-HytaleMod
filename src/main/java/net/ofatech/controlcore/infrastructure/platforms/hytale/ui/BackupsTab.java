@@ -28,6 +28,8 @@ final class BackupsTab {
         void send(UICommandBuilder update);
 
         void whileOpen(Runnable work);
+
+        void whileOpenOrTell(Runnable work, String closedText);
     }
 
     private final BackupsView view;
@@ -42,22 +44,21 @@ final class BackupsTab {
     }
 
     void build(UICommandBuilder commands, UIEventBuilder events) {
-        commands.set(
-                "#BackupsSetupText.Text",
-                tr.t(view.configured() ? "controlcore.panel.backups.directory" : "controlcore.panel.backups.setup"));
+        boolean mayChange = view.mayChangeDirectory();
+        String setup = view.configured()
+                ? mayChange ? "controlcore.panel.backups.directory" : "controlcore.panel.backups.directory_read_only"
+                : mayChange ? "controlcore.panel.backups.setup" : "controlcore.panel.backups.setup_ask";
+        commands.set("#BackupsSetupText.Text", tr.t(setup));
         commands.set("#BackupsDirectory.Value", view.configured() ? view.directory() : "backups");
         commands.set("#BackupsStatus.Text", view.status());
         commands.set("#BackupsSettings.Text", view.settings());
         boolean busy = view.running() || view.preparingRestore();
         commands.set("#BackupsNow.Disabled", !view.configured() || busy);
-        boolean mayChange = view.mayChangeDirectory();
         commands.set("#BackupsDirectory.Visible", mayChange);
         commands.set("#BackupsSetDirectory.Visible", mayChange);
         commands.set("#BackupsSetDirectory.Disabled", view.running());
-        commands.set("#BackupsDirectoryNote.Visible", !mayChange);
-        commands.set(
-                "#BackupsDirectoryNote.Text",
-                tr.t("controlcore.panel.backups.directory_read_only", "directory", view.directory()));
+        commands.set("#BackupsDirectoryNote.Visible", !mayChange && view.configured());
+        commands.set("#BackupsDirectoryNote.Text", view.directory());
         Optional<String> pending = view.pending();
         commands.set("#BackupsPendingRow.Visible", pending.isPresent());
         commands.set("#BackupsPendingText.Text", pending.orElse(""));
@@ -133,7 +134,7 @@ final class BackupsTab {
             update.set("#FooterStatus.Text", tr.t("controlcore.backups.preparing_restore"));
             host.send(update);
         }
-        planned.thenAccept(result -> host.whileOpen(() -> refreshAfter(result)));
+        planned.thenAccept(result -> host.whileOpenOrTell(() -> refreshAfter(result), text(result)));
     }
 
     private boolean confirmed(String kind, String name, String confirmKey) {
@@ -149,7 +150,11 @@ final class BackupsTab {
     private void refreshAfter(Result<String> result) {
         host.rebuild();
         UICommandBuilder update = new UICommandBuilder();
-        update.set("#FooterStatus.Text", result.isSuccess() ? result.value() : tr.error(result.error()));
+        update.set("#FooterStatus.Text", text(result));
         host.send(update);
+    }
+
+    private String text(Result<String> result) {
+        return result.isSuccess() ? result.value() : tr.error(result.error());
     }
 }

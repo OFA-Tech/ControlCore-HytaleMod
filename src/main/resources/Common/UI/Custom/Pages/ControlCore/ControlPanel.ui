@@ -633,7 +633,8 @@ $C.@PageOverlay {
                 Label #BackupsDirectoryNote {
                   Style: @NoteStyle;
                   Visible: false;
-                  Anchor: (Width: 456, Left: 6);
+                  FlexWeight: 1;
+                  Anchor: (Left: 6);
                 }
 
                 $C.@SmallSecondaryTextButton #BackupsSetDirectory {

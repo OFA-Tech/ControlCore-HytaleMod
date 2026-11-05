@@ -43,6 +43,7 @@ import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.game.KeyDetection;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Result;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.mapping.Messages;
 
 final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
@@ -635,15 +636,22 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
         @Override
         public void whileOpen(Runnable work) {
+            whileOpenOrTell(work, "");
+        }
+
+        @Override
+        public void whileOpenOrTell(Runnable work, String closedText) {
             Ref<EntityStore> ref = playerRef.getReference();
             if (ref == null || !ref.isValid()) {
                 ControlPanelPage.this.stopListening();
+                tell(closedText);
                 return;
             }
             Store<EntityStore> store = ref.getStore();
             store.getExternalData().getWorld().execute(() -> {
                 if (!ControlPanelPage.this.isOpen(ref, store)) {
                     ControlPanelPage.this.stopListening();
+                    tell(closedText);
                     return;
                 }
                 try {
@@ -652,6 +660,12 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                     log.error("Could not update the control panel of " + playerRef.getUsername(), e);
                 }
             });
+        }
+
+        private void tell(String text) {
+            if (!text.isEmpty()) {
+                playerRef.sendMessage(Messages.text(text));
+            }
         }
 
         @Override

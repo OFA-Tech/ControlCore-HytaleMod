@@ -6,8 +6,8 @@
 - **Maintenance mode**: a bar in Server Configs -> Players (Whitelisted filter) and `/cc-maintenance <on|off|status>
   [--message=] [--motd=] [--for=]`. Turning it on (press twice in the panel) kicks every online player who is not an
   admin and lacks `ofatech.controlcore.maintenance.join` and `ofatech.controlcore.maintenance`, and refuses them until
-  it is off (if that check itself fails, or the maintenance state can't be read, the join is refused with "try again
-  later"). Optional
+  it is off (if that check itself fails, or the maintenance state can't be read, admins are still let in and everyone
+  else is refused with "try again later"). Optional
   message, a MOTD shown while it is on (admins and the console only; for others it is ignored and the reply says so; the
   old one comes back after) and an automatic end (15 min to 4 h, or `--for=30m`). Needs
   `ofatech.controlcore.maintenance`; recorded in History, where rolling it back turns it the other way. New automation
@@ -31,16 +31,20 @@
 - **Restore on next start**: **Restore on next start** (press twice) or `/cc-backup-restore <name> confirm` plans a
   restore; `/cc-backup-restore-cancel` or **Cancel restore** cancels it. Planning copies the zip to ControlCore's
   `pending-restore` folder in the background ("Copying the backup for the restore..."; backups, other plans and
-  cancels wait for it), so Hytale's backup rotation cannot remove it (the planned backup keeps its badge when Hytale
+  cancels wait for it, a due restart waits for it, and it can't start while a backup runs), so Hytale's backup rotation cannot remove it (the planned backup keeps its badge when Hytale
   archives it); only zips with a `worlds` folder can be planned (a zip with everything inside one top folder is
   unpacked without it), and not when the universe folder is a link or a separate mount. At the next start, before any
   world loads, ControlCore checks the free space, unpacks the copy into `universe-restoring-<date>` next to the
   universe (entries outside it are refused), and only when that is complete renames the current universe to
   `universe-before-restore-<date>` and the new folder to `universe`; if anything fails the universe is left or put
-  back as it was and the copy is kept. If the server was killed during a restore, the next start deletes the
-  half-unpacked folder when the universe is intact, and stops the server with a clear message (naming the folders)
-  when the universe folder is missing, instead of starting a new, empty world. A plan older than 7 days is not
-  applied (admins are told; it stays planned until cancelled), and copies no plan uses are deleted. The result is in
+  back as it was and the copy is kept until the next restore is planned. If the server was killed during a restore,
+  the next start deletes the half-unpacked folder when the universe is intact and no matching
+  `universe-before-restore-<date>` exists; when one does (killed between the two renames), it keeps every folder
+  (renaming the restored one to `universe-failed-restore-<date>`) and stops the server with a clear message, as it does
+  when the universe folder is missing, instead of starting a new, empty world. A plan never expires while the server
+  runs; if the server was off for more than 7 days after it, the plan is dropped at start instead of applied (admins
+  are told, History shows it, the copy is kept until the next plan). Copies no plan uses are deleted when a restore is
+  planned. The result is in
   History, the log, the Health tab's problems (on failure) and a chat line for the first admin who joins.
 - **Restarts**: a **Restart** button (press twice, with a 10 s to 10 min or default countdown) in the restart banner,
   which also shows after mod changes in the Mods tab, and in the Health tab, plus `/cc-restart [--in=] [--reason=]`,

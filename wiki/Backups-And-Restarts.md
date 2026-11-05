@@ -33,7 +33,8 @@ back a planned restore cancels it.
 
 A universe cannot be swapped while the server runs, so **Restore on next start** only plans it: ControlCore copies the
 zip to `pending-restore/` in its own folder in the background (the view shows "Copying the backup for the
-restore..."; backups, other plans and cancels wait until it is done), so Hytale's rotation or a backup before
+restore..."; backups, other plans and cancels wait until it is done, and a restart that is due waits for it too, at
+most 10 minutes; it can't start while a backup runs), so Hytale's rotation or a backup before
 restarting cannot move or delete it (the disk needs room for the copy; the planned backup keeps its badge after Hytale
 archives it). It writes `PendingRestore.json` and deletes any other copy left in `pending-restore/`; and Server Configs -> Backups shows "The restore
 of ... will happen at the next start" with **Cancel restore** (which also deletes the copy). Only a zip with a `worlds`
@@ -46,9 +47,10 @@ mount the folder that holds `universe` instead.
 
 At the next start ControlCore applies it during its setup, before Hytale loads any world or player:
 
-1. A plan older than 7 days is not applied: admins are told, and it stays planned (with its copy) until it is cancelled
-   or planned again. This keeps an old plan from surprising you after an update. With no plan, any copy left in
-   `pending-restore/` is deleted.
+1. A plan never expires while the server runs. But if the server was off for more than 7 days after the plan (counted
+   from the last time it stopped with the plan in place), the plan is dropped instead of applied: admins are told,
+   History shows it, and the copy stays in `pending-restore/` until the next restore is planned. This keeps an old plan
+   from surprising you after a long break.
 2. It checks the zip (every entry must stay inside the universe folder, and there must be a `worlds` folder), checks
    that the disk has room for the unpacked backup, and deletes `PendingRestore.json`, so a failing restore never
    repeats at every start.
@@ -58,14 +60,17 @@ At the next start ControlCore applies it during its setup, before Hytale loads a
 4. Only when the unpacked folder is complete, it renames `universe` to `universe-before-restore-<date>` and the new
    folder to `universe`, then deletes the copy. If the first rename fails (for example a file is locked), nothing
    changes. If the second fails, the original is renamed back. The copy is kept in `pending-restore/` on any failure
-   and the message says so.
+   (until the next restore is planned) and the message says so.
 
 If the server is killed during a restore (power loss, Ctrl+C, a host timeout), the next start finds the
-`universe-restoring-*` folder. When `universe` is intact, the half-unpacked folder is deleted and the server starts
-normally (a warning is logged). When `universe` is missing, ControlCore does not let Hytale create a new, empty world:
-it logs the problem (also in the Health tab), stops the server and names the folders. `universe-restoring-*` then
-holds the complete backup and `universe-before-restore-*` the universe from before; rename the one you want to
-`universe` and start again.
+`universe-restoring-*` folder. When `universe` is intact and there is no `universe-before-restore-*` folder with the
+same date, the half-unpacked folder is deleted and the server starts normally (a warning is logged). When there is one,
+the restore was cut between its two renames: ControlCore deletes nothing, renames the restored folder to
+`universe-failed-restore-<date>`, logs the problem (also in the Health tab), stops the server and names the folders;
+keep the one you want as `universe`, move the others away and start again. When `universe` is missing, ControlCore
+does not let Hytale create a new, empty world: it logs the problem, stops the server and names the folders.
+`universe-restoring-*` then holds the complete backup and `universe-before-restore-*` the universe from before; rename
+the one you want to `universe` and start again.
 
 The result is in History (by "ControlCore (at startup)"), in the server log, in the Backups view, and the first admin
 who joins gets a chat line. Failures also show in the Health tab's recent problems. The old universe is never deleted:
