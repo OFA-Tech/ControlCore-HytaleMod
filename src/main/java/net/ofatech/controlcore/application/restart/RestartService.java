@@ -487,6 +487,6 @@ public final class RestartService {
     private static Error forbidden() {
         return Error.forbidden(
                 "Restart.Forbidden",
-                Text.key("controlcore.errors.restart.forbidden", "You may not restart the server."));
+                Text.key("controlcore.errors.restart.not_allowed", "You may not restart the server."));
     }
 }

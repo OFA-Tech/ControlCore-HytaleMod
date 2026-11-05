@@ -444,7 +444,9 @@ public final class BackupService {
         return tr.t(
                 "controlcore.backups.settings",
                 "enabled",
-                config("Backup.Enabled"),
+                Boolean.parseBoolean(config("Backup.Enabled"))
+                        ? tr.t("controlcore.history.value.on")
+                        : tr.t("controlcore.history.value.off"),
                 "minutes",
                 config("Backup.FrequencyMinutes"),
                 "max",

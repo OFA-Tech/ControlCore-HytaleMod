@@ -274,7 +274,7 @@ $C.@PageOverlay {
 
           $C.@DropdownBox #RestartDelay {
             Visible: false;
-            Anchor: (Width: 150, Height: 30, Top: 3, Left: 6);
+            Anchor: (Width: 200, Height: 30, Top: 3, Left: 6);
           }
 
           $C.@SmallSecondaryTextButton #RestartNow {
@@ -1689,7 +1689,7 @@ $C.@PageOverlay {
 
                 $C.@SmallSecondaryTextButton #AnnounceToggle {
                   @Text = %controlcore.ui.announce.turnOn;
-                  Anchor: (Width: 190, Height: 30, Left: 6);
+                  Anchor: (Width: 260, Height: 30, Left: 6);
                 }
               }
 
