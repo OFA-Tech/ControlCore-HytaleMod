@@ -109,8 +109,20 @@ public final class MaintenanceService {
                     ? Optional.empty()
                     : Optional.of(messageFor(now, texts.forPlayer(Optional.of(player))));
         } catch (RuntimeException e) {
+            if (isAdmin(player)) {
+                log.error("The maintenance join check failed for " + name + "; letting the admin in", e);
+                return Optional.empty();
+            }
             log.error("The maintenance join check failed for " + name + "; refusing the join", e);
             return Optional.of(tryLater());
+        }
+    }
+
+    private boolean isAdmin(PlayerId player) {
+        try {
+            return policy.isAdmin(player);
+        } catch (RuntimeException e) {
+            return false;
         }
     }
 

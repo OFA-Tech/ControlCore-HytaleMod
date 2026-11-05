@@ -2,6 +2,7 @@ package net.ofatech.controlcore.application.runtime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -9,7 +10,9 @@ import java.util.Optional;
 import net.ofatech.controlcore.api.ControlCoreApi;
 import net.ofatech.controlcore.api.HistoryApi;
 import net.ofatech.controlcore.api.ServerApi;
+import net.ofatech.controlcore.application.maintenance.MaintenanceService;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
+import net.ofatech.controlcore.domain.model.server.MaintenanceState;
 import net.ofatech.controlcore.domain.model.serverconfig.ConfigEntry;
 import net.ofatech.controlcore.domain.model.serverconfig.ConfigValueKind;
 import net.ofatech.controlcore.domain.model.settings.SettingAccess;
@@ -205,6 +208,33 @@ class MaintenanceRuntimeTest extends RuntimeTestBase {
         platform.permissionsFail = true;
 
         assertThat(platform.joins.connect(admin.id(), "Admin").orElseThrow()).contains("try again later");
+    }
+
+    @Test
+    void anUnreadableMaintenanceStateLetsAdminsInAndAsksOthersToTryLater() throws Exception {
+        platform.maintenance.failReads = true;
+        forgetLoadedState();
+
+        assertThat(platform.joins.connect(admin.id(), "Admin")).isEmpty();
+        assertThat(platform.joins.connect(guest.id(), "Guest").orElseThrow()).contains("try again later");
+    }
+
+    private static void forgetLoadedState() throws IllegalAccessException {
+        Object server = ControlCoreApi.get().server();
+        for (Field field : server.getClass().getDeclaredFields()) {
+            if (field.getType() == MaintenanceService.class) {
+                field.setAccessible(true);
+                Object service = field.get(server);
+                for (Field cached : MaintenanceService.class.getDeclaredFields()) {
+                    if (cached.getType() == MaintenanceState.class) {
+                        cached.setAccessible(true);
+                        cached.set(service, null);
+                        return;
+                    }
+                }
+            }
+        }
+        throw new IllegalStateException("no MaintenanceService in " + server.getClass());
     }
 
     private static ServerApi api() {
