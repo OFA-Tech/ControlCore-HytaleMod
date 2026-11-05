@@ -45,6 +45,7 @@ public final class MaintenanceService {
 
     private static final SettingId MOTD = ServerConfigEditor.idOf("MOTD");
     private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("HH:mm");
+    private static final String TRY_LATER = "The server can't check who may join right now. Please try again later.";
 
     private final MaintenanceStore store;
     private final Players players;
@@ -99,16 +100,25 @@ public final class MaintenanceService {
     }
 
     Optional<String> refuse(PlayerId player, String name) {
-        MaintenanceState now = state();
-        if (!now.on()) {
-            return Optional.empty();
-        }
-        Translator tr = texts.forPlayer(Optional.of(player));
         try {
-            return mayJoin(player) ? Optional.empty() : Optional.of(messageFor(now, tr));
+            MaintenanceState now = state();
+            if (!now.on()) {
+                return Optional.empty();
+            }
+            return mayJoin(player)
+                    ? Optional.empty()
+                    : Optional.of(messageFor(now, texts.forPlayer(Optional.of(player))));
         } catch (RuntimeException e) {
             log.error("The maintenance join check failed for " + name + "; refusing the join", e);
-            return Optional.of(tr.t("controlcore.maintenance.try_later"));
+            return Optional.of(tryLater());
+        }
+    }
+
+    private String tryLater() {
+        try {
+            return texts.forServer().t("controlcore.maintenance.try_later");
+        } catch (RuntimeException e) {
+            return TRY_LATER;
         }
     }
 
