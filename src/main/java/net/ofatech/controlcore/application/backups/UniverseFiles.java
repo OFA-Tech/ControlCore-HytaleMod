@@ -77,14 +77,6 @@ final class UniverseFiles {
         }
     }
 
-    static Path nearestExisting(Path folder) {
-        Path current = folder.toAbsolutePath().normalize();
-        while (current != null && !Files.exists(current)) {
-            current = current.getParent();
-        }
-        return current == null ? folder.toAbsolutePath() : current;
-    }
-
     static Layout layout(Path zip, Path target) throws IOException {
         Path root = target.toAbsolutePath().normalize();
         List<String> names = new ArrayList<>();

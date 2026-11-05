@@ -16,7 +16,7 @@ public final class BackupDirectory {
 
     public static boolean allowed(String value, Path universe) {
         String text = value == null ? "" : value.strip();
-        if (text.isEmpty() || text.startsWith("\\\\") || text.startsWith("//")) {
+        if (text.isEmpty() || (text.length() > 1 && slash(text.charAt(0)) && slash(text.charAt(1)))) {
             return false;
         }
         for (String part : text.split("[/\\\\]")) {
@@ -26,6 +26,11 @@ public final class BackupDirectory {
         }
         try {
             Path path = Path.of(text);
+            Path root = path.getRoot();
+            if (root != null
+                    && (root.toString().startsWith("\\\\") || root.toString().startsWith("//"))) {
+                return false;
+            }
             if (text.contains(":") && !(path.isAbsolute() && text.lastIndexOf(':') == 1)) {
                 return false;
             }
@@ -38,12 +43,22 @@ public final class BackupDirectory {
             if (resolved.getParent() == null || resolved.equals(server) || resolved.startsWith(world)) {
                 return false;
             }
-            return !Files.exists(resolved)
-                    || !Files.exists(world)
-                    || !real(resolved).startsWith(real(world));
+            return !Files.exists(world) || !real(nearestExisting(resolved)).startsWith(real(world));
         } catch (InvalidPathException e) {
             return false;
         }
+    }
+
+    private static boolean slash(char c) {
+        return c == '/' || c == '\\';
+    }
+
+    public static Path nearestExisting(Path folder) {
+        Path current = folder.toAbsolutePath().normalize();
+        while (current != null && !Files.exists(current)) {
+            current = current.getParent();
+        }
+        return current == null ? folder.toAbsolutePath() : current;
     }
 
     private static Path real(Path path) {

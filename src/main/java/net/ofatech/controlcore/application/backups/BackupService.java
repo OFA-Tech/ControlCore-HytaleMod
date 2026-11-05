@@ -279,7 +279,7 @@ public final class BackupService {
     Result<Boolean> room(Path directory) {
         try {
             long needed = UniverseFiles.size(backups.universe());
-            long free = backups.usableSpace(UniverseFiles.nearestExisting(directory));
+            long free = backups.usableSpace(BackupDirectory.nearestExisting(directory));
             if (free >= 0 && free < needed) {
                 return Result.failure(Error.conflict(
                         "Backup.NoSpace",
@@ -403,7 +403,7 @@ public final class BackupService {
         Path copy = folder.resolve(source.getFileName().toString());
         try {
             long needed = Files.size(source);
-            long free = backups.usableSpace(UniverseFiles.nearestExisting(folder));
+            long free = backups.usableSpace(BackupDirectory.nearestExisting(folder));
             if (free >= 0 && free < needed) {
                 return Result.failure(Error.conflict(
                         "Backup.NoSpace",
@@ -576,7 +576,7 @@ public final class BackupService {
         }
         try {
             UniverseFiles.Layout layout = UniverseFiles.layout(zip.get(), universe);
-            long free = backups.usableSpace(UniverseFiles.nearestExisting(UniverseFiles.stagingOf(aside)));
+            long free = backups.usableSpace(BackupDirectory.nearestExisting(UniverseFiles.stagingOf(aside)));
             if (free >= 0 && free < layout.unpackedSize()) {
                 throw new NoSpace(layout.unpackedSize(), free);
             }
