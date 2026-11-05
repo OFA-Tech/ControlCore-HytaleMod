@@ -67,8 +67,13 @@ public final class CronExpression {
     }
 
     public Optional<LocalDateTime> next(LocalDateTime after) {
-        LocalDateTime time = after.truncatedTo(ChronoUnit.MINUTES).plusMinutes(1);
-        for (int i = 0; i < SEARCH_MINUTES; i++, time = time.plusMinutes(1)) {
+        return next(after, after.plusMinutes(SEARCH_MINUTES));
+    }
+
+    public Optional<LocalDateTime> next(LocalDateTime after, LocalDateTime notAfter) {
+        for (LocalDateTime time = after.truncatedTo(ChronoUnit.MINUTES).plusMinutes(1);
+                !time.isAfter(notAfter);
+                time = time.plusMinutes(1)) {
             if (matches(time)) {
                 return Optional.of(time);
             }

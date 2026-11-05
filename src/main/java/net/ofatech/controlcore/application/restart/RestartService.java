@@ -5,7 +5,6 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -420,18 +419,18 @@ public final class RestartService {
 
     static Optional<LocalDateTime> due(
             List<CronExpression> entries, Instant now, Duration countdown, Set<LocalDateTime> done) {
+        LocalDateTime from = LocalDateTime.ofInstant(now, ZoneId.systemDefault());
         LocalDateTime until = LocalDateTime.ofInstant(now.plus(countdown), ZoneId.systemDefault());
-        for (LocalDateTime minute = LocalDateTime.ofInstant(now, ZoneId.systemDefault())
-                        .truncatedTo(ChronoUnit.MINUTES)
-                        .plusMinutes(1);
-                !minute.isAfter(until);
-                minute = minute.plusMinutes(1)) {
-            LocalDateTime candidate = minute;
-            if (!done.contains(candidate) && entries.stream().anyMatch(cron -> cron.matches(candidate))) {
-                return Optional.of(candidate);
-            }
-        }
-        return Optional.empty();
+        return entries.stream()
+                .map(cron -> {
+                    Optional<LocalDateTime> hit = cron.next(from, until);
+                    while (hit.isPresent() && done.contains(hit.get())) {
+                        hit = cron.next(hit.get(), until);
+                    }
+                    return hit;
+                })
+                .flatMap(Optional::stream)
+                .min(LocalDateTime::compareTo);
     }
 
     public Optional<LocalDateTime> nextScheduled() {
