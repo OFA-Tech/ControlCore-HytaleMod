@@ -508,15 +508,7 @@ public final class AutomationService {
                 if (started.isDone() && started.join().isFailure()) {
                     return Result.failure(started.join().error());
                 }
-                started.whenComplete((made, failure) -> {
-                    if (failure == null && made.isSuccess()) {
-                        return;
-                    }
-                    String why = failure != null ? String.valueOf(failure.getMessage()) : tr.error(made.error());
-                    log.warn("Automation rule " + rule.name() + ": " + why);
-                    notifications.toAdmins(
-                            tr.t("controlcore.automation.backup_failed", "name", rule.name(), "reason", why));
-                });
+                backups.tellAdminsIfFailed(started, "controlcore.automation.backup_failed", "name", rule.name());
             }
             case RESTART -> {
                 Result<String> started =

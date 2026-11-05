@@ -157,46 +157,100 @@ final class UniverseFiles {
         return aside.resolveSibling(aside.getFileName().toString().replace("-before-restore-", "-failed-restore-"));
     }
 
+    static Path stagingOf(Path aside) {
+        return aside.resolveSibling(aside.getFileName().toString().replace("-before-restore-", "-restoring-"));
+    }
+
+    static List<Path> leftovers(Path universe) throws IOException {
+        Path absolute = universe.toAbsolutePath().normalize();
+        String prefix = absolute.getFileName() + "-restoring-";
+        Path parent = absolute.getParent();
+        if (parent == null || !Files.isDirectory(parent)) {
+            return List.of();
+        }
+        try (Stream<Path> siblings = Files.list(parent)) {
+            return siblings.filter(path -> path.getFileName().toString().startsWith(prefix))
+                    .sorted()
+                    .toList();
+        }
+    }
+
+    static void checkSwappable(Path universe) throws IOException {
+        Path absolute = universe.toAbsolutePath().normalize();
+        if (Files.isSymbolicLink(absolute)) {
+            throw new NotSwappable(absolute);
+        }
+        if (Files.exists(absolute, LinkOption.NOFOLLOW_LINKS)
+                && absolute.getParent() != null
+                && !Files.getFileStore(absolute).equals(Files.getFileStore(absolute.getParent()))) {
+            throw new NotSwappable(absolute);
+        }
+    }
+
+    static final class NotSwappable extends IOException {
+        private static final long serialVersionUID = 1L;
+
+        NotSwappable(Path universe) {
+            super(universe + " is a link or a separate mount, so it can't be swapped");
+        }
+    }
+
     static void restore(Path zip, Path universe, Path aside) throws IOException {
         restore(zip, universe, aside, layout(zip, universe));
     }
 
     static void restore(Path zip, Path universe, Path aside, Layout layout) throws IOException {
-        if (Files.exists(aside)) {
-            throw new IOException(aside + " already exists");
+        Path staging = stagingOf(aside);
+        if (Files.exists(aside) || Files.exists(staging)) {
+            throw new IOException((Files.exists(aside) ? aside : staging) + " already exists");
         }
-        boolean had = Files.exists(universe);
+        checkSwappable(universe);
+        try {
+            Files.createDirectories(staging);
+            extract(zip, staging, layout.prefix());
+        } catch (IOException | RuntimeException e) {
+            discard(staging, aside, e);
+            throw e;
+        }
+        swap(universe, staging, aside);
+    }
+
+    private static void swap(Path universe, Path staging, Path aside) throws IOException {
+        boolean had = Files.exists(universe, LinkOption.NOFOLLOW_LINKS);
         if (had) {
-            move(universe, aside);
+            try {
+                move(universe, aside);
+            } catch (IOException e) {
+                discard(staging, aside, e);
+                throw e;
+            }
         }
         try {
-            Files.createDirectories(universe);
-            extract(zip, universe, layout.prefix());
-        } catch (IOException | RuntimeException e) {
-            undo(universe, aside, had, e);
+            move(staging, universe);
+        } catch (IOException e) {
+            if (had) {
+                try {
+                    move(aside, universe);
+                } catch (IOException back) {
+                    e.addSuppressed(back);
+                    throw e;
+                }
+            }
+            discard(staging, aside, e);
             throw e;
         }
     }
 
-    private static void undo(Path universe, Path aside, boolean had, Exception failure) {
+    private static void discard(Path staging, Path aside, Exception failure) {
         try {
-            delete(universe);
+            delete(staging);
         } catch (IOException e) {
             failure.addSuppressed(e);
             try {
-                move(universe, failedOf(aside));
+                move(staging, failedOf(aside));
             } catch (IOException moved) {
                 failure.addSuppressed(moved);
-                return;
             }
-        }
-        if (!had) {
-            return;
-        }
-        try {
-            move(aside, universe);
-        } catch (IOException e) {
-            failure.addSuppressed(e);
         }
     }
 

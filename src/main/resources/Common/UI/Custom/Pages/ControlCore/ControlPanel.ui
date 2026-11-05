@@ -630,6 +630,12 @@ $C.@PageOverlay {
                   Anchor: (Width: 260, Height: 30, Top: 3, Left: 6);
                 }
 
+                Label #BackupsDirectoryNote {
+                  Style: @NoteStyle;
+                  Visible: false;
+                  Anchor: (Width: 456, Left: 6);
+                }
+
                 $C.@SmallSecondaryTextButton #BackupsSetDirectory {
                   @Text = %controlcore.ui.backups.setDirectory;
                   Anchor: (Width: 190, Height: 30, Top: 3, Left: 6);

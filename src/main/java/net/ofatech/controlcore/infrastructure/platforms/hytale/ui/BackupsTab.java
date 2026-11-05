@@ -6,7 +6,7 @@ import com.hypixel.hytale.server.core.ui.builder.UICommandBuilder;
 import com.hypixel.hytale.server.core.ui.builder.UIEventBuilder;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.concurrent.CompletableFuture;
 import net.ofatech.controlcore.domain.model.server.BackupsView;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.result.Result;
@@ -33,8 +33,7 @@ final class BackupsTab {
     private final BackupsView view;
     private final Translator tr;
     private final Host host;
-    private Optional<String> armed = Optional.empty();
-    private long armedAt;
+    private final ConfirmGate confirm = new ConfirmGate(CONFIRM_MILLIS);
 
     BackupsTab(BackupsView view, Translator tr, Host host) {
         this.view = view;
@@ -49,7 +48,16 @@ final class BackupsTab {
         commands.set("#BackupsDirectory.Value", view.configured() ? view.directory() : "backups");
         commands.set("#BackupsStatus.Text", view.status());
         commands.set("#BackupsSettings.Text", view.settings());
-        commands.set("#BackupsNow.Disabled", !view.configured() || view.running());
+        boolean busy = view.running() || view.preparingRestore();
+        commands.set("#BackupsNow.Disabled", !view.configured() || busy);
+        boolean mayChange = view.mayChangeDirectory();
+        commands.set("#BackupsDirectory.Visible", mayChange);
+        commands.set("#BackupsSetDirectory.Visible", mayChange);
+        commands.set("#BackupsSetDirectory.Disabled", view.running());
+        commands.set("#BackupsDirectoryNote.Visible", !mayChange);
+        commands.set(
+                "#BackupsDirectoryNote.Text",
+                tr.t("controlcore.panel.backups.directory_read_only", "directory", view.directory()));
         Optional<String> pending = view.pending();
         commands.set("#BackupsPendingRow.Visible", pending.isPresent());
         commands.set("#BackupsPendingText.Text", pending.orElse(""));
@@ -73,7 +81,7 @@ final class BackupsTab {
             commands.set(row + " #Name.Text", backup.name());
             commands.set(row + " #Info.Text", backup.info());
             commands.set(row + " #PendingBadge.Visible", backup.pending());
-            commands.set(row + " #Restore.Visible", pending.isEmpty());
+            commands.set(row + " #Restore.Visible", pending.isEmpty() && !view.preparingRestore());
             for (String[] button : List.of(new String[] {"#Restore", RESTORE}, new String[] {"#Delete", DELETE})) {
                 events.addEventBinding(
                         CustomUIEventBindingType.Activating,
@@ -81,7 +89,7 @@ final class BackupsTab {
                         new EventData().append(PanelAction.KEY, button[1]).append(PanelAction.ID, backup.name()));
             }
         }
-        armed = Optional.empty();
+        confirm.disarm();
     }
 
     boolean handle(PanelAction action) {
@@ -89,14 +97,16 @@ final class BackupsTab {
             case NOW -> backUp();
             case SET_DIRECTORY -> refreshAfter(view.setDirectory(action.value));
             case CANCEL_RESTORE -> refreshAfter(view.cancelRestore());
-            case RESTORE ->
-                confirmed(
-                        RESTORE,
-                        action.id,
-                        "controlcore.panel.backups.confirm_restore",
-                        () -> view.restoreOnNextStart(action.id));
-            case DELETE ->
-                confirmed(DELETE, action.id, "controlcore.panel.backups.confirm_delete", () -> view.delete(action.id));
+            case RESTORE -> {
+                if (confirmed(RESTORE, action.id, "controlcore.panel.backups.confirm_restore")) {
+                    restore(action.id);
+                }
+            }
+            case DELETE -> {
+                if (confirmed(DELETE, action.id, "controlcore.panel.backups.confirm_delete")) {
+                    refreshAfter(view.delete(action.id));
+                }
+            }
             default -> {
                 return false;
             }
@@ -107,25 +117,33 @@ final class BackupsTab {
     private void backUp() {
         UICommandBuilder update = new UICommandBuilder();
         update.set("#BackupsNow.Disabled", true);
+        update.set("#BackupsSetDirectory.Disabled", true);
         update.set("#BackupsStatus.Text", tr.t("controlcore.backups.running"));
         update.set("#FooterStatus.Text", tr.t("controlcore.backups.running"));
         host.send(update);
         view.backUpNow().thenAccept(result -> host.whileOpen(() -> refreshAfter(result)));
     }
 
-    private void confirmed(String kind, String name, String confirmKey, Supplier<Result<String>> work) {
-        String key = kind + ":" + name;
-        boolean fresh = System.currentTimeMillis() - armedAt < CONFIRM_MILLIS;
-        if (armed.filter(key::equals).isEmpty() || !fresh) {
-            armed = Optional.of(key);
-            armedAt = System.currentTimeMillis();
+    private void restore(String name) {
+        CompletableFuture<Result<String>> planned = view.restoreOnNextStart(name);
+        if (!planned.isDone()) {
             UICommandBuilder update = new UICommandBuilder();
-            update.set("#FooterStatus.Text", tr.t(confirmKey, "name", name));
+            update.set("#BackupsNow.Disabled", true);
+            update.set("#BackupsStatus.Text", tr.t("controlcore.backups.preparing_restore"));
+            update.set("#FooterStatus.Text", tr.t("controlcore.backups.preparing_restore"));
             host.send(update);
-            return;
         }
-        armed = Optional.empty();
-        refreshAfter(work.get());
+        planned.thenAccept(result -> host.whileOpen(() -> refreshAfter(result)));
+    }
+
+    private boolean confirmed(String kind, String name, String confirmKey) {
+        if (confirm.confirmed(kind + ":" + name)) {
+            return true;
+        }
+        UICommandBuilder update = new UICommandBuilder();
+        update.set("#FooterStatus.Text", tr.t(confirmKey, "name", name));
+        host.send(update);
+        return false;
     }
 
     private void refreshAfter(Result<String> result) {

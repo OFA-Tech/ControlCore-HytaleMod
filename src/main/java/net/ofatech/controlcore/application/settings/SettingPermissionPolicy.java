@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import net.ofatech.controlcore.application.history.ChangeRecorder;
 import net.ofatech.controlcore.application.history.HistoryValues;
+import net.ofatech.controlcore.application.serverconfig.BackupDirectory;
 import net.ofatech.controlcore.application.text.CommonErrors;
 import net.ofatech.controlcore.domain.model.PlayerId;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
@@ -66,13 +67,17 @@ public final class SettingPermissionPolicy {
         }
         Resolved rule = resolve(definition);
         if (passes(viewer.get(), rule.edit(), definition.scope())) {
-            return SettingRights.EDIT;
+            return BackupDirectory.ID.equals(definition.id()) ? SettingRights.VIEW : SettingRights.EDIT;
         }
         return passes(viewer.get(), rule.view(), definition.scope()) ? SettingRights.VIEW : SettingRights.NONE;
     }
 
     public PermittedSettingsEditor editor(SettingsEditor settings, Optional<PlayerId> viewer) {
         return new PermittedSettingsEditor(settings, this, viewer);
+    }
+
+    public boolean mayChangeBackupDirectory(Optional<PlayerId> who) {
+        return who.isEmpty() || isAdmin(who.get());
     }
 
     public boolean isAdmin(PlayerId player) {

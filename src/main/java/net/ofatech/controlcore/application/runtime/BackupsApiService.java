@@ -66,7 +66,7 @@ public final class BackupsApiService implements BackupsApi {
     }
 
     @Override
-    public Result<String> restoreOnNextStart(String name) {
+    public CompletableFuture<Result<String>> restoreOnNextStart(String name) {
         return actor.run(() -> backups.restoreOnNextStart(name, actor.who(), tr()));
     }
 

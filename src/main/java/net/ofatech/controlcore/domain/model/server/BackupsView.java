@@ -21,6 +21,10 @@ public interface BackupsView {
 
     boolean running();
 
+    boolean preparingRestore();
+
+    boolean mayChangeDirectory();
+
     List<Row> backups();
 
     Result<String> setDirectory(String directory);
@@ -29,7 +33,7 @@ public interface BackupsView {
 
     Result<String> delete(String name);
 
-    Result<String> restoreOnNextStart(String name);
+    CompletableFuture<Result<String>> restoreOnNextStart(String name);
 
     Result<String> cancelRestore();
 }

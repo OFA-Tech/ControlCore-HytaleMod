@@ -23,6 +23,7 @@ import net.ofatech.controlcore.domain.model.settings.SettingType;
 import net.ofatech.controlcore.domain.model.settings.SettingsEditor;
 import net.ofatech.controlcore.domain.model.text.Text;
 import net.ofatech.controlcore.domain.ports.event.EventPublisher;
+import net.ofatech.controlcore.domain.ports.game.ServerBackups;
 import net.ofatech.controlcore.domain.ports.game.ServerConfiguration;
 import net.ofatech.controlcore.domain.ports.game.Worlds;
 import net.ofatech.controlcore.domain.ports.system.Log;
@@ -40,6 +41,7 @@ public final class ServerConfigEditor implements SettingsEditor {
     private final Worlds worlds;
     private final EventPublisher publisher;
     private final ControlCoreEvents events;
+    private final ServerBackups backups;
     private final Log log;
     private final Map<String, Pending> pending = new ConcurrentHashMap<>();
     private final Map<String, String> lastSeen = new ConcurrentHashMap<>();
@@ -49,8 +51,14 @@ public final class ServerConfigEditor implements SettingsEditor {
     private record Source(SettingId id, ConfigEntry entry, Optional<String> world) {}
 
     public ServerConfigEditor(
-            ServerConfiguration server, Worlds worlds, EventPublisher publisher, ControlCoreEvents events, Log log) {
+            ServerConfiguration server,
+            Worlds worlds,
+            EventPublisher publisher,
+            ControlCoreEvents events,
+            ServerBackups backups,
+            Log log) {
         this.server = server;
+        this.backups = backups;
         this.worlds = worlds;
         this.publisher = publisher;
         this.events = events;
@@ -202,6 +210,11 @@ public final class ServerConfigEditor implements SettingsEditor {
                     "ServerConfig.ReadOnly",
                     Text.key("controlcore.errors.serverconfig.read_only", "{name} cannot be changed here.")
                             .with("name", entry.name())));
+        }
+        if (BackupDirectory.ID.equals(source.id())
+                && !value.isBlank()
+                && !BackupDirectory.allowed(value, backups.universe())) {
+            return Result.failure(BackupDirectory.bad(value));
         }
         Result<ConfigEntry> written = source.world().isPresent()
                 ? worlds.write(source.world().get(), entry.path(), value)

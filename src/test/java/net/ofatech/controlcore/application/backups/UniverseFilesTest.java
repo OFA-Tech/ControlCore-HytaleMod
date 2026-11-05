@@ -6,6 +6,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import net.ofatech.controlcore.fakes.FakeServerBackups;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
@@ -86,6 +90,7 @@ class UniverseFilesTest {
 
         assertThat(universe.resolve("worlds/default/old.txt")).hasContent("old");
         assertThat(aside).doesNotExist();
+        assertThat(UniverseFiles.stagingOf(aside)).doesNotExist();
     }
 
     @Test
@@ -115,15 +120,58 @@ class UniverseFilesTest {
     @Test
     void aZipWithADuplicateEntryRollsBack() throws IOException {
         Path zip = root.resolve("dup.zip");
-        FakeServerBackups.zip(zip, "a/x.txt", "1", "a\\x.txt", "2");
+        FakeServerBackups.zip(zip, "worlds/x.txt", "1", "worlds\\x.txt", "2");
 
-        try {
-            UniverseFiles.restore(zip, universe, aside);
-            assertThat(universe.resolve("a/x.txt")).exists();
-        } catch (IOException e) {
-            assertThat(universe.resolve("worlds/default/old.txt")).hasContent("old");
-            assertThat(aside).doesNotExist();
+        assertThatThrownBy(() -> UniverseFiles.restore(zip, universe, aside)).isInstanceOf(IOException.class);
+
+        assertThat(universe.resolve("worlds/default/old.txt")).hasContent("old");
+        assertThat(universe.resolve("worlds/x.txt")).doesNotExist();
+        assertThat(aside).doesNotExist();
+        assertThat(UniverseFiles.stagingOf(aside)).doesNotExist();
+    }
+
+    @Test
+    void theBackupIsUnpackedNextToTheUniverseBeforeAnythingMoves() throws IOException {
+        Path zip = backups.resolve("b.zip");
+        FakeServerBackups.zip(zip, "worlds/default/new.txt", "new");
+
+        UniverseFiles.restore(zip, universe, aside);
+
+        assertThat(UniverseFiles.stagingOf(aside))
+                .hasFileName("universe-restoring-2026-01-01_00-00-00")
+                .doesNotExist();
+        assertThat(UniverseFiles.leftovers(universe)).isEmpty();
+    }
+
+    @Test
+    void aLeftoverStagingFolderStopsANewRestore() throws IOException {
+        Path zip = backups.resolve("b.zip");
+        FakeServerBackups.zip(zip, "worlds/default/new.txt", "new");
+        Files.createDirectories(UniverseFiles.stagingOf(aside));
+
+        assertThatThrownBy(() -> UniverseFiles.restore(zip, universe, aside)).isInstanceOf(IOException.class);
+
+        assertThat(universe.resolve("worlds/default/old.txt")).hasContent("old");
+        assertThat(UniverseFiles.leftovers(universe)).containsExactly(UniverseFiles.stagingOf(aside));
+    }
+
+    @Test
+    void aUniverseThatCannotBeMovedAsideIsKeptAndTheStagingFolderDeleted() throws IOException {
+        Assumptions.assumeTrue(
+                System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win"),
+                "only Windows refuses to rename a folder with an open file");
+        Path zip = backups.resolve("b.zip");
+        FakeServerBackups.zip(zip, "worlds/default/new.txt", "new");
+
+        try (var open = Files.newInputStream(universe.resolve("worlds/default/old.txt"))) {
+            assertThat(open.read()).isPositive();
+            assertThatThrownBy(() -> UniverseFiles.restore(zip, universe, aside))
+                    .isInstanceOf(IOException.class);
         }
+
+        assertThat(universe.resolve("worlds/default/old.txt")).hasContent("old");
+        assertThat(aside).doesNotExist();
+        assertThat(UniverseFiles.stagingOf(aside)).doesNotExist();
     }
 
     @Test
@@ -201,5 +249,65 @@ class UniverseFilesTest {
         assertThatThrownBy(() -> UniverseFiles.restore(empty, universe, aside)).isInstanceOf(IOException.class);
         assertThatThrownBy(() -> UniverseFiles.restore(junk, universe, aside)).isInstanceOf(IOException.class);
         assertThat(universe.resolve("worlds/default/old.txt")).hasContent("old");
+    }
+
+    @Test
+    void aPartialUnpackThatCannotBeDeletedIsMovedAsideAndTheUniverseIsKept() throws Exception {
+        Assumptions.assumeTrue(
+                System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win"),
+                "read-only files only block deletion on Windows");
+        Files.createDirectories(universe.resolve("worlds/default"));
+        Files.writeString(universe.resolve("worlds/default/old.txt"), "old");
+        Path zip = root.resolve("partial.zip");
+        try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(zip))) {
+            out.putNextEntry(new ZipEntry("worlds/lock.txt"));
+            out.write("lock".getBytes());
+            out.closeEntry();
+            out.putNextEntry(new ZipEntry("worlds/big.bin"));
+            byte[] zeros = new byte[1 << 20];
+            for (int i = 0; i < 128; i++) {
+                out.write(zeros);
+            }
+            out.closeEntry();
+            out.putNextEntry(new ZipEntry("worlds\\lock.txt"));
+            out.write("again".getBytes());
+            out.closeEntry();
+        }
+        Path lock = UniverseFiles.stagingOf(aside).resolve("worlds/lock.txt");
+        AtomicBoolean locked = new AtomicBoolean();
+        Thread locker = new Thread(() -> {
+            long until = System.currentTimeMillis() + 10_000;
+            while (System.currentTimeMillis() < until) {
+                if (Files.exists(lock)) {
+                    try {
+                        Files.setAttribute(lock, "dos:readonly", true);
+                        locked.set(true);
+                    } catch (IOException ignored) {
+                        // the file vanished or is busy; the test is skipped below
+                    }
+                    return;
+                }
+                Thread.onSpinWait();
+            }
+        });
+        locker.start();
+
+        Path failed = UniverseFiles.failedOf(aside);
+        try {
+            assertThatThrownBy(() -> UniverseFiles.restore(zip, universe, aside))
+                    .isInstanceOf(IOException.class);
+            locker.join();
+            Assumptions.assumeTrue(locked.get(), "could not mark the partial file read-only in time");
+
+            assertThat(universe.resolve("worlds/default/old.txt")).hasContent("old");
+            assertThat(aside).doesNotExist();
+            assertThat(failed.resolve("worlds/lock.txt")).exists();
+        } finally {
+            for (Path candidate : new Path[] {lock, failed.resolve("worlds/lock.txt")}) {
+                if (Files.exists(candidate)) {
+                    Files.setAttribute(candidate, "dos:readonly", false);
+                }
+            }
+        }
     }
 }

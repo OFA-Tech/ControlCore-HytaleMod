@@ -43,9 +43,6 @@ public final class BackupCommand implements ModCommand {
         Translator tr = texts.forSender(context.sender());
         Optional<String> directory = context.arg("directory").map(Object::toString);
         if (directory.isPresent()) {
-            if (backups.running()) {
-                return Result.failure(BackupService.busy());
-            }
             Result<String> set = backups.setDirectory(directory.get(), who, tr);
             if (set.isFailure()) {
                 return Result.failure(set.error());

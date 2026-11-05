@@ -113,7 +113,8 @@ class ControlPanelServiceTest {
                 ChangeRecorder.NONE);
         var policy = new SettingPermissionPolicy(
                 new FakeSettingPermissionStore(), (player, node) -> stillAdmin, registry, ChangeRecorder.NONE);
-        var serverConfig = new ServerConfigEditor(server, Worlds.NONE, bus, bus, log);
+        var serverConfig = new ServerConfigEditor(
+                server, Worlds.NONE, bus, bus, new net.ofatech.controlcore.fakes.FakeServerBackups(), log);
         var mods = new ModsEditor(catalog, registry, keyRegistry, modNames, policy, log, ChangeRecorder.NONE);
         var changes = new ChangeHistory(new FakeChangeLogStore(), new FakeClock());
         var bans = new BansService(
@@ -225,6 +226,8 @@ class ControlPanelServiceTest {
                 serverConfig,
                 changes,
                 new net.ofatech.controlcore.fakes.FakeMessenger(),
+                notifications,
+                new net.ofatech.controlcore.fakes.FakeServerControl(),
                 new FakeClock(),
                 texts,
                 log);

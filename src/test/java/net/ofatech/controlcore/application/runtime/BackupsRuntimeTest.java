@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -14,11 +15,14 @@ import java.util.concurrent.CompletableFuture;
 import net.ofatech.controlcore.api.BackupsApi;
 import net.ofatech.controlcore.api.ControlCoreApi;
 import net.ofatech.controlcore.api.HistoryApi;
+import net.ofatech.controlcore.application.backups.BackupService;
 import net.ofatech.controlcore.domain.event.PlayerJoined;
 import net.ofatech.controlcore.domain.model.PlayerInfo;
+import net.ofatech.controlcore.domain.model.server.BackupsView;
 import net.ofatech.controlcore.domain.model.server.PendingRestore;
 import net.ofatech.controlcore.domain.result.Result;
 import net.ofatech.controlcore.fakes.FakeServerBackups;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -102,7 +106,7 @@ class BackupsRuntimeTest extends RuntimeTestBase {
                 "archive/../../secret.zip",
                 root.resolve("secret.zip").toString())) {
             assertThat(api().delete(name).error().code()).isEqualTo("Backup.Unknown");
-            assertThat(api().restoreOnNextStart(name).error().code()).isEqualTo("Backup.Unknown");
+            assertThat(api().restoreOnNextStart(name).join().error().code()).isEqualTo("Backup.Unknown");
         }
         assertThat(root.resolve("secret.zip")).exists();
     }
@@ -132,6 +136,7 @@ class BackupsRuntimeTest extends RuntimeTestBase {
         Result<?> planned =
                 platform.commands.runAsConsole("cc-backup-restore", Map.of("name", name, "confirm", "confirm"));
         assertThat(planned.isSuccess()).isTrue();
+        awaitPending();
         assertThat(api().pendingRestore()).map(BackupsApi.PendingRestore::name).contains(name);
         assertThat(api().delete(name).error().code()).isEqualTo("Backup.InUse");
         assertThat(platform.commands
@@ -152,7 +157,7 @@ class BackupsRuntimeTest extends RuntimeTestBase {
     void aPlannedRestoreIsAppliedAtStartupAndReported() throws IOException {
         Files.createDirectories(folder);
         FakeServerBackups.zip(folder.resolve("good.zip"), "worlds/default/new.txt", "new");
-        platform.pendingRestore.restore = Optional.of(new PendingRestore("good.zip", "Admin", Instant.EPOCH));
+        platform.pendingRestore.restore = Optional.of(new PendingRestore("good.zip", "Admin", platform.clock.now));
 
         startUp();
         assertThat(universe.resolve("worlds/default/new.txt")).hasContent("new");
@@ -174,7 +179,7 @@ class BackupsRuntimeTest extends RuntimeTestBase {
     void aBadBackupLeavesTheUniverseAloneAtStartup() throws IOException {
         Files.createDirectories(folder);
         FakeServerBackups.zip(folder.resolve("evil.zip"), "../evil.txt", "evil");
-        platform.pendingRestore.restore = Optional.of(new PendingRestore("evil.zip", "Admin", Instant.EPOCH));
+        platform.pendingRestore.restore = Optional.of(new PendingRestore("evil.zip", "Admin", platform.clock.now));
 
         startUp();
 
@@ -190,7 +195,7 @@ class BackupsRuntimeTest extends RuntimeTestBase {
     void theRestoreIsSkippedWhenItsMarkerCannotBeDeleted() throws IOException {
         Files.createDirectories(folder);
         FakeServerBackups.zip(folder.resolve("good.zip"), "worlds/default/new.txt", "new");
-        platform.pendingRestore.restore = Optional.of(new PendingRestore("good.zip", "Admin", Instant.EPOCH));
+        platform.pendingRestore.restore = Optional.of(new PendingRestore("good.zip", "Admin", platform.clock.now));
         platform.pendingRestore.failClear = true;
 
         startUp();
@@ -207,7 +212,7 @@ class BackupsRuntimeTest extends RuntimeTestBase {
         BackupsApi asGuest = api().actingFor(guest.id());
 
         assertThat(asGuest.create().join().error().code()).isEqualTo("Backup.Forbidden");
-        assertThat(asGuest.restoreOnNextStart("x.zip").error().code()).isEqualTo("Backup.Forbidden");
+        assertThat(asGuest.restoreOnNextStart("x.zip").join().error().code()).isEqualTo("Backup.Forbidden");
         api().create().join();
         assertThat(asGuest.list()).isEmpty();
         assertThat(platform.commands.run("cc-backups", guest, Map.of()).error().code())
@@ -265,11 +270,22 @@ class BackupsRuntimeTest extends RuntimeTestBase {
                         .error()
                         .code())
                 .isEqualTo("Backup.DirectoryForbidden");
-        for (String bad :
-                List.of("\\\\host\\share", "C:\\", "C:/backups", "..", "backups/../..", "/srv/x", "\\x", ".")) {
+        for (String bad : List.of(
+                "\\\\host\\share",
+                "//host/share",
+                "C:\\",
+                "a:b",
+                "..",
+                "backups/../..",
+                "\\x",
+                ".",
+                universe.toString(),
+                universe.resolve("backups").toString())) {
             assertThat(api().setDirectory(bad).error().code()).as(bad).isEqualTo("Backup.BadDirectory");
         }
-        assertThat(api().setDirectory("backups/nightly").error().code()).isNotEqualTo("Backup.BadDirectory");
+        assertThat(api().setDirectory("backups/nightly").isSuccess()).isTrue();
+        assertThat(api().setDirectory(root.resolve("elsewhere").toString()).isSuccess())
+                .isTrue();
     }
 
     @Test
@@ -285,6 +301,7 @@ class BackupsRuntimeTest extends RuntimeTestBase {
                         .error()
                         .code())
                 .isEqualTo("Backup.Running");
+        assertThat(api().setDirectory("elsewhere").error().code()).isEqualTo("Backup.Running");
 
         platform.backups.next = null;
         running.complete(null);
@@ -297,8 +314,10 @@ class BackupsRuntimeTest extends RuntimeTestBase {
         startUp();
         String name = api().create().join().value().name();
 
-        assertThat(api().restoreOnNextStart(name).isSuccess()).isTrue();
-        Path copy = Path.of(platform.pendingRestore.restore.orElseThrow().copy());
+        assertThat(api().restoreOnNextStart(name).join().isSuccess()).isTrue();
+        String stored = platform.pendingRestore.restore.orElseThrow().copy();
+        assertThat(stored).doesNotContain("/").doesNotContain("\\");
+        Path copy = root.resolve("pending-restore").resolve(stored);
         assertThat(copy).exists().hasParent(root.resolve("pending-restore"));
 
         assertThat(api().cancelRestore().isSuccess()).isTrue();
@@ -312,7 +331,7 @@ class BackupsRuntimeTest extends RuntimeTestBase {
         String name = api().create().join().value().name();
         platform.backups.usable = 1;
 
-        assertThat(api().restoreOnNextStart(name).error().code()).isEqualTo("Backup.NoSpace");
+        assertThat(api().restoreOnNextStart(name).join().error().code()).isEqualTo("Backup.NoSpace");
         assertThat(api().pendingRestore()).isEmpty();
     }
 
@@ -323,7 +342,7 @@ class BackupsRuntimeTest extends RuntimeTestBase {
         FakeServerBackups.zip(copy, "worlds/default/new.txt", "new");
         platform.pendingRestore.copies = copies;
         platform.pendingRestore.restore =
-                Optional.of(new PendingRestore("gone.zip", "Admin", Instant.EPOCH, copy.toString()));
+                Optional.of(new PendingRestore("gone.zip", "Admin", platform.clock.now, copy.toString()));
 
         startUp();
 
@@ -338,7 +357,7 @@ class BackupsRuntimeTest extends RuntimeTestBase {
         FakeServerBackups.zip(copy, "notes.txt", "no worlds here");
         platform.pendingRestore.copies = copies;
         platform.pendingRestore.restore =
-                Optional.of(new PendingRestore("bad.zip", "Admin", Instant.EPOCH, copy.toString()));
+                Optional.of(new PendingRestore("bad.zip", "Admin", platform.clock.now, copy.toString()));
 
         startUp();
 
@@ -357,7 +376,7 @@ class BackupsRuntimeTest extends RuntimeTestBase {
         Files.createDirectories(folder);
         FakeServerBackups.zip(folder.resolve("other.zip"), "notes.txt", "x");
 
-        assertThat(api().restoreOnNextStart("other.zip").error().code()).isEqualTo("Backup.NotUniverse");
+        assertThat(api().restoreOnNextStart("other.zip").join().error().code()).isEqualTo("Backup.NotUniverse");
     }
 
     @Test
@@ -368,6 +387,175 @@ class BackupsRuntimeTest extends RuntimeTestBase {
 
         assertThat(api().list()).extracting(BackupsApi.Backup::name).contains("my backup.zip");
         assertThat(api().delete("my backup.zip").error().code()).isEqualTo("Backup.BadName");
+    }
+
+    @Test
+    void aLeftoverStagingFolderNextToAnIntactUniverseIsDeletedAndStartupGoesOn() throws IOException {
+        Path staging = root.resolve("universe-restoring-2026-01-01_00-00-00");
+        Files.createDirectories(staging.resolve("worlds"));
+
+        startUp();
+
+        assertThat(staging).doesNotExist();
+        assertThat(universe.resolve("worlds/default/old.txt")).exists();
+        assertThat(platform.control.stops).isEmpty();
+        assertThat(platform.log.contains("left over from an interrupted backup restore"))
+                .isTrue();
+    }
+
+    @Test
+    void aMissingUniverseAfterAnInterruptedSwapStopsTheServerAndTouchesNothing() throws IOException {
+        Path aside = root.resolve("universe-before-restore-2026-01-01_00-00-00");
+        Files.move(universe, aside);
+        Path staging = Files.createDirectories(root.resolve("universe-restoring-2026-01-01_00-00-00/worlds"));
+        Files.createDirectories(folder);
+        FakeServerBackups.zip(folder.resolve("good.zip"), "worlds/default/new.txt", "new");
+        platform.pendingRestore.restore = Optional.of(new PendingRestore("good.zip", "Admin", platform.clock.now));
+
+        startUp();
+
+        assertThat(platform.control.stops).hasSize(1);
+        assertThat(platform.log.contains("is missing")).isTrue();
+        assertThat(universe).doesNotExist();
+        assertThat(staging).exists();
+        assertThat(aside.resolve("worlds/default/old.txt")).exists();
+        assertThat(platform.pendingRestore.restore).isPresent();
+    }
+
+    @Test
+    void aPlanOlderThanSevenDaysIsNotAppliedAndAdminsAreTold() throws IOException {
+        Path copies = Files.createDirectories(root.resolve("pending-restore"));
+        Path copy = copies.resolve("old.zip");
+        FakeServerBackups.zip(copy, "worlds/default/new.txt", "new");
+        platform.pendingRestore.copies = copies;
+        platform.pendingRestore.restore = Optional.of(
+                new PendingRestore("old.zip", "Admin", platform.clock.now.minus(Duration.ofDays(8)), "old.zip"));
+
+        startUp();
+
+        assertThat(universe.resolve("worlds/default/old.txt")).exists();
+        assertThat(universe.resolve("worlds/default/new.txt")).doesNotExist();
+        assertThat(copy).exists();
+        assertThat(platform.pendingRestore.restore).isPresent();
+        PlayerInfo admin = platform.players.join("Admin");
+        platform.connectedPublisher.publish(new PlayerJoined(admin));
+        assertThat(platform.messenger.textsTo(admin.id()))
+                .anyMatch(text -> text.contains("7 days")
+                        && text.contains(copy.toAbsolutePath().toString()));
+    }
+
+    @Test
+    void copiesNoPlanUsesAreDeletedAtStartAndWhenPlanning() throws IOException {
+        Path copies = Files.createDirectories(root.resolve("pending-restore"));
+        Path stale = copies.resolve("stale.zip");
+        FakeServerBackups.zip(stale, "worlds/a.txt", "a");
+        platform.pendingRestore.copies = copies;
+
+        startUp();
+        assertThat(stale).doesNotExist();
+
+        FakeServerBackups.zip(stale, "worlds/a.txt", "a");
+        String name = api().create().join().value().name();
+        assertThat(api().restoreOnNextStart(name).join().isSuccess()).isTrue();
+        assertThat(stale).doesNotExist();
+        assertThat(copies.resolve(name)).exists();
+    }
+
+    @Test
+    void aUniverseThatIsALinkCannotBeRestored() throws IOException {
+        Path real = root.resolve("real-universe");
+        Files.move(universe, real);
+        try {
+            Files.createSymbolicLink(universe, real);
+        } catch (IOException | UnsupportedOperationException e) {
+            Assumptions.abort("symbolic links are not allowed here: " + e.getMessage());
+        }
+        startUp();
+        String name = api().create().join().value().name();
+
+        assertThat(api().restoreOnNextStart(name).join().error().code()).isEqualTo("Backup.UniverseNotSwappable");
+    }
+
+    @Test
+    void thePlannedBackupKeepsItsBadgeAfterHytaleMovesItToTheArchive() throws Exception {
+        platform.pendingRestore.copies = root.resolve("pending-restore");
+        startUp();
+        String name = api().create().join().value().name();
+        assertThat(api().restoreOnNextStart(name).join().isSuccess()).isTrue();
+        Files.createDirectories(folder.resolve("archive"));
+        Files.move(folder.resolve(name), folder.resolve("archive").resolve(name));
+        PlayerInfo admin = platform.players.join("Admin");
+
+        assertThat(service().viewedBy(admin.id()).backups())
+                .singleElement()
+                .extracting(BackupsView.Row::name, BackupsView.Row::pending)
+                .containsExactly("archive/" + name, true);
+    }
+
+    @Test
+    void whileARestoreIsBeingPreparedBackupsPlansAndCancelsWait() {
+        platform.pendingRestore.copies = root.resolve("pending-restore");
+        startUp();
+        String name = api().create().join().value().name();
+        CompletableFuture<Void> gate = new CompletableFuture<>();
+        platform.backups.spaceGate = gate;
+
+        CompletableFuture<Result<String>> planning = api().restoreOnNextStart(name);
+
+        assertThat(api().create().join().error().code()).isEqualTo("Backup.PreparingRestore");
+        assertThat(api().restoreOnNextStart(name).join().error().code()).isEqualTo("Backup.PreparingRestore");
+        assertThat(api().cancelRestore().error().code()).isEqualTo("Backup.PreparingRestore");
+        platform.backups.spaceGate = null;
+        gate.complete(null);
+        assertThat(planning.join().isSuccess()).isTrue();
+        assertThat(api().pendingRestore()).isPresent();
+    }
+
+    @Test
+    void theBackupDirectoryRuleAlsoGuardsTheGenericConfigPath() {
+        startUp();
+        PlayerInfo moderator = platform.players.join("Moderator");
+        platform.deniedNodesFor.put(moderator.id(), List.of("admin", "settings"));
+        platform.commands.runAsConsole(
+                "cc-perm", Map.of("target", "category:backup", "side", "both", "node", "everyone"));
+
+        assertThat(platform.commands
+                        .run("cc-set", moderator, Map.of("id", "server:backup.enabled", "value", "true"))
+                        .isSuccess())
+                .isTrue();
+        assertThat(platform.commands
+                        .run("cc-set", moderator, Map.of("id", "server:backup.directory", "value", "\\\\share\\x"))
+                        .error()
+                        .code())
+                .isEqualTo("Backup.DirectoryForbidden");
+        assertThat(platform.commands
+                        .runAsConsole("cc-set", Map.of("id", "server:backup.directory", "value", "\\\\share\\x"))
+                        .error()
+                        .code())
+                .isEqualTo("Backup.BadDirectory");
+        assertThat(platform.commands
+                        .runAsConsole("cc-set", Map.of("id", "server:backup.directory", "value", universe.toString()))
+                        .error()
+                        .code())
+                .isEqualTo("Backup.BadDirectory");
+    }
+
+    private static BackupService service() throws IllegalAccessException {
+        Object backups = ControlCoreApi.get().backups();
+        for (var field : backups.getClass().getDeclaredFields()) {
+            if (field.getType() == BackupService.class) {
+                field.setAccessible(true);
+                return (BackupService) field.get(backups);
+            }
+        }
+        throw new IllegalStateException("no BackupService in " + backups.getClass());
+    }
+
+    private void awaitPending() {
+        long until = System.currentTimeMillis() + 5_000;
+        while (api().pendingRestore().isEmpty() && System.currentTimeMillis() < until) {
+            Thread.onSpinWait();
+        }
     }
 
     private void awaitRun(int runs) {

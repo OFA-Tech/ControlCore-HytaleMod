@@ -47,12 +47,15 @@ public interface BackupsApi {
 
     /**
      * Sets config.json's {@code Backup.Directory}. Recorded in History like any config.json change. Acting for a
-     * player, only admins may change it ({@code Backup.DirectoryForbidden} otherwise).
+     * player, only admins may change it ({@code Backup.DirectoryForbidden} otherwise), whatever the setting rights
+     * say; the same rule applies when it is changed as a config.json setting. Refused while a backup runs
+     * ({@code Backup.Running}).
      *
-     * @param directory a folder inside the server folder, relative to it (no drive letter, no {@code ..}, no leading
-     *     slash); {@code null} or empty for {@code backups}
-     * @return a message, or an error such as {@code Backup.Forbidden}, {@code Backup.DirectoryForbidden} or
-     *     {@code Backup.BadDirectory}
+     * @param directory a folder inside the server folder, relative to it, or an absolute local folder such as
+     *     {@code D:/Backups}; never a network share, a {@code ..} segment, an NTFS stream or the universe folder or a
+     *     folder inside it; {@code null} or empty for {@code backups}
+     * @return a message, or an error such as {@code Backup.Forbidden}, {@code Backup.DirectoryForbidden},
+     *     {@code Backup.Running} or {@code Backup.BadDirectory}
      */
     Result<String> setDirectory(String directory);
 
@@ -81,17 +84,23 @@ public interface BackupsApi {
     Result<String> delete(String name);
 
     /**
-     * Plans a restore of a backup at the next server start. Recorded in History, where rolling it back cancels it.
+     * Plans a restore of a backup at the next server start. ControlCore checks the zip and copies it to its own
+     * folder in the background, so this returns at once; while the copy runs, other plans, backups and cancels are
+     * refused with {@code Backup.PreparingRestore}. Recorded in History, where rolling it back cancels it. A plan
+     * older than 7 days is not applied at start; it stays planned until cancelled.
      *
      * @param name the name as {@link Backup#name()} gives it
-     * @return a message, or an error such as {@code Backup.Unknown} or {@code Backup.RestorePending}
+     * @return a future completed with a message, or an error such as {@code Backup.Unknown},
+     *     {@code Backup.RestorePending}, {@code Backup.PreparingRestore}, {@code Backup.NotUniverse} or
+     *     {@code Backup.UniverseNotSwappable} (the universe folder is a link or a separate mount)
      */
-    Result<String> restoreOnNextStart(String name);
+    CompletableFuture<Result<String>> restoreOnNextStart(String name);
 
     /**
      * Cancels the planned restore. Recorded in History.
      *
-     * @return a message, or {@code Backup.NoRestore} when none is planned
+     * @return a message, {@code Backup.NoRestore} when none is planned or {@code Backup.PreparingRestore} while a
+     *     restore is being prepared
      */
     Result<String> cancelRestore();
 

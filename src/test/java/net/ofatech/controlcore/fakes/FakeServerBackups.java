@@ -17,6 +17,7 @@ public final class FakeServerBackups implements ServerBackups {
     public volatile Optional<Path> directory = Optional.empty();
     public volatile long usable = Long.MAX_VALUE;
     public volatile CompletableFuture<Void> next;
+    public volatile CompletableFuture<Void> spaceGate;
     public final AtomicInteger runs = new AtomicInteger();
 
     @Override
@@ -31,6 +32,10 @@ public final class FakeServerBackups implements ServerBackups {
 
     @Override
     public long usableSpace(Path folder) {
+        CompletableFuture<Void> gate = spaceGate;
+        if (gate != null) {
+            gate.join();
+        }
         return usable;
     }
 
