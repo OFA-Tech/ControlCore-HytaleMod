@@ -84,8 +84,43 @@ $C.@PageOverlay {
         Label {
           Text: "OFA-Tech";
           Style: @BrandStyle;
-          FlexWeight: 1;
+          Anchor: (Width: 120);
         }
+
+        Group #RestartBanner {
+            LayoutMode: Left;
+            Visible: false;
+            FlexWeight: 1;
+            Anchor: (Height: 36, Top: 6);
+            Background: #1b2f44;
+            Padding: (Horizontal: 10);
+
+            Group {
+              Anchor: (Width: 4, Right: 10);
+              Background: #7fb2e0;
+            }
+
+            Group {
+              Anchor: (Width: 18, Height: 18, Top: 9, Right: 10);
+              Background: "Icons/Restart.png";
+            }
+
+            Label #RestartText {
+              Style: @BannerStyle;
+              FlexWeight: 1;
+            }
+
+            $C.@DropdownBox #RestartDelay {
+              Visible: false;
+              Anchor: (Width: 200, Height: 30, Top: 3, Left: 6);
+            }
+
+            $C.@SmallSecondaryTextButton #RestartNow {
+              @Text = %controlcore.ui.restart.now;
+              Visible: false;
+              Anchor: (Width: 190, Height: 30, Top: 3, Left: 6);
+            }
+          }
       }
 
       Group #TabButtons {
@@ -249,40 +284,6 @@ $C.@PageOverlay {
         LayoutMode: Top;
         Background: #1d3140;
         Padding: (Full: 16);
-
-        Group #RestartBanner {
-          LayoutMode: Left;
-          Visible: false;
-          Anchor: (Height: 36, Bottom: 10);
-          Background: #1b2f44;
-          Padding: (Horizontal: 10);
-
-          Group {
-            Anchor: (Width: 4, Right: 10);
-            Background: #7fb2e0;
-          }
-
-          Group {
-            Anchor: (Width: 18, Height: 18, Top: 9, Right: 10);
-            Background: "Icons/Restart.png";
-          }
-
-          Label #RestartText {
-            Style: @BannerStyle;
-            FlexWeight: 1;
-          }
-
-          $C.@DropdownBox #RestartDelay {
-            Visible: false;
-            Anchor: (Width: 200, Height: 30, Top: 3, Left: 6);
-          }
-
-          $C.@SmallSecondaryTextButton #RestartNow {
-            @Text = %controlcore.ui.restart.now;
-            Visible: false;
-            Anchor: (Width: 190, Height: 30, Top: 3, Left: 6);
-          }
-        }
 
         Group #Columns {
           LayoutMode: Left;
