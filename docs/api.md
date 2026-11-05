@@ -323,8 +323,8 @@ manages rotating announcements (`list`, `add`, `remove`, `setEnabled`, `move`, `
 ## Backups and restarts (API 2.5.0)
 
 `backups()` makes, lists and deletes universe backups (`configured`, `setDirectory`, `create` returning a
-`CompletableFuture<Result<Backup>>`, `list`, `delete`) and plans a restore at the next start (`restoreOnNextStart`,
-`pendingRestore`, `cancelRestore`). `server()` also restarts: `restart(delay, reason)`, `cancelRestart()`,
+`CompletableFuture<Result<Backup>>`, `list`, `delete`) and plans a restore at the next start (`restoreOnNextStart`, a
+`CompletableFuture<Result<String>>` because the zip is copied in the background, `pendingRestore`, `cancelRestore`). `server()` also restarts: `restart(delay, reason)`, `cancelRestart()`,
 `restartStatus()`. Both have `actingFor(playerId)`; the nodes are `ofatech.controlcore.backups` and
 `ofatech.controlcore.restart`. `HistoryApi.Kind.BACKUP` is new.
 ## Using it from another mod

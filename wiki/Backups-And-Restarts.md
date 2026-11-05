@@ -8,10 +8,13 @@ named like `2026-11-04_18-30-00.zip`, written to config.json's `Backup.Directory
 
 Open **Server Configs -> Backups** (admins and `ofatech.controlcore.backups`):
 
-- **Backup directory.** If none is set, the bar says so; type a folder (relative to the server folder, `backups` by
-  default) and press **Set directory**. Only admins and the console may change it, and only to a folder inside the
-  server folder (no drive letter, no `..`, no leading `/` or `\`); an admin who wants another place can edit
-  `Backup.Directory` in config.json by hand. It works at once for **Back up now**; Hytale's automatic backups
+- **Backup directory.** If none is set, the bar says so; type a folder and press **Set directory**: a folder inside
+  the server folder (`backups` by default) or an absolute local folder such as `D:/Backups`. A network share
+  (`\\host\share`, `//host/share`), a `..` segment, a `:` other than a drive letter and the universe folder (or a
+  folder inside it) are refused. Only admins and the console may change it, whatever the setting rights say: the same
+  rule applies when `Backup.Directory` is changed in the config.json view, with `/cc-set`, through the settings API
+  or by rolling it back in History. Others see the folder read-only. It can't change while a backup runs. It works at
+  once for **Back up now**; Hytale's automatic backups
   (`Backup.Enabled`, `Backup.FrequencyMinutes`) start after a restart. The line under it shows those settings; change
   them in the config.json view (search `Backup`).
 - **Back up now** shows "Backing up..." and then "Done: name (size)" or the error. Only one backup runs at a time, and
@@ -29,28 +32,45 @@ back a planned restore cancels it.
 ## Restoring a backup
 
 A universe cannot be swapped while the server runs, so **Restore on next start** only plans it: ControlCore copies the
-zip to `pending-restore/` in its own folder (so Hytale's rotation or a backup before restarting cannot move or delete
-it; the disk needs room for the copy), writes `PendingRestore.json`, and Server Configs -> Backups shows "The restore
+zip to `pending-restore/` in its own folder in the background (the view shows "Copying the backup for the
+restore..."; backups, other plans and cancels wait until it is done), so Hytale's rotation or a backup before
+restarting cannot move or delete it (the disk needs room for the copy; the planned backup keeps its badge after Hytale
+archives it). It writes `PendingRestore.json` and deletes any other copy left in `pending-restore/`; and Server Configs -> Backups shows "The restore
 of ... will happen at the next start" with **Cancel restore** (which also deletes the copy). Only a zip with a `worlds`
 folder can be planned; a zip made by hand with everything inside one top folder (`universe/worlds/...`) is unpacked
 without that folder. While a restore is planned, **Back up before restarting** is skipped.
 
+A restore is refused when the `universe` folder is a symbolic link or a separate mount (for example a Docker volume
+mounted at `universe`): such a folder can't be renamed safely. Restore those by hand while the server is stopped, or
+mount the folder that holds `universe` instead.
+
 At the next start ControlCore applies it during its setup, before Hytale loads any world or player:
 
-1. It checks the zip (every entry must stay inside the universe folder, and there must be a `worlds` folder), checks
+1. A plan older than 7 days is not applied: admins are told, and it stays planned (with its copy) until it is cancelled
+   or planned again. This keeps an old plan from surprising you after an update. With no plan, any copy left in
+   `pending-restore/` is deleted.
+2. It checks the zip (every entry must stay inside the universe folder, and there must be a `worlds` folder), checks
    that the disk has room for the unpacked backup, and deletes `PendingRestore.json`, so a failing restore never
    repeats at every start.
-2. It moves the current `universe` folder to `universe-before-restore-<date>` next to it. If that is not possible (for
-   example a file is locked), nothing is changed and the server starts with the current universe.
-3. It unpacks the backup into a fresh `universe` folder and deletes the copy. If that fails, the partial folder is
-   deleted (or, if it cannot be, moved to `universe-failed-restore-<date>`) and the old universe is moved back; if even
-   that fails, the message says where the original universe is. The copy is kept in `pending-restore/` and the
-   message says so.
+3. It unpacks the backup into `universe-restoring-<date>` next to the universe. The universe is not touched yet. If
+   unpacking fails, that folder is deleted (or, if it can't be, moved to `universe-failed-restore-<date>`) and the
+   server starts with the current universe.
+4. Only when the unpacked folder is complete, it renames `universe` to `universe-before-restore-<date>` and the new
+   folder to `universe`, then deletes the copy. If the first rename fails (for example a file is locked), nothing
+   changes. If the second fails, the original is renamed back. The copy is kept in `pending-restore/` on any failure
+   and the message says so.
+
+If the server is killed during a restore (power loss, Ctrl+C, a host timeout), the next start finds the
+`universe-restoring-*` folder. When `universe` is intact, the half-unpacked folder is deleted and the server starts
+normally (a warning is logged). When `universe` is missing, ControlCore does not let Hytale create a new, empty world:
+it logs the problem (also in the Health tab), stops the server and names the folders. `universe-restoring-*` then
+holds the complete backup and `universe-before-restore-*` the universe from before; rename the one you want to
+`universe` and start again.
 
 The result is in History (by "ControlCore (at startup)"), in the server log, in the Backups view, and the first admin
 who joins gets a chat line. Failures also show in the Health tab's recent problems. The old universe is never deleted:
-remove `universe-before-restore-*` (and any `universe-failed-restore-*`) folders by hand once you are happy with the
-restore.
+`universe-before-restore-*` (and any `universe-failed-restore-*`) folders stay until you delete them by hand, once
+you are happy with the restore. They take as much disk space as the universe.
 
 ## Restarts
 
@@ -63,9 +83,9 @@ setting (default 60 s). `/cc-restart --in=5m --reason=Update` does the same; it 
   (those that fit in the countdown). While it counts down, the banner and the Health tab show "Restarting in 0:42" with
   **Cancel restart**; cancelling tells everyone.
 - At zero, if **Back up before restarting** is on and no restore is planned, ControlCore makes a backup first (if it
-  fails or takes more than 10 minutes, the server still restarts and admins are told). A backup that is already running
+  fails or takes more than 10 minutes, the server still restarts and admins are told, each in their own language). A backup that is already running
   is waited for, also at most 10 minutes. If the server cannot be stopped, admins are told and Restart can be pressed
-  again. Then players are kicked with "Server restarting, back soon!" and the server stops the
+  again; a backup that finishes after that does not stop the server by itself. Then players are kicked with "Server restarting, back soon!" and the server stops the
   normal way, saving every world.
 - **Scheduled restarts** (Mod Settings -> Restarts) takes daily times and cron schedules separated by `;`, for example
   `04:00; 0 16 * * SAT`. The countdown starts early so the server stops at that time; if the server comes up (or is

@@ -54,7 +54,7 @@ Messages (`Result<String>`) and display texts are in the acting player's languag
 | `controlPanel()` | `openForMod(player, modId)` opens the panel on a mod's settings | |
 | `notifications()` | `toastAdmins`, `warningAdmins`, `clearWarningAdmins`: the `admins` target of `/cc-toast`, `/cc-warn` and `/cc-warn-clear` | online ControlCore admins only; admins who join later do not get the warning |
 | `server()` (2.5.0) | `maintenance()` (a `Maintenance(on, message, motd, since, until)`), `setMaintenance(on, MaintenanceOptions(message, motd, offAfter))`: turning it on kicks everyone who may not join; `restart(delay, reason)`, `cancelRestart()`, `restartStatus()` | admins or `ofatech.controlcore.maintenance` (restarts: `ofatech.controlcore.restart`) |
-| `backups()` (2.5.0) | `configured`, `setDirectory`, `create()` (a future with the `Backup`), `list`, `delete(name)`, `restoreOnNextStart(name)`, `pendingRestore`, `cancelRestore` | admins or `ofatech.controlcore.backups` |
+| `backups()` (2.5.0) | `configured`, `setDirectory`, `create()` (a future with the `Backup`), `list`, `delete(name)`, `restoreOnNextStart(name)` (a future: the zip is copied in the background), `pendingRestore`, `cancelRestore` | admins or `ofatech.controlcore.backups` |
 | `announcements()` (2.5.0) | `list`, `add`, `remove`, `setEnabled(id, on)`, `move(id, by)`, `settings()`/`setSettings(Settings(enabled, intervalMinutes, order, channel, minPlayers))`, `sendNow()`, `send(id)` | admins or `ofatech.controlcore.announcements` |
 
 `players()` methods that may have to look a player up (offline names) return a `CompletableFuture`. `teleportTo`

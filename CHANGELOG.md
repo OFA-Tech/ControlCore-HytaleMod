@@ -6,7 +6,8 @@
 - **Maintenance mode**: a bar in Server Configs -> Players (Whitelisted filter) and `/cc-maintenance <on|off|status>
   [--message=] [--motd=] [--for=]`. Turning it on (press twice in the panel) kicks every online player who is not an
   admin and lacks `ofatech.controlcore.maintenance.join` and `ofatech.controlcore.maintenance`, and refuses them until
-  it is off (if that check itself fails while maintenance is on, the join is refused with "try again later"). Optional
+  it is off (if that check itself fails, or the maintenance state can't be read, the join is refused with "try again
+  later"). Optional
   message, a MOTD shown while it is on (admins and the console only; for others it is ignored and the reply says so; the
   old one comes back after) and an automatic end (15 min to 4 h, or `--for=30m`). Needs
   `ofatech.controlcore.maintenance`; recorded in History, where rolling it back turns it the other way. New automation
@@ -19,20 +20,28 @@
   them (new part `announcements`, restoring it needs an admin).
 - **Backups**: a **Backups** view in Server Configs (next to config.json | Worlds | Players) and `/cc-backup
   [--directory=]`, `/cc-backups`, `/cc-backup-delete <name> confirm`. It uses Hytale's own universe backup: set the
-  backup directory right there if none is set (admins and the console only, and only a folder inside the server
-  folder), **Back up now** (one at a time, refused when the disk has less free space than the universe; a run that
+  backup directory right there if none is set (admins and the console only, whatever the setting rights say, also as
+  a config.json setting, in History rollback and through the settings API; a folder inside the server folder or an
+  absolute local folder, never a network share, a `..` segment or the universe folder; non-admins see it read-only;
+  refused while a backup runs), **Back up now** (one at a time, refused when the disk has less free space than the
+  universe; a run that
   writes no new zip is reported as failed), the list of latest and archived backups with date and size, and Delete
   (press twice). Backup names may only use letters, digits, `.`, `_` and `-`; others are listed with a clear error.
   Needs `ofatech.controlcore.backups` (admins have it); recorded in History. New automation action **Make a backup**.
 - **Restore on next start**: **Restore on next start** (press twice) or `/cc-backup-restore <name> confirm` plans a
   restore; `/cc-backup-restore-cancel` or **Cancel restore** cancels it. Planning copies the zip to ControlCore's
-  `pending-restore` folder, so Hytale's backup rotation cannot remove it; only zips with a `worlds` folder can be
-  planned (a zip with everything inside one top folder is unpacked without it). At the next start, before any world
-  loads, ControlCore checks the free space, moves the current universe to `universe-before-restore-<date>` and
-  unpacks the copy (entries outside the universe folder are refused), then deletes the copy; if anything fails the
-  universe is left or put back as it was (or, if that is impossible, the message says where the original is) and the
-  copy is kept. The result is in History, the log, the Health tab's problems (on failure) and a chat line for the
-  first admin who joins.
+  `pending-restore` folder in the background ("Copying the backup for the restore..."; backups, other plans and
+  cancels wait for it), so Hytale's backup rotation cannot remove it (the planned backup keeps its badge when Hytale
+  archives it); only zips with a `worlds` folder can be planned (a zip with everything inside one top folder is
+  unpacked without it), and not when the universe folder is a link or a separate mount. At the next start, before any
+  world loads, ControlCore checks the free space, unpacks the copy into `universe-restoring-<date>` next to the
+  universe (entries outside it are refused), and only when that is complete renames the current universe to
+  `universe-before-restore-<date>` and the new folder to `universe`; if anything fails the universe is left or put
+  back as it was and the copy is kept. If the server was killed during a restore, the next start deletes the
+  half-unpacked folder when the universe is intact, and stops the server with a clear message (naming the folders)
+  when the universe folder is missing, instead of starting a new, empty world. A plan older than 7 days is not
+  applied (admins are told; it stays planned until cancelled), and copies no plan uses are deleted. The result is in
+  History, the log, the Health tab's problems (on failure) and a chat line for the first admin who joins.
 - **Restarts**: a **Restart** button (press twice, with a 10 s to 10 min or default countdown) in the restart banner,
   which also shows after mod changes in the Mods tab, and in the Health tab, plus `/cc-restart [--in=] [--reason=]`,
   `/cc-restart-cancel` and `/cc-restart-status`. Everyone gets a warning bar and chat warnings at 10 min, 5 min, 1 min,
@@ -46,7 +55,8 @@
   `setMaintenance(on, MaintenanceOptions)`, `announcements()` with `list`, `add`, `remove`, `setEnabled`, `move`,
   `settings`, `setSettings`, `sendNow` and `send`, both with `actingFor(player)`; `SnapshotsApi.Part.ANNOUNCEMENTS`;
   `server().restart`, `cancelRestart` and `restartStatus`; `backups()` with `configured`, `setDirectory`, `create`,
-  `list`, `delete`, `restoreOnNextStart`, `pendingRestore` and `cancelRestore`; `HistoryApi.Kind.BACKUP`.
+  `list`, `delete`, `restoreOnNextStart` (returns a future), `pendingRestore` and `cancelRestore`;
+  `HistoryApi.Kind.BACKUP`.
 
 ## 0.20.0 - 2026-11-03
 
