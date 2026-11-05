@@ -12,7 +12,7 @@ $C = "../../Common.ui";
 @TitleStyle = (FontSize: 18, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center);
 @BrandStyle = (FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center);
 @BannerStyle = (FontSize: 14, TextColor: #e9e4d6, VerticalAlignment: Center, Wrap: true);
-@FooterStyle = (FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center);
+@FooterStyle = (FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center, Wrap: true);
 
 @TabLabel = (FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center, HorizontalAlignment: Center);
 @TabLabelOn = (FontSize: 13, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center, HorizontalAlignment: Center);
@@ -523,7 +523,7 @@ $C.@PageOverlay {
 
                   $C.@SmallSecondaryTextButton #MaintenanceToggle {
                     @Text = %controlcore.ui.maintenance.turnOn;
-                    Anchor: (Width: 190, Height: 30, Left: 6);
+                    Anchor: (Width: 230, Height: 30, Left: 6);
                   }
                 }
 
@@ -531,17 +531,35 @@ $C.@PageOverlay {
                   LayoutMode: Left;
                   Anchor: (Height: 34);
 
+                  Label {
+                    Text: %controlcore.ui.maintenance.kickMessage;
+                    Style: (...@NoteStyle, VerticalAlignment: Center, Wrap: false);
+                    Anchor: (Width: 120, Right: 6);
+                  }
+
                   $C.@TextField #MaintenanceMessage {
                     FlexWeight: 1;
-                    Anchor: (Right: 6);
+                    Anchor: (Right: 10);
+                  }
+
+                  Label {
+                    Text: %controlcore.ui.maintenance.motd;
+                    Style: (...@NoteStyle, VerticalAlignment: Center, Wrap: false);
+                    Anchor: (Width: 50, Right: 6);
                   }
 
                   $C.@TextField #MaintenanceMotd {
                     FlexWeight: 1;
                   }
 
+                  Label {
+                    Text: %controlcore.ui.maintenance.offAfter;
+                    Style: (...@NoteStyle, VerticalAlignment: Center, Wrap: false);
+                    Anchor: (Width: 100, Left: 10, Right: 6);
+                  }
+
                   $C.@DropdownBox #MaintenanceOffAfter {
-                    Anchor: (Width: 170, Left: 6);
+                    Anchor: (Width: 220);
                   }
                 }
               }
@@ -614,7 +632,7 @@ $C.@PageOverlay {
 
                 $C.@SmallSecondaryTextButton #BackupsSetDirectory {
                   @Text = %controlcore.ui.backups.setDirectory;
-                  Anchor: (Width: 170, Height: 30, Top: 3, Left: 6);
+                  Anchor: (Width: 190, Height: 30, Top: 3, Left: 6);
                 }
               }
 
@@ -652,7 +670,7 @@ $C.@PageOverlay {
 
                 $C.@SmallTertiaryTextButton #BackupsCancelRestore {
                   @Text = %controlcore.ui.backups.cancelRestore;
-                  Anchor: (Width: 190, Height: 30, Top: 3, Left: 6);
+                  Anchor: (Width: 220, Height: 30, Top: 3, Left: 6);
                 }
               }
 
@@ -1622,7 +1640,7 @@ $C.@PageOverlay {
               }
 
               $C.@DropdownBox #HealthRestartDelay {
-                Anchor: (Width: 150, Height: 30, Top: 3, Left: 6);
+                Anchor: (Width: 200, Height: 30, Top: 3, Left: 6);
               }
 
               $C.@SmallSecondaryTextButton #HealthRestart {
@@ -1714,8 +1732,20 @@ $C.@PageOverlay {
                   Anchor: (Width: 80);
                 }
 
+                Label {
+                  Text: %controlcore.ui.announce.order;
+                  Style: (...@NoteStyle, VerticalAlignment: Center);
+                  Anchor: (Width: 60);
+                }
+
                 $C.@DropdownBox #AnnounceOrder {
-                  Anchor: (Width: 170, Right: 6);
+                  Anchor: (Width: 170, Right: 10);
+                }
+
+                Label {
+                  Text: %controlcore.ui.announce.sendAs;
+                  Style: (...@NoteStyle, VerticalAlignment: Center);
+                  Anchor: (Width: 90);
                 }
 
                 $C.@DropdownBox #AnnounceChannel {
@@ -1725,7 +1755,7 @@ $C.@PageOverlay {
                 Label {
                   Text: %controlcore.ui.announce.minPlayers;
                   Style: (...@NoteStyle, VerticalAlignment: Center);
-                  Anchor: (Width: 150);
+                  Anchor: (Width: 170);
                 }
 
                 $C.@TextField #AnnounceMin {

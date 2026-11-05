@@ -9,7 +9,7 @@ Group {
     Anchor: (Height: 32);
 
     Label #Name {
-      Anchor: (Width: 380);
+      Anchor: (Width: 350);
       Style: (...$C.@DefaultLabelStyle, FontSize: 15, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center);
     }
 
@@ -28,7 +28,7 @@ Group {
 
     $C.@SmallTertiaryTextButton #Restore {
       @Text = %controlcore.ui.backups.restore;
-      Anchor: (Width: 230, Height: 32, Left: 6);
+      Anchor: (Width: 260, Height: 32, Left: 6);
     }
 
     $C.@SmallTertiaryTextButton #Delete {

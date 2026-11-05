@@ -31,6 +31,7 @@ final class SettingRowEditor {
 
     static final String RESTORE_DEFAULTS = "RestoreDefaults";
     static final String HISTORY_LINK = "HistoryOf";
+    static final int BANNER_NAMES = 3;
 
     interface Host {
         PlayerRef viewer();
@@ -635,13 +636,25 @@ final class SettingRowEditor {
         commands.set("#RestartBanner.Visible", !names.isEmpty());
         commands.set(
                 "#RestartText.Text",
-                names.isEmpty()
-                        ? ""
-                        : tr.t(
-                                "controlcore.panel.restart_pending",
-                                "keys",
-                                names.stream().map(tr::translate).collect(Collectors.joining(", "))));
+                pendingText(names.stream().map(tr::translate).toList(), tr));
         host.restartBanner(commands, !names.isEmpty());
+    }
+
+    static String pendingText(List<String> names, Translator tr) {
+        if (names.isEmpty()) {
+            return "";
+        }
+        if (names.size() <= BANNER_NAMES) {
+            return tr.t("controlcore.panel.restart_pending", "keys", String.join(", ", names));
+        }
+        return tr.t(
+                "controlcore.panel.restart_pending_many",
+                "count",
+                names.size(),
+                "keys",
+                String.join(", ", names.subList(0, BANNER_NAMES)),
+                "more",
+                names.size() - BANNER_NAMES);
     }
 
     void restoreDefaults(String sectionName) {
