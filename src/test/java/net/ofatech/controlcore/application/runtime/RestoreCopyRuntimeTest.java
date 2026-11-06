@@ -71,7 +71,7 @@ class RestoreCopyRuntimeTest extends RuntimeTestBase {
 
             assertThat(platform.messenger.textsTo(admin.id()))
                     .anyMatch(text -> text.contains("The restore copy did not finish within 10 minutes")
-                            && text.contains("Plan it again after the restart"))
+                            && text.contains("Check the Backups tab after the restart"))
                     .noneMatch(text -> text.contains("The backup before restarting did not finish"));
         } finally {
             platform.backups.spaceGate = null;

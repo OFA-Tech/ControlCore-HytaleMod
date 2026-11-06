@@ -64,6 +64,7 @@ public final class BackupService {
 
     private static final SettingId DIRECTORY = BackupDirectory.ID;
     private static final Duration MAX_PLAN_AGE = Duration.ofDays(7);
+    private volatile boolean expiredPlanStuck;
     private static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
     private static final DateTimeFormatter WHEN = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
@@ -125,7 +126,9 @@ public final class BackupService {
 
     synchronized void stillPlanned() {
         try {
-            store.load().ifPresent(restore -> store.save(restore.seenAt(clock.now())));
+            if (!expiredPlanStuck) {
+                store.load().ifPresent(restore -> store.save(restore.seenAt(clock.now())));
+            }
         } catch (RuntimeException e) {
             log.warn("Could not note that the planned backup restore is still wanted: " + e.getMessage());
         }
@@ -561,6 +564,7 @@ public final class BackupService {
         Optional<Path> copy = copyOf(pending.get());
         boolean expired = pending.get().seen().isBefore(clock.now().minus(MAX_PLAN_AGE));
         if (expired && !store.clear()) {
+            expiredPlanStuck = true;
             log.error(
                     "Backup " + name + " was planned for restore too long ago and was not restored, but"
                             + " PendingRestore.json could not be deleted. Delete the file by hand.",
