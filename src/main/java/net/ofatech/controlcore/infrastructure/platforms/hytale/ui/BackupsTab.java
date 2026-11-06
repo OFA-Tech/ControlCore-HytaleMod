@@ -122,7 +122,7 @@ final class BackupsTab {
         update.set("#BackupsStatus.Text", tr.t("controlcore.backups.running"));
         update.set("#FooterStatus.Text", tr.t("controlcore.backups.running"));
         host.send(update);
-        view.backUpNow().thenAccept(result -> host.whileOpen(() -> refreshAfter(result)));
+        view.backUpNow().thenAccept(result -> host.whileOpenOrTell(() -> refreshAfter(result), text(result)));
     }
 
     private void restore(String name) {

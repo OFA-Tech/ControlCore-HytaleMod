@@ -92,6 +92,7 @@ class ModRuntimeTest extends RuntimeTestBase {
         assertThat(platform.scheduler.entries)
                 .extracting(entry -> entry.period)
                 .containsExactlyInAnyOrder(
+                        Duration.ofHours(1),
                         Duration.ofMinutes(5),
                         Duration.ofSeconds(5),
                         Duration.ofSeconds(5),

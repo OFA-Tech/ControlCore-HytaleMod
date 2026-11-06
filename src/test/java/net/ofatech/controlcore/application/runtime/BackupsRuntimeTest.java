@@ -22,6 +22,7 @@ import net.ofatech.controlcore.domain.model.PlayerInfo;
 import net.ofatech.controlcore.domain.model.server.BackupsView;
 import net.ofatech.controlcore.domain.model.server.PendingRestore;
 import net.ofatech.controlcore.domain.result.Result;
+import net.ofatech.controlcore.fakes.FakePlatform;
 import net.ofatech.controlcore.fakes.FakeServerBackups;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeEach;
@@ -432,18 +433,31 @@ class BackupsRuntimeTest extends RuntimeTestBase {
         Path other = Files.createDirectories(root.resolve("universe-restoring-2025-01-01_00-00-00/worlds"));
 
         startUp();
+        runtime.shutdown();
+        FakePlatform next = new FakePlatform();
+        next.backups.universe = universe;
+        next.backups.directory = Optional.of(folder);
+        ModRuntime again = new ModRuntime(next, BackupsRuntimeTest.class.getClassLoader());
+        try {
+            again.setup();
+            again.start();
+        } finally {
+            again.shutdown();
+        }
 
         assertThat(platform.control.stops).hasSize(1);
-        assertThat(staging).doesNotExist();
-        assertThat(root.resolve("universe-failed-restore-2026-01-01_00-00-00/worlds/default/new.txt"))
-                .hasContent("new");
+        assertThat(next.control.stops)
+                .as("the next start stops too, until the admin moves the folders")
+                .hasSize(1);
+        assertThat(staging.resolve("worlds/default/new.txt")).hasContent("new");
+        assertThat(root.resolve("universe-failed-restore-2026-01-01_00-00-00")).doesNotExist();
         assertThat(aside).exists();
         assertThat(universe.resolve("worlds/default/old.txt")).exists();
         assertThat(other)
                 .as("a staging folder with no before-restore partner is junk")
                 .doesNotExist();
-        assertThat(platform.log.contains("universe-failed-restore-2026-01-01_00-00-00"))
-                .isTrue();
+        assertThat(platform.log.contains(staging.toString())).isTrue();
+        assertThat(platform.log.contains("Rename the one you want to universe")).isTrue();
     }
 
     @Test
@@ -539,6 +553,37 @@ class BackupsRuntimeTest extends RuntimeTestBase {
         platform.control.shutdown();
 
         assertThat(platform.pendingRestore.restore.orElseThrow().seen()).isEqualTo(platform.clock.now);
+    }
+
+    @Test
+    void theSeenTimeIsAlsoSavedWhileTheServerRuns() {
+        platform.pendingRestore.copies = root.resolve("pending-restore");
+        startUp();
+        String name = api().create().join().value().name();
+        assertThat(api().restoreOnNextStart(name).join().isSuccess()).isTrue();
+        platform.clock.now = platform.clock.now.plus(Duration.ofDays(8));
+
+        platform.scheduler.runAll();
+
+        assertThat(platform.pendingRestore.restore.orElseThrow().seen())
+                .as("a crash after long uptime does not expire the plan")
+                .isEqualTo(platform.clock.now);
+    }
+
+    @Test
+    void anExpiredPlanWhoseMarkerCannotBeDeletedIsNotApplied() throws IOException {
+        Files.createDirectories(folder);
+        FakeServerBackups.zip(folder.resolve("good.zip"), "worlds/default/new.txt", "new");
+        platform.pendingRestore.restore =
+                Optional.of(new PendingRestore("good.zip", "Admin", platform.clock.now.minus(Duration.ofDays(8))));
+        platform.pendingRestore.failClear = true;
+
+        startUp();
+
+        assertThat(universe.resolve("worlds/default/old.txt")).exists();
+        assertThat(universe.resolve("worlds/default/new.txt")).doesNotExist();
+        assertThat(platform.log.contains("PendingRestore.json could not be deleted"))
+                .isTrue();
     }
 
     @Test

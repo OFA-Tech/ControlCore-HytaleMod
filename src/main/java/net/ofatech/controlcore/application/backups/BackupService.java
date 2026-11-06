@@ -74,6 +74,8 @@ public final class BackupService {
         }
     }
 
+    public record Copying(String text) {}
+
     private final ServerBackups backups;
     private final PendingRestoreStore store;
     private final Permissions permissions;
@@ -121,7 +123,7 @@ public final class BackupService {
         control.onStopping(this::stillPlanned);
     }
 
-    private void stillPlanned() {
+    synchronized void stillPlanned() {
         try {
             store.load().ifPresent(restore -> store.save(restore.seenAt(clock.now())));
         } catch (RuntimeException e) {
@@ -532,7 +534,7 @@ public final class BackupService {
                 String text = result.isSuccess() ? result.value() : tr.error(result.error());
                 who.ifPresentOrElse(player -> messenger.send(player, text), () -> log.info(text));
             });
-            return Result.success(tr.t("controlcore.backups.preparing_restore"));
+            return Result.success(new Copying(tr.t("controlcore.backups.preparing_restore")));
         }
         return Result.failure(Error.validation(
                 "Backup.NoRollback",
@@ -558,7 +560,15 @@ public final class BackupService {
         String name = pending.get().name();
         Optional<Path> copy = copyOf(pending.get());
         boolean expired = pending.get().seen().isBefore(clock.now().minus(MAX_PLAN_AGE));
-        if (expired && store.clear()) {
+        if (expired && !store.clear()) {
+            log.error(
+                    "Backup " + name + " was planned for restore too long ago and was not restored, but"
+                            + " PendingRestore.json could not be deleted. Delete the file by hand.",
+                    null);
+            startup = Optional.of(new Outcome(name, false, Text.of("PendingRestore.json could not be deleted")));
+            return;
+        }
+        if (expired) {
             log.error(
                     "Backup " + name + " was planned for restore at "
                             + pending.get().at()
@@ -645,7 +655,7 @@ public final class BackupService {
                 Path aside = UniverseFiles.asideOf(
                         universe, leftover.getFileName().toString().substring(prefix.length()));
                 if (Files.exists(aside, LinkOption.NOFOLLOW_LINKS)) {
-                    halfSwapped.add(keepRestored(leftover, aside));
+                    halfSwapped.add(leftover);
                     halfSwapped.add(aside);
                     continue;
                 }
@@ -665,14 +675,16 @@ public final class BackupService {
                     String.join(", ", halfSwapped.stream().map(Path::toString).toList());
             log.error(
                     "A backup restore was interrupted halfway: " + universe + " exists, but so do " + folders
-                            + ". ControlCore deleted nothing and stops the server so no world is lost. The "
-                            + universe.getFileName() + "-failed-restore-* (or -restoring-*) folder holds the restored"
-                            + " backup, the "
+                            + ". ControlCore deleted nothing and stops the server at every start until this is fixed,"
+                            + " so no world is lost. The " + universe.getFileName()
+                            + "-restoring-* folder holds the restored backup, the "
                             + universe.getFileName() + "-before-restore-* folder the universe from before the restore."
-                            + " Keep the one you want as " + universe.getFileName()
-                            + ", move the others away, then start again.",
+                            + " Rename the one you want to " + universe.getFileName() + " (move the current "
+                            + universe.getFileName() + " away first), move the other folder out of "
+                            + universe.getParent()
+                            + ", then start again.",
                     null);
-            stopFor("controlcore.backups.stopped_interrupted_restore", folders);
+            stopFor("controlcore.backups.stopped_interrupted_restore", folders, universe);
             return false;
         }
         String folders =
@@ -684,26 +696,19 @@ public final class BackupService {
                         + " restored backup) or a " + universe.getFileName() + "-before-restore-* folder (the"
                         + " universe from before the restore) to " + universe.getFileName() + ", then start again.",
                 null);
-        stopFor("controlcore.backups.stopped_broken_universe", folders);
+        stopFor("controlcore.backups.stopped_broken_universe", folders, universe);
         return false;
     }
 
-    private Path keepRestored(Path staging, Path aside) {
-        Path failed = UniverseFiles.failedOf(aside);
-        if (Files.exists(failed, LinkOption.NOFOLLOW_LINKS)) {
-            return staging;
-        }
+    private void stopFor(String key, String folders, Path universe) {
         try {
-            return Files.move(staging, failed);
-        } catch (IOException e) {
-            log.warn("Could not rename " + staging + " to " + failed + "; it was kept as it is: " + e.getMessage());
-            return staging;
-        }
-    }
-
-    private void stopFor(String key, String folders) {
-        try {
-            control.stop(texts.forServer().t(key, "folders", folders));
+            control.stop(texts.forServer()
+                    .t(
+                            key,
+                            "folders",
+                            folders,
+                            "universe",
+                            universe.getFileName().toString()));
         } catch (RuntimeException e) {
             log.error("Could not stop the server after the interrupted backup restore", e);
         }

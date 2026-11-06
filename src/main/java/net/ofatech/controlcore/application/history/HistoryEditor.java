@@ -273,6 +273,9 @@ public final class HistoryEditor {
                             .with("id", id)));
         }
         Result<?> done = ChangeContext.rollingBack(actor, id, () -> apply(record, who));
+        if (done.isSuccess() && done.value() instanceof BackupService.Copying copying) {
+            return Result.success(copying.text());
+        }
         return done.map(ignored -> tr.t(
                 "controlcore.history.rolled_back",
                 "id",

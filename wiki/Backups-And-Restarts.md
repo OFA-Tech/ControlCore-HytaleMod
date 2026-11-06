@@ -47,8 +47,8 @@ mount the folder that holds `universe` instead.
 
 At the next start ControlCore applies it during its setup, before Hytale loads any world or player:
 
-1. A plan never expires while the server runs. But if the server was off for more than 7 days after the plan (counted
-   from the last time it stopped with the plan in place), the plan is dropped instead of applied: admins are told,
+1. If the server was off for more than 7 days, counted from the last time the server was seen running with the plan
+   in place (saved hourly and on stop), the plan is dropped instead of applied: admins are told,
    History shows it, and the copy stays in `pending-restore/` until the next restore is planned. This keeps an old plan
    from surprising you after a long break.
 2. It checks the zip (every entry must stay inside the universe folder, and there must be a `worlds` folder), checks
@@ -65,9 +65,10 @@ At the next start ControlCore applies it during its setup, before Hytale loads a
 If the server is killed during a restore (power loss, Ctrl+C, a host timeout), the next start finds the
 `universe-restoring-*` folder. When `universe` is intact and there is no `universe-before-restore-*` folder with the
 same date, the half-unpacked folder is deleted and the server starts normally (a warning is logged). When there is one,
-the restore was cut between its two renames: ControlCore deletes nothing, renames the restored folder to
-`universe-failed-restore-<date>`, logs the problem (also in the Health tab), stops the server and names the folders;
-keep the one you want as `universe`, move the others away and start again. When `universe` is missing, ControlCore
+the restore was cut between its two renames: ControlCore deletes and renames nothing, logs the problem (also in the
+Health tab), stops the server and names the folders, and does so at every start until you fix it.
+`universe-restoring-<date>` holds the restored backup and `universe-before-restore-<date>` the universe from before:
+move the current `universe` away, rename the one you want to `universe`, move the other away and start again. When `universe` is missing, ControlCore
 does not let Hytale create a new, empty world: it logs the problem, stops the server and names the folders.
 `universe-restoring-*` then holds the complete backup and `universe-before-restore-*` the universe from before; rename
 the one you want to `universe` and start again.

@@ -39,10 +39,10 @@
   `universe-before-restore-<date>` and the new folder to `universe`; if anything fails the universe is left or put
   back as it was and the copy is kept until the next restore is planned. If the server was killed during a restore,
   the next start deletes the half-unpacked folder when the universe is intact and no matching
-  `universe-before-restore-<date>` exists; when one does (killed between the two renames), it keeps every folder
-  (renaming the restored one to `universe-failed-restore-<date>`) and stops the server with a clear message, as it does
-  when the universe folder is missing, instead of starting a new, empty world. A plan never expires while the server
-  runs; if the server was off for more than 7 days after it, the plan is dropped at start instead of applied (admins
+  `universe-before-restore-<date>` exists; when one does (killed between the two renames), it keeps and renames no
+  folder and stops the server at every start with a message naming the folder to rename, as it does when the
+  universe folder is missing, instead of starting a new, empty world. If the server was off for more than 7 days,
+  counted from the last time it was seen running with the plan (saved hourly and on stop), the plan is dropped at start instead of applied (admins
   are told, History shows it, the copy is kept until the next plan). Copies no plan uses are deleted when a restore is
   planned. The result is in
   History, the log, the Health tab's problems (on failure) and a chat line for the first admin who joins.

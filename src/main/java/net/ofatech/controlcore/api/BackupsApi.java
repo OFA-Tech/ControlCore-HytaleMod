@@ -88,8 +88,9 @@ public interface BackupsApi {
      * folder in the background, so this returns at once. Refused while a backup runs ({@code Backup.Running}).
      * While the copy runs, {@link #create()}, another plan and {@link #cancelRestore()} are refused with
      * {@code Backup.PreparingRestore}, and a restart that is due waits for the copy (up to 10 minutes). Recorded in
-     * History, where rolling it back cancels it. A plan never expires while the server runs; if the server was off
-     * for more than 7 days after the plan, it is dropped at start instead of applied.
+     * History, where rolling it back cancels it. If the server was off for more than 7 days, counted from the last
+     * time it was seen running with the plan in place (saved hourly and on stop), the plan is dropped at start
+     * instead of applied.
      *
      * @param name the name as {@link Backup#name()} gives it
      * @return a future completed with a message, or an error such as {@code Backup.Unknown},

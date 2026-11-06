@@ -633,7 +633,7 @@ $C.@PageOverlay {
                 Label #BackupsDirectoryNote {
                   Style: @NoteStyle;
                   Visible: false;
-                  FlexWeight: 1;
+                  FlexWeight: 2;
                   Anchor: (Left: 6);
                 }
 

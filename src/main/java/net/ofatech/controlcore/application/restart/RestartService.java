@@ -240,7 +240,11 @@ public final class RestartService {
                             false);
                     return;
                 }
-                backupTimedOut();
+                if (preparing) {
+                    restoreCopyTimedOut();
+                } else {
+                    backupTimedOut();
+                }
                 waitUntil = null;
                 finish(false);
                 return;
@@ -322,6 +326,12 @@ public final class RestartService {
         log.warn("The backup before restarting did not finish within " + BACKUP_LIMIT.toMinutes()
                 + " minutes, restarting anyway");
         toAdmins("controlcore.restart.backup_timeout", "minutes", BACKUP_LIMIT.toMinutes());
+    }
+
+    private void restoreCopyTimedOut() {
+        log.warn("The restore copy did not finish within " + BACKUP_LIMIT.toMinutes()
+                + " minutes; restarting anyway, so the restore was not planned");
+        toAdmins("controlcore.restart.restore_copy_timeout", "minutes", BACKUP_LIMIT.toMinutes());
     }
 
     private void toAdmins(String key, Object... nameValuePairs) {
