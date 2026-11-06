@@ -401,6 +401,7 @@ public final class BackupService {
             deleteCopy(copy.value());
             return Result.failure(CommonErrors.notSaved());
         }
+        expiredPlanStuck = false;
         deleteLeftoverCopies(copy.value());
         history.record(Kind.BACKUP, shown, "", RESTORE, false);
         log.info("Backup " + shown + " will be restored at the next start");
@@ -511,6 +512,7 @@ public final class BackupService {
         if (!store.clear()) {
             return Result.failure(CommonErrors.notSaved());
         }
+        expiredPlanStuck = false;
         copyOf(now.get()).ifPresent(this::deleteCopy);
         history.record(Kind.BACKUP, now.get().name(), RESTORE, "", false);
         log.info("Restore of backup " + now.get().name() + " cancelled");

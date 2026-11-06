@@ -111,19 +111,19 @@ class RestoreCopyRuntimeTest extends RuntimeTestBase {
             gate.complete(null);
         }
         awaitPending();
+        long until = System.currentTimeMillis() + 5_000;
+        while (!platform.log.contains("will be restored at the next start") && System.currentTimeMillis() < until) {
+            Thread.onSpinWait();
+        }
 
         assertThat(api().pendingRestore()).map(BackupsApi.PendingRestore::name).contains(name);
+        assertThat(platform.log.contains(name + " will be restored at the next start"))
+                .isTrue();
         assertThat(history().stream().filter(change -> change.id() == cancelled.id()))
                 .singleElement()
                 .extracting(HistoryApi.Change::rolledBack)
                 .as("the History row shows it was rolled back once the copy is done")
                 .isEqualTo(true);
-        long until = System.currentTimeMillis() + 5_000;
-        while (!platform.log.contains("will be restored at the next start") && System.currentTimeMillis() < until) {
-            Thread.onSpinWait();
-        }
-        assertThat(platform.log.contains(name + " will be restored at the next start"))
-                .isTrue();
     }
 
     private void awaitPending() {
