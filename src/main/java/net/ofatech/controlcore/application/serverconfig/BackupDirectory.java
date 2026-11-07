@@ -15,8 +15,11 @@ public final class BackupDirectory {
     private BackupDirectory() {}
 
     public static boolean allowed(String value, Path universe) {
-        String text = value == null ? "" : value.strip();
-        if (text.isEmpty() || (text.length() > 1 && slash(text.charAt(0)) && slash(text.charAt(1)))) {
+        String raw = value == null ? "" : value.strip();
+        String text = raw.replace('\\', '/');
+        if (raw.startsWith("\\")
+                || text.isEmpty()
+                || (text.length() > 1 && slash(text.charAt(0)) && slash(text.charAt(1)))) {
             return false;
         }
         for (String part : text.split("[/\\\\]")) {
