@@ -83,7 +83,25 @@ public interface HistoryApi {
         /** A player: whitelist, groups, mute, freeze or game mode. */
         PLAYER,
         /** The game action mode of a key action. */
-        GAME_ACTION
+        GAME_ACTION,
+        /**
+         * Maintenance mode turned on or off.
+         *
+         * @since API 2.5.0
+         */
+        MAINTENANCE,
+        /**
+         * A rotating announcement, their order or their settings.
+         *
+         * @since API 2.5.0
+         */
+        ANNOUNCEMENT,
+        /**
+         * A backup made or deleted, or its restore planned, cancelled or applied at startup.
+         *
+         * @since API 2.5.0
+         */
+        BACKUP
     }
 
     /** Where a change was made. */

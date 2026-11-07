@@ -76,6 +76,12 @@ public final class FakePlatform implements Platform {
     public final FakePlayerAdmin admin = new FakePlayerAdmin();
     public final FakeAccessLists access = new FakeAccessLists();
     public final FakeChatGate chat = new FakeChatGate();
+    public final FakeJoinGate joins = new FakeJoinGate();
+    public final FakeMaintenanceStore maintenance = new FakeMaintenanceStore();
+    public final FakeAnnouncementStore announcements = new FakeAnnouncementStore();
+    public final FakeServerBackups backups = new FakeServerBackups();
+    public final FakeServerControl control = new FakeServerControl();
+    public final FakePendingRestoreStore pendingRestore = new FakePendingRestoreStore();
     public final java.util.Map<PlayerId, net.ofatech.controlcore.domain.ports.game.PlayerContext.Context> context =
             new java.util.concurrent.ConcurrentHashMap<>();
     public final FakeReportWriter reports = new FakeReportWriter();
@@ -93,6 +99,7 @@ public final class FakePlatform implements Platform {
     public final Set<String> deniedNodes = ConcurrentHashMap.newKeySet();
     public final java.util.Map<PlayerId, java.util.List<String>> deniedNodesFor = new ConcurrentHashMap<>();
     public final Set<PlayerId> probing = ConcurrentHashMap.newKeySet();
+    public volatile boolean permissionsFail;
 
     public final FakeServerConfiguration serverConfig = new FakeServerConfiguration(
             new ServerSettings("Test Server", "Welcome", false, 10, 5, java.time.Duration.ofMinutes(10)));
@@ -114,12 +121,13 @@ public final class FakePlatform implements Platform {
         binder.bind(Players.class, players);
         binder.bind(Translations.class, translations);
         binder.bind(Messenger.class, messenger);
-        binder.bind(
-                Permissions.class,
-                (player, node) -> !deniedNodes.contains(node)
-                        && !deniedNodesFor
-                                .getOrDefault(player, java.util.List.of())
-                                .contains(node));
+        binder.bind(Permissions.class, (player, node) -> {
+            if (permissionsFail) {
+                throw new IllegalStateException("permissions are down");
+            }
+            return !deniedNodes.contains(node)
+                    && !deniedNodesFor.getOrDefault(player, java.util.List.of()).contains(node);
+        });
         binder.bind(PlayerData.class, playerData);
         binder.bind(SettingStore.class, settingStore);
         binder.bind(Scheduler.class, scheduler);
@@ -151,6 +159,12 @@ public final class FakePlatform implements Platform {
         binder.bind(net.ofatech.controlcore.domain.ports.game.PlayerAdmin.class, admin);
         binder.bind(net.ofatech.controlcore.domain.ports.game.AccessLists.class, access);
         binder.bind(net.ofatech.controlcore.domain.ports.game.ChatGate.class, chat);
+        binder.bind(net.ofatech.controlcore.domain.ports.game.JoinGate.class, joins);
+        binder.bind(net.ofatech.controlcore.domain.ports.config.MaintenanceStore.class, maintenance);
+        binder.bind(net.ofatech.controlcore.domain.ports.config.AnnouncementStore.class, announcements);
+        binder.bind(net.ofatech.controlcore.domain.ports.game.ServerBackups.class, backups);
+        binder.bind(net.ofatech.controlcore.domain.ports.game.ServerControl.class, control);
+        binder.bind(net.ofatech.controlcore.domain.ports.config.PendingRestoreStore.class, pendingRestore);
         binder.bind(
                 net.ofatech.controlcore.domain.ports.game.PlayerContext.class,
                 player -> context.getOrDefault(

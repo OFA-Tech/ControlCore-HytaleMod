@@ -5,14 +5,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import net.ofatech.controlcore.api.ControlPanelApi;
+import net.ofatech.controlcore.application.automation.AnnouncementService;
 import net.ofatech.controlcore.application.automation.AutomationService;
+import net.ofatech.controlcore.application.backups.BackupService;
 import net.ofatech.controlcore.application.diagnostics.DiagnosticsService;
 import net.ofatech.controlcore.application.history.HistoryEditor;
 import net.ofatech.controlcore.application.hud.HudPrefs;
 import net.ofatech.controlcore.application.keymaps.InputProbeCommand;
 import net.ofatech.controlcore.application.keymaps.KeymapsEditor;
+import net.ofatech.controlcore.application.maintenance.MaintenanceService;
 import net.ofatech.controlcore.application.mods.ModsEditor;
 import net.ofatech.controlcore.application.players.PlayersService;
+import net.ofatech.controlcore.application.restart.RestartService;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.application.settings.DefaultsService;
 import net.ofatech.controlcore.application.settings.PermissionsEditor;
@@ -63,6 +67,10 @@ public final class ControlPanelService implements ControlPanelApi {
     private final AutomationService automation;
     private final DefaultsService defaults;
     private final HudPrefs hudPrefs;
+    private final MaintenanceService maintenance;
+    private final AnnouncementService announcements;
+    private final BackupService backups;
+    private final RestartService restart;
 
     public ControlPanelService(
             ControlPanelSettings settings,
@@ -86,8 +94,16 @@ public final class ControlPanelService implements ControlPanelApi {
             DiagnosticsService diagnostics,
             AutomationService automation,
             DefaultsService defaults,
-            HudPrefs hudPrefs) {
+            HudPrefs hudPrefs,
+            MaintenanceService maintenance,
+            AnnouncementService announcements,
+            BackupService backups,
+            RestartService restart) {
+        this.backups = backups;
+        this.restart = restart;
         this.hudPrefs = hudPrefs;
+        this.maintenance = maintenance;
+        this.announcements = announcements;
         this.settings = settings;
         this.defaults = defaults;
         this.players = players;
@@ -115,7 +131,10 @@ public final class ControlPanelService implements ControlPanelApi {
         return permissions.isAdmin(player)
                 || permitted(serverConfig, player).seesAny(SettingScope.SERVER)
                 || permitted(registry, player).seesAny(SettingScope.SERVER)
-                || playerAdmin.maySee(Optional.of(player));
+                || playerAdmin.maySee(Optional.of(player))
+                || announcements.mayManage(Optional.of(player))
+                || backups.mayManage(Optional.of(player))
+                || restart.mayManage(Optional.of(player));
     }
 
     private PermittedSettingsEditor permitted(SettingsEditor editor, PlayerId player) {
@@ -224,7 +243,19 @@ public final class ControlPanelService implements ControlPanelApi {
                         keyDetection.viewedBy(player),
                         () -> rights(player),
                         () -> permissions.isAdmin(player),
-                        defaults.viewedBy(player, nameOf(player))));
+                        defaults.viewedBy(player, nameOf(player)),
+                        maintenance.mayManage(Optional.of(player))
+                                ? Optional.of(maintenance.viewedBy(player))
+                                : Optional.empty(),
+                        announcements.mayManage(Optional.of(player))
+                                ? Optional.of(announcements.viewedBy(player))
+                                : Optional.empty(),
+                        backups.mayManage(Optional.of(player))
+                                ? Optional.of(backups.viewedBy(player))
+                                : Optional.empty(),
+                        restart.mayManage(Optional.of(player))
+                                ? Optional.of(restart.viewedBy(player))
+                                : Optional.empty()));
         opened.onSuccess(nothing -> keyDetection.cancel(player));
         return opened;
     }
@@ -241,7 +272,7 @@ public final class ControlPanelService implements ControlPanelApi {
                 nodes.hasOwn(player, InputProbeCommand.PERMISSION),
                 playerAdmin.maySee(who),
                 diagnostics.maySee(who),
-                automation.mayManage(who));
+                automation.mayOpen(who));
     }
 
     private String nameOf(PlayerId player) {

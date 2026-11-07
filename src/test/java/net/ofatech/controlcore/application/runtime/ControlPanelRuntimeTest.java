@@ -127,7 +127,10 @@ class ControlPanelRuntimeTest extends RuntimeTestBase {
                         "controlcore:player-speed",
                         "controlcore:chunk-sections-per-second",
                         "controlcore:chunk-sections-per-tick",
-                        "controlcore:pause-empty-worlds");
+                        "controlcore:pause-empty-worlds",
+                        "controlcore:restart-backup-first",
+                        "controlcore:restart-countdown",
+                        "controlcore:restart-schedule");
     }
 
     @Test

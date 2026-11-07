@@ -141,6 +141,42 @@ Ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`.
 | Built-in triggers, conditions and actions | Rule form dropdowns | `/cc-rule-add` lists them for an unknown id | `rules().triggers`, `rules().conditions`, `rules().actions` |
 | Triggers and actions mods offer | Rule form dropdowns | `/cc-rules` | `rules().modTriggers`, `rules().modActions` |
 
+## Announcements
+
+Rotating announcements, in the Automation tab's **Announcements** view. Players need
+`ofatech.controlcore.announcements` (or admin); the API acts with full rights or a player's through `actingFor`.
+
+| Operation | Panel (where) | Command | API method |
+|---|---|---|---|
+| List the announcements and settings | Automation -> Announcements | `/cc-announce-list` | `announcements().list`, `announcements().settings` |
+| Add an announcement | Automation -> Announcements: text, Add announcement | `/cc-announce-add <text>` | `announcements().add` |
+| Delete an announcement | Announcements row: Remove (press twice) | `/cc-announce-remove <id>` | `announcements().remove` |
+| Turn one announcement on or off | Announcements row: Turn on / Turn off | `/cc-announce-toggle <on or off> --id=<id>` | `announcements().setEnabled` |
+| Move an announcement | Announcements row: Up / Down | `/cc-announce-move <id> <up or down>` | `announcements().move` |
+| Turn announcements on or off | Announcements: Turn announcements on / off | `/cc-announce-toggle <on or off>` | `announcements().setSettings` |
+| Interval, order, channel, minimum players | Announcements: fields, Save settings | `/cc-announce-set [--interval=] [--order=] [--channel=] [--min-players=]` | `announcements().setSettings` |
+| Send the next one now | - (each row has Send now) | `/cc-announce-now` | `announcements().sendNow` |
+| Send one announcement now | Announcements row: Send now | `/cc-announce-now --id=<id>` | `announcements().send` |
+## Backups & restarts
+
+Backups are Hytale's own universe zips in config.json's `Backup.Directory`; a restore happens at the next start, before
+the worlds load. Backups need `ofatech.controlcore.backups`, restarts `ofatech.controlcore.restart` (admins have both);
+the API acts with full rights or a player's through `actingFor`.
+
+| Operation | Panel (where) | Command | API method |
+|---|---|---|---|
+| Is a backup directory set | Server Configs -> Backups: top line | `/cc-backups` | `backups().configured` |
+| Set the backup directory | Server Configs -> Backups: folder, Set directory | `/cc-backup --directory=<folder>` | `backups().setDirectory` |
+| Back up now | Server Configs -> Backups: Back up now | `/cc-backup` | `backups().create` |
+| List the backups | Server Configs -> Backups: list | `/cc-backups` | `backups().list` |
+| Delete a backup | Backups row: Delete (press twice) | `/cc-backup-delete <name> confirm` | `backups().delete` |
+| Restore a backup at the next start | Backups row: Restore on next start (press twice) | `/cc-backup-restore <name> confirm` | `backups().restoreOnNextStart` |
+| Show the planned restore | Server Configs -> Backups: orange bar | `/cc-backups` | `backups().pendingRestore` |
+| Cancel the planned restore | Backups: Cancel restore | `/cc-backup-restore-cancel` | `backups().cancelRestore` |
+| Restart after a countdown | Restart banner, Health tab: countdown, Restart (press twice) | `/cc-restart [--in=] [--reason=]` | `server().restart` |
+| Cancel the restart | Restart banner or Health tab: Cancel restart | `/cc-restart-cancel` | `server().cancelRestart` |
+| Restart countdown and next scheduled restart | Restart banner, Health tab | `/cc-restart-status` | `server().restartStatus` |
+| Countdown length, backup first, scheduled restarts | Mod Settings: Restarts | `/cc-set controlcore:restart-countdown <seconds>` | `settings().write` |
 ## Players & moderation
 
 `<player>` is a name or UUID.
@@ -165,6 +201,9 @@ Ids are `world:<world>.<key>`, for example `world:default.is-pvp-enabled`.
 | Add to or remove from the whitelist | + Player action | `/cc-whitelist-add <player>`, `/cc-whitelist-remove <player>` | `players().whitelist` |
 | List the whitelist | Players: Whitelisted filter | `/cc-whitelist` | `players().list` (`WHITELISTED`) |
 | Require the whitelist to join | Players, Whitelisted filter: Require whitelist / Stop requiring | `/cc-whitelist-require <on or off>` | `players().whitelistRequired`, `players().requireWhitelist` |
+| Maintenance mode status | Players, Whitelisted filter: maintenance bar | `/cc-maintenance status` | `server().maintenance` |
+| Turn maintenance mode on (kicks who may not join) | Players, Whitelisted filter: message, MOTD, turn off after, Maintenance on (press twice) | `/cc-maintenance on [--message=] [--motd=] [--for=]` | `server().setMaintenance` (`true`) |
+| Turn maintenance mode off | Players, Whitelisted filter: Maintenance off | `/cc-maintenance off` | `server().setMaintenance` (`false`) |
 | Make or remove an operator | + Player action: Make / Remove operator | `/cc-op <player>`, `/cc-deop <player>` | `players().operator` |
 | List groups and their permissions | + Player action: group dropdown | `/cc-groups` | `players().groups`, `players().groupPermissions` |
 | Add to or remove from a group | + Player action | `/cc-group <add or remove> <player> <group>` | `players().group` |

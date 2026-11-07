@@ -3,6 +3,7 @@ package net.ofatech.controlcore.application.settings;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import net.ofatech.controlcore.application.serverconfig.BackupDirectory;
 import net.ofatech.controlcore.domain.event.SettingChanged;
 import net.ofatech.controlcore.domain.event.Subscription;
 import net.ofatech.controlcore.domain.model.PlayerId;
@@ -70,6 +71,9 @@ public final class PermittedSettingsEditor implements SettingsEditor {
             SettingRights rights = rights(snapshot);
             if (!rights.canView()) {
                 return unknown(id);
+            }
+            if (!rights.canEdit() && BackupDirectory.ID.equals(id)) {
+                return Result.failure(BackupDirectory.forbidden());
             }
             if (!rights.canEdit()) {
                 return Result.failure(Error.forbidden(

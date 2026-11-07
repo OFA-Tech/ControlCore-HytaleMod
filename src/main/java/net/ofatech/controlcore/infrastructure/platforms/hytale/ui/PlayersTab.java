@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import net.ofatech.controlcore.domain.model.players.PlayersView;
+import net.ofatech.controlcore.domain.model.server.MaintenanceView;
 import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Error;
@@ -38,6 +39,8 @@ final class PlayersTab {
     private static final String SEARCH = "PlayerSearch";
     private static final String REQUIRE = "WhitelistRequire";
     private static final int REQUIRE_HEIGHT = 42;
+    private static final String MAINTENANCE = "MaintenanceToggle";
+    private static final int MAINTENANCE_HEIGHT = 88;
     private static final String BODY = "#PlayerDetailsBody";
     private static final String ROW = "Pages/ControlCore/PlayerRow.ui";
     private static final String LIST = "#PlayersRows";
@@ -71,6 +74,7 @@ final class PlayersTab {
     }
 
     private final PlayersView view;
+    private final Optional<MaintenanceView> maintenance;
     private final Translator tr;
     private final Host host;
     private final Log log;
@@ -79,8 +83,7 @@ final class PlayersTab {
     private String query = "";
     private Optional<PlayersView.Details> details = Optional.empty();
     private int detailsRequest;
-    private Optional<String> armed = Optional.empty();
-    private long armedAt;
+    private final ConfirmGate confirm = new ConfirmGate(CONFIRM_MILLIS);
     private Optional<String> footer = Optional.empty();
     private List<PlayersView.Entry> rows = List.of();
     private int generation;
@@ -88,8 +91,9 @@ final class PlayersTab {
     private boolean stale;
     private long lastTyped;
 
-    PlayersTab(PlayersView view, Translator tr, Host host, Log log) {
+    PlayersTab(PlayersView view, Optional<MaintenanceView> maintenance, Translator tr, Host host, Log log) {
         this.view = view;
+        this.maintenance = maintenance;
         this.tr = tr;
         this.host = host;
         this.log = log;
@@ -112,6 +116,7 @@ final class PlayersTab {
                 CustomUIEventBindingType.Activating,
                 "#WhitelistRequiredToggle",
                 EventData.of(PanelAction.KEY, REQUIRE));
+        buildMaintenance(commands, events);
         events.addEventBinding(
                 CustomUIEventBindingType.Activating, "#PlayerDetailsBack", EventData.of(PanelAction.KEY, DETAILS_BACK));
         events.addEventBinding(
@@ -136,6 +141,7 @@ final class PlayersTab {
         showCount(commands);
         resizeList(commands);
         showRequire(commands);
+        showMaintenance(commands);
         showDetails(commands);
         footer.ifPresent(text -> commands.set("#FooterStatus.Text", text));
         footer = Optional.empty();
@@ -210,7 +216,10 @@ final class PlayersTab {
 
     private void resizeList(UICommandBuilder commands) {
         int height = form.isOpen() ? LIST_WITH_FORM - (form.showsNote() ? NOTE_HEIGHT : 0) : LIST_ALONE;
-        host.resize(LIST, height - (showsRequire() ? REQUIRE_HEIGHT : 0), commands);
+        host.resize(
+                LIST,
+                height - (showsRequire() ? REQUIRE_HEIGHT : 0) - (showsMaintenance() ? MAINTENANCE_HEIGHT : 0),
+                commands);
     }
 
     private boolean showsRequire() {
@@ -238,6 +247,69 @@ final class PlayersTab {
                         required
                                 ? "controlcore.panel.players.whitelist_require_off"
                                 : "controlcore.panel.players.whitelist_require_on"));
+    }
+
+    private void buildMaintenance(UICommandBuilder commands, UIEventBuilder events) {
+        if (maintenance.isEmpty()) {
+            return;
+        }
+        MaintenanceView shown = maintenance.get();
+        List<DropdownEntryInfo> choices = new ArrayList<>();
+        for (MaintenanceView.Choice choice : shown.offAfterChoices()) {
+            choices.add(new DropdownEntryInfo(LocalizableString.fromString(choice.label()), choice.id()));
+        }
+        commands.set("#MaintenanceOffAfter.Entries", choices);
+        commands.set("#MaintenanceOffAfter.Value", "never");
+        commands.set("#MaintenanceMessage.Value", shown.message());
+        commands.set("#MaintenanceMotd.Value", shown.motd());
+        commands.set("#MaintenanceMessage.PlaceholderText", tr.t("controlcore.panel.maintenance.message_hint"));
+        commands.set("#MaintenanceMotd.PlaceholderText", tr.t("controlcore.panel.maintenance.motd_hint"));
+        events.addEventBinding(
+                CustomUIEventBindingType.Activating,
+                "#MaintenanceToggle",
+                new EventData()
+                        .append(PanelAction.KEY, MAINTENANCE)
+                        .append("@MaintenanceMessage", "#MaintenanceMessage.Value")
+                        .append("@MaintenanceMotd", "#MaintenanceMotd.Value")
+                        .append("@MaintenanceOffAfter", "#MaintenanceOffAfter.Value"));
+    }
+
+    private boolean showsMaintenance() {
+        return maintenance.isPresent() && filter == PlayersView.Filter.WHITELISTED && details.isEmpty();
+    }
+
+    private void showMaintenance(UICommandBuilder commands) {
+        boolean shown = showsMaintenance();
+        commands.set("#MaintenanceRow.Visible", shown);
+        if (!shown) {
+            return;
+        }
+        boolean on = maintenance.get().on();
+        commands.set("#MaintenanceText.Text", maintenance.get().status());
+        commands.set(
+                "#MaintenanceToggle.Text",
+                tr.t(on ? "controlcore.panel.maintenance.turn_off" : "controlcore.panel.maintenance.turn_on"));
+    }
+
+    private void toggleMaintenance(PanelAction action) {
+        if (maintenance.isEmpty()) {
+            host.send(new UICommandBuilder());
+            return;
+        }
+        MaintenanceView shown = maintenance.get();
+        if (shown.on()) {
+            confirm.disarm();
+            show(shown.turnOff());
+            return;
+        }
+        if (!confirm.confirmed(MAINTENANCE)) {
+            UICommandBuilder update = new UICommandBuilder();
+            update.set("#FooterStatus.Text", tr.t("controlcore.panel.maintenance.confirm_on"));
+            host.send(update);
+            return;
+        }
+        show(shown.turnOn(
+                action.form("MaintenanceMessage"), action.form("MaintenanceMotd"), action.form("MaintenanceOffAfter")));
     }
 
     private void showDetails(UICommandBuilder commands) {
@@ -300,7 +372,7 @@ final class PlayersTab {
         switch (action.name()) {
             case DETAILS -> openDetails(action);
             case CHAT -> {
-                armed = Optional.empty();
+                confirm.disarm();
                 detailsRequest++;
                 details = Optional.of(view.chat());
                 host.rebuild();
@@ -311,8 +383,9 @@ final class PlayersTab {
                 host.rebuild();
             }
             case FILTER, SEARCH -> narrow(action);
+            case MAINTENANCE -> toggleMaintenance(action);
             case REQUIRE -> {
-                armed = Optional.empty();
+                confirm.disarm();
                 Result<String> result = view.requireWhitelist(!view.whitelistRequired());
                 UICommandBuilder update = new UICommandBuilder();
                 showRequire(update);
@@ -322,7 +395,7 @@ final class PlayersTab {
             case UNBAN -> confirmed(action, "controlcore.panel.players.confirm_unban", () -> view.unban(action.id));
             case KICK -> confirmed(action, "controlcore.players.confirm_kick", () -> view.kick(action.id, ""));
             case BAN -> {
-                armed = Optional.empty();
+                confirm.disarm();
                 if (form.busy()) {
                     showError(PlayerErrorText.busy(tr));
                     return true;
@@ -388,7 +461,7 @@ final class PlayersTab {
     }
 
     private void openDetails(PanelAction action) {
-        armed = Optional.empty();
+        confirm.disarm();
         int request = ++detailsRequest;
         String id = text(action.id);
         UICommandBuilder waiting = new UICommandBuilder();
@@ -410,7 +483,7 @@ final class PlayersTab {
     }
 
     private void narrow(PanelAction action) {
-        armed = Optional.empty();
+        confirm.disarm();
         if (FILTER.equals(action.name())) {
             filter = PlayersView.Filter.of(action.value);
         } else {
@@ -423,6 +496,7 @@ final class PlayersTab {
         }
         showCount(update);
         showRequire(update);
+        showMaintenance(update);
         resizeList(update);
         host.send(update);
     }
@@ -432,22 +506,17 @@ final class PlayersTab {
             host.send(new UICommandBuilder());
             return;
         }
-        String key = action.name() + ":" + action.id;
-        boolean fresh = System.currentTimeMillis() - armedAt < CONFIRM_MILLIS;
-        if (armed.filter(key::equals).isEmpty() || !fresh) {
-            armed = Optional.of(key);
-            armedAt = System.currentTimeMillis();
+        if (!confirm.confirmed(action.name() + ":" + action.id)) {
             UICommandBuilder update = new UICommandBuilder();
             update.set("#FooterStatus.Text", tr.t(question, "player", nameOf(action.id)));
             host.send(update);
             return;
         }
-        armed = Optional.empty();
         show(work.get());
     }
 
     private void finish(CompletableFuture<Result<String>> pending, Consumer<Result<String>> done) {
-        armed = Optional.empty();
+        confirm.disarm();
         host.send(new UICommandBuilder());
         pending.whenComplete((result, failure) -> host.later(() -> {
             Result<String> outcome = failure == null ? result : Result.failure(failed(failure));

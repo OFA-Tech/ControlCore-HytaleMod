@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import net.ofatech.controlcore.api.HudApi;
 import net.ofatech.controlcore.api.NotificationsApi;
 import net.ofatech.controlcore.api.Setting;
@@ -141,6 +142,10 @@ public final class NotificationService implements NotificationsApi {
     @Override
     public void toAdmins(String text) {
         admins().forEach(player -> messenger.send(player, text));
+    }
+
+    public void toEachAdmin(Function<PlayerId, String> text) {
+        admins().forEach(player -> messenger.send(player, text.apply(player)));
     }
 
     List<PlayerId> admins() {

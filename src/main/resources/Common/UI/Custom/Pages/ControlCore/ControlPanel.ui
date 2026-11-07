@@ -12,7 +12,7 @@ $C = "../../Common.ui";
 @TitleStyle = (FontSize: 18, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center);
 @BrandStyle = (FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center);
 @BannerStyle = (FontSize: 14, TextColor: #e9e4d6, VerticalAlignment: Center, Wrap: true);
-@FooterStyle = (FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center);
+@FooterStyle = (FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center, Wrap: true);
 
 @TabLabel = (FontSize: 13, TextColor: #9fb0bd, VerticalAlignment: Center, HorizontalAlignment: Center);
 @TabLabelOn = (FontSize: 13, TextColor: #e9e4d6, RenderBold: true, VerticalAlignment: Center, HorizontalAlignment: Center);
@@ -84,8 +84,43 @@ $C.@PageOverlay {
         Label {
           Text: "OFA-Tech";
           Style: @BrandStyle;
-          FlexWeight: 1;
+          Anchor: (Width: 120);
         }
+
+        Group #RestartBanner {
+            LayoutMode: Left;
+            Visible: false;
+            FlexWeight: 1;
+            Anchor: (Height: 36, Top: 6);
+            Background: #1b2f44;
+            Padding: (Horizontal: 10);
+
+            Group {
+              Anchor: (Width: 4, Right: 10);
+              Background: #7fb2e0;
+            }
+
+            Group {
+              Anchor: (Width: 18, Height: 18, Top: 9, Right: 10);
+              Background: "Icons/Restart.png";
+            }
+
+            Label #RestartText {
+              Style: @BannerStyle;
+              FlexWeight: 1;
+            }
+
+            $C.@DropdownBox #RestartDelay {
+              Visible: false;
+              Anchor: (Width: 200, Height: 30, Top: 3, Left: 6);
+            }
+
+            $C.@SmallSecondaryTextButton #RestartNow {
+              @Text = %controlcore.ui.restart.now;
+              Visible: false;
+              Anchor: (Width: 190, Height: 30, Top: 3, Left: 6);
+            }
+          }
       }
 
       Group #TabButtons {
@@ -250,29 +285,6 @@ $C.@PageOverlay {
         Background: #1d3140;
         Padding: (Full: 16);
 
-        Group #RestartBanner {
-          LayoutMode: Left;
-          Visible: false;
-          Anchor: (Height: 36, Bottom: 10);
-          Background: #1b2f44;
-          Padding: (Horizontal: 10);
-
-          Group {
-            Anchor: (Width: 4, Right: 10);
-            Background: #7fb2e0;
-          }
-
-          Group {
-            Anchor: (Width: 18, Height: 18, Top: 9, Right: 10);
-            Background: "Icons/Restart.png";
-          }
-
-          Label #RestartText {
-            Style: @BannerStyle;
-            FlexWeight: 1;
-          }
-        }
-
         Group #Columns {
           LayoutMode: Left;
 
@@ -303,6 +315,13 @@ $C.@PageOverlay {
               TextButton #ServerModePlayers {
                 Text: %controlcore.ui.server.modePlayers;
                 Style: @SegmentStyle;
+                Anchor: (Width: 180, Right: 2);
+              }
+
+              TextButton #ServerModeBackups {
+                Text: %controlcore.ui.server.modeBackups;
+                Style: @SegmentStyle;
+                Visible: false;
                 Anchor: (Width: 180, Right: 12);
               }
 
@@ -486,6 +505,65 @@ $C.@PageOverlay {
                 }
               }
 
+              Group #MaintenanceRow {
+                LayoutMode: Top;
+                Visible: false;
+                Anchor: (Height: 80, Bottom: 8);
+                Background: #1b2f44;
+                Padding: (Left: 10, Right: 10, Top: 4);
+
+                Group {
+                  LayoutMode: Left;
+                  Anchor: (Height: 32, Bottom: 4);
+
+                  Label #MaintenanceText {
+                    Style: @BannerStyle;
+                    FlexWeight: 1;
+                  }
+
+                  $C.@SmallSecondaryTextButton #MaintenanceToggle {
+                    @Text = %controlcore.ui.maintenance.turnOn;
+                    Anchor: (Width: 230, Height: 30, Left: 6);
+                  }
+                }
+
+                Group {
+                  LayoutMode: Left;
+                  Anchor: (Height: 34);
+
+                  Label {
+                    Text: %controlcore.ui.maintenance.kickMessage;
+                    Style: (...@NoteStyle, VerticalAlignment: Center, Wrap: false);
+                    Anchor: (Width: 120, Right: 6);
+                  }
+
+                  $C.@TextField #MaintenanceMessage {
+                    FlexWeight: 1;
+                    Anchor: (Right: 10);
+                  }
+
+                  Label {
+                    Text: %controlcore.ui.maintenance.motd;
+                    Style: (...@NoteStyle, VerticalAlignment: Center, Wrap: false);
+                    Anchor: (Width: 50, Right: 6);
+                  }
+
+                  $C.@TextField #MaintenanceMotd {
+                    FlexWeight: 1;
+                  }
+
+                  Label {
+                    Text: %controlcore.ui.maintenance.offAfter;
+                    Style: (...@NoteStyle, VerticalAlignment: Center, Wrap: false);
+                    Anchor: (Width: 100, Left: 10, Right: 6);
+                  }
+
+                  $C.@DropdownBox #MaintenanceOffAfter {
+                    Anchor: (Width: 220);
+                  }
+                }
+              }
+
               Label #PlayerListEmpty {
                 Text: %controlcore.ui.players.empty;
                 Style: @NoteStyle;
@@ -525,6 +603,95 @@ $C.@PageOverlay {
                   Anchor: (Height: 470);
                   Padding: (Right: 10);
                 }
+              }
+            }
+            Group #BackupsPanel {
+              LayoutMode: Top;
+              Visible: false;
+
+              Label {
+                Text: %controlcore.ui.backups.intro;
+                Style: @NoteStyle;
+                Anchor: (Bottom: 8);
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 36, Bottom: 8);
+                Background: #1b2f44;
+                Padding: (Horizontal: 10);
+
+                Label #BackupsSetupText {
+                  Style: @BannerStyle;
+                  FlexWeight: 1;
+                }
+
+                $C.@TextField #BackupsDirectory {
+                  Anchor: (Width: 260, Height: 30, Top: 3, Left: 6);
+                }
+
+                Label #BackupsDirectoryNote {
+                  Style: @NoteStyle;
+                  Visible: false;
+                  FlexWeight: 2;
+                  Anchor: (Left: 6);
+                }
+
+                $C.@SmallSecondaryTextButton #BackupsSetDirectory {
+                  @Text = %controlcore.ui.backups.setDirectory;
+                  Anchor: (Width: 190, Height: 30, Top: 3, Left: 6);
+                }
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 34, Bottom: 4);
+
+                Label #BackupsStatus {
+                  Style: @BannerStyle;
+                  FlexWeight: 1;
+                }
+
+                $C.@SmallSecondaryTextButton #BackupsNow {
+                  @Text = %controlcore.ui.backups.now;
+                  Anchor: (Width: 190, Height: 32, Left: 6);
+                }
+              }
+
+              Label #BackupsSettings {
+                Style: @NoteStyle;
+                Anchor: (Bottom: 8);
+              }
+
+              Group #BackupsPendingRow {
+                LayoutMode: Left;
+                Visible: false;
+                Anchor: (Height: 36, Bottom: 8);
+                Background: #3a2a1c;
+                Padding: (Horizontal: 10);
+
+                Label #BackupsPendingText {
+                  Style: @BannerStyle;
+                  FlexWeight: 1;
+                }
+
+                $C.@SmallTertiaryTextButton #BackupsCancelRestore {
+                  @Text = %controlcore.ui.backups.cancelRestore;
+                  Anchor: (Width: 220, Height: 30, Top: 3, Left: 6);
+                }
+              }
+
+              Label #BackupsEmpty {
+                Text: %controlcore.ui.backups.empty;
+                Style: @NoteStyle;
+                Visible: false;
+              }
+
+              Group #BackupsList {
+                LayoutMode: TopScrolling;
+                ScrollbarStyle: $C.@DefaultScrollbarStyle;
+                Anchor: (Height: 380);
+                Padding: (Right: 10);
               }
             }
           }
@@ -1291,6 +1458,15 @@ $C.@PageOverlay {
                     Style: (...@NoteStyle, VerticalAlignment: Center);
                     Anchor: (Height: 26, Width: 135, Right: 6);
                   }
+                  $C.@CheckBox #SnapPartAnnouncements {
+                    Anchor: (Width: 26, Height: 26, Right: 6);
+                  }
+
+                  Label {
+                    Text: %controlcore.ui.snapshots.partAnnouncements;
+                    Style: (...@NoteStyle, VerticalAlignment: Center);
+                    Anchor: (Height: 26, Width: 125, Right: 6);
+                  }
                 }
               }
 
@@ -1458,6 +1634,35 @@ $C.@PageOverlay {
               }
             }
 
+            Group #HealthRestartRow {
+              LayoutMode: Left;
+              Visible: false;
+              Anchor: (Height: 36, Bottom: 4);
+              Background: #1b2f44;
+              Padding: (Horizontal: 10);
+
+              Label #HealthRestartText {
+                Style: @BannerStyle;
+                FlexWeight: 1;
+              }
+
+              $C.@DropdownBox #HealthRestartDelay {
+                Anchor: (Width: 200, Height: 30, Top: 3, Left: 6);
+              }
+
+              $C.@SmallSecondaryTextButton #HealthRestart {
+                @Text = %controlcore.ui.restart.now;
+                Anchor: (Width: 190, Height: 30, Top: 3, Left: 6);
+              }
+            }
+
+            Label #HealthRestartNote {
+              Text: %controlcore.ui.restart.hostNote;
+              Style: @NoteStyle;
+              Visible: false;
+              Anchor: (Bottom: 8);
+            }
+
             Group #HealthList {
               LayoutMode: TopScrolling;
               ScrollbarStyle: $C.@DefaultScrollbarStyle;
@@ -1468,6 +1673,142 @@ $C.@PageOverlay {
           Group #AutomationTab {
             LayoutMode: Top;
             Visible: false;
+
+            Group #AutomationModeButtons {
+              LayoutMode: Left;
+              Visible: false;
+              Anchor: (Height: 32, Bottom: 8);
+
+              TextButton #AutomationModeRules {
+                Text: %controlcore.ui.automation.modeRules;
+                Style: @SegmentStyle;
+                Anchor: (Width: 180, Right: 2);
+              }
+
+              TextButton #AutomationModeAnnouncements {
+                Text: %controlcore.ui.automation.modeAnnouncements;
+                Style: @SegmentStyle;
+                Anchor: (Width: 180, Right: 2);
+              }
+            }
+
+            Group #AnnouncePanel {
+              LayoutMode: Top;
+              Visible: false;
+
+              Label {
+                Text: %controlcore.ui.announce.intro;
+                Style: (...@NoteStyle, Wrap: true);
+                Anchor: (Bottom: 8);
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 34, Bottom: 6);
+                Background: #1b2f44;
+                Padding: (Horizontal: 10);
+
+                Label #AnnounceStatus {
+                  Style: @BannerStyle;
+                  FlexWeight: 1;
+                }
+
+                $C.@SmallSecondaryTextButton #AnnounceToggle {
+                  @Text = %controlcore.ui.announce.turnOn;
+                  Anchor: (Width: 260, Height: 30, Left: 6);
+                }
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 36, Bottom: 8);
+
+                Label {
+                  Text: %controlcore.ui.announce.every;
+                  Style: (...@NoteStyle, VerticalAlignment: Center);
+                  Anchor: (Width: 60);
+                }
+
+                $C.@TextField #AnnounceInterval {
+                  Anchor: (Width: 70, Right: 6);
+                }
+
+                Label {
+                  Text: %controlcore.ui.announce.minutes;
+                  Style: (...@NoteStyle, VerticalAlignment: Center);
+                  Anchor: (Width: 80);
+                }
+
+                Label {
+                  Text: %controlcore.ui.announce.order;
+                  Style: (...@NoteStyle, VerticalAlignment: Center);
+                  Anchor: (Width: 60);
+                }
+
+                $C.@DropdownBox #AnnounceOrder {
+                  Anchor: (Width: 170, Right: 10);
+                }
+
+                Label {
+                  Text: %controlcore.ui.announce.sendAs;
+                  Style: (...@NoteStyle, VerticalAlignment: Center);
+                  Anchor: (Width: 90);
+                }
+
+                $C.@DropdownBox #AnnounceChannel {
+                  Anchor: (Width: 170, Right: 10);
+                }
+
+                Label {
+                  Text: %controlcore.ui.announce.minPlayers;
+                  Style: (...@NoteStyle, VerticalAlignment: Center);
+                  Anchor: (Width: 170);
+                }
+
+                $C.@TextField #AnnounceMin {
+                  Anchor: (Width: 70, Right: 6);
+                }
+
+                Group {
+                  FlexWeight: 1;
+                }
+
+                $C.@SmallTertiaryTextButton #AnnounceSave {
+                  @Text = %controlcore.ui.announce.save;
+                  Anchor: (Width: 150, Height: 32);
+                }
+              }
+
+              Group {
+                LayoutMode: Left;
+                Anchor: (Height: 36, Bottom: 8);
+
+                $C.@TextField #AnnounceText {
+                  FlexWeight: 1;
+                }
+
+                $C.@SmallSecondaryTextButton #AnnounceAdd {
+                  @Text = %controlcore.ui.announce.add;
+                  Anchor: (Width: 170, Height: 32, Left: 6);
+                }
+              }
+
+              Label #AnnounceEmpty {
+                Text: %controlcore.ui.announce.empty;
+                Style: @NoteStyle;
+                Visible: false;
+              }
+
+              Group #AnnounceList {
+                LayoutMode: TopScrolling;
+                ScrollbarStyle: $C.@DefaultScrollbarStyle;
+                Anchor: (Height: 440);
+                Padding: (Right: 10);
+              }
+            }
+
+            Group #RulesPanel {
+            LayoutMode: Top;
 
             Group {
               LayoutMode: Left;
@@ -1700,6 +2041,7 @@ $C.@PageOverlay {
               ScrollbarStyle: $C.@DefaultScrollbarStyle;
               Anchor: (Height: 560);
               Padding: (Right: 10);
+            }
             }
           }
           }

@@ -25,6 +25,13 @@ src/main/resources/ActiveProfile.json
 src/main/resources/AutomationRules.json
 src/main/resources/AutomationRules.json.tmp
 src/main/resources/ActiveProfile.json.tmp
+src/main/resources/Maintenance.json
+src/main/resources/Maintenance.json.tmp
+src/main/resources/Announcements.json
+src/main/resources/Announcements.json.tmp
+src/main/resources/PendingRestore.json
+src/main/resources/PendingRestore.json.tmp
+src/main/resources/pending-restore/
 src/main/resources/diagnostics/
 
 ### IntelliJ IDEA ###

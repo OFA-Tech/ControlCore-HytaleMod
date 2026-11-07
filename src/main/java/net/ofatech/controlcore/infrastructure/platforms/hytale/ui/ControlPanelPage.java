@@ -43,6 +43,7 @@ import net.ofatech.controlcore.domain.model.text.Translator;
 import net.ofatech.controlcore.domain.ports.game.KeyDetection;
 import net.ofatech.controlcore.domain.ports.system.Log;
 import net.ofatech.controlcore.domain.result.Result;
+import net.ofatech.controlcore.infrastructure.platforms.hytale.mapping.Messages;
 
 final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
@@ -124,6 +125,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
     private final Optional<HealthTab> healthTab;
     private final Optional<AutomationTab> automationTab;
     private final Optional<PlayersTab> playersTab;
+    private final Optional<BackupsTab> backupsTab;
+    private final RestartControls restart;
     private final SettingRowEditor rows;
     private final SectionSearch search;
     private final KeymapTools keys;
@@ -164,12 +167,19 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 ? content.diagnostics().map(view -> new HealthTab(view, tr, hooks))
                 : Optional.empty();
         this.automationTab = shownSections.includeServerSettings()
-                ? content.automation().map(view -> new AutomationTab(view, tr, hooks))
+                ? (content.automation().isPresent() || content.announcements().isPresent()
+                        ? Optional.of(new AutomationTab(content.automation(), content.announcements(), tr, hooks))
+                        : Optional.empty())
                 : Optional.empty();
         this.historyMode = historyTab.isPresent() ? HistoryMode.CHANGES : HistoryMode.SNAPSHOTS;
         this.playersTab = shownSections.includeServerSettings()
-                ? content.players().map(view -> new PlayersTab(view, tr, hooks, log))
+                ? content.players().map(view -> new PlayersTab(view, content.maintenance(), tr, hooks, log))
                 : Optional.empty();
+        this.backupsTab = shownSections.includeServerSettings()
+                ? content.backups().map(view -> new BackupsTab(view, tr, hooks))
+                : Optional.empty();
+        this.restart = new RestartControls(
+                shownSections.includeServerSettings() ? content.restart() : Optional.empty(), tr, hooks);
         this.viewerId = PlayerId.of(player.getUuid());
         this.viewerName = player.getUsername();
         this.stillAdmin = content.stillAdmin();
@@ -189,7 +199,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 viewerId,
                 tr,
                 hooks);
-        this.scope = new ServerScope(sections, content.worlds(), playersTab.isPresent(), hooks);
+        this.scope = new ServerScope(sections, content.worlds(), playersTab.isPresent(), backupsTab.isPresent(), hooks);
         for (Tab tab : Tab.values()) {
             if (tab.shownFor(shownSections)
                     && (tab != Tab.PERMISSIONS || permissionsTab.isPresent())
@@ -280,6 +290,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         healthTab.ifPresent(tab -> tab.build(commands, events));
         automationTab.ifPresent(tab -> tab.build(commands, events));
         playersTab.ifPresent(tab -> tab.build(commands, events));
+        backupsTab.ifPresent(tab -> tab.build(commands, events));
+        restart.build(commands, events, healthTab.isPresent());
         rows.disarmDefaults();
         events.addEventBinding(
                 CustomUIEventBindingType.Activating,
@@ -314,6 +326,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
             sections.forEach((key, section) ->
                     subscriptions.add(section.listen(change -> rows.onSettingChanged(key, section, change))));
             playersTab.ifPresent(tab -> subscriptions.add(tab.view().onChange(this::refreshPlayers)));
+            restart.listen().ifPresent(subscriptions::add);
         }
     }
 
@@ -358,7 +371,7 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
 
     private Optional<PanelSection> currentSection() {
         PanelSection key = switch (selected) {
-            case SERVER -> scope.showingPlayers() ? null : PanelSection.SERVER_CONFIG;
+            case SERVER -> scope.showingRows() ? PanelSection.SERVER_CONFIG : null;
             case SETTINGS -> PanelSection.SETTINGS;
             case PLAYER -> PanelSection.PREFS;
             case KEYMAP -> keys.keymapSection();
@@ -427,7 +440,9 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                 || profilesTab.map(tab -> tab.handle(action)).orElse(false)
                 || healthTab.map(tab -> tab.handle(action)).orElse(false)
                 || automationTab.map(tab -> tab.handle(action)).orElse(false)
-                || playersTab.map(tab -> tab.handle(action)).orElse(false)) {
+                || playersTab.map(tab -> tab.handle(action)).orElse(false)
+                || backupsTab.map(tab -> tab.handle(action)).orElse(false)
+                || restart.handle(action)) {
             return;
         }
         if (CLOSE.equals(name)) {
@@ -547,6 +562,8 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
                     HealthTab.Host,
                     AutomationTab.Host,
                     PlayersTab.Host,
+                    BackupsTab.Host,
+                    RestartControls.Host,
                     PanelKeyDetect.Host,
                     SettingRowEditor.Host,
                     SectionSearch.Host,
@@ -610,6 +627,45 @@ final class ControlPanelPage extends InteractiveCustomUIPage<PanelAction> {
         @Override
         public void showRestartNotice(UICommandBuilder update) {
             rows.showRestartNotice(update);
+        }
+
+        @Override
+        public void restartBanner(UICommandBuilder update, boolean pending) {
+            restart.showBanner(update, pending);
+        }
+
+        @Override
+        public void whileOpen(Runnable work) {
+            whileOpenOrTell(work, "");
+        }
+
+        @Override
+        public void whileOpenOrTell(Runnable work, String closedText) {
+            Ref<EntityStore> ref = playerRef.getReference();
+            if (ref == null || !ref.isValid()) {
+                ControlPanelPage.this.stopListening();
+                tell(closedText);
+                return;
+            }
+            Store<EntityStore> store = ref.getStore();
+            store.getExternalData().getWorld().execute(() -> {
+                if (!ControlPanelPage.this.isOpen(ref, store)) {
+                    ControlPanelPage.this.stopListening();
+                    tell(closedText);
+                    return;
+                }
+                try {
+                    work.run();
+                } catch (RuntimeException e) {
+                    log.error("Could not update the control panel of " + playerRef.getUsername(), e);
+                }
+            });
+        }
+
+        private void tell(String text) {
+            if (!text.isEmpty()) {
+                playerRef.sendMessage(Messages.text(text));
+            }
         }
 
         @Override

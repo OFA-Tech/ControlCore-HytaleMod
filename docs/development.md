@@ -102,3 +102,5 @@ Things to know:
   player rejoins.
 - **Mods tab:** turning a mod on or off applies after a restart; mod config files are shown read-only.
 - **Permissions:** not yet tested in game with a non-admin account.
+- **Restarts:** a server cannot start itself; Restart only stops it cleanly, and it comes back only if the host restarts it.
+- **Restore on next start** runs in ControlCore's setup (core plugins' setups, including Hytale:Universe, open no universe files; worlds and players load in the start phase). If a file in `universe/` is still locked, the move fails and nothing changes.

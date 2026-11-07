@@ -311,6 +311,22 @@ lists the player may not see are empty. `players().teleportTo` and `bring` move 
 `actingFor`. The input probe and "Detect key" are not part of the API. Details:
 [Server management API](https://github.com/OFA-Tech/ControlCore-HytaleMod/wiki/Server-Management-API).
 
+## Maintenance and announcements (API 2.5.0)
+
+`server()` reads and switches maintenance mode (`maintenance()`, `setMaintenance(on, MaintenanceOptions)`); turning it
+on kicks every online player who is not an admin and lacks `ofatech.controlcore.maintenance.join` and
+`ofatech.controlcore.maintenance` (only admins may set the maintenance MOTD). `announcements()`
+manages rotating announcements (`list`, `add`, `remove`, `setEnabled`, `move`, `settings`/`setSettings`, `sendNow`,
+`send`). Both have `actingFor(playerId)` like the other server sections; the nodes are
+`ofatech.controlcore.maintenance` and `ofatech.controlcore.announcements`. `SnapshotsApi.Part.ANNOUNCEMENTS` is new.
+
+## Backups and restarts (API 2.5.0)
+
+`backups()` makes, lists and deletes universe backups (`configured`, `setDirectory`, `create` returning a
+`CompletableFuture<Result<Backup>>`, `list`, `delete`) and plans a restore at the next start (`restoreOnNextStart`, a
+`CompletableFuture<Result<String>>` because the zip is copied in the background, `pendingRestore`, `cancelRestore`). `server()` also restarts: `restart(delay, reason)`, `cancelRestart()`,
+`restartStatus()`. Both have `actingFor(playerId)`; the nodes are `ofatech.controlcore.backups` and
+`ofatech.controlcore.restart`. `HistoryApi.Kind.BACKUP` is new.
 ## Using it from another mod
 
 1. **Dependency.** Releases are published to GitHub Packages. GitHub asks for a login even for public
@@ -329,8 +345,8 @@ lists the player may not see are empty. `players().teleportTo` and `bring` move 
        }
    }
    dependencies {
-       compileOnly("net.ofatech:controlcore:0.20.0")
-       vineImplementation("net.ofatech:controlcore:0.20.0") // run it in your dev server (not vineMod: see docs/platforms.md)
+       compileOnly("net.ofatech:controlcore:0.21.0")
+       vineImplementation("net.ofatech:controlcore:0.21.0") // run it in your dev server (not vineMod: see docs/platforms.md)
    }
    ```
 2. **Manifest.** Use `manifest_dependencies = OFATech:ControlCore=>=0.10.0`, or

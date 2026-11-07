@@ -17,6 +17,7 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import net.ofatech.controlcore.application.automation.AnnouncementService;
 import net.ofatech.controlcore.application.history.ChangeContext;
 import net.ofatech.controlcore.application.history.HistoryEditor;
 import net.ofatech.controlcore.application.history.HistoryValues;
@@ -27,6 +28,7 @@ import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
 import net.ofatech.controlcore.application.text.Texts;
 import net.ofatech.controlcore.domain.model.PlayerId;
+import net.ofatech.controlcore.domain.model.automation.Announcements;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Actor;
 import net.ofatech.controlcore.domain.model.history.ChangeRecord.Kind;
 import net.ofatech.controlcore.domain.model.keys.CustomKeyBind;
@@ -80,6 +82,7 @@ public final class SnapshotService {
     private final Texts texts;
     private final Clock clock;
     private final Log log;
+    private final AnnouncementService announcements;
 
     public SnapshotService(
             SnapshotStore store,
@@ -96,7 +99,9 @@ public final class SnapshotService {
             HistoryEditor history,
             Texts texts,
             Clock clock,
-            Log log) {
+            Log log,
+            AnnouncementService announcements) {
+        this.announcements = announcements;
         this.store = store;
         this.settings = settings;
         this.serverConfig = serverConfig;
@@ -692,6 +697,7 @@ public final class SnapshotService {
                 rules,
                 enabled,
                 playerValues,
+                parts.contains(Part.ANNOUNCEMENTS) ? Optional.of(announcements.state()) : Optional.empty(),
                 false,
                 false);
     }
@@ -817,6 +823,17 @@ public final class SnapshotService {
         }
         if (snapshot.has(Part.PLAYERS)) {
             playerChanges(snapshot, tr, adminOnly, skipped);
+        }
+        if (snapshot.has(Part.ANNOUNCEMENTS) && snapshot.announcements().isPresent()) {
+            Announcements wanted = snapshot.announcements().get();
+            Announcements now = announcements.state();
+            if (!now.equals(wanted)) {
+                adminOnly.add(new Change(
+                        tr.t("controlcore.snapshots.part.announcements"),
+                        announcements.summary(now, tr),
+                        announcements.summary(wanted, tr),
+                        () -> announcements.restore(wanted, Optional.empty())));
+            }
         }
         adminOnly.forEach(change -> changes.add(change.onlyForAdmins()));
         return new Plan(snapshot, changes, skipped[0]);

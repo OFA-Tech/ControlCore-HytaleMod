@@ -36,6 +36,25 @@ class LanguageFilesTest {
     }
 
     @Test
+    void noLanguageFileDefinesAKeyTwice() throws IOException {
+        for (String language : Texts.LANGUAGES) {
+            Path file = Path.of("src/main/resources/Server/Languages", language, "controlcore.lang");
+            Set<String> seen = new TreeSet<>();
+            Set<String> twice = new TreeSet<>();
+            for (String line : Files.readAllLines(file)) {
+                int equals = line.indexOf('=');
+                if (equals > 0 && !line.startsWith("#")) {
+                    String key = line.substring(0, equals).trim();
+                    if (!seen.add(key)) {
+                        twice.add(key);
+                    }
+                }
+            }
+            assertThat(twice).as(language + " duplicate keys").isEmpty();
+        }
+    }
+
+    @Test
     void everyKeyTheCodeAndLayoutsNameExists() throws IOException {
         Set<String> english = bundled.messages(Texts.ENGLISH).keySet();
         Set<String> used = new TreeSet<>();

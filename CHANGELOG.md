@@ -2,6 +2,70 @@
 
 ## Unreleased
 
+## 0.21.0 - 2026-11-06
+
+Beta for Hytale `>=0.7.2 <0.8.0` (tested on 0.7.5). API 2.5.0: additions only, so mods built for 2.0.0 and later keep working. No migration needed; as always, back up `mods/OFATech_ControlCore/` first. Restoring a backup replaces the world folder at the next start; the previous universe is always kept as `universe-before-restore-<date>`.
+
+### Added
+- **Maintenance mode**: a bar in Server Configs -> Players (Whitelisted filter) and `/cc-maintenance <on|off|status>
+  [--message=] [--motd=] [--for=]`. Turning it on (press twice in the panel) kicks every online player who is not an
+  admin and lacks `ofatech.controlcore.maintenance.join` and `ofatech.controlcore.maintenance`, and refuses them until
+  it is off (if that check itself fails, or the maintenance state can't be read, admins are still let in and everyone
+  else is refused with "try again later"). Optional
+  message, a MOTD shown while it is on (admins and the console only; for others it is ignored and the reply says so; the
+  old one comes back after) and an automatic end (15 min to 4 h, or `--for=30m`). Needs
+  `ofatech.controlcore.maintenance`; recorded in History, where rolling it back turns it the other way. New automation
+  actions **Turn maintenance on** (value: the message) and **Turn maintenance off**.
+- **Rotating announcements**: a **Rules | Announcements** switch in the Automation tab, and `/cc-announce-list`,
+  `-add`, `-remove`, `-toggle`, `-move`, `-now` and `-set`. Messages sent to everyone every N minutes, in turn or at
+  random (never the same twice in a row), in chat, as a toast or on the warning bar, only from a number of players
+  online; each can be turned off, moved and sent now. Placeholders as in rules. Needs
+  `ofatech.controlcore.announcements` (admins have it); every change is in History with rollback, and snapshots can hold
+  them (new part `announcements`, restoring it needs an admin).
+- **Backups**: a **Backups** view in Server Configs (next to config.json | Worlds | Players) and `/cc-backup
+  [--directory=]`, `/cc-backups`, `/cc-backup-delete <name> confirm`. It uses Hytale's own universe backup: set the
+  backup directory right there if none is set (admins and the console only, whatever the setting rights say, also as
+  a config.json setting, in History rollback and through the settings API; a folder inside the server folder or an
+  absolute local folder, never a network share, a `..` segment or the universe folder; non-admins see it read-only;
+  refused while a backup runs), **Back up now** (one at a time, refused when the disk has less free space than the
+  universe; a run that
+  writes no new zip is reported as failed), the list of latest and archived backups with date and size, and Delete
+  (press twice). Backup names may only use letters, digits, `.`, `_` and `-`; others are listed with a clear error.
+  Needs `ofatech.controlcore.backups` (admins have it); recorded in History. New automation action **Make a backup**.
+- **Restore on next start**: **Restore on next start** (press twice) or `/cc-backup-restore <name> confirm` plans a
+  restore; `/cc-backup-restore-cancel` or **Cancel restore** cancels it. Planning copies the zip to ControlCore's
+  `pending-restore` folder in the background ("Copying the backup for the restore..."; backups, other plans and
+  cancels wait for it, a due restart waits for it, and it can't start while a backup runs), so Hytale's backup rotation cannot remove it (the planned backup keeps its badge when Hytale
+  archives it); only zips with a `worlds` folder can be planned (a zip with everything inside one top folder is
+  unpacked without it), and not when the universe folder is a link or a separate mount. At the next start, before any
+  world loads, ControlCore checks the free space, unpacks the copy into `universe-restoring-<date>` next to the
+  universe (entries outside it are refused), and only when that is complete renames the current universe to
+  `universe-before-restore-<date>` and the new folder to `universe`; if anything fails the universe is left or put
+  back as it was and the copy is kept until the next restore is planned. If the server was killed during a restore,
+  the next start deletes the half-unpacked folder when the universe is intact and no matching
+  `universe-before-restore-<date>` exists; when one does (killed between the two renames), it keeps and renames no
+  folder and stops the server at every start with a message naming the folder to rename, as it does when the
+  universe folder is missing, instead of starting a new, empty world. If the server was off for more than 7 days,
+  counted from the last time it was seen running with the plan (saved hourly and on stop), the plan is dropped at start instead of applied (admins
+  are told, History shows it, the copy is kept until the next plan). Copies no plan uses are deleted when a restore is
+  planned. The result is in
+  History, the log, the Health tab's problems (on failure) and a chat line for the first admin who joins.
+- **Restarts**: a **Restart** button (press twice, with a 10 s to 10 min or default countdown) in the restart banner,
+  which also shows after mod changes in the Mods tab, and in the Health tab, plus `/cc-restart [--in=] [--reason=]`,
+  `/cc-restart-cancel` and `/cc-restart-status`. Everyone gets a warning bar and chat warnings at 10 min, 5 min, 1 min,
+  30 s and 10 s; at zero players are kicked with "Server restarting, back soon!" and the server stops (the host must
+  start it again). New settings **Restart countdown** (10 to 600 s, default 60), **Back up before restarting** (skipped
+  while a restore is planned; the restart waits at most 10 minutes for a backup) and **Scheduled restarts** (daily
+  `HH:mm` times and cron schedules; also started when the server comes up inside the countdown). Needs
+  `ofatech.controlcore.restart`. New automation action **Restart the server** and triggers **A restart countdown
+  starts** and **The server is stopping** (every stop, before players are disconnected).
+- **API 2.5.0** (additive; mods built for 2.0.0 and later keep working): `server()` with `maintenance()` and
+  `setMaintenance(on, MaintenanceOptions)`, `announcements()` with `list`, `add`, `remove`, `setEnabled`, `move`,
+  `settings`, `setSettings`, `sendNow` and `send`, both with `actingFor(player)`; `SnapshotsApi.Part.ANNOUNCEMENTS`;
+  `server().restart`, `cancelRestart` and `restartStatus`; `backups()` with `configured`, `setDirectory`, `create`,
+  `list`, `delete`, `restoreOnNextStart` (returns a future), `pendingRestore` and `cancelRestore`;
+  `HistoryApi.Kind.BACKUP`.
+
 ## 0.20.0 - 2026-11-03
 
 Beta. Requires Hytale server 0.7.2 or newer 0.7.x (`>=0.7.2 <0.8.0`), tested on 0.7.5. Everything the panel does now

@@ -30,7 +30,8 @@ class ServerConfigEditorTest {
             new ServerSettings("My Server", "Hello", false, 20, 12, Duration.ofSeconds(90)));
     private final RecordingLog log = new RecordingLog();
     private final DomainEventBus bus = new DomainEventBus(log);
-    private final ServerConfigEditor editor = new ServerConfigEditor(server, Worlds.NONE, bus, bus, log);
+    private final ServerConfigEditor editor = new ServerConfigEditor(
+            server, Worlds.NONE, bus, bus, new net.ofatech.controlcore.fakes.FakeServerBackups(), log);
 
     @Test
     void keysBecomeSettingIds() {
@@ -55,6 +56,7 @@ class ServerConfigEditorTest {
                         "server:defaults.game-mode=Creative APPLIES_AFTER_RESTART",
                         "server:connection-timeouts.play-timeout=90 EDITABLE",
                         "server:backup.enabled=false APPLIES_AFTER_RESTART",
+                        "server:backup.directory= APPLIES_AFTER_RESTART",
                         "server:update.patchline= APPLIES_AFTER_RESTART",
                         "server:ban-storage=Disk (bans.json) READ_ONLY");
         assertThat(snapshots.get(4).definition().type()).isInstanceOf(SettingType.ChoiceType.class);

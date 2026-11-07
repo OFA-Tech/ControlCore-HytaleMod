@@ -81,6 +81,7 @@ The console counts as an admin; `/cc-tp` and `/cc-bring` need a player.
 | `/cc-whitelist` | `ofatech.controlcore.players.whitelist` | list the whitelist, 20 at most |
 | `/cc-whitelist-add <player>` / `/cc-whitelist-remove <player>` | `ofatech.controlcore.players.whitelist` | add a player to the whitelist or remove one |
 | `/cc-whitelist-require <on\|off>` | `ofatech.controlcore.players.whitelist` | whether joining needs the whitelist (config.json `RequireJoinPermission`, live, in History) |
+| `/cc-maintenance <on\|off\|status> [--message=] [--motd=] [--for=]` | `ofatech.controlcore.maintenance` (`status`: anyone) | maintenance mode: `on` kicks every online player who isn't an admin and lacks `ofatech.controlcore.maintenance.join` and `ofatech.controlcore.maintenance` and refuses them until it is off; `--message=` is what they see (one word, see the top; empty for the default; shown in the server's language, because Hytale gives no language before a player joins), `--motd=` replaces the MOTD while it is on (admins and the console only; ignored for others), `--for=` turns it off by itself (`30m`, `2h`, `never`). In History |
 | `/cc-op <player>` / `/cc-deop <player>` | admins | make or remove an operator |
 | `/cc-group <add\|remove> <player> <group>` | admins | add a player to a permission group or remove them |
 | `/cc-group set <player> <group>` | admins | make that group the player's only group (one History line per group changed) |
@@ -179,6 +180,36 @@ Ids for triggers, conditions and actions are the panel's choices in lower case w
 /cc-rule-add name=Night; when=daily-at:22:00; do=message-all:Night mode; do=set-setting:homes:max-homes=2
 /cc-rule-edit welcome cooldown=60; on=no
 ```
+
+## Announcements
+
+Rotating announcements, also in the panel's **Automation** tab, **Announcements** view (see [Automation](Automation)).
+Admins or `ofatech.controlcore.announcements`.
+
+| Command | Does |
+|---|---|
+| `/cc-announce-list` | list the announcements with their ids, and the settings |
+| `/cc-announce-add <text>` | add an announcement at the end, turned on; placeholders such as `{online}` work |
+| `/cc-announce-remove <id>` | delete an announcement |
+| `/cc-announce-toggle <on\|off> [--id=]` | turn the rotation on or off, or with `--id=` one announcement |
+| `/cc-announce-move <id> <up\|down>` | move an announcement one place up or down |
+| `/cc-announce-now [--id=]` | send the next announcement now, or with `--id=` that one |
+| `/cc-announce-set [--interval=] [--order=] [--channel=] [--min-players=]` | minutes between announcements (1 to 1440), `in-turn` or `random`, `chat`, `toast` or `warning`, and the players online needed (0 for always) |
+## Backups and restarts
+
+Backups need `ofatech.controlcore.backups`, restarts `ofatech.controlcore.restart`; admins have both. See
+[Backups and restarts](Backups-And-Restarts).
+
+| Command | Who | Does |
+|---|---|---|
+| `/cc-backup [--directory=]` | `ofatech.controlcore.backups` | back up the universe now (Hytale's own backup, one at a time, refused when the disk is too full); `--directory=` sets config.json `Backup.Directory` first, for example `--directory=backups` (admins and the console only, a folder inside the server folder or an absolute local folder, never a network share or the universe folder, not while a backup runs). In History |
+| `/cc-backups` | `ofatech.controlcore.backups` | list the backups (latest and archived, newest first) and the planned restore |
+| `/cc-backup-delete <name> confirm` | `ofatech.controlcore.backups` | delete a backup; the second word must be `confirm`. Archived ones are named `archive/<file>.zip`. In History |
+| `/cc-backup-restore <name> confirm` | `ofatech.controlcore.backups` | restore that backup at the next server start, before the worlds load; the current universe is moved to `universe-before-restore-<date>`. Replies "Copying the backup for the restore..." and then the result. In History |
+| `/cc-backup-restore-cancel` | `ofatech.controlcore.backups` | cancel the planned restore |
+| `/cc-restart [--in=] [--reason=]` | `ofatech.controlcore.restart` | restart after a countdown (`--in=30s`, `5m`, `1h`; default: the Restart countdown setting). Everyone is warned at 10 min, 5 min, 1 min, 30 s and 10 s; at zero players are kicked with "back soon" and the server stops. Your host must start it again |
+| `/cc-restart-cancel` | `ofatech.controlcore.restart` | cancel the countdown and tell everyone |
+| `/cc-restart-status` | anyone | the countdown and the next scheduled restart |
 
 ## Diagnostics
 

@@ -2,6 +2,8 @@ package net.ofatech.controlcore.application.runtime;
 
 import com.google.auto.service.AutoService;
 import net.ofatech.controlcore.api.ActionsApi;
+import net.ofatech.controlcore.api.AnnouncementsApi;
+import net.ofatech.controlcore.api.BackupsApi;
 import net.ofatech.controlcore.api.ControlCoreApi;
 import net.ofatech.controlcore.api.ControlCoreEvents;
 import net.ofatech.controlcore.api.ControlPanelApi;
@@ -17,6 +19,7 @@ import net.ofatech.controlcore.api.PlayersApi;
 import net.ofatech.controlcore.api.ProfilesApi;
 import net.ofatech.controlcore.api.RulesApi;
 import net.ofatech.controlcore.api.SchedulerApi;
+import net.ofatech.controlcore.api.ServerApi;
 import net.ofatech.controlcore.api.SessionsApi;
 import net.ofatech.controlcore.api.SettingsApi;
 import net.ofatech.controlcore.api.SnapshotsApi;
@@ -146,5 +149,20 @@ public final class ControlCoreApiService implements ControlCoreApi {
     @Override
     public DefaultsApi defaults() {
         return server.defaults();
+    }
+
+    @Override
+    public ServerApi server() {
+        return server.server();
+    }
+
+    @Override
+    public AnnouncementsApi announcements() {
+        return server.announcements();
+    }
+
+    @Override
+    public BackupsApi backups() {
+        return server.backups();
     }
 }

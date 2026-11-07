@@ -26,7 +26,10 @@ public record ChangeRecord(
         MOD,
         BAN,
         PLAYER,
-        GAME_ACTION
+        GAME_ACTION,
+        MAINTENANCE,
+        ANNOUNCEMENT,
+        BACKUP
     }
 
     public enum Source {

@@ -72,6 +72,14 @@ public final class FakeServerConfiguration implements ServerConfiguration {
                 "false",
                 SettingAccess.APPLIES_AFTER_RESTART));
         entries.add(entry(
+                "Backup.Directory",
+                "Backup",
+                "Directory",
+                ConfigValueKind.TEXT,
+                "",
+                null,
+                SettingAccess.APPLIES_AFTER_RESTART));
+        entries.add(entry(
                 "Update.Patchline",
                 "Update",
                 "Patchline",

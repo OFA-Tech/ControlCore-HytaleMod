@@ -20,7 +20,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import net.ofatech.controlcore.api.ActionContext;
 import net.ofatech.controlcore.api.AutomationAction;
+import net.ofatech.controlcore.application.backups.BackupService;
 import net.ofatech.controlcore.application.history.ChangeContext;
+import net.ofatech.controlcore.application.maintenance.MaintenanceService;
+import net.ofatech.controlcore.application.restart.RestartService;
 import net.ofatech.controlcore.application.serverconfig.ServerConfigEditor;
 import net.ofatech.controlcore.application.settings.SettingPermissionPolicy;
 import net.ofatech.controlcore.application.settings.SettingsRegistry;
@@ -96,7 +99,7 @@ public final class AutomationService {
 
     public static final int MAX_ACTIONS = 8;
 
-    private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("H:mm");
+    static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("H:mm");
     private static final DateTimeFormatter WHEN = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final ThreadLocal<Boolean> RUNNING = ThreadLocal.withInitial(() -> false);
 
@@ -124,6 +127,11 @@ public final class AutomationService {
     private final Texts texts;
     private final Log log;
     private final Recipients recipients;
+    private final ServerPlaceholders serverValues;
+    private final MaintenanceService maintenance;
+    private final AnnouncementService announcements;
+    private final BackupService backups;
+    private final RestartService restart;
 
     private final Map<String, Instant> lastRun = new ConcurrentHashMap<>();
     private final Map<String, Instant> timerStart = new ConcurrentHashMap<>();
@@ -149,8 +157,18 @@ public final class AutomationService {
             Clock clock,
             Texts texts,
             Log log,
-            Recipients recipients) {
+            Recipients recipients,
+            ServerPlaceholders serverValues,
+            MaintenanceService maintenance,
+            AnnouncementService announcements,
+            BackupService backups,
+            RestartService restart) {
+        this.backups = backups;
+        this.restart = restart;
         this.recipients = recipients;
+        this.serverValues = serverValues;
+        this.maintenance = maintenance;
+        this.announcements = announcements;
         this.store = store;
         this.settings = settings;
         this.actions = actions;
@@ -173,10 +191,30 @@ public final class AutomationService {
                 fired.player().flatMap(sessions::world),
                 fired.variables(),
                 id));
+        restart.listen(new RestartService.Listener() {
+            @Override
+            public void started(Duration delay, String reason) {
+                fire(
+                        Trigger.RESTART_STARTED,
+                        Optional.empty(),
+                        Optional.empty(),
+                        Map.of("seconds", Long.toString(delay.toSeconds()), "reason", reason),
+                        "");
+            }
+
+            @Override
+            public void stopping() {
+                fire(Trigger.SERVER_STOPPING, Optional.empty(), Optional.empty(), Map.of(), "");
+            }
+        });
     }
 
     public boolean mayManage(Optional<PlayerId> who) {
         return who.isEmpty() || policy.isAdmin(who.get());
+    }
+
+    public boolean mayOpen(Optional<PlayerId> who) {
+        return mayManage(who) || announcements.mayManage(who);
     }
 
     public List<Rule> rules() {
@@ -453,6 +491,32 @@ public final class AutomationService {
                         .work()
                         .accept(new ActionContext(rule.name(), player, parts.length > 1 ? parts[1] : "", values));
             }
+            case MAINTENANCE_ON -> {
+                Result<String> on = maintenance.turnOn(text, "", Optional.empty(), Optional.empty(), tr);
+                if (on.isFailure()) {
+                    return Result.failure(on.error());
+                }
+            }
+            case MAINTENANCE_OFF -> {
+                Result<String> off = maintenance.turnOff(Optional.empty(), tr);
+                if (off.isFailure()) {
+                    return Result.failure(off.error());
+                }
+            }
+            case BACKUP -> {
+                var started = backups.create(Optional.empty(), tr);
+                if (started.isDone() && started.join().isFailure()) {
+                    return Result.failure(started.join().error());
+                }
+                backups.tellAdminsIfFailed(started, "controlcore.automation.backup_failed", "name", rule.name());
+            }
+            case RESTART -> {
+                Result<String> started =
+                        RestartService.delay(text).flatMap(delay -> restart.start(delay, "", Optional.empty(), tr));
+                if (started.isFailure()) {
+                    return Result.failure(started.error());
+                }
+            }
         }
         return Result.success(true);
     }
@@ -493,18 +557,9 @@ public final class AutomationService {
         values.put("rule", rule.name());
         values.put("player", fired.player().map(PlayerInfo::name).orElse(""));
         values.put("world", fired.world().orElse(""));
-        values.put("online", Integer.toString(players.online().size()));
-        values.put("max", Integer.toString(health.maxPlayers()));
-        values.putIfAbsent(
-                "tps",
-                health.worlds().stream()
-                        .filter(world -> fired.world()
-                                .map(world.name()::equalsIgnoreCase)
-                                .orElse(true))
-                        .findFirst()
-                        .map(world -> Long.toString(Math.round(effectiveTps(world))))
-                        .orElse(""));
-        values.put("time", CLOCK.format(LocalTime.ofInstant(clock.now(), ZoneId.systemDefault())));
+        Map<String, String> server = serverValues.values(fired.world());
+        values.putIfAbsent("tps", server.remove("tps"));
+        values.putAll(server);
         return values;
     }
 
@@ -882,6 +937,9 @@ public final class AutomationService {
                                 .isSuccess();
             case MOD_ACTION -> value.matches("[a-z0-9][a-z0-9_-]*:[a-z0-9][a-z0-9_-]*(\\s.*)?");
             case CLEAR_WARNING -> value.equalsIgnoreCase("all") || value.matches("[a-z0-9][a-z0-9-]*");
+            case MAINTENANCE_ON -> value.length() <= MAX_TEXT;
+            case MAINTENANCE_OFF, BACKUP -> true;
+            case RESTART -> RestartService.delay(value).isSuccess();
             default -> !value.isEmpty() && value.length() <= MAX_TEXT;
         };
         return ok
@@ -990,7 +1048,7 @@ public final class AutomationService {
         return number >= min && number <= max ? Optional.of(number) : Optional.empty();
     }
 
-    static Optional<LocalTime> clockTime(String text) {
+    public static Optional<LocalTime> clockTime(String text) {
         try {
             return Optional.of(LocalTime.parse(text == null ? "" : text.strip(), CLOCK));
         } catch (DateTimeParseException e) {
