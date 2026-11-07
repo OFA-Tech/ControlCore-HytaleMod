@@ -4,7 +4,12 @@
 
 ## 0.21.0 - 2026-11-06
 
-Beta for Hytale `>=0.7.2 <0.8.0` (tested on 0.7.5). API 2.5.0: additions only, so mods built for 2.0.0 and later keep working. No migration needed; as always, back up `mods/OFATech_ControlCore/` first. Restoring a backup replaces the world folder at the next start; the previous universe is always kept as `universe-before-restore-<date>`.
+Beta for Hytale `>=0.7.2 <0.8.0` (tested on 0.7.6). API 2.5.0: additions only, so mods built for 2.0.0 and later keep working. No migration needed; as always, back up `mods/OFATech_ControlCore/` first. Restoring a backup replaces the world folder at the next start; the previous universe is always kept as `universe-before-restore-<date>`.
+
+### Hytale
+
+- Built and tested on Hytale server 0.7.6; 0.7.2 to 0.7.5 are still supported. 0.7.6 only changed world generation, network listener internals and translations, so ControlCore needed no code changes.
+- The backup folder check now treats `\` as a folder separator on Linux too, so Linux servers refuse the same folders as Windows ones.
 
 ### Added
 - **Maintenance mode**: a bar in Server Configs -> Players (Whitelisted filter) and `/cc-maintenance <on|off|status>
