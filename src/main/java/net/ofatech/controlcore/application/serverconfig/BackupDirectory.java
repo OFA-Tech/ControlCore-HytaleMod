@@ -14,12 +14,19 @@ public final class BackupDirectory {
 
     private BackupDirectory() {}
 
+    public static String normalised(String value) {
+        return value == null ? "" : value.strip().replace('\\', '/');
+    }
+
     public static boolean allowed(String value, Path universe) {
-        String text = value == null ? "" : value.strip();
-        if (text.isEmpty() || (text.length() > 1 && slash(text.charAt(0)) && slash(text.charAt(1)))) {
+        String raw = value == null ? "" : value.strip();
+        String text = raw.replace('\\', '/');
+        if (raw.startsWith("\\")
+                || text.isEmpty()
+                || (text.length() > 1 && slash(text.charAt(0)) && slash(text.charAt(1)))) {
             return false;
         }
-        for (String part : text.split("[/\\\\]")) {
+        for (String part : text.split("/")) {
             if (part.strip().equals("..")) {
                 return false;
             }
@@ -34,7 +41,7 @@ public final class BackupDirectory {
             if (text.contains(":") && !(path.isAbsolute() && text.lastIndexOf(':') == 1)) {
                 return false;
             }
-            if ((text.startsWith("/") || text.startsWith("\\")) && !path.isAbsolute()) {
+            if (text.startsWith("/") && !path.isAbsolute()) {
                 return false;
             }
             Path server = Path.of("").toAbsolutePath().normalize();

@@ -211,10 +211,11 @@ public final class ServerConfigEditor implements SettingsEditor {
                     Text.key("controlcore.errors.serverconfig.read_only", "{name} cannot be changed here.")
                             .with("name", entry.name())));
         }
-        if (BackupDirectory.ID.equals(source.id())
-                && !value.isBlank()
-                && !BackupDirectory.allowed(value, backups.universe())) {
-            return Result.failure(BackupDirectory.bad(value));
+        if (BackupDirectory.ID.equals(source.id())) {
+            if (!value.isBlank() && !BackupDirectory.allowed(value, backups.universe())) {
+                return Result.failure(BackupDirectory.bad(value));
+            }
+            value = BackupDirectory.normalised(value);
         }
         Result<ConfigEntry> written = source.world().isPresent()
                 ? worlds.write(source.world().get(), entry.path(), value)

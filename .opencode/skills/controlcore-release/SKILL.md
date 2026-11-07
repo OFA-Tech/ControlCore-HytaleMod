@@ -27,7 +27,10 @@ owner uploads the jar to CurseForge (project 1757053) and posts in the Discord t
    `>=0.7.2 <0.8.0`, API version and whether mods keep working, migration notes), and put an empty `## Unreleased`
    above it.
 4. Bump the API version in the docs only when the public API changed (additions = minor, removals = major).
-5. `./gradlew clean build -Pstrict` must pass. Check the jar: `manifest.json` version and `ServerVersion`, and no
+5. `./gradlew clean build -Pstrict` must pass on Windows **and on Linux** (GitHub's runner is Ubuntu: `\` is not a
+   folder separator there). Run it in WSL with `bash /mnt/c/Users/caiom/AppData/Local/Temp/opencode/cc-lab/linux-check.sh`
+   (copies the checkout to `~/cc`, uses `~/jdk/jdk25`), and never tell the owner to merge while the PR's **Build**
+   check is red. Check the jar: `manifest.json` version and `ServerVersion`, and no
    `history/`, `snapshots/`, `diagnostics/`, `*Rules.json`, `SettingValues.json`, `bans.json` or other runtime files.
 6. `git ls-files -ci --exclude-standard` must be empty, then commit `Release <version>`.
 
